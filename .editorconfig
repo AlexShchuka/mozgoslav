@@ -1,20 +1,242 @@
-root = true
+﻿# You can modify the rules from these initially generated values to suit your own policies
+# You can learn more about editorconfig here: https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-code-style-settings-reference
 
-[*]
-charset = utf-8
-end_of_line = lf
-insert_final_newline = true
-trim_trailing_whitespace = true
+[*.props]
 indent_style = space
 
-[*.{cs,csproj,sln,props,targets}]
-indent_size = 4
+[*.i18n.json]
+indent_style = tab
 
-[*.{ts,tsx,js,jsx,json,yml,yaml,md,html,css,scss}]
+[*.{csproj, config.development, config}]
+indent_style = space
 indent_size = 2
 
-[*.py]
-indent_size = 4
-
-[Makefile]
+[*.cs]
+max_line_length = 130
+charset = utf-8
+insert_final_newline = false
 indent_style = tab
+trim_trailing_whitespace = true
+
+csharp_style_namespace_declarations = file_scoped
+
+# CA1720: Identifiers should not contain type names
+dotnet_diagnostic.CA1720.severity = none
+
+# CA2007: Consider calling ConfigureAwait on the awaited task
+dotnet_diagnostic.CA2007.severity = none
+
+# CA1031: Do not catch general exception types
+dotnet_diagnostic.CA1031.severity = none
+
+# CA1032: Implement standard exception constructors
+dotnet_diagnostic.CA1032.severity = none
+
+# CA2227: Collection properties should be read only
+dotnet_diagnostic.CA2227.severity = none
+
+# CA1062: Validate arguments of public methods
+dotnet_diagnostic.CA1062.severity = none
+
+# CS1591: Missing XML comment for publicly visible type or member 'Type_or_Member'
+dotnet_diagnostic.CS1591.severity = none
+
+# CA1848 Use the LoggerMessage delegates
+dotnet_diagnostic.CA1848.severity = none
+
+# CS1998: This async method lacks 'await'
+dotnet_diagnostic.CS1998.severity = none
+
+# CA2254: Template should be a static expression
+dotnet_diagnostic.CA2254.severity = none
+
+# CA1819: Properties should not return arrays
+dotnet_diagnostic.CA1819.severity = suggestion
+
+# Error CA1861 : Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedl…
+dotnet_diagnostic.CA1861.severity = suggestion
+
+# Error CA1859 : Use concrete types when possible for improved performance
+dotnet_diagnostic.CA1859.severity = suggestion
+
+# IDE0290 Use primary constructors
+dotnet_diagnostic.IDE0290.severity = none
+
+# CA2007: Do not directly await a Task
+dotnet_diagnostic.CA2007.severity = none
+
+# Warning for all style and code quality rules (IDEXXXX rules)
+# Then remove IDEXXXX rules that don't comply with company rules
+dotnet_analyzer_diagnostic.category-Style.severity = warning
+dotnet_analyzer_diagnostic.category-CodeQuality.severity = warning
+
+# IDE0008 Use explicit type instead of var
+dotnet_diagnostic.IDE0008.severity = none
+
+# IDE0009 Add this or Me qualification
+dotnet_diagnostic.IDE0009.severity = none
+
+# IDE0011 Add braces '{}'
+dotnet_diagnostic.IDE0011.severity = none
+
+# IDE0021 Use expression body for constructors
+dotnet_diagnostic.IDE0021.severity = none
+
+# IDE0022 Use expression body for methods
+dotnet_diagnostic.IDE0022.severity = none
+
+# IDE0023 Use expression body for conversion operators
+dotnet_diagnostic.IDE0023.severity = none
+
+# IDE0024 Use expression body for operators
+dotnet_diagnostic.IDE0024.severity = none
+
+# IDE0025 Use expression body for properties
+dotnet_diagnostic.IDE0025.severity = none
+
+# IDE0026 Use expression body for indexers
+dotnet_diagnostic.IDE0026.severity = none
+
+# IDE0027 Use expression body for accessors
+dotnet_diagnostic.IDE0027.severity = none
+
+# IDE0037 Use inferred member name
+dotnet_diagnostic.IDE0037.severity = none
+
+# IDE0042 Deconstruct variable declaration 
+dotnet_diagnostic.IDE0042.severity = none
+
+# IDE0046 If statement can be simplified
+dotnet_diagnostic.IDE0046.severity = none
+
+# IDE0047 Remove unnecessary parentheses
+dotnet_diagnostic.IDE0047.severity = none
+
+# IDE0048 Add parentheses for clarity
+dotnet_diagnostic.IDE0048.severity = none
+
+# IDE0050 Convert anonymous type to tuple
+dotnet_diagnostic.IDE0050.severity = none
+
+# IDE0058 Remove unnecessary expression value
+dotnet_diagnostic.IDE0058.severity = none
+
+# IDE0130 Namespace {0} does not match folder structure, expected "{1}" based on directory structure
+dotnet_diagnostic.IDE0130.severity = none
+
+# IDE0078 Use pattern matching
+dotnet_diagnostic.IDE0078.severity = none
+
+# VSTHRD200: Use "Async" suffix for async methods
+dotnet_diagnostic.VSTHRD200.severity = suggestion
+
+# CA1822: Mark members as static
+dotnet_diagnostic.CA1822.severity = suggestion
+
+# CA1515: Consider making public types internal
+dotnet_diagnostic.CA1515.severity = suggestion
+
+# IDE0010 Populate switch
+dotnet_diagnostic.IDE0010.severity = none
+
+# Use collection expression for empty (IDE0301)
+dotnet_diagnostic.IDE0301.severity = none
+
+# IDE0305: Collection initialization can be simplified
+dotnet_diagnostic.IDE0305.severity = suggestion
+
+dotnet_diagnostic.CA1873.severity = suggestion
+
+# Naming convention - Private and internal fields should start with _ and be camelCased
+dotnet_naming_symbols.private_internal_fields.applicable_kinds = field
+dotnet_naming_symbols.private_internal_fields.applicable_accessibilities = private
+dotnet_naming_style.require_underscore_prefix_and_camel_case.required_prefix = _
+dotnet_naming_style.require_underscore_prefix_and_camel_case.capitalization = camel_case
+dotnet_naming_rule.private_internal_fields.symbols = private_internal_fields
+dotnet_naming_rule.private_internal_fields.style = require_underscore_prefix_and_camel_case
+dotnet_naming_rule.private_internal_fields.severity = warning
+
+dotnet_naming_symbols.constant_fields.applicable_kinds = field
+dotnet_naming_symbols.constant_fields.required_modifiers = const
+dotnet_naming_style.const_pascal_case.capitalization = pascal_case
+dotnet_naming_rule.constant_fields.symbols = constant_fields
+dotnet_naming_rule.constant_fields.style = const_pascal_case
+dotnet_naming_rule.constant_fields.severity = warning
+
+#Formatting - new line options
+#place catch statements on a new line
+csharp_new_line_before_catch = true
+#require members of anonymous types to be on the same line
+csharp_new_line_before_members_in_anonymous_types = false
+#require members of object intializers to be on separate lines
+csharp_new_line_before_members_in_object_initializers = false
+#require braces to be on a new line, also known as "Allman" style
+csharp_new_line_before_open_brace = all
+
+#Formatting - organize using options
+#sort System.* using directives alphabetically, and place them before other usings
+dotnet_sort_system_directives_first = true
+
+#Formatting - spacing options
+#require NO space between a cast and the value
+csharp_space_after_cast = false
+#require a space before the colon for bases or interfaces in a type declaration
+csharp_space_after_colon_in_inheritance_clause = true
+#require a space after a keyword in a control flow statement such as a for loop
+csharp_space_after_keywords_in_control_flow_statements = true
+#require a space before the colon for bases or interfaces in a type declaration
+csharp_space_before_colon_in_inheritance_clause = true
+#remove space within empty argument list parentheses
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+#remove space between method call name and opening parenthesis
+csharp_space_between_method_call_name_and_opening_parenthesis = false
+#do not place space characters after the opening parenthesis and before the closing parenthesis of a method call
+csharp_space_between_method_call_parameter_list_parentheses = false
+#remove space within empty parameter list parentheses for a method declaration
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false
+#place a space character after the opening parenthesis and before the closing parenthesis of a method declaration parameter list.
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+
+#Formatting - wrapping options
+#leave code block on single line
+csharp_preserve_single_line_blocks = true
+
+#Style - Modifier preferences
+#when this rule is set to a list of modifiers, prefer the specified ordering.
+csharp_preferred_modifier_order = public, private, protected, internal, static, extern, new, virtual, abstract, sealed, override, readonly, unsafe, volatile, async:suggestion
+
+# ReSharper properties
+resharper_csharp_wrap_array_initializer_style = chop_if_long
+resharper_csharp_wrap_before_extends_colon = true
+resharper_csharp_wrap_before_first_method_call = true
+resharper_csharp_wrap_chained_method_calls = chop_if_long
+resharper_csharp_wrap_list_pattern = chop_if_long
+resharper_csharp_new_line_before_while = true
+resharper_csharp_parentheses_redundancy_style = remove
+resharper_csharp_place_accessorholder_attribute_on_same_line = false
+resharper_csharp_place_accessor_attribute_on_same_line = false
+resharper_csharp_place_expr_accessor_on_single_line = true
+resharper_csharp_place_expr_method_on_single_line = true
+resharper_csharp_place_field_attribute_on_same_line = false
+resharper_csharp_place_simple_embedded_statement_on_same_line = false
+resharper_csharp_wrap_after_property_in_chained_method_calls = true
+resharper_csharp_wrap_after_declaration_lpar = true
+resharper_csharp_wrap_after_invocation_lpar = true
+resharper_csharp_wrap_arguments_style = chop_if_long
+resharper_csharp_wrap_before_first_type_parameter_constraint = true
+resharper_csharp_wrap_extends_list_style = chop_if_long
+resharper_csharp_wrap_parameters_style = chop_if_long
+resharper_csharp_blank_lines_around_field = 0
+resharper_csharp_blank_lines_around_single_line_field = 0
+resharper_csharp_blank_lines_around_single_line_invocable = 1
+resharper_csharp_keep_blank_lines_in_code = 1
+resharper_csharp_keep_blank_lines_in_declarations = 1
+resharper_csharp_blank_lines_between_using_groups = 1
+resharper_csharp_align_multiline_binary_expressions_chain = false
+resharper_csharp_braces_for_for = required_for_multiline
+resharper_csharp_braces_for_foreach = required_for_multiline
+resharper_csharp_braces_for_while = required
+
+[*Test{s.cs,.cs,sBase.cs,Base.cs}]
+dotnet_diagnostic.VSTHRD200.severity = none
+dotnet_diagnostic.CA1707.severity = none
