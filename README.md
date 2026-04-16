@@ -98,6 +98,12 @@ cd frontend && npm install && npm run dev
 cd frontend && npm run dist:mac
 ```
 
+## Demo (macOS)
+
+Double-click `scripts/demo.command` in Finder — starts backend, python-sidecar, and the Electron UI. Ctrl+C in the opened terminal window shuts everything down cleanly.
+
+(Requires: .NET 10 SDK, Node 24, Python 3.12 with `python-sidecar/.venv` initialized.)
+
 ## Dev setup
 
 1. Install lefthook once:
