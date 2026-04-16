@@ -10,24 +10,22 @@ namespace Mozgoslav.Tests.Integration;
 /// </summary>
 internal sealed class ApiFactory : WebApplicationFactory<Program>
 {
-    private readonly string _databasePath;
-
     public ApiFactory()
     {
-        _databasePath = Path.Combine(Path.GetTempPath(), $"mozgoslav-api-{Guid.NewGuid():N}.db");
+        DatabasePath = Path.Combine(Path.GetTempPath(), $"mozgoslav-api-{Guid.NewGuid():N}.db");
     }
 
-    public string DatabasePath => _databasePath;
+    public string DatabasePath { get; }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        Environment.SetEnvironmentVariable("Mozgoslav__DatabasePath", _databasePath);
+        Environment.SetEnvironmentVariable("Mozgoslav__DatabasePath", DatabasePath);
         builder.UseEnvironment("IntegrationTest");
         builder.ConfigureAppConfiguration((_, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Mozgoslav:DatabasePath"] = _databasePath,
+                ["Mozgoslav:DatabasePath"] = DatabasePath,
             });
         });
     }
@@ -35,14 +33,22 @@ internal sealed class ApiFactory : WebApplicationFactory<Program>
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
+        if (!disposing)
+        {
+            return;
+        }
         try
         {
-            if (File.Exists(_databasePath))
+            if (File.Exists(DatabasePath))
             {
-                File.Delete(_databasePath);
+                File.Delete(DatabasePath);
             }
         }
-        catch
+        catch (IOException)
+        {
+            // best effort
+        }
+        catch (UnauthorizedAccessException)
         {
             // best effort
         }

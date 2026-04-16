@@ -82,4 +82,9 @@ public sealed class ModelDownloadService
         var hash = await SHA256.HashDataAsync(stream, ct);
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
+
+    public async Task<string> DownloadAsync(Uri url, string destinationPath, IProgress<Progress>? progress, CancellationToken ct)
+    {
+        throw new NotImplementedException();
+    }
 }

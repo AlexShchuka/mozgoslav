@@ -41,7 +41,7 @@ public class EfProcessedNoteRepositoryTests
         var loaded = await new EfProcessedNoteRepository(freshCtx).GetByIdAsync(note.Id, CancellationToken.None);
 
         loaded.Should().NotBeNull();
-        loaded!.Version.Should().Be(2);
+        loaded.Version.Should().Be(2);
         loaded.KeyPoints.Should().BeEquivalentTo("тезис 1", "тезис 2");
         loaded.ActionItems.Should().ContainSingle().Which.Person.Should().Be("Иван");
         loaded.Participants.Should().BeEquivalentTo("Иван", "Ольга");

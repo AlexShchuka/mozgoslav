@@ -31,27 +31,27 @@ public sealed class DatabaseInitializer : IHostedService
         _logger = logger;
     }
 
-    public async Task StartAsync(CancellationToken ct)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         AppPaths.EnsureExist();
 
-        await using (var db = await _contextFactory.CreateDbContextAsync(ct))
+        await using (var db = await _contextFactory.CreateDbContextAsync(cancellationToken))
         {
-            await db.Database.EnsureCreatedAsync(ct);
+            await db.Database.EnsureCreatedAsync(cancellationToken);
         }
         _logger.LogInformation("SQLite schema ensured");
 
         foreach (var profile in BuiltInProfiles.All)
         {
-            await _profiles.AddAsync(profile, ct);
+            await _profiles.AddAsync(profile, cancellationToken);
         }
         _logger.LogInformation("Seeded {Count} built-in profiles", BuiltInProfiles.All.Count);
 
-        var loaded = await _settings.LoadAsync(ct);
+        var loaded = await _settings.LoadAsync(cancellationToken);
         var withDefaults = ApplyRuntimeDefaults(loaded);
         if (!loaded.Equals(withDefaults))
         {
-            await _settings.SaveAsync(withDefaults, ct);
+            await _settings.SaveAsync(withDefaults, cancellationToken);
             _logger.LogInformation("Populated default settings on first run");
         }
 
@@ -59,7 +59,7 @@ public sealed class DatabaseInitializer : IHostedService
             _settings.Language, string.IsNullOrEmpty(_settings.VaultPath) ? "<not set>" : _settings.VaultPath);
     }
 
-    public Task StopAsync(CancellationToken ct) => Task.CompletedTask;
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
     private static AppSettingsDto ApplyRuntimeDefaults(AppSettingsDto current) => current with
     {

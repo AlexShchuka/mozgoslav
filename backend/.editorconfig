@@ -1,7 +1,6 @@
 # C# code style for Mozgoslav backend
-# Aligned with Microsoft .NET guidelines + StyleCop
-
-root = true
+# Aligned with Microsoft .NET guidelines + StyleCop.
+# Inherits from the repository-root .editorconfig — do NOT set root = true here.
 
 [*]
 charset = utf-8

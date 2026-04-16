@@ -74,11 +74,11 @@ public class ProcessQueueWorkerTests
         fixture.ArrangeHappyPipeline();
 
         fixture.Notes.GetByTranscriptIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(new ProcessedNote[]
-            {
+            .Returns(
+            [
                 new() { Version = 1 },
                 new() { Version = 2 },
-            });
+            ]);
 
         ProcessedNote? captured = null;
         await fixture.Notes.AddAsync(
@@ -105,7 +105,7 @@ public class ProcessQueueWorkerTests
         await fixture.Worker.ProcessNextAsync(CancellationToken.None);
 
         captured.Should().NotBeNull();
-        captured!.Summary.Should().BeEmpty();
+        captured.Summary.Should().BeEmpty();
         captured.FullTranscript.Should().NotBeNullOrEmpty();
         await fixture.Llm.DidNotReceive().ProcessAsync(
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
@@ -130,7 +130,7 @@ public class ProcessQueueWorkerTests
 
         result.Should().BeTrue();
         captured.Should().NotBeNull();
-        captured!.ExportedToVault.Should().BeFalse();
+        captured.ExportedToVault.Should().BeFalse();
         captured.VaultPath.Should().BeNull();
         job.Status.Should().Be(JobStatus.Done);
     }
@@ -260,11 +260,11 @@ public class ProcessQueueWorkerTests
             Transcription.TranscribeAsync(
                     Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>(),
                     Arg.Any<IProgress<int>?>(), Arg.Any<CancellationToken>())
-                .Returns(new[]
-                {
+                .Returns(
+                [
                     new TranscriptSegment(TimeSpan.Zero, TimeSpan.FromSeconds(3), "Hello world"),
                     new TranscriptSegment(TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(6), "Second segment"),
-                });
+                ]);
 
             Llm.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(llmAvailable);
             if (llmAvailable)
@@ -272,14 +272,14 @@ public class ProcessQueueWorkerTests
                 Llm.ProcessAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
                     .Returns(new LlmProcessingResult(
                         Summary: "Test summary",
-                        KeyPoints: new[] { "point 1" },
+                        KeyPoints: ["point 1"],
                         Decisions: Array.Empty<string>(),
                         ActionItems: Array.Empty<ActionItem>(),
                         UnresolvedQuestions: Array.Empty<string>(),
-                        Participants: new[] { "Alice" },
+                        Participants: ["Alice"],
                         Topic: "Testing",
                         ConversationType: ConversationType.Meeting,
-                        Tags: new[] { "test" }));
+                        Tags: ["test"]));
             }
 
             Exporter.ExportAsync(

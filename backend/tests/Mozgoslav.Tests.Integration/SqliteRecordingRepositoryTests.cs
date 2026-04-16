@@ -32,7 +32,7 @@ public class EfRecordingRepositoryTests
             .GetByIdAsync(recording.Id, CancellationToken.None);
 
         loaded.Should().NotBeNull();
-        loaded!.Id.Should().Be(recording.Id);
+        loaded.Id.Should().Be(recording.Id);
         loaded.FileName.Should().Be("test.wav");
         loaded.Sha256.Should().Be("abcdef0123456789");
         loaded.Format.Should().Be(AudioFormat.Wav);
@@ -68,7 +68,7 @@ public class EfRecordingRepositoryTests
         var all = await repository.GetAllAsync(CancellationToken.None);
 
         all.Should().HaveCount(2);
-        all.Select(r => r.Sha256).Should().Contain(new[] { "aaa", "bbb" });
+        all.Select(r => r.Sha256).Should().Contain(["aaa", "bbb"]);
     }
 
     [TestMethod]

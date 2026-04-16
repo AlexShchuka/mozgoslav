@@ -31,7 +31,7 @@ public class EfProfileRepositoryTests
         var loaded = await new EfProfileRepository(freshCtx).GetByIdAsync(profile.Id, CancellationToken.None);
 
         loaded.Should().NotBeNull();
-        loaded!.Name.Should().Be("Test");
+        loaded.Name.Should().Be("Test");
         loaded.SystemPrompt.Should().Be("prompt");
         loaded.CleanupLevel.Should().Be(CleanupLevel.Aggressive);
         loaded.AutoTags.Should().BeEquivalentTo("tag1", "tag2");
@@ -67,7 +67,7 @@ public class EfProfileRepositoryTests
         var defaultProfile = await repo.TryGetDefaultAsync(CancellationToken.None);
 
         defaultProfile.Should().NotBeNull();
-        defaultProfile!.IsDefault.Should().BeTrue();
+        defaultProfile.IsDefault.Should().BeTrue();
         defaultProfile.Name.Should().Be("Рабочий");
     }
 

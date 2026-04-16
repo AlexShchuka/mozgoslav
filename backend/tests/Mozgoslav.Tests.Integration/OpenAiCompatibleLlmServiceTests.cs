@@ -35,8 +35,11 @@ public class OpenAiCompatibleLlmServiceTests
         _settings.LlmModel.Returns("test-model");
 
         _httpFactory = Substitute.For<IHttpClientFactory>();
+        // HttpClient instances are owned by the caller-created factory; their lifetime
+        // spans individual test methods, disposal is handled via Cleanup below.
+#pragma warning disable CA2000, IDISP004
         _httpFactory.CreateClient(Arg.Any<string>()).Returns(_ => new HttpClient());
-
+#pragma warning restore CA2000, IDISP004
         _service = new OpenAiCompatibleLlmService(_settings, _httpFactory, NullLogger<OpenAiCompatibleLlmService>.Instance);
     }
 
@@ -51,7 +54,7 @@ public class OpenAiCompatibleLlmServiceTests
     public async Task IsAvailableAsync_ServerReturns200_ReturnsTrue()
     {
         _server.Given(Request.Create().WithPath("/v1/models").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{\"data\":[]}"));
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(/*lang=json,strict*/ "{\"data\":[]}"));
 
         var result = await _service.IsAvailableAsync(CancellationToken.None);
 
@@ -91,7 +94,7 @@ public class OpenAiCompatibleLlmServiceTests
     [TestMethod]
     public async Task ProcessAsync_ValidJsonResponse_ReturnsTypedResult()
     {
-        const string content = """
+        const string content = /*lang=json,strict*/ """
             {
               "summary": "A short summary",
               "key_points": ["point one", "point two"],
@@ -109,14 +112,14 @@ public class OpenAiCompatibleLlmServiceTests
         var result = await _service.ProcessAsync("transcript body", "system prompt", CancellationToken.None);
 
         result.Summary.Should().Be("A short summary");
-        result.KeyPoints.Should().BeEquivalentTo(new[] { "point one", "point two" });
-        result.Decisions.Should().BeEquivalentTo(new[] { "decided" });
+        result.KeyPoints.Should().BeEquivalentTo(["point one", "point two"]);
+        result.Decisions.Should().BeEquivalentTo(["decided"]);
         result.ActionItems.Should().ContainSingle()
             .Which.Person.Should().Be("Alice");
-        result.Participants.Should().BeEquivalentTo(new[] { "Alice", "Bob" });
+        result.Participants.Should().BeEquivalentTo(["Alice", "Bob"]);
         result.Topic.Should().Be("Testing");
         result.ConversationType.Should().Be(ConversationType.Meeting);
-        result.Tags.Should().BeEquivalentTo(new[] { "demo" });
+        result.Tags.Should().BeEquivalentTo(["demo"]);
     }
 
     [TestMethod]
@@ -162,7 +165,7 @@ public class OpenAiCompatibleLlmServiceTests
     [TestMethod]
     public async Task ProcessAsync_UnknownConversationType_FallsBackToOther()
     {
-        const string content = """
+        const string content = /*lang=json,strict*/ """
             {"summary": "x", "key_points": [], "decisions": [], "action_items": [], "unresolved_questions": [], "participants": [], "topic": "t", "conversation_type": "unknown-variant", "tags": []}
             """;
         StubChatCompletion(content);

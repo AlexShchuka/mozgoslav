@@ -41,7 +41,7 @@ public sealed class OpenAiCompatibleLlmService : ILlmService
         {
             using var client = _httpClientFactory.CreateClient("llm");
             client.Timeout = TimeSpan.FromSeconds(3);
-            var response = await client.GetAsync(
+            using var response = await client.GetAsync(
                 new Uri(new Uri(_settings.LlmEndpoint), "/v1/models"), ct);
             return response.IsSuccessStatusCode;
         }
@@ -139,7 +139,7 @@ public sealed class OpenAiCompatibleLlmService : ILlmService
 
     private static string ExtractJson(string content)
     {
-        var start = content.IndexOf('{');
+        var start = content.IndexOf('{', StringComparison.Ordinal);
         var end = content.LastIndexOf('}');
         if (start >= 0 && end > start)
         {

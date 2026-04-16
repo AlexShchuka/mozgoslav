@@ -17,7 +17,7 @@ public class Profile
     public string OutputTemplate { get; set; } = string.Empty;
     public CleanupLevel CleanupLevel { get; set; } = CleanupLevel.Light;
     public string ExportFolder { get; set; } = "_inbox";
-    public List<string> AutoTags { get; set; } = new();
+    public List<string> AutoTags { get; set; } = [];
     public bool IsDefault { get; set; }
     public bool IsBuiltIn { get; set; }
 }

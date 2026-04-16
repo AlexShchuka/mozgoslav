@@ -9,6 +9,6 @@ public class Transcript
     public string ModelUsed { get; init; } = string.Empty;
     public string Language { get; init; } = "ru";
     public string RawText { get; set; } = string.Empty;
-    public List<TranscriptSegment> Segments { get; set; } = new();
+    public List<TranscriptSegment> Segments { get; set; } = [];
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
 }

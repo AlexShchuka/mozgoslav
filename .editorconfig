@@ -163,6 +163,16 @@ dotnet_naming_rule.constant_fields.symbols = constant_fields
 dotnet_naming_rule.constant_fields.style = const_pascal_case
 dotnet_naming_rule.constant_fields.severity = warning
 
+# Private static readonly fields → PascalCase (standard Microsoft convention).
+# Overrides the `_camelCase` rule above for the specific `static readonly` case.
+dotnet_naming_symbols.static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.static_readonly_fields.applicable_accessibilities = private, internal, private_protected
+dotnet_naming_symbols.static_readonly_fields.required_modifiers = static, readonly
+dotnet_naming_style.static_pascal_case.capitalization = pascal_case
+dotnet_naming_rule.static_readonly_fields.symbols = static_readonly_fields
+dotnet_naming_rule.static_readonly_fields.style = static_pascal_case
+dotnet_naming_rule.static_readonly_fields.severity = warning
+
 #Formatting - new line options
 #place catch statements on a new line
 csharp_new_line_before_catch = true
@@ -240,3 +250,43 @@ resharper_csharp_braces_for_while = required
 [*Test{s.cs,.cs,sBase.cs,Base.cs}]
 dotnet_diagnostic.VSTHRD200.severity = none
 dotnet_diagnostic.CA1707.severity = none
+
+# Project-wide analyzer tuning (mozgoslav).
+# Each suppression is intentional; adding a new one requires a comment here explaining why.
+[*.cs]
+# CA1002: we expose List<T> in domain entities on purpose — EF Core value-converters
+# and JSON (de)serialization both need a concrete mutable list. ReadOnlyCollection<T>
+# would force a shadow-collection wrapper everywhere for zero benefit.
+dotnet_diagnostic.CA1002.severity = none
+# CA2227: same reason as CA1002 — EF Core materialization + JSON deserialization
+# need a public setter on collection properties.
+dotnet_diagnostic.CA2227.severity = none
+# CA1308: SHA-256 hex representations are lowercase by convention (git, OpenSSL,
+# most ecosystems). Uppercase would create gratuitous drift.
+dotnet_diagnostic.CA1308.severity = none
+# CA1724: false positive — `Profile` clashes with `System.Web.Profile` from
+# full-framework WebForms, which is not referenced anywhere in this solution.
+dotnet_diagnostic.CA1724.severity = none
+# CA2007: ASP.NET Core has no SynchronizationContext, so ConfigureAwait(false)
+# is noise. Enforcing it on library code would just clutter every await.
+dotnet_diagnostic.CA2007.severity = none
+# CA1812: DI-resolved DTOs and options classes are instantiated via the container,
+# not `new`. The analyzer cannot see that and fires false positives.
+dotnet_diagnostic.CA1812.severity = none
+# CA1034: nested public `Result/Report` DTOs next to their producing service is a
+# deliberate locality decision — they are not reused elsewhere, and pulling them
+# to the top level would scatter a single feature across many files.
+dotnet_diagnostic.CA1034.severity = none
+# CA1848: LoggerMessage source-generator is overkill for an app logger hot path
+# measured in tens of calls/sec, not millions. Plain ILogger is fine here.
+dotnet_diagnostic.CA1848.severity = none
+# CA1054 / CA1056 / CA2234: DTOs and API contracts serialized as JSON use `string`
+# for URLs. Converting to `System.Uri` would break wire-format on round-trip for every
+# existing profile/model JSON. URLs are validated at the use site before HttpClient.
+dotnet_diagnostic.CA1054.severity = none
+dotnet_diagnostic.CA1056.severity = none
+dotnet_diagnostic.CA2234.severity = none
+# CA1305: culture-aware string formatting. For Serilog sinks (IFormatProvider is
+# optional by design), log paths, and developer-facing strings, invariant culture
+# is implicit. Tightening this adds boilerplate without fixing a real bug here.
+dotnet_diagnostic.CA1305.severity = none

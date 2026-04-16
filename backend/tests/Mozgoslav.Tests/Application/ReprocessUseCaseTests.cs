@@ -15,7 +15,7 @@ public class ReprocessUseCaseTests
     public async Task ExecuteAsync_MissingRecording_Throws()
     {
         var (useCase, deps) = BuildUseCase();
-        deps.Recordings.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())!.Returns((Recording?)null);
+        deps.Recordings.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns((Recording?)null);
 
         var act = () => useCase.ExecuteAsync(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None);
 
@@ -27,11 +27,11 @@ public class ReprocessUseCaseTests
     public async Task ExecuteAsync_MissingTranscript_Throws()
     {
         var (useCase, deps) = BuildUseCase();
-        deps.Recordings.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())!
+        deps.Recordings.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(new Recording { FileName = "a.m4a" });
-        deps.Profiles.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())!
+        deps.Profiles.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(new Profile { Name = "Work" });
-        deps.Transcripts.GetByRecordingIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())!
+        deps.Transcripts.GetByRecordingIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((Transcript?)null);
 
         var act = () => useCase.ExecuteAsync(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None);
@@ -48,9 +48,9 @@ public class ReprocessUseCaseTests
         var profile = new Profile { Name = "Work", CleanupLevel = CleanupLevel.Aggressive };
         var transcript = new Transcript { RecordingId = recording.Id, RawText = "текст" };
 
-        deps.Recordings.GetByIdAsync(recording.Id, Arg.Any<CancellationToken>())!.Returns(recording);
-        deps.Profiles.GetByIdAsync(profile.Id, Arg.Any<CancellationToken>())!.Returns(profile);
-        deps.Transcripts.GetByRecordingIdAsync(recording.Id, Arg.Any<CancellationToken>())!.Returns(transcript);
+        deps.Recordings.GetByIdAsync(recording.Id, Arg.Any<CancellationToken>()).Returns(recording);
+        deps.Profiles.GetByIdAsync(profile.Id, Arg.Any<CancellationToken>()).Returns(profile);
+        deps.Transcripts.GetByRecordingIdAsync(recording.Id, Arg.Any<CancellationToken>()).Returns(transcript);
         deps.Notes.GetByTranscriptIdAsync(transcript.Id, Arg.Any<CancellationToken>())
             .Returns([new ProcessedNote { Version = 3 }]);
         deps.Llm.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(false);

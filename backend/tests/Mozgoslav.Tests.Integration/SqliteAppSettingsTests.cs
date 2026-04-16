@@ -11,7 +11,7 @@ public class EfAppSettingsTests
     public async Task LoadAsync_EmptyDatabase_ReturnsDefaults()
     {
         await using var db = new TestDatabase();
-        var settings = new EfAppSettings(db.CreateFactory());
+        using var settings = new EfAppSettings(db.CreateFactory());
 
         var loaded = await settings.LoadAsync(CancellationToken.None);
 
@@ -22,7 +22,7 @@ public class EfAppSettingsTests
     public async Task SaveAsync_Roundtrips_AllFields_IncludingSecrets()
     {
         await using var db = new TestDatabase();
-        var settings = new EfAppSettings(db.CreateFactory());
+        using var settings = new EfAppSettings(db.CreateFactory());
 
         var dto = AppSettingsDto.Defaults with
         {
@@ -38,7 +38,7 @@ public class EfAppSettingsTests
 
         await settings.SaveAsync(dto, CancellationToken.None);
 
-        var fresh = new EfAppSettings(db.CreateFactory());
+        using var fresh = new EfAppSettings(db.CreateFactory());
         var loaded = await fresh.LoadAsync(CancellationToken.None);
 
         loaded.Should().BeEquivalentTo(dto);
@@ -48,7 +48,7 @@ public class EfAppSettingsTests
     public async Task SaveAsync_UpdatesInMemorySnapshot()
     {
         await using var db = new TestDatabase();
-        var settings = new EfAppSettings(db.CreateFactory());
+        using var settings = new EfAppSettings(db.CreateFactory());
 
         await settings.SaveAsync(AppSettingsDto.Defaults with { Language = "de" }, CancellationToken.None);
 

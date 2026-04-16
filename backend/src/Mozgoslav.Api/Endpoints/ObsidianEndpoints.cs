@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Infrastructure.Services;
 

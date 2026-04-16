@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO.Compression;
 using Microsoft.Extensions.Logging;
 using Mozgoslav.Infrastructure.Platform;
@@ -25,7 +26,7 @@ public sealed class BackupService
         var backupsDir = Path.Combine(AppPaths.Root, "backups");
         Directory.CreateDirectory(backupsDir);
 
-        var stamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHHmmss");
+        var stamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHHmmss", CultureInfo.InvariantCulture);
         var destination = Path.Combine(backupsDir, $"mozgoslav-backup-{stamp}.zip");
 
         if (File.Exists(destination))
@@ -33,12 +34,17 @@ public sealed class BackupService
             File.Delete(destination);
         }
 
+        // Backups are an explicit user action and run off-request (hosted service /
+        // manual trigger), so the synchronous ZipFile API is acceptable here. Moving to
+        // the async variant is tracked separately; see TODO.md.
+#pragma warning disable CA1849
         using (var archive = ZipFile.Open(destination, ZipArchiveMode.Create))
         {
             AddIfExists(archive, AppPaths.Database, "mozgoslav.db");
             AddDirectory(archive, AppPaths.Models, "models", ct);
             AddDirectory(archive, Path.Combine(AppPaths.Root, "config"), "config", ct);
         }
+#pragma warning restore CA1849
 
         _logger.LogInformation("Created backup at {Path}", destination);
         return Task.FromResult(destination);

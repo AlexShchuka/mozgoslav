@@ -7,7 +7,7 @@ using Mozgoslav.Infrastructure.Services;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public class FileMarkdownExporterTests : IDisposable
+public sealed class FileMarkdownExporterTests : IDisposable
 {
     private readonly string _vaultRoot;
 
@@ -19,7 +19,7 @@ public class FileMarkdownExporterTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_vaultRoot, recursive: true); } catch { /* best effort */ }
+        try { Directory.Delete(_vaultRoot, recursive: true); } catch (IOException) { /* best effort */ } catch (UnauthorizedAccessException) { /* best effort */ }
     }
 
     [TestMethod]

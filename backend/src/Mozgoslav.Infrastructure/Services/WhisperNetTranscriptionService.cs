@@ -65,7 +65,7 @@ public sealed class WhisperNetTranscriptionService : ITranscriptionService
         var segments = new List<TranscriptSegment>();
         await using var audioStream = File.OpenRead(audioPath);
 
-        await foreach (var segment in processor.ProcessAsync(audioStream).WithCancellation(ct))
+        await foreach (var segment in processor.ProcessAsync(audioStream, ct).WithCancellation(ct))
         {
             segments.Add(new TranscriptSegment(segment.Start, segment.End, segment.Text.Trim()));
             progress?.Report(Math.Min(99, segments.Count)); // best-effort, final 100 set by caller

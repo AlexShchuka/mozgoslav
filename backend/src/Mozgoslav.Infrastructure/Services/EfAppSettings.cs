@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Infrastructure.Persistence;
@@ -9,29 +10,33 @@ namespace Mozgoslav.Infrastructure.Services;
 /// Caches the latest snapshot in memory; writes are wrapped in a transaction so
 /// partial failures never leave the table in a split state.
 /// </summary>
-public sealed class EfAppSettings : IAppSettings
+public sealed class EfAppSettings : IAppSettings, IDisposable
 {
     private readonly IDbContextFactory<MozgoslavDbContext> _contextFactory;
     private readonly SemaphoreSlim _lock = new(1, 1);
-    private AppSettingsDto _snapshot = AppSettingsDto.Defaults;
 
     public EfAppSettings(IDbContextFactory<MozgoslavDbContext> contextFactory)
     {
         _contextFactory = contextFactory;
     }
 
-    public string VaultPath => _snapshot.VaultPath;
-    public string LlmEndpoint => _snapshot.LlmEndpoint;
-    public string LlmModel => _snapshot.LlmModel;
-    public string LlmApiKey => _snapshot.LlmApiKey;
-    public string ObsidianApiHost => _snapshot.ObsidianApiHost;
-    public string ObsidianApiToken => _snapshot.ObsidianApiToken;
-    public string WhisperModelPath => _snapshot.WhisperModelPath;
-    public string VadModelPath => _snapshot.VadModelPath;
-    public string Language => _snapshot.Language;
-    public string ThemeMode => _snapshot.ThemeMode;
-    public int WhisperThreads => _snapshot.WhisperThreads;
-    public AppSettingsDto Snapshot => _snapshot;
+    public void Dispose()
+    {
+        _lock.Dispose();
+    }
+
+    public string VaultPath => Snapshot.VaultPath;
+    public string LlmEndpoint => Snapshot.LlmEndpoint;
+    public string LlmModel => Snapshot.LlmModel;
+    public string LlmApiKey => Snapshot.LlmApiKey;
+    public string ObsidianApiHost => Snapshot.ObsidianApiHost;
+    public string ObsidianApiToken => Snapshot.ObsidianApiToken;
+    public string WhisperModelPath => Snapshot.WhisperModelPath;
+    public string VadModelPath => Snapshot.VadModelPath;
+    public string Language => Snapshot.Language;
+    public string ThemeMode => Snapshot.ThemeMode;
+    public int WhisperThreads => Snapshot.WhisperThreads;
+    public AppSettingsDto Snapshot { get; private set; } = AppSettingsDto.Defaults;
 
     public async Task<AppSettingsDto> LoadAsync(CancellationToken ct)
     {
@@ -53,7 +58,7 @@ public sealed class EfAppSettings : IAppSettings
             WhisperThreads: int.TryParse(map.GetValueOrDefault(Keys.WhisperThreads, "0"), out var t) ? t : 0);
 
         await _lock.WaitAsync(ct);
-        try { _snapshot = dto; }
+        try { Snapshot = dto; }
         finally { _lock.Release(); }
 
         return dto;
@@ -75,7 +80,7 @@ public sealed class EfAppSettings : IAppSettings
             (Keys.VadModelPath, dto.VadModelPath),
             (Keys.Language, dto.Language),
             (Keys.ThemeMode, dto.ThemeMode),
-            (Keys.WhisperThreads, dto.WhisperThreads.ToString()),
+            (Keys.WhisperThreads, dto.WhisperThreads.ToString(CultureInfo.InvariantCulture)),
         };
 
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
@@ -98,7 +103,7 @@ public sealed class EfAppSettings : IAppSettings
         await tx.CommitAsync(ct);
 
         await _lock.WaitAsync(ct);
-        try { _snapshot = dto; }
+        try { Snapshot = dto; }
         finally { _lock.Release(); }
     }
 

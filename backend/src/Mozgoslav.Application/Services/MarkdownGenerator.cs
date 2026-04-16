@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Text;
 using Mozgoslav.Domain.Entities;
-using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Application.Services;
 
@@ -119,12 +118,15 @@ public static class MarkdownGenerator
         {
             return "\"\"";
         }
-        return $"\"{value.Replace("\"", "\\\"")}\"";
+        return $"\"{value.Replace("\"", "\\\"", StringComparison.Ordinal)}\"";
     }
 
     private static string YamlList(IReadOnlyList<string> items)
     {
-        var rendered = items.Select(i => i.Contains(',') || i.Contains('"') ? Quote(i) : i);
+        var rendered = items.Select(i =>
+            i.Contains(',', StringComparison.Ordinal) || i.Contains('"', StringComparison.Ordinal)
+                ? Quote(i)
+                : i);
         return "[" + string.Join(", ", rendered) + "]";
     }
 }

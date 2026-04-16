@@ -33,7 +33,7 @@ public class EfTranscriptRepositoryTests
         var loaded = await new EfTranscriptRepository(freshCtx).GetByIdAsync(transcript.Id, CancellationToken.None);
 
         loaded.Should().NotBeNull();
-        loaded!.Segments.Should().HaveCount(2);
+        loaded.Segments.Should().HaveCount(2);
         loaded.Segments[0].Text.Should().Be("Привет");
         loaded.Segments[0].End.Should().Be(TimeSpan.FromSeconds(1.2));
     }
@@ -65,6 +65,6 @@ public class EfTranscriptRepositoryTests
         var loaded = await new EfTranscriptRepository(freshCtx).GetByRecordingIdAsync(recordingId, CancellationToken.None);
 
         loaded.Should().NotBeNull();
-        loaded!.RawText.Should().Be("new");
+        loaded.RawText.Should().Be("new");
     }
 }

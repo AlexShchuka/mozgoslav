@@ -26,7 +26,7 @@ public class EfProcessingJobRepositoryTests
         var dequeued = await new EfProcessingJobRepository(freshCtx).DequeueNextAsync(CancellationToken.None);
 
         dequeued.Should().NotBeNull();
-        dequeued!.Id.Should().Be(job.Id);
+        dequeued.Id.Should().Be(job.Id);
         dequeued.Status.Should().Be(JobStatus.Queued);
     }
 

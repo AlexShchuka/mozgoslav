@@ -23,7 +23,7 @@ public class ApiEndpointsTests
         using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.GetAsync("/api/health");
+        using var response = await client.GetAsync("/api/health");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadAsStringAsync();
@@ -36,13 +36,13 @@ public class ApiEndpointsTests
         using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.GetAsync("/api/profiles");
+        using var response = await client.GetAsync("/api/profiles");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var profiles = await response.Content.ReadFromJsonAsync<List<Profile>>(Json);
 
         profiles.Should().NotBeNull();
-        profiles!.Should().HaveCountGreaterThanOrEqualTo(3);
+        profiles.Should().HaveCountGreaterThanOrEqualTo(3);
         profiles.Should().ContainSingle(p => p.IsDefault);
         profiles.Where(p => p.IsBuiltIn).Should().HaveCount(3);
     }
@@ -53,7 +53,7 @@ public class ApiEndpointsTests
         using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("/api/profiles", new
+        using var response = await client.PostAsJsonAsync("/api/profiles", new
         {
             name = "   ",
             systemPrompt = "x",
@@ -70,7 +70,7 @@ public class ApiEndpointsTests
         using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        var create = await client.PostAsJsonAsync("/api/profiles", new
+        using var create = await client.PostAsJsonAsync("/api/profiles", new
         {
             name = "Test profile",
             systemPrompt = "test prompt",
@@ -84,7 +84,7 @@ public class ApiEndpointsTests
         created!.Name.Should().Be("Test profile");
         created.IsBuiltIn.Should().BeFalse();
 
-        var fetch = await client.GetAsync($"/api/profiles/{created.Id}");
+        using var fetch = await client.GetAsync($"/api/profiles/{created.Id}");
         fetch.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
@@ -94,7 +94,7 @@ public class ApiEndpointsTests
         using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.GetAsync($"/api/profiles/{Guid.NewGuid()}");
+        using var response = await client.GetAsync($"/api/profiles/{Guid.NewGuid()}");
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -104,11 +104,11 @@ public class ApiEndpointsTests
         using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.GetAsync("/api/recordings");
+        using var response = await client.GetAsync("/api/recordings");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var recordings = await response.Content.ReadFromJsonAsync<List<Recording>>(Json);
-        recordings!.Should().BeEmpty();
+        recordings.Should().BeEmpty();
     }
 
     [TestMethod]
@@ -117,7 +117,7 @@ public class ApiEndpointsTests
         using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("/api/recordings/import", new
+        using var response = await client.PostAsJsonAsync("/api/recordings/import", new
         {
             filePaths = Array.Empty<string>(),
         });
@@ -131,7 +131,7 @@ public class ApiEndpointsTests
         using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("/api/recordings/import", new
+        using var response = await client.PostAsJsonAsync("/api/recordings/import", new
         {
             filePaths = new[] { "/tmp/mozgoslav-does-not-exist.wav" },
         });
@@ -152,19 +152,19 @@ public class ApiEndpointsTests
 
         try
         {
-            var response = await client.PostAsJsonAsync("/api/recordings/import", new
+            using var response = await client.PostAsJsonAsync("/api/recordings/import", new
             {
                 filePaths = new[] { tempFile },
             });
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             var imported = await response.Content.ReadFromJsonAsync<List<Recording>>(Json);
-            imported!.Should().ContainSingle();
+            imported.Should().ContainSingle();
             imported[0].FileName.Should().Be(Path.GetFileName(tempFile));
 
-            var listResponse = await client.GetAsync("/api/recordings");
+            using var listResponse = await client.GetAsync("/api/recordings");
             var list = await listResponse.Content.ReadFromJsonAsync<List<Recording>>(Json);
-            list!.Should().ContainSingle();
+            list.Should().ContainSingle();
         }
         finally
         {
@@ -178,11 +178,11 @@ public class ApiEndpointsTests
         using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.GetAsync("/api/jobs");
+        using var response = await client.GetAsync("/api/jobs");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var jobs = await response.Content.ReadFromJsonAsync<List<ProcessingJob>>(Json);
-        jobs!.Should().BeEmpty();
+        jobs.Should().BeEmpty();
     }
 
     [TestMethod]
@@ -191,7 +191,7 @@ public class ApiEndpointsTests
         using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.GetAsync("/api/settings");
+        using var response = await client.GetAsync("/api/settings");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var body = await response.Content.ReadAsStringAsync();

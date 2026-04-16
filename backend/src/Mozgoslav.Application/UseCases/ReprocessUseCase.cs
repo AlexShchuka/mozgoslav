@@ -2,7 +2,6 @@ using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.Enums;
-using Mozgoslav.Domain.ValueObjects;
 
 namespace Mozgoslav.Application.UseCases;
 
@@ -70,16 +69,16 @@ public sealed class ReprocessUseCase
             ProfileId = profile.Id,
             Version = version,
             Summary = llm?.Summary ?? string.Empty,
-            KeyPoints = llm?.KeyPoints.ToList() ?? new List<string>(),
-            Decisions = llm?.Decisions.ToList() ?? new List<string>(),
-            ActionItems = llm?.ActionItems.ToList() ?? new List<ActionItem>(),
-            UnresolvedQuestions = llm?.UnresolvedQuestions.ToList() ?? new List<string>(),
-            Participants = llm?.Participants.ToList() ?? new List<string>(),
+            KeyPoints = llm?.KeyPoints.ToList() ?? [],
+            Decisions = llm?.Decisions.ToList() ?? [],
+            ActionItems = llm?.ActionItems.ToList() ?? [],
+            UnresolvedQuestions = llm?.UnresolvedQuestions.ToList() ?? [],
+            Participants = llm?.Participants.ToList() ?? [],
             Topic = llm?.Topic ?? Path.GetFileNameWithoutExtension(recording.FileName),
             ConversationType = llm?.ConversationType ?? ConversationType.Other,
             CleanTranscript = cleanText,
             FullTranscript = transcript.RawText,
-            Tags = llm?.Tags.ToList() ?? new List<string>(),
+            Tags = llm?.Tags.ToList() ?? [],
         };
         note.MarkdownContent = MarkdownGenerator.Generate(note, profile, recording);
 
