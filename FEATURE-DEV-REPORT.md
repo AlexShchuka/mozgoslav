@@ -44,37 +44,53 @@ The `fc86c4a` snapshot contained a mostly-implemented three-tier app with roughl
 | `frontend/.eslintrc.cjs` → `frontend/eslint.config.js` | Flat config for ESLint 9. |
 | `frontend/package.json` | Added `@eslint/js`, `@testing-library/dom`, `vite-plugin-electron-renderer` devDeps. |
 
-## Tests written (Phase B — planned)
+## Tests written (Phase B — expansion)
 
-Phase A focused on making the existing 56 backend + 6 frontend + 8 python tests compile and run. Phase B expands coverage per ADR-001 §6 functional requirements — each acceptance criterion to its own test. See "Verification output" below for the current green baseline.
+Three new backend suites were added in `[tests]` commit (30 tests, all green on first run):
 
-## Verification output (Phase A baseline)
+- `ProcessQueueWorkerTests` (10 tests) — fills the critical gap in Application-layer coverage. Covers: empty queue, happy-path pipeline, note versioning starting from 1 and incrementing past existing, LLM unavailable path that keeps the raw transcript, export failure still persists the note, empty vault path skips exporter, unknown recording and STT exception mark `Failed` without stalling the queue, `OperationCanceledException` propagates.
+- `ApiEndpointsTests` (11 tests) — first smoke-level HTTP coverage through `WebApplicationFactory<Program>` and a temp SQLite file. One representative test per endpoint family: health, profiles (list / GET 404 / POST validation / POST create + GET by id), recordings (empty list / import validation / import missing file / import real file enqueues), jobs (empty list), settings (defaults).
+- `OpenAiCompatibleLlmServiceTests` (9 tests) — WireMock-backed contract tests for the OpenAI-compatible client: `IsAvailableAsync` (200 / 500 / no-server), `ProcessAsync` (empty transcript / valid JSON / markdown-fenced JSON / non-JSON fallback to raw summary / server-error graceful degradation / unknown `conversation_type` falls back to `Other`).
+
+Total backend coverage: 86 tests (41 unit + 45 integration), up from 56.
+
+## Verification output (final)
 
 ```
 $ dotnet restore -maxcpucount:1
 All projects are up-to-date for restore.
 
 $ dotnet build -maxcpucount:1 -nodeReuse:false -p:UseSharedCompilation=false --no-incremental
-ok dotnet build: 7 projects, 0 errors, 0 warnings (00:00:28.49)
+ok dotnet build: 7 projects, 0 errors, 0 warnings (00:00:28.83)
 
 $ dotnet test -maxcpucount:1 --no-build --nologo
-Passed!  - Failed:     0, Passed:    31, Skipped:     0, Total:    31 — Mozgoslav.Tests.dll
-Passed!  - Failed:     0, Passed:    25, Skipped:     0, Total:    25 — Mozgoslav.Tests.Integration.dll
+Passed!  - Failed:     0, Passed:    41, Skipped:     0, Total:    41 — Mozgoslav.Tests.dll
+Passed!  - Failed:     0, Passed:    45, Skipped:     0, Total:    45 — Mozgoslav.Tests.Integration.dll
 
+$ cd frontend
 $ npm run typecheck   # clean
 $ npm run lint        # clean
 $ npm test -- --watchAll=false
 Test Suites: 2 passed, 2 total
 Tests:       6 passed, 6 total
-$ npm run build       # OK (dist/ + dist-electron/)
+$ npm run build       # dist/ + dist-electron/ produced, 0 errors
 
-$ pytest
+$ cd ../python-sidecar
+$ source .venv/bin/activate && pytest
 ============================== 8 passed in 0.03s ===============================
 ```
 
+**DoD summary:** backend 86/86 green, frontend typecheck + lint + 6 tests + vite build all green, python 8/8 green. No skipped tests outside explicitly-marked V2+ roadmap items (none encountered in this pass).
+
 ## Blockers
 
-- None observed in Phase A. Whisper.net runtime selection in production requires macOS + `.mlmodelc` — out of scope on this Linux sandbox.
+- **`git push` to `origin` is blocked at the remote.** The `mozgoslav.token` in `/home/coder/workspace/.persistent/github/` and the `gh` CLI token both lack the `contents: write` fine-grained permission for `AlexShchuka/mozgoslav`:
+  ```
+  $ curl -X POST -H "Authorization: token …" https://api.github.com/repos/AlexShchuka/mozgoslav/git/refs -d '{"ref":"refs/heads/test-perm-probe","sha":"fc86c4a…"}'
+  {"message": "Resource not accessible by personal access token", "status": "403"}
+  ```
+  Branch `shuka/wire-everything-green` lives locally with three commits on top of `fc86c4a` but cannot be pushed until a token with write permission is provided. This is external to the code itself — all three commits are clean and ready.
+- **Whisper.net runtime selection** in production requires macOS + `.mlmodelc` — out of scope on this Linux sandbox.
 
 ## UNVERIFIED
 
