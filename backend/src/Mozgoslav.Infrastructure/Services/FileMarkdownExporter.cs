@@ -60,7 +60,7 @@ public sealed class FileMarkdownExporter : IMarkdownExporter
         {
             0 => "note",
             > 80 => collapsed[..80].TrimEnd('-'),
-            _ => collapsed,
+            _ => collapsed
         };
     }
 

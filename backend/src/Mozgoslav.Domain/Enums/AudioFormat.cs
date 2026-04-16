@@ -3,7 +3,7 @@ namespace Mozgoslav.Domain.Enums;
 public enum AudioFormat
 {
     Mp3,
-    M4a,
+    M4A,
     Wav,
     Mp4,
     Ogg,

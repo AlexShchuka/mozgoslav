@@ -23,15 +23,15 @@ public sealed class DictationEndpointsTests
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        using var response = await client.PostAsync("/api/dictation/start", content: null);
+        using var response = await client.PostAsync("/api/dictation/start", content: null, TestContext.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var body = await response.Content.ReadFromJsonAsync<StartResponse>(Json);
+        var body = await response.Content.ReadFromJsonAsync<StartResponse>(Json, TestContext.CancellationToken);
         body.Should().NotBeNull();
         body.SessionId.Should().NotBeEmpty();
 
         // cleanup: otherwise Whisper.net would be invoked on stop (no model available).
-        await client.PostAsync($"/api/dictation/cancel/{body.SessionId}", content: null);
+        await client.PostAsync($"/api/dictation/cancel/{body.SessionId}", content: null, TestContext.CancellationToken);
     }
 
     [TestMethod]
@@ -40,14 +40,14 @@ public sealed class DictationEndpointsTests
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        using var first = await client.PostAsync("/api/dictation/start", content: null);
+        using var first = await client.PostAsync("/api/dictation/start", content: null, TestContext.CancellationToken);
         first.StatusCode.Should().Be(HttpStatusCode.OK);
-        var firstBody = await first.Content.ReadFromJsonAsync<StartResponse>(Json);
+        var firstBody = await first.Content.ReadFromJsonAsync<StartResponse>(Json, TestContext.CancellationToken);
 
-        using var second = await client.PostAsync("/api/dictation/start", content: null);
+        using var second = await client.PostAsync("/api/dictation/start", content: null, TestContext.CancellationToken);
         second.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        await client.PostAsync($"/api/dictation/cancel/{firstBody!.SessionId}", content: null);
+        await client.PostAsync($"/api/dictation/cancel/{firstBody!.SessionId}", content: null, TestContext.CancellationToken);
     }
 
     [TestMethod]
@@ -60,10 +60,10 @@ public sealed class DictationEndpointsTests
         {
             samples = new[] { 0.1f, 0.2f },
             sampleRate = 16_000,
-            offsetSeconds = 0.0,
+            offsetSeconds = 0.0
         };
         using var response = await client.PostAsJsonAsync(
-            $"/api/dictation/push/{Guid.NewGuid()}", payload);
+            $"/api/dictation/push/{Guid.NewGuid()}", payload, cancellationToken: TestContext.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -74,21 +74,21 @@ public sealed class DictationEndpointsTests
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        using var start = await client.PostAsync("/api/dictation/start", content: null);
-        var session = await start.Content.ReadFromJsonAsync<StartResponse>(Json);
+        using var start = await client.PostAsync("/api/dictation/start", content: null, TestContext.CancellationToken);
+        var session = await start.Content.ReadFromJsonAsync<StartResponse>(Json, TestContext.CancellationToken);
 
         var payload = new
         {
             samples = Array.Empty<float>(),
             sampleRate = 16_000,
-            offsetSeconds = 0.0,
+            offsetSeconds = 0.0
         };
         using var response = await client.PostAsJsonAsync(
-            $"/api/dictation/push/{session!.SessionId}", payload);
+            $"/api/dictation/push/{session!.SessionId}", payload, cancellationToken: TestContext.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        await client.PostAsync($"/api/dictation/cancel/{session.SessionId}", content: null);
+        await client.PostAsync($"/api/dictation/cancel/{session.SessionId}", content: null, TestContext.CancellationToken);
     }
 
     [TestMethod]
@@ -97,19 +97,19 @@ public sealed class DictationEndpointsTests
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        using var start1 = await client.PostAsync("/api/dictation/start", content: null);
-        var first = await start1.Content.ReadFromJsonAsync<StartResponse>(Json);
+        using var start1 = await client.PostAsync("/api/dictation/start", content: null, TestContext.CancellationToken);
+        var first = await start1.Content.ReadFromJsonAsync<StartResponse>(Json, TestContext.CancellationToken);
 
         using var cancel = await client.PostAsync(
-            $"/api/dictation/cancel/{first!.SessionId}", content: null);
+            $"/api/dictation/cancel/{first!.SessionId}", content: null, TestContext.CancellationToken);
         cancel.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        using var start2 = await client.PostAsync("/api/dictation/start", content: null);
+        using var start2 = await client.PostAsync("/api/dictation/start", content: null, TestContext.CancellationToken);
         start2.StatusCode.Should().Be(HttpStatusCode.OK);
-        var second = await start2.Content.ReadFromJsonAsync<StartResponse>(Json);
+        var second = await start2.Content.ReadFromJsonAsync<StartResponse>(Json, TestContext.CancellationToken);
         second!.SessionId.Should().NotBe(first.SessionId);
 
-        await client.PostAsync($"/api/dictation/cancel/{second.SessionId}", content: null);
+        await client.PostAsync($"/api/dictation/cancel/{second.SessionId}", content: null, TestContext.CancellationToken);
     }
 
     [TestMethod]
@@ -119,7 +119,7 @@ public sealed class DictationEndpointsTests
         using var client = factory.CreateClient();
 
         using var response = await client.PostAsync(
-            $"/api/dictation/cancel/{Guid.NewGuid()}", content: null);
+            $"/api/dictation/cancel/{Guid.NewGuid()}", content: null, TestContext.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -130,7 +130,7 @@ public sealed class DictationEndpointsTests
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        using var response = await client.GetAsync($"/api/dictation/stream/{Guid.NewGuid()}");
+        using var response = await client.GetAsync($"/api/dictation/stream/{Guid.NewGuid()}", TestContext.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -142,10 +142,12 @@ public sealed class DictationEndpointsTests
         using var client = factory.CreateClient();
 
         using var response = await client.PostAsync(
-            $"/api/dictation/stop/{Guid.NewGuid()}", content: null);
+            $"/api/dictation/stop/{Guid.NewGuid()}", content: null, TestContext.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     private sealed record StartResponse(Guid SessionId);
+
+    public TestContext TestContext { get; set; }
 }

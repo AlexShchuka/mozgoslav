@@ -10,7 +10,7 @@ public static class DictationEndpoints
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
     public sealed record PushChunkRequest(
@@ -88,7 +88,7 @@ public static class DictationEndpoints
                 var payload = JsonSerializer.Serialize(new
                 {
                     text = partial.Text,
-                    timestampMs = partial.Timestamp.TotalMilliseconds,
+                    timestampMs = partial.Timestamp.TotalMilliseconds
                 }, JsonOptions);
 
                 await context.Response.WriteAsync($"event: partial\ndata: {payload}\n\n", Encoding.UTF8, ct);
@@ -108,7 +108,7 @@ public static class DictationEndpoints
                 {
                     rawText = result.RawText,
                     polishedText = result.PolishedText,
-                    durationMs = result.Duration.TotalMilliseconds,
+                    durationMs = result.Duration.TotalMilliseconds
                 });
             }
             catch (KeyNotFoundException ex)

@@ -33,7 +33,7 @@ public sealed class ImportRecordingUseCaseTests
     public async Task ExecuteAsync_NewFile_StoresRecordingAndEnqueuesJob()
     {
         var path = Path.Combine(Path.GetTempPath(), $"mozgoslav-usecase-{Guid.NewGuid():N}.wav");
-        await File.WriteAllBytesAsync(path, [1, 2, 3, 4, 5]);
+        await File.WriteAllBytesAsync(path, [1, 2, 3, 4, 5], TestContext.CancellationToken);
 
         try
         {
@@ -74,7 +74,7 @@ public sealed class ImportRecordingUseCaseTests
     public async Task ExecuteAsync_DuplicateSha256_IsIdempotentAndDoesNotEnqueue()
     {
         var path = Path.Combine(Path.GetTempPath(), $"mozgoslav-dup-{Guid.NewGuid():N}.wav");
-        await File.WriteAllBytesAsync(path, [9, 9, 9]);
+        await File.WriteAllBytesAsync(path, [9, 9, 9], TestContext.CancellationToken);
 
         try
         {
@@ -116,4 +116,6 @@ public sealed class ImportRecordingUseCaseTests
         CleanupLevel = CleanupLevel.Light,
         SystemPrompt = "test"
     };
+
+    public TestContext TestContext { get; set; }
 }

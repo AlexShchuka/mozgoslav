@@ -7,7 +7,7 @@ namespace Mozgoslav.Api.Endpoints;
 
 public static class RecordingEndpoints
 {
-    public sealed record ImportByPathRequest(IReadOnlyList<string> FilePaths, Guid? ProfileId);
+    private sealed record ImportByPathRequest(IReadOnlyList<string> FilePaths, Guid? ProfileId);
 
     public static IEndpointRouteBuilder MapRecordingEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -33,7 +33,7 @@ public static class RecordingEndpoints
             ImportRecordingUseCase useCase,
             CancellationToken ct) =>
         {
-            if (request is null || request.FilePaths is null || request.FilePaths.Count == 0)
+            if (request.FilePaths.Count == 0)
             {
                 return Results.BadRequest(new { error = "filePaths is required" });
             }
@@ -47,7 +47,7 @@ public static class RecordingEndpoints
             ImportRecordingUseCase useCase,
             CancellationToken ct) =>
         {
-            if (files is null || files.Count == 0)
+            if (files.Count == 0)
             {
                 return Results.BadRequest(new { error = "No files uploaded" });
             }
@@ -57,7 +57,10 @@ public static class RecordingEndpoints
 
             foreach (var file in files)
             {
-                if (file.Length == 0) continue;
+                if (file.Length == 0)
+                {
+                    continue;
+                }
 
                 var safeName = Path.GetFileName(file.FileName);
                 var target = Path.Combine(AppPaths.Temp, $"{Guid.NewGuid():N}_{safeName}");

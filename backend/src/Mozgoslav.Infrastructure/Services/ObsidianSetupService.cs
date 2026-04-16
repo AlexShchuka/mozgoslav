@@ -24,7 +24,7 @@ public sealed class ObsidianSetupService
         "People",
         "Projects",
         "Topics",
-        "Templates",
+        "Templates"
     ];
 
     private const string TemplateFileName = "Mozgoslav Conversation.md";

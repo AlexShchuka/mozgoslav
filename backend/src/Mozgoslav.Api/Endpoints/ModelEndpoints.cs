@@ -23,7 +23,7 @@ public static class ModelEndpoints
                 kind = m.Kind.ToString().ToLowerInvariant(),
                 m.IsDefault,
                 destinationPath = ResolveDestination(m),
-                installed = File.Exists(ResolveDestination(m)),
+                installed = File.Exists(ResolveDestination(m))
             });
             return Results.Ok(models);
         });

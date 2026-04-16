@@ -182,7 +182,7 @@ public sealed class DictationSessionManagerTests
         // the enumerator subscribes to its partials channel.
         var enumerator = fixture.Manager
             .SubscribePartialsAsync(session.Id, CancellationToken.None)
-            .GetAsyncEnumerator();
+            .GetAsyncEnumerator(TestContext.CancellationToken);
 
         try
         {
@@ -193,7 +193,7 @@ public sealed class DictationSessionManagerTests
                 {
                     partials.Add(enumerator.Current);
                 }
-            });
+            }, TestContext.CancellationToken);
 
             await fixture.Manager.StopAsync(session.Id, CancellationToken.None);
             await drainTask;
@@ -255,4 +255,6 @@ public sealed class DictationSessionManagerTests
             Streaming.Partials.Add(new PartialTranscript(text, TimeSpan.FromSeconds(1)));
         }
     }
+
+    public TestContext TestContext { get; set; }
 }

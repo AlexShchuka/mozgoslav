@@ -18,7 +18,7 @@ public static class AudioFormatDetector
         return normalized.ToLowerInvariant() switch
         {
             "mp3" => AudioFormat.Mp3,
-            "m4a" => AudioFormat.M4a,
+            "m4a" => AudioFormat.M4A,
             "wav" => AudioFormat.Wav,
             "mp4" => AudioFormat.Mp4,
             "ogg" => AudioFormat.Ogg,

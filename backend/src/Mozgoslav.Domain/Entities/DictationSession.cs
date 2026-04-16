@@ -14,5 +14,4 @@ public sealed class DictationSession
     public DictationState State { get; set; } = DictationState.Recording;
     public DateTime StartedAt { get; init; } = DateTime.UtcNow;
     public DateTime? FinishedAt { get; set; }
-    public string? ErrorMessage { get; set; }
 }

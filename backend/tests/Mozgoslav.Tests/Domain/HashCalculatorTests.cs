@@ -1,5 +1,5 @@
-using System.Text;
 using FluentAssertions;
+
 using Mozgoslav.Domain.Services;
 
 namespace Mozgoslav.Tests.Domain;
@@ -10,12 +10,12 @@ public sealed class HashCalculatorTests
     [TestMethod]
     public async Task Sha256Async_SameContent_ProducesSameHash()
     {
-        var bytes = Encoding.UTF8.GetBytes("mozgoslav test payload");
+        var bytes = "mozgoslav test payload"u8.ToArray();
         using var streamA = new MemoryStream(bytes);
         using var streamB = new MemoryStream(bytes);
 
-        var hashA = await HashCalculator.Sha256Async(streamA);
-        var hashB = await HashCalculator.Sha256Async(streamB);
+        var hashA = await HashCalculator.Sha256Async(streamA, TestContext.CancellationToken);
+        var hashB = await HashCalculator.Sha256Async(streamB, TestContext.CancellationToken);
 
         hashA.Should().Be(hashB);
         hashA.Should().HaveLength(64);
@@ -25,11 +25,11 @@ public sealed class HashCalculatorTests
     [TestMethod]
     public async Task Sha256Async_DifferentContent_ProducesDifferentHash()
     {
-        using var a = new MemoryStream(Encoding.UTF8.GetBytes("hello"));
-        using var b = new MemoryStream(Encoding.UTF8.GetBytes("world"));
+        using var a = new MemoryStream("hello"u8.ToArray());
+        using var b = new MemoryStream("world"u8.ToArray());
 
-        var hashA = await HashCalculator.Sha256Async(a);
-        var hashB = await HashCalculator.Sha256Async(b);
+        var hashA = await HashCalculator.Sha256Async(a, TestContext.CancellationToken);
+        var hashB = await HashCalculator.Sha256Async(b, TestContext.CancellationToken);
 
         hashA.Should().NotBe(hashB);
     }
@@ -38,15 +38,15 @@ public sealed class HashCalculatorTests
     public async Task Sha256Async_FromFile_MatchesStreamHash()
     {
         var path = Path.Combine(Path.GetTempPath(), $"mozgoslav-hash-{Guid.NewGuid():N}.bin");
-        var payload = Encoding.UTF8.GetBytes("Мысли вслух, встречи, диалоги, рассуждения.");
-        await File.WriteAllBytesAsync(path, payload);
+        var payload = "Мысли вслух, встречи, диалоги, рассуждения."u8.ToArray();
+        await File.WriteAllBytesAsync(path, payload, TestContext.CancellationToken);
 
         try
         {
-            var fileHash = await HashCalculator.Sha256Async(path);
+            var fileHash = await HashCalculator.Sha256Async(path, TestContext.CancellationToken);
 
             using var stream = new MemoryStream(payload);
-            var streamHash = await HashCalculator.Sha256Async(stream);
+            var streamHash = await HashCalculator.Sha256Async(stream, TestContext.CancellationToken);
 
             fileHash.Should().Be(streamHash);
         }
@@ -55,4 +55,6 @@ public sealed class HashCalculatorTests
             File.Delete(path);
         }
     }
+
+    public TestContext TestContext { get; set; }
 }

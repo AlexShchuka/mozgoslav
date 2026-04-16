@@ -9,17 +9,17 @@ public sealed class ProcessedNote
     public Guid TranscriptId { get; init; }
     public Guid ProfileId { get; init; }
     public int Version { get; init; } = 1;
-    public string Summary { get; set; } = string.Empty;
-    public List<string> KeyPoints { get; set; } = [];
-    public List<string> Decisions { get; set; } = [];
-    public List<ActionItem> ActionItems { get; set; } = [];
-    public List<string> UnresolvedQuestions { get; set; } = [];
-    public List<string> Participants { get; set; } = [];
-    public string Topic { get; set; } = string.Empty;
-    public ConversationType ConversationType { get; set; } = ConversationType.Other;
-    public string CleanTranscript { get; set; } = string.Empty;
-    public string FullTranscript { get; set; } = string.Empty;
-    public List<string> Tags { get; set; } = [];
+    public string Summary { get; init; } = string.Empty;
+    public List<string> KeyPoints { get; init; } = [];
+    public List<string> Decisions { get; init; } = [];
+    public List<ActionItem> ActionItems { get; init; } = [];
+    public List<string> UnresolvedQuestions { get; init; } = [];
+    public List<string> Participants { get; init; } = [];
+    public string Topic { get; init; } = string.Empty;
+    public ConversationType ConversationType { get; init; } = ConversationType.Other;
+    public string CleanTranscript { get; init; } = string.Empty;
+    public string FullTranscript { get; init; } = string.Empty;
+    public List<string> Tags { get; init; } = [];
     public string MarkdownContent { get; set; } = string.Empty;
     public bool ExportedToVault { get; set; }
     public string? VaultPath { get; set; }

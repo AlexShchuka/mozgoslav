@@ -113,7 +113,7 @@ public sealed class ProcessQueueWorker
                 : Path.GetFileName(_settings.WhisperModelPath),
             Language = _settings.Language,
             RawText = string.Join(" ", segments.Select(s => s.Text)).Trim(),
-            Segments = segments.ToList(),
+            Segments = segments.ToList()
         };
         await _transcripts.AddAsync(transcript, ct);
 
@@ -187,7 +187,7 @@ public sealed class ProcessQueueWorker
             ConversationType = llm?.ConversationType ?? ConversationType.Other,
             CleanTranscript = cleanText,
             FullTranscript = transcript.RawText,
-            Tags = llm?.Tags.ToList() ?? [],
+            Tags = llm?.Tags.ToList() ?? []
         };
 
     private async Task TransitionAsync(ProcessingJob job, JobStatus status, int progress, string? step, CancellationToken ct)

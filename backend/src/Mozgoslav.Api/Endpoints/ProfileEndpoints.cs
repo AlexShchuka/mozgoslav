@@ -53,7 +53,7 @@ public static class ProfileEndpoints
                 ExportFolder = string.IsNullOrWhiteSpace(request.ExportFolder) ? "_inbox" : request.ExportFolder,
                 AutoTags = request.AutoTags?.ToList() ?? [],
                 IsDefault = request.IsDefault,
-                IsBuiltIn = false,
+                IsBuiltIn = false
             };
 
             if (request.IsDefault)
@@ -72,7 +72,10 @@ public static class ProfileEndpoints
             CancellationToken ct) =>
         {
             var existing = await repository.GetByIdAsync(id, ct);
-            if (existing is null) return Results.NotFound();
+            if (existing is null)
+            {
+                return Results.NotFound();
+            }
 
             existing.Name = request.Name.Trim();
             existing.SystemPrompt = request.SystemPrompt ?? string.Empty;

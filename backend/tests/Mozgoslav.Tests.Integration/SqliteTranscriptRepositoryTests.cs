@@ -23,8 +23,8 @@ public sealed class EfTranscriptRepositoryTests
             Segments =
             [
                 new TranscriptSegment(TimeSpan.Zero, TimeSpan.FromSeconds(1.2), "Привет"),
-                new TranscriptSegment(TimeSpan.FromSeconds(1.2), TimeSpan.FromSeconds(2.5), "мир"),
-            ],
+                new TranscriptSegment(TimeSpan.FromSeconds(1.2), TimeSpan.FromSeconds(2.5), "мир")
+            ]
         };
 
         await repo.AddAsync(transcript, CancellationToken.None);
@@ -51,14 +51,14 @@ public sealed class EfTranscriptRepositoryTests
             RecordingId = recordingId,
             ModelUsed = "a",
             RawText = "old",
-            CreatedAt = DateTime.UtcNow.AddMinutes(-1),
+            CreatedAt = DateTime.UtcNow.AddMinutes(-1)
         }, CancellationToken.None);
         await repo.AddAsync(new Transcript
         {
             RecordingId = recordingId,
             ModelUsed = "a",
             RawText = "new",
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow
         }, CancellationToken.None);
 
         await using var freshCtx = db.CreateContext();

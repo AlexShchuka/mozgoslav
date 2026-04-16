@@ -24,7 +24,7 @@ public static class LogsEndpoints
                 {
                     name = f.Name,
                     sizeBytes = f.Length,
-                    modified = f.LastWriteTimeUtc,
+                    modified = f.LastWriteTimeUtc
                 })
                 .ToArray();
             return Results.Ok(files);

@@ -10,16 +10,16 @@ public sealed class FillerCleanerTests
     [TestMethod]
     public void Clean_NoneLevel_ReturnsOriginalText()
     {
-        const string input = "ну типа эээ что-то там";
-        var result = FillerCleaner.Clean(input, CleanupLevel.None);
-        result.Should().Be(input);
+        const string Input = "ну типа эээ что-то там";
+        var result = FillerCleaner.Clean(Input, CleanupLevel.None);
+        result.Should().Be(Input);
     }
 
     [TestMethod]
     public void Clean_LightLevel_RemovesBasicFillers()
     {
-        const string input = "ну давай уже сделаем это типа быстро, эээ.";
-        var result = FillerCleaner.Clean(input, CleanupLevel.Light);
+        const string Input = "ну давай уже сделаем это типа быстро, эээ.";
+        var result = FillerCleaner.Clean(Input, CleanupLevel.Light);
 
         result.Should().NotContain("ну");
         result.Should().NotContain("типа");
@@ -31,8 +31,8 @@ public sealed class FillerCleanerTests
     [TestMethod]
     public void Clean_AggressiveLevel_RemovesMultiwordFillers()
     {
-        const string input = "ну вот смотри, ну это важно.";
-        var result = FillerCleaner.Clean(input, CleanupLevel.Aggressive);
+        const string Input = "ну вот смотри, ну это важно.";
+        var result = FillerCleaner.Clean(Input, CleanupLevel.Aggressive);
 
         result.Should().NotContain("ну вот");
         result.Should().NotContain("ну это");

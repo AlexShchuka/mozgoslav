@@ -16,16 +16,10 @@ public sealed class BuiltInProfilesTests
     }
 
     [TestMethod]
-    public void All_ExactlyOneIsDefault()
-    {
-        BuiltInProfiles.All.Where(p => p.IsDefault).Should().HaveCount(1);
-    }
+    public void All_ExactlyOneIsDefault() => BuiltInProfiles.All.Where(p => p.IsDefault).Should().HaveCount(1);
 
     [TestMethod]
-    public void All_AreMarkedBuiltIn()
-    {
-        BuiltInProfiles.All.Should().OnlyContain(p => p.IsBuiltIn);
-    }
+    public void All_AreMarkedBuiltIn() => BuiltInProfiles.All.Should().OnlyContain(p => p.IsBuiltIn);
 
     [TestMethod]
     public void All_HaveStableIds()

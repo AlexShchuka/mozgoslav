@@ -32,7 +32,7 @@ public sealed class EfProcessedNoteRepositoryTests
             CleanTranscript = "clean text",
             FullTranscript = "raw text",
             Tags = ["meeting", "q2"],
-            MarkdownContent = "# Note",
+            MarkdownContent = "# Note"
         };
 
         await repo.AddAsync(note, CancellationToken.None);

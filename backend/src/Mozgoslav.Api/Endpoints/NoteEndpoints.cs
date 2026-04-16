@@ -69,16 +69,28 @@ public static class NoteEndpoints
             CancellationToken ct) =>
         {
             var note = await notes.GetByIdAsync(id, ct);
-            if (note is null) return Results.NotFound();
+            if (note is null)
+            {
+                return Results.NotFound();
+            }
 
             var profile = await profiles.GetByIdAsync(note.ProfileId, ct);
-            if (profile is null) return Results.BadRequest(new { error = "Profile missing" });
+            if (profile is null)
+            {
+                return Results.BadRequest(new { error = "Profile missing" });
+            }
 
             var transcript = await transcripts.GetByIdAsync(note.TranscriptId, ct);
-            if (transcript is null) return Results.BadRequest(new { error = "Transcript missing" });
+            if (transcript is null)
+            {
+                return Results.BadRequest(new { error = "Transcript missing" });
+            }
 
             var recording = await recordings.GetByIdAsync(transcript.RecordingId, ct);
-            if (recording is null) return Results.BadRequest(new { error = "Recording missing" });
+            if (recording is null)
+            {
+                return Results.BadRequest(new { error = "Recording missing" });
+            }
 
             if (string.IsNullOrWhiteSpace(settings.VaultPath))
             {

@@ -8,7 +8,7 @@ public static class SseEndpoints
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
     public static IEndpointRouteBuilder MapSseEndpoints(this IEndpointRouteBuilder endpoints)
@@ -37,7 +37,7 @@ public static class SseEndpoints
                     job.CurrentStep,
                     job.ErrorMessage,
                     job.StartedAt,
-                    job.FinishedAt,
+                    job.FinishedAt
                 }, JsonOptions);
 
                 await context.Response.WriteAsync($"event: job\ndata: {payload}\n\n", Encoding.UTF8, ct);

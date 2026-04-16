@@ -17,7 +17,7 @@ public sealed class MarkdownGeneratorTests
         {
             FileName = "meeting.m4a",
             Duration = TimeSpan.FromMinutes(42),
-            CreatedAt = new DateTime(2026, 04, 16, 10, 0, 0, DateTimeKind.Utc),
+            CreatedAt = new DateTime(2026, 04, 16, 10, 0, 0, DateTimeKind.Utc)
         };
         var note = new ProcessedNote
         {
@@ -30,7 +30,7 @@ public sealed class MarkdownGeneratorTests
             ConversationType = ConversationType.Meeting,
             Tags = ["release"],
             CleanTranscript = "clean",
-            FullTranscript = "raw",
+            FullTranscript = "raw"
         };
 
         var markdown = MarkdownGenerator.Generate(note, profile, recording);

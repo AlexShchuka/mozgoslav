@@ -11,5 +11,5 @@ public enum DictationState
     Recording,
     Processing,
     Injecting,
-    Error,
+    Error
 }

@@ -38,7 +38,7 @@ public sealed class FfmpegAudioConverter : IAudioConverter
             RedirectStandardError = true,
             RedirectStandardOutput = true,
             UseShellExecute = false,
-            CreateNoWindow = true,
+            CreateNoWindow = true
         };
         psi.ArgumentList.Add("-y");
         psi.ArgumentList.Add("-i");

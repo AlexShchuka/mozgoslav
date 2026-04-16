@@ -221,7 +221,6 @@ public sealed class DictationSessionManager : IDictationSessionManager
     private void MarkError(SessionRuntime runtime, Exception ex)
     {
         runtime.Session.State = DictationState.Error;
-        runtime.Session.ErrorMessage = ex.Message;
         runtime.Partials.Writer.TryComplete(ex);
         _logger.LogError(ex, "Dictation session {SessionId} failed", runtime.Session.Id);
     }
@@ -236,12 +235,12 @@ public sealed class DictationSessionManager : IDictationSessionManager
                 return rawText;
             }
 
-            const string systemPrompt =
+            const string SystemPrompt =
                 "Ты редактор русского текста. Тебе дают расшифровку голосового ввода. " +
                 "Исправь пунктуацию, капитализацию, очевидные ошибки распознавания. " +
                 "НЕ меняй смысл, НЕ добавляй ничего от себя, НЕ перефразируй. " +
                 "Выведи только отредактированный текст — ничего больше.";
-            var result = await _llm.ProcessAsync(rawText, systemPrompt, ct);
+            var result = await _llm.ProcessAsync(rawText, SystemPrompt, ct);
             return string.IsNullOrWhiteSpace(result.Summary) ? rawText : result.Summary.Trim();
         }
         catch (Exception ex)
@@ -259,14 +258,14 @@ public sealed class DictationSessionManager : IDictationSessionManager
             var audioChannel = Channel.CreateUnbounded<AudioChunk>(new UnboundedChannelOptions
             {
                 SingleReader = true,
-                SingleWriter = false,
+                SingleWriter = false
             });
             AudioReader = audioChannel.Reader;
             AudioWriter = audioChannel.Writer;
             Partials = Channel.CreateUnbounded<PartialTranscript>(new UnboundedChannelOptions
             {
                 SingleReader = false,
-                SingleWriter = true,
+                SingleWriter = true
             });
             Cts = new CancellationTokenSource();
             TranscriptionTask = Task.CompletedTask;
@@ -281,9 +280,6 @@ public sealed class DictationSessionManager : IDictationSessionManager
         public Task TranscriptionTask { get; set; }
         public string LastPartialText { get; set; }
 
-        public void Dispose()
-        {
-            Cts.Dispose();
-        }
+        public void Dispose() => Cts.Dispose();
     }
 }

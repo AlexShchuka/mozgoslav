@@ -10,7 +10,7 @@ public sealed class AudioFormatDetectorTests
     [TestMethod]
     [DataRow(".mp3", AudioFormat.Mp3)]
     [DataRow(".MP3", AudioFormat.Mp3)]
-    [DataRow("m4a", AudioFormat.M4a)]
+    [DataRow("m4a", AudioFormat.M4A)]
     [DataRow(".wav", AudioFormat.Wav)]
     [DataRow(".mp4", AudioFormat.Mp4)]
     [DataRow(".ogg", AudioFormat.Ogg)]

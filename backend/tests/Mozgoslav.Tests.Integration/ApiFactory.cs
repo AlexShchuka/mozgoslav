@@ -25,7 +25,7 @@ internal sealed class ApiFactory : WebApplicationFactory<Program>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Mozgoslav:DatabasePath"] = DatabasePath,
+                ["Mozgoslav:DatabasePath"] = DatabasePath
             });
         });
     }

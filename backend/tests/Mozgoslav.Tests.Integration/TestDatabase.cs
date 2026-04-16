@@ -32,10 +32,7 @@ internal sealed class TestDatabase : IAsyncDisposable, IDisposable
     public IDbContextFactory<MozgoslavDbContext> CreateFactory() =>
         new PooledFactory(ConnectionString);
 
-    public void Dispose()
-    {
-        TryDelete();
-    }
+    public void Dispose() => TryDelete();
 
     public ValueTask DisposeAsync()
     {

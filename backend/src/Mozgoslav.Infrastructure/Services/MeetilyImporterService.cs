@@ -43,7 +43,7 @@ public sealed class MeetilyImporterService
         var connectionString = new SqliteConnectionStringBuilder
         {
             DataSource = meetilyDatabasePath,
-            Mode = SqliteOpenMode.ReadOnly,
+            Mode = SqliteOpenMode.ReadOnly
         }.ToString();
 
         await using var connection = new SqliteConnection(connectionString);
@@ -102,7 +102,7 @@ public sealed class MeetilyImporterService
                     Format = format,
                     SourceType = SourceType.Imported,
                     Status = RecordingStatus.Transcribed,
-                    CreatedAt = ParseDate(row.CreatedAt),
+                    CreatedAt = ParseDate(row.CreatedAt)
                 };
                 await _recordings.AddAsync(recording, ct);
 
@@ -114,7 +114,7 @@ public sealed class MeetilyImporterService
                         ModelUsed = "meetily-import",
                         Language = "ru",
                         RawText = row.TranscriptText,
-                        CreatedAt = DateTime.UtcNow,
+                        CreatedAt = DateTime.UtcNow
                     }, ct);
                 }
 

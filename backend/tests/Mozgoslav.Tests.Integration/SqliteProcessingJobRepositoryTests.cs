@@ -17,7 +17,7 @@ public sealed class EfProcessingJobRepositoryTests
         var job = new ProcessingJob
         {
             RecordingId = Guid.NewGuid(),
-            ProfileId = Guid.NewGuid(),
+            ProfileId = Guid.NewGuid()
         };
 
         await repo.EnqueueAsync(job, CancellationToken.None);
@@ -41,7 +41,7 @@ public sealed class EfProcessingJobRepositoryTests
         {
             RecordingId = Guid.NewGuid(),
             ProfileId = Guid.NewGuid(),
-            Status = JobStatus.Done,
+            Status = JobStatus.Done
         }, CancellationToken.None);
 
         var dequeued = await repo.DequeueNextAsync(CancellationToken.None);
@@ -59,19 +59,19 @@ public sealed class EfProcessingJobRepositoryTests
         {
             RecordingId = Guid.NewGuid(),
             ProfileId = Guid.NewGuid(),
-            Status = JobStatus.Queued,
+            Status = JobStatus.Queued
         }, CancellationToken.None);
         await repo.EnqueueAsync(new ProcessingJob
         {
             RecordingId = Guid.NewGuid(),
             ProfileId = Guid.NewGuid(),
-            Status = JobStatus.Done,
+            Status = JobStatus.Done
         }, CancellationToken.None);
         await repo.EnqueueAsync(new ProcessingJob
         {
             RecordingId = Guid.NewGuid(),
             ProfileId = Guid.NewGuid(),
-            Status = JobStatus.Failed,
+            Status = JobStatus.Failed
         }, CancellationToken.None);
 
         var active = await repo.GetActiveAsync(CancellationToken.None);
@@ -88,7 +88,7 @@ public sealed class EfProcessingJobRepositoryTests
         var job = new ProcessingJob
         {
             RecordingId = Guid.NewGuid(),
-            ProfileId = Guid.NewGuid(),
+            ProfileId = Guid.NewGuid()
         };
         await repo.EnqueueAsync(job, CancellationToken.None);
 

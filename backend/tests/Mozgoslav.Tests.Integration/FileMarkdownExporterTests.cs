@@ -33,7 +33,7 @@ public sealed class FileMarkdownExporterTests : IDisposable
 
         File.Exists(path).Should().BeTrue();
         path.Should().StartWith(Path.Combine(_vaultRoot, "_inbox"));
-        var content = await File.ReadAllTextAsync(path);
+        var content = await File.ReadAllTextAsync(path, TestContext.CancellationToken);
         content.Should().Be("# Q2\n\nbody");
     }
 
@@ -62,4 +62,6 @@ public sealed class FileMarkdownExporterTests : IDisposable
         await FluentActions.Invoking(() => exporter.ExportAsync(note, profile, "", CancellationToken.None))
             .Should().ThrowAsync<ArgumentException>();
     }
+
+    public TestContext TestContext { get; set; }
 }

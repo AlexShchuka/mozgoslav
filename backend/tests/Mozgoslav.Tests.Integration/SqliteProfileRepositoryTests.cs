@@ -22,7 +22,7 @@ public sealed class EfProfileRepositoryTests
             CleanupLevel = CleanupLevel.Aggressive,
             ExportFolder = "_inbox",
             AutoTags = ["tag1", "tag2"],
-            IsDefault = true,
+            IsDefault = true
         };
 
         await repo.AddAsync(profile, CancellationToken.None);

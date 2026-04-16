@@ -78,7 +78,7 @@ public sealed class ReprocessUseCase
             ConversationType = llm?.ConversationType ?? ConversationType.Other,
             CleanTranscript = cleanText,
             FullTranscript = transcript.RawText,
-            Tags = llm?.Tags.ToList() ?? [],
+            Tags = llm?.Tags.ToList() ?? []
         };
         note.MarkdownContent = MarkdownGenerator.Generate(note, profile, recording);
 

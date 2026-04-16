@@ -64,7 +64,7 @@ try
     var connectionString = $"Data Source={databasePath}";
 
     builder.Services.AddDbContextFactory<MozgoslavDbContext>(options => options.UseSqlite(connectionString));
-    builder.Services.AddDbContext<MozgoslavDbContext>((sp, options) => options.UseSqlite(connectionString),
+    builder.Services.AddDbContext<MozgoslavDbContext>((_, options) => options.UseSqlite(connectionString),
         contextLifetime: ServiceLifetime.Scoped,
         optionsLifetime: ServiceLifetime.Singleton);
 
@@ -139,4 +139,4 @@ finally
     await Log.CloseAndFlushAsync();
 }
 
-public partial class Program;
+public abstract partial class Program;

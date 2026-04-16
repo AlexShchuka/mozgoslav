@@ -35,7 +35,7 @@ public sealed class ChannelJobProgressNotifier : IJobProgressNotifier, IDisposab
         var channel = Channel.CreateUnbounded<ProcessingJob>(new UnboundedChannelOptions
         {
             SingleReader = true,
-            SingleWriter = false,
+            SingleWriter = false
         });
 
         _subscribers[id] = channel;
@@ -73,6 +73,6 @@ public sealed class ChannelJobProgressNotifier : IJobProgressNotifier, IDisposab
         ErrorMessage = src.ErrorMessage,
         CreatedAt = src.CreatedAt,
         StartedAt = src.StartedAt,
-        FinishedAt = src.FinishedAt,
+        FinishedAt = src.FinishedAt
     };
 }

@@ -33,7 +33,7 @@ public sealed class EfAppSettingsTests
             ObsidianApiToken = "sk-xyz",
             Language = "en",
             ThemeMode = "dark",
-            WhisperThreads = 12,
+            WhisperThreads = 12
         };
 
         await settings.SaveAsync(dto, CancellationToken.None);

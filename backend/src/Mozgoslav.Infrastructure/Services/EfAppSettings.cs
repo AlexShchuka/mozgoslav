@@ -20,10 +20,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         _contextFactory = contextFactory;
     }
 
-    public void Dispose()
-    {
-        _lock.Dispose();
-    }
+    public void Dispose() => _lock.Dispose();
 
     public string VaultPath => Snapshot.VaultPath;
     public string LlmEndpoint => Snapshot.LlmEndpoint;
@@ -116,7 +113,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             (Keys.DictationInjectMode, dto.DictationInjectMode),
             (Keys.DictationOverlayEnabled, BoolToString(dto.DictationOverlayEnabled)),
             (Keys.DictationOverlayPosition, dto.DictationOverlayPosition),
-            (Keys.DictationSoundFeedback, BoolToString(dto.DictationSoundFeedback)),
+            (Keys.DictationSoundFeedback, BoolToString(dto.DictationSoundFeedback))
         };
 
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
@@ -143,10 +140,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         finally { _lock.Release(); }
     }
 
-    public async Task ReloadAsync(CancellationToken ct)
-    {
-        await LoadAsync(ct);
-    }
+    public async Task ReloadAsync(CancellationToken ct) => await LoadAsync(ct);
 
     private static int ParseInt(IReadOnlyDictionary<string, string> map, string key, int fallback) =>
         map.TryGetValue(key, out var raw) && int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)

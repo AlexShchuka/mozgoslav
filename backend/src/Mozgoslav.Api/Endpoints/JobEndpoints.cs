@@ -49,7 +49,7 @@ public static class JobEndpoints
             {
                 RecordingId = request.RecordingId,
                 ProfileId = request.ProfileId,
-                Status = JobStatus.Queued,
+                Status = JobStatus.Queued
             };
             await jobs.EnqueueAsync(job, ct);
             return Results.Created($"/api/jobs/{job.Id}", job);

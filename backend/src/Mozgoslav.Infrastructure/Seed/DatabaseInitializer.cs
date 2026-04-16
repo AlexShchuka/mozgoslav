@@ -71,6 +71,6 @@ public sealed class DatabaseInitializer : IHostedService
             : current.VadModelPath,
         VaultPath = string.IsNullOrWhiteSpace(current.VaultPath)
             ? string.Empty
-            : current.VaultPath,
+            : current.VaultPath
     };
 }

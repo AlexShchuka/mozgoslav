@@ -57,7 +57,7 @@ public static class ModelCatalog
             Url: "https://huggingface.co/ggml-org/whisper-vad/resolve/main/ggml-silero-v6.2.0.bin",
             SizeMb: 4,
             Kind: ModelKind.Vad,
-            IsDefault: true),
+            IsDefault: true)
     ];
 
     public static CatalogEntry? TryGet(string id) =>

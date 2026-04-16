@@ -79,13 +79,13 @@ public sealed class OpenAiCompatibleLlmService : ILlmService
         {
             Temperature = Temperature,
             MaxOutputTokenCount = MaxTokens,
-            ResponseFormat = ChatResponseFormat.CreateJsonObjectFormat(),
+            ResponseFormat = ChatResponseFormat.CreateJsonObjectFormat()
         };
 
         var messages = new ChatMessage[]
         {
             ChatMessage.CreateSystemMessage(systemPrompt),
-            ChatMessage.CreateUserMessage(text),
+            ChatMessage.CreateUserMessage(text)
         };
 
         ChatCompletion response;
@@ -114,7 +114,7 @@ public sealed class OpenAiCompatibleLlmService : ILlmService
         var credential = new ApiKeyCredential(apiKey);
         var options = new OpenAIClientOptions
         {
-            Endpoint = new Uri(new Uri(_settings.LlmEndpoint), "/v1"),
+            Endpoint = new Uri(new Uri(_settings.LlmEndpoint), "/v1")
         };
         var openAiClient = new OpenAIClient(credential, options);
         var model = string.IsNullOrWhiteSpace(_settings.LlmModel) ? "default" : _settings.LlmModel;
@@ -175,8 +175,14 @@ public sealed class OpenAiCompatibleLlmService : ILlmService
 
     private static string CombineSummaries(string a, string b)
     {
-        if (string.IsNullOrWhiteSpace(a)) return b;
-        if (string.IsNullOrWhiteSpace(b)) return a;
+        if (string.IsNullOrWhiteSpace(a))
+        {
+            return b;
+        }
+        if (string.IsNullOrWhiteSpace(b))
+        {
+            return a;
+        }
         return a + "\n\n" + b;
     }
 
@@ -198,7 +204,7 @@ public sealed class OpenAiCompatibleLlmService : ILlmService
     {
         PropertyNameCaseInsensitive = true,
         AllowTrailingCommas = true,
-        ReadCommentHandling = JsonCommentHandling.Skip,
+        ReadCommentHandling = JsonCommentHandling.Skip
     };
 
     private sealed class LlmJsonDto
@@ -214,24 +220,24 @@ public sealed class OpenAiCompatibleLlmService : ILlmService
         [JsonPropertyName("tags")] public List<string> Tags { get; init; } = [];
 
         public LlmProcessingResult ToDomain() => new(
-            Summary: Summary ?? string.Empty,
-            KeyPoints: KeyPoints ?? [],
-            Decisions: Decisions ?? [],
-            ActionItems: (ActionItems ?? []).Select(a => a.ToDomain()).ToList(),
-            UnresolvedQuestions: UnresolvedQuestions ?? [],
-            Participants: Participants ?? [],
-            Topic: Topic ?? string.Empty,
+            Summary: Summary,
+            KeyPoints: KeyPoints,
+            Decisions: Decisions,
+            ActionItems: (ActionItems).Select(a => a.ToDomain()).ToList(),
+            UnresolvedQuestions: UnresolvedQuestions,
+            Participants: Participants,
+            Topic: Topic,
             ConversationType: ParseConversationType(ConversationType),
-            Tags: Tags ?? []);
+            Tags: Tags);
     }
 
     private sealed class ActionItemDto
     {
-        [JsonPropertyName("person")] public string Person { get; init; } = string.Empty;
-        [JsonPropertyName("task")] public string Task { get; init; } = string.Empty;
+        [JsonPropertyName("person")] public string Person => string.Empty;
+        [JsonPropertyName("task")] public string Task => string.Empty;
         [JsonPropertyName("deadline")] public string? Deadline { get; init; }
 
-        public ActionItem ToDomain() => new(Person ?? string.Empty, Task ?? string.Empty, Deadline);
+        public ActionItem ToDomain() => new(Person, Task, Deadline);
     }
 
     private static ConversationType ParseConversationType(string? value) => (value ?? string.Empty).ToLowerInvariant() switch
@@ -240,6 +246,6 @@ public sealed class OpenAiCompatibleLlmService : ILlmService
         "1:1" or "one_on_one" or "oneonone" => ConversationType.OneOnOne,
         "idea" => ConversationType.Idea,
         "personal" => ConversationType.Personal,
-        _ => ConversationType.Other,
+        _ => ConversationType.Other
     };
 }

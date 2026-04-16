@@ -94,7 +94,7 @@ public sealed class OpenAiCompatibleLlmServiceTests
     [TestMethod]
     public async Task ProcessAsync_ValidJsonResponse_ReturnsTypedResult()
     {
-        const string content = /*lang=json,strict*/ """
+        const string Content = /*lang=json,strict*/ """
             {
               "summary": "A short summary",
               "key_points": ["point one", "point two"],
@@ -107,31 +107,31 @@ public sealed class OpenAiCompatibleLlmServiceTests
               "tags": ["demo"]
             }
             """;
-        StubChatCompletion(content);
+        StubChatCompletion(Content);
 
         var result = await _service.ProcessAsync("transcript body", "system prompt", CancellationToken.None);
 
         result.Summary.Should().Be("A short summary");
-        result.KeyPoints.Should().BeEquivalentTo(["point one", "point two"]);
-        result.Decisions.Should().BeEquivalentTo(["decided"]);
+        result.KeyPoints.Should().BeEquivalentTo("point one", "point two");
+        result.Decisions.Should().BeEquivalentTo("decided");
         result.ActionItems.Should().ContainSingle()
             .Which.Person.Should().Be("Alice");
-        result.Participants.Should().BeEquivalentTo(["Alice", "Bob"]);
+        result.Participants.Should().BeEquivalentTo("Alice", "Bob");
         result.Topic.Should().Be("Testing");
         result.ConversationType.Should().Be(ConversationType.Meeting);
-        result.Tags.Should().BeEquivalentTo(["demo"]);
+        result.Tags.Should().BeEquivalentTo("demo");
     }
 
     [TestMethod]
     public async Task ProcessAsync_JsonWithMarkdownFence_StripsAndParses()
     {
-        const string content = """
+        const string Content = """
             Here's your answer:
             ```json
             {"summary": "fenced summary", "key_points": [], "decisions": [], "action_items": [], "unresolved_questions": [], "participants": [], "topic": "t", "conversation_type": "idea", "tags": []}
             ```
             """;
-        StubChatCompletion(content);
+        StubChatCompletion(Content);
 
         var result = await _service.ProcessAsync("t", "s", CancellationToken.None);
 
@@ -142,8 +142,8 @@ public sealed class OpenAiCompatibleLlmServiceTests
     [TestMethod]
     public async Task ProcessAsync_NonJsonContent_FallsBackToRawSummary()
     {
-        const string content = "Sorry, I cannot produce JSON output.";
-        StubChatCompletion(content);
+        const string Content = "Sorry, I cannot produce JSON output.";
+        StubChatCompletion(Content);
 
         var result = await _service.ProcessAsync("t", "s", CancellationToken.None);
 
@@ -165,10 +165,10 @@ public sealed class OpenAiCompatibleLlmServiceTests
     [TestMethod]
     public async Task ProcessAsync_UnknownConversationType_FallsBackToOther()
     {
-        const string content = /*lang=json,strict*/ """
+        const string Content = /*lang=json,strict*/ """
             {"summary": "x", "key_points": [], "decisions": [], "action_items": [], "unresolved_questions": [], "participants": [], "topic": "t", "conversation_type": "unknown-variant", "tags": []}
             """;
-        StubChatCompletion(content);
+        StubChatCompletion(Content);
 
         var result = await _service.ProcessAsync("t", "s", CancellationToken.None);
 

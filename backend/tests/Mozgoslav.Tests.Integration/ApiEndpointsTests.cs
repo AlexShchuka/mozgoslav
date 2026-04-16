@@ -20,10 +20,10 @@ public sealed class ApiEndpointsTests
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        using var response = await client.GetAsync("/api/health");
+        using var response = await client.GetAsync("/api/health", TestContext.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var body = await response.Content.ReadAsStringAsync();
+        var body = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
         body.Should().Contain("\"status\":\"ok\"");
     }
 
@@ -33,10 +33,10 @@ public sealed class ApiEndpointsTests
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        using var response = await client.GetAsync("/api/profiles");
+        using var response = await client.GetAsync("/api/profiles", TestContext.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var profiles = await response.Content.ReadFromJsonAsync<List<Profile>>(Json);
+        var profiles = await response.Content.ReadFromJsonAsync<List<Profile>>(Json, TestContext.CancellationToken);
 
         profiles.Should().NotBeNull();
         profiles.Should().HaveCountGreaterThanOrEqualTo(3);
@@ -57,8 +57,8 @@ public sealed class ApiEndpointsTests
                 name = "   ",
                 systemPrompt = "x",
                 cleanupLevel = CleanupLevel.Light,
-                isDefault = false,
-            });
+                isDefault = false
+            }, cancellationToken: TestContext.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -77,15 +77,15 @@ public sealed class ApiEndpointsTests
                 systemPrompt = "test prompt",
                 cleanupLevel = CleanupLevel.Light,
                 isDefault = false,
-                autoTags = new[] { "test" },
-            });
+                autoTags = new[] { "test" }
+            }, cancellationToken: TestContext.CancellationToken);
 
         create.StatusCode.Should().Be(HttpStatusCode.Created);
-        var created = await create.Content.ReadFromJsonAsync<Profile>(Json);
+        var created = await create.Content.ReadFromJsonAsync<Profile>(Json, TestContext.CancellationToken);
         created!.Name.Should().Be("Test profile");
         created.IsBuiltIn.Should().BeFalse();
 
-        using var fetch = await client.GetAsync($"/api/profiles/{created.Id}");
+        using var fetch = await client.GetAsync($"/api/profiles/{created.Id}", TestContext.CancellationToken);
         fetch.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
@@ -95,7 +95,7 @@ public sealed class ApiEndpointsTests
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        using var response = await client.GetAsync($"/api/profiles/{Guid.NewGuid()}");
+        using var response = await client.GetAsync($"/api/profiles/{Guid.NewGuid()}", TestContext.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -105,10 +105,10 @@ public sealed class ApiEndpointsTests
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        using var response = await client.GetAsync("/api/recordings");
+        using var response = await client.GetAsync("/api/recordings", TestContext.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var recordings = await response.Content.ReadFromJsonAsync<List<Recording>>(Json);
+        var recordings = await response.Content.ReadFromJsonAsync<List<Recording>>(Json, TestContext.CancellationToken);
         recordings.Should().BeEmpty();
     }
 
@@ -122,8 +122,8 @@ public sealed class ApiEndpointsTests
             "/api/recordings/import",
             new
             {
-                filePaths = Array.Empty<string>(),
-            });
+                filePaths = Array.Empty<string>()
+            }, cancellationToken: TestContext.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -138,11 +138,11 @@ public sealed class ApiEndpointsTests
             "/api/recordings/import",
             new
             {
-                filePaths = new[] { "/tmp/mozgoslav-does-not-exist.wav" },
-            });
+                filePaths = new[] { "/tmp/mozgoslav-does-not-exist.wav" }
+            }, cancellationToken: TestContext.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var body = await response.Content.ReadAsStringAsync();
+        var body = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
         body.Should().Contain("not found");
     }
 
@@ -150,7 +150,7 @@ public sealed class ApiEndpointsTests
     public async Task Recordings_Import_ExistingFile_CreatesRecordingAndEnqueuesJob()
     {
         var tempFile = Path.Combine(Path.GetTempPath(), $"mozgoslav-api-upload-{Guid.NewGuid():N}.wav");
-        await File.WriteAllBytesAsync(tempFile, [1, 2, 3, 4]);
+        await File.WriteAllBytesAsync(tempFile, [1, 2, 3, 4], TestContext.CancellationToken);
 
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
@@ -161,16 +161,16 @@ public sealed class ApiEndpointsTests
                 "/api/recordings/import",
                 new
                 {
-                    filePaths = new[] { tempFile },
-                });
+                    filePaths = new[] { tempFile }
+                }, cancellationToken: TestContext.CancellationToken);
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            var imported = await response.Content.ReadFromJsonAsync<List<Recording>>(Json);
+            var imported = await response.Content.ReadFromJsonAsync<List<Recording>>(Json, TestContext.CancellationToken);
             imported.Should().ContainSingle();
             imported[0].FileName.Should().Be(Path.GetFileName(tempFile));
 
-            using var listResponse = await client.GetAsync("/api/recordings");
-            var list = await listResponse.Content.ReadFromJsonAsync<List<Recording>>(Json);
+            using var listResponse = await client.GetAsync("/api/recordings", TestContext.CancellationToken);
+            var list = await listResponse.Content.ReadFromJsonAsync<List<Recording>>(Json, TestContext.CancellationToken);
             list.Should().ContainSingle();
         }
         finally
@@ -185,10 +185,10 @@ public sealed class ApiEndpointsTests
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        using var response = await client.GetAsync("/api/jobs");
+        using var response = await client.GetAsync("/api/jobs", TestContext.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var jobs = await response.Content.ReadFromJsonAsync<List<ProcessingJob>>(Json);
+        var jobs = await response.Content.ReadFromJsonAsync<List<ProcessingJob>>(Json, TestContext.CancellationToken);
         jobs.Should().BeEmpty();
     }
 
@@ -198,10 +198,12 @@ public sealed class ApiEndpointsTests
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        using var response = await client.GetAsync("/api/settings");
+        using var response = await client.GetAsync("/api/settings", TestContext.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var body = await response.Content.ReadAsStringAsync();
+        var body = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
         body.Should().Contain("llmEndpoint");
     }
+
+    public TestContext TestContext { get; set; }
 }

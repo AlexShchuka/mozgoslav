@@ -29,7 +29,7 @@ public static class BackupEndpoints
                 name = f.Name,
                 path = f.FullName,
                 sizeBytes = f.Length,
-                createdAt = f.LastWriteTimeUtc,
+                createdAt = f.LastWriteTimeUtc
             });
             return Results.Ok(files);
         });

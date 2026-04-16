@@ -40,7 +40,7 @@ public static class BuiltInProfiles
               "conversation_type": "meeting",
               "tags": ["tag1", ...]
             }
-            """,
+            """
     };
 
     public static Profile Personal { get; } = new()
@@ -57,7 +57,7 @@ public static class BuiltInProfiles
             Сохрани общий смысл, контекст, шутки как шутки.
             НЕ делай сухой протокол.
             Верни JSON: {"summary", "key_points", "participants", "topic", "conversation_type": "personal", "tags"}
-            """,
+            """
     };
 
     public static Profile Full { get; } = new()
@@ -72,7 +72,7 @@ public static class BuiltInProfiles
             Обработай запись разговора. Сохрани ВСЁ.
             Язык: русский.
             Верни JSON: {"summary", "key_points", "decisions", "action_items", "unresolved_questions", "participants", "topic", "conversation_type", "tags"}
-            """,
+            """
     };
 
     public static IReadOnlyList<Profile> All { get; } = [Work, Personal, Full];

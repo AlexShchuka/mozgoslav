@@ -83,8 +83,5 @@ public sealed class ModelDownloadService
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
-    public async Task<string> DownloadAsync(Uri url, string destinationPath, IProgress<Progress>? progress, CancellationToken ct)
-    {
-        throw new NotImplementedException();
-    }
+    public async Task<string> DownloadAsync(Uri url, string destinationPath, IProgress<Progress>? progress, CancellationToken ct) => throw new NotImplementedException();
 }

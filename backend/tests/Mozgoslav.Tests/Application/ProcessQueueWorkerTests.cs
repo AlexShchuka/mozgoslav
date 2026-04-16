@@ -22,7 +22,7 @@ public sealed class ProcessQueueWorkerTests
         var result = await fixture.Worker.ProcessNextAsync(CancellationToken.None);
 
         result.Should().BeFalse();
-        await fixture.Recordings.DidNotReceiveWithAnyArgs().GetByIdAsync(default, default);
+        await fixture.Recordings.DidNotReceiveWithAnyArgs().GetByIdAsync(Guid.Empty, CancellationToken.None);
     }
 
     [TestMethod]
@@ -77,7 +77,7 @@ public sealed class ProcessQueueWorkerTests
             .Returns(
             [
                 new() { Version = 1 },
-                new() { Version = 2 },
+                new() { Version = 2 }
             ]);
 
         ProcessedNote? captured = null;
@@ -144,7 +144,7 @@ public sealed class ProcessQueueWorkerTests
 
         await fixture.Worker.ProcessNextAsync(CancellationToken.None);
 
-        await fixture.Exporter.DidNotReceiveWithAnyArgs().ExportAsync(default!, default!, default!, default);
+        await fixture.Exporter.DidNotReceiveWithAnyArgs().ExportAsync(null!, null!, null!, CancellationToken.None);
     }
 
     [TestMethod]
@@ -224,7 +224,7 @@ public sealed class ProcessQueueWorkerTests
             var job = new ProcessingJob
             {
                 RecordingId = Guid.NewGuid(),
-                ProfileId = Guid.NewGuid(),
+                ProfileId = Guid.NewGuid()
             };
             Jobs.DequeueNextAsync(Arg.Any<CancellationToken>()).Returns(job);
             return job;
@@ -242,8 +242,8 @@ public sealed class ProcessQueueWorkerTests
                     FileName = "test.m4a",
                     FilePath = "/tmp/test.m4a",
                     Sha256 = "deadbeef",
-                    Format = AudioFormat.M4a,
-                    SourceType = SourceType.Imported,
+                    Format = AudioFormat.M4A,
+                    SourceType = SourceType.Imported
                 });
 
             Profiles.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
@@ -251,7 +251,7 @@ public sealed class ProcessQueueWorkerTests
                 {
                     Name = "Test",
                     CleanupLevel = CleanupLevel.Light,
-                    SystemPrompt = "test prompt",
+                    SystemPrompt = "test prompt"
                 });
 
             AudioConverter.ConvertToWavAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -263,7 +263,7 @@ public sealed class ProcessQueueWorkerTests
                 .Returns(
                 [
                     new TranscriptSegment(TimeSpan.Zero, TimeSpan.FromSeconds(3), "Hello world"),
-                    new TranscriptSegment(TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(6), "Second segment"),
+                    new TranscriptSegment(TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(6), "Second segment")
                 ]);
 
             Llm.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(llmAvailable);

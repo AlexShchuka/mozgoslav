@@ -22,7 +22,7 @@ public sealed class EfRecordingRepositoryTests
             Sha256 = "abcdef0123456789",
             Format = AudioFormat.Wav,
             SourceType = SourceType.Imported,
-            Duration = TimeSpan.FromSeconds(42),
+            Duration = TimeSpan.FromSeconds(42)
         };
 
         await repository.AddAsync(recording, CancellationToken.None);
@@ -53,7 +53,7 @@ public sealed class EfRecordingRepositoryTests
             FilePath = "/tmp/a.wav",
             Sha256 = "aaa",
             Format = AudioFormat.Wav,
-            SourceType = SourceType.Imported,
+            SourceType = SourceType.Imported
         }, CancellationToken.None);
 
         await repository.AddAsync(new Recording
@@ -62,7 +62,7 @@ public sealed class EfRecordingRepositoryTests
             FilePath = "/tmp/b.mp3",
             Sha256 = "bbb",
             Format = AudioFormat.Mp3,
-            SourceType = SourceType.Recorded,
+            SourceType = SourceType.Recorded
         }, CancellationToken.None);
 
         var all = await repository.GetAllAsync(CancellationToken.None);
