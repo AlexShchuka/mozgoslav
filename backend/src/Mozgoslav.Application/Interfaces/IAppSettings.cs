@@ -18,6 +18,18 @@ public interface IAppSettings
     string Language { get; }
     string ThemeMode { get; }
     int WhisperThreads { get; }
+    bool DictationEnabled { get; }
+    string DictationHotkeyType { get; }
+    int DictationMouseButton { get; }
+    string DictationKeyboardHotkey { get; }
+    string DictationLanguage { get; }
+    string DictationWhisperModelId { get; }
+    int DictationCaptureSampleRate { get; }
+    bool DictationLlmPolish { get; }
+    string DictationInjectMode { get; }
+    bool DictationOverlayEnabled { get; }
+    string DictationOverlayPosition { get; }
+    bool DictationSoundFeedback { get; }
 
     AppSettingsDto Snapshot { get; }
 

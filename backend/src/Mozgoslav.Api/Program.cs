@@ -86,10 +86,14 @@ try
     builder.Services.AddHttpClient();
     builder.Services.AddSingleton<IJobProgressNotifier, ChannelJobProgressNotifier>();
     builder.Services.AddSingleton<IAudioConverter, FfmpegAudioConverter>();
-    builder.Services.AddSingleton<ITranscriptionService, WhisperNetTranscriptionService>();
+    builder.Services.AddSingleton<IVadPreprocessor, SileroVadPreprocessor>();
+    builder.Services.AddSingleton<WhisperNetTranscriptionService>();
+    builder.Services.AddSingleton<ITranscriptionService>(sp => sp.GetRequiredService<WhisperNetTranscriptionService>());
+    builder.Services.AddSingleton<IStreamingTranscriptionService>(sp => sp.GetRequiredService<WhisperNetTranscriptionService>());
     builder.Services.AddSingleton<ILlmService, OpenAiCompatibleLlmService>();
     builder.Services.AddSingleton<IMarkdownExporter, FileMarkdownExporter>();
     builder.Services.AddSingleton<IAudioRecorder, NoopAudioRecorder>();
+    builder.Services.AddSingleton<IDictationSessionManager, DictationSessionManager>();
     builder.Services.AddScoped<MeetilyImporterService>();
     builder.Services.AddScoped<ObsidianSetupService>();
     builder.Services.AddSingleton<ModelDownloadService>();
@@ -121,6 +125,7 @@ try
     app.MapSseEndpoints();
     app.MapLogsEndpoints();
     app.MapBackupEndpoints();
+    app.MapDictationEndpoints();
 
     await app.RunAsync();
 }
