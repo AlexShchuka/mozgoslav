@@ -25,7 +25,6 @@ mac:
   hardenedRuntime: false
   gatekeeperAssess: false
 dmg:
-  icon: build/icon.icns
   iconSize: 100
   contents:
     - x: 380

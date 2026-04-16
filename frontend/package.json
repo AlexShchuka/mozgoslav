@@ -13,7 +13,26 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\" \"electron/**/*.ts\"",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"electron/**/*.ts\"",
     "plop": "plop",
-    "dist:mac": "electron-builder --mac"
+    "build:helper:mac": "swift build -c release --package-path ../helpers/MozgoslavDictationHelper && chmod +x ../helpers/MozgoslavDictationHelper/.build/arm64-apple-macosx/release/mozgoslav-dictation-helper",
+    "dist:mac": "npm run build && npm run build:helper:mac && electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.mozgoslav.app",
+    "productName": "Mozgoslav",
+    "mac": {
+      "target": "dmg"
+    },
+    "files": [
+      "dist/**",
+      "dist-electron/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../helpers/MozgoslavDictationHelper/.build/arm64-apple-macosx/release/mozgoslav-dictation-helper",
+        "to": "mozgoslav-dictation-helper"
+      }
+    ]
   },
   "dependencies": {
     "axios": "^1.7.9",

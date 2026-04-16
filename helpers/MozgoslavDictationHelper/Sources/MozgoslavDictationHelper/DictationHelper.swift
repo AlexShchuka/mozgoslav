@@ -5,10 +5,6 @@ import DictationHelperCore
 import AppKit
 #endif
 
-/// Top-level coordinator for the helper process. Reads JSON-RPC requests line
-/// by line from stdin and dispatches each to the matching service. Services
-/// are stateful (mic capture) or stateless (text injection) — this class is
-/// the only place that knows about both.
 public final class DictationHelper {
     private let stdin: FileHandle
     private let stdout: FileHandle
@@ -30,7 +26,7 @@ public final class DictationHelper {
     public func run() {
         audioCapture.onAudioChunk = { [weak self] chunk in
             self?.emit(event: "audio", params: .object([
-                "samples": .array(chunk.map { .double(Double($0)) }),
+                "samples": .array(chunk.samples.map { .double(Double($0)) }),
                 "sampleRate": .int(chunk.sampleRate),
                 "offsetMs": .int(chunk.offsetMs),
             ]))

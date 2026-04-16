@@ -57,7 +57,7 @@ const Dashboard: FC = () => {
         setUploading(false);
       }
     },
-    [refresh],
+    [refresh]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -82,6 +82,12 @@ const Dashboard: FC = () => {
     } finally {
       setUploading(false);
     }
+  };
+
+  const getFormatLabel = (format: unknown) => {
+    if (typeof format === "string") return format.toUpperCase();
+    if (typeof format === "number") return String(format);
+    return "UNKNOWN";
   };
 
   return (
@@ -127,10 +133,18 @@ const Dashboard: FC = () => {
               <RecordingMeta>
                 <RecordingName>{r.fileName}</RecordingName>
                 <small>
-                  {r.format.toUpperCase()} · {formatDuration(r.duration)}
+                  {getFormatLabel(r.format)} · {formatDuration(r.duration)}
                 </small>
               </RecordingMeta>
-              <Badge tone={r.status === "Transcribed" ? "success" : r.status === "Failed" ? "error" : "neutral"}>
+              <Badge
+                tone={
+                  r.status === "Transcribed"
+                    ? "success"
+                    : r.status === "Failed"
+                      ? "error"
+                      : "neutral"
+                }
+              >
                 {r.status}
               </Badge>
             </RecordingRow>

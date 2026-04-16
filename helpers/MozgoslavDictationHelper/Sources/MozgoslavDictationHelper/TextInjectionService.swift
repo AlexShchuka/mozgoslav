@@ -57,8 +57,8 @@ public final class TextInjectionService {
             keyDown.keyboardSetUnicodeString(stringLength: utf16.count, unicodeString: &utf16)
             keyUp.keyboardSetUnicodeString(stringLength: utf16.count, unicodeString: &utf16)
 
-            keyDown.post(tap: .cgHIDEventTap)
-            keyUp.post(tap: .cgHIDEventTap)
+            keyDown.post(tap: .cghidEventTap)
+            keyUp.post(tap: .cghidEventTap)
         }
         #else
         _ = text
