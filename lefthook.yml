@@ -1,0 +1,22 @@
+# Pre-commit: fast local checks, auto-format where возможно.
+pre-commit:
+  parallel: true
+  commands:
+    dotnet-format:
+      glob: "*.cs"
+      run: cd backend && dotnet format --include {staged_files} --verbosity minimal
+      stage_fixed: true
+    eslint:
+      glob: "frontend/**/*.{ts,tsx,js,jsx}"
+      run: cd frontend && npx eslint --fix {staged_files}
+      stage_fixed: true
+    prettier:
+      glob: "frontend/**/*.{ts,tsx,css,md,json}"
+      run: cd frontend && npx prettier --write {staged_files}
+      stage_fixed: true
+    ruff:
+      glob: "python-sidecar/**/*.py"
+      run: cd python-sidecar && ruff check --fix {staged_files} && black {staged_files}
+      stage_fixed: true
+
+# Pre-push: быстрые unit-тесты не гоняем (CI этим займётся).

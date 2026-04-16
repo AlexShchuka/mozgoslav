@@ -98,6 +98,23 @@ cd frontend && npm install && npm run dev
 cd frontend && npm run dist:mac
 ```
 
+## Dev setup
+
+1. Install lefthook once:
+   ```bash
+   # macOS
+   brew install lefthook
+   # Linux
+   curl -sSfL https://raw.githubusercontent.com/evilmartians/lefthook/master/install.sh | sh
+   ```
+2. Initialize hooks in the repo:
+   ```bash
+   cd mozgoslav
+   lefthook install
+   ```
+
+Pre-commit will auto-run `dotnet format` / `eslint --fix` / `prettier --write` / `ruff --fix + black` on staged files.
+
 ## Первая настройка
 
 1. Запусти LM Studio / Ollama, загрузи Qwen2.5-14B-Instruct-Q4.
