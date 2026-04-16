@@ -1,0 +1,68 @@
+# ---- C# / .NET ----
+bin/
+obj/
+out/
+*.user
+*.suo
+*.cache
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ---- Node / Frontend ----
+node_modules/
+dist/
+dist-electron/
+build/
+release/
+*.log
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# ---- OS ----
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ---- Local data ----
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+local-data/
+temp/
+tmp/
+logs/
+models/
+
+# ---- IDE ----
+.idea/
+.vs/
+.vscode/
+*.iml
