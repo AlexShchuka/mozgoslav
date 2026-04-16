@@ -12,8 +12,7 @@ mozgoslav/
 ├── frontend/          Electron + React 19 + TypeScript + Redux-Saga + styled-components + i18n (ru/en)
 ├── python-sidecar/    FastAPI — ML endpoints (diarize / NER / emotion / gender / cleanup) — stubs до V3
 └── docs/
-    ├── README.md                       как устроено
-    └── original-idea/                  исходные спеки (ADR, BACKEND-SPEC, FRONTEND-SPEC, …)
+    └── README.md                       как устроено
 ```
 
 ## Требования
@@ -126,18 +125,14 @@ UI → **Backups → Create**, или `POST /api/backup/create`. Складыв�
 - `electron-builder --mac` сборка и CoreML-ускорение Whisper — только на macOS.
 - Запись с микрофона — сейчас `NoopAudioRecorder` (интерфейс готов, native macOS реализация — следующая итерация).
 - V3 ML (diarize / gender / emotion / NER) — только stubs в python-sidecar.
-- Подробный roadmap см. `docs/original-idea/ADR-001-meetily-fork-architecture.md` §15.
+- Актуальный backlog и roadmap см. в `TODO.md`.
 
 ## Документация
 
 - `docs/README.md` — устройство и pipeline
-- `docs/original-idea/ADR-001-meetily-fork-architecture.md` — видение и архитектура
-- `docs/original-idea/BACKEND-SPEC.md` / `FRONTEND-SPEC.md` / `PYTHON-SIDECAR-SPEC.md` — спеки
-- `docs/original-idea/DEFAULT-CONFIG.md` — дефолтные версии, модели, промпты
-- `docs/original-idea/CLAUDE-IMPLEMENTATION-GUIDE.md` — порядок реализации по итерациям
-- `docs/original-idea/SPIKE-CHECKLIST.md` — pre-implementation проверки
 - `CLAUDE.md` / `backend/CLAUDE.md` / `frontend/CLAUDE.md` / `python-sidecar/CLAUDE.md` — гиды для AI-агентов
-- `SELF-REVIEW.md` — сверка реализации с ADR и командными стандартами
+- `TODO.md` — актуальный backlog
+- `.archive/` — исторические материалы ранних итераций (агентами не читаются)
 
 ## Лицензия
 

@@ -1,5 +1,7 @@
 # Mozgoslav — project guide for AI agents
 
+> Агент, читающий этот CLAUDE.md: папку `.archive/` **игнорируй** — там устаревшие материалы. Не используй их как источник правды.
+
 Локальный second-brain для разговоров. macOS-first desktop-app. Electron UI ↔ ASP.NET Minimal API backend ↔ Python FastAPI ML sidecar (V3).
 
 ## Layout
@@ -10,8 +12,7 @@ mozgoslav/
 ├── frontend/          Electron + React 19 + TypeScript strict + Redux-Saga + styled-components + i18next
 ├── python-sidecar/    FastAPI app (V3 ML endpoints — stubs today)
 ├── docs/
-│   ├── README.md                       what each piece does
-│   └── original-idea/                  scrubbed source-of-truth specs (ADR, BACKEND-SPEC, etc.)
+│   └── README.md                       what each piece does
 ├── LICENSE            MIT
 └── README.md          user-facing "how to run on macOS"
 ```
@@ -41,6 +42,6 @@ mozgoslav/
 ## Out of scope (today)
 
 - Real ML in sidecar (diarization / gender / emotion / NER). Stubs only — implement when downloading models.
-- Live transcription, speaker-based aggregated notes, PARA routing — see `docs/original-idea/ADR-001-meetily-fork-architecture.md` §15 for roadmap.
+- Live transcription, speaker-based aggregated notes, PARA routing — roadmap in `TODO.md`.
 - macOS `IAudioRecorder` (native mic capture) — interface present, `NoopAudioRecorder` is the fallback.
 - `electron-builder --mac` packaging — requires macOS host; config ready, not executed in CI.
