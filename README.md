@@ -139,6 +139,10 @@ Pre-commit will auto-run `dotnet format` / `eslint --fix` / `prettier --write` /
 - Логи — только локально в `~/Library/Application Support/Mozgoslav/logs/`. Просматривать можно прямо в UI (Logs page).
 - Downloads моделей — только HuggingFace HTTPS URL из встроенного каталога (`ModelCatalog.cs`).
 
+## Recording playback caveat
+
+Playback through Bluetooth headphones may sound distorted — your recording is fine, it's a playback driver issue. See [docs/bluetooth-playback-notice.md](docs/bluetooth-playback-notice.md).
+
 ## Бэкапы
 
 UI → **Backups → Create**, или `POST /api/backup/create`. Складывается zip в `~/Library/Application Support/Mozgoslav/backups/` (база + конфиг, без логов). Восстановить — распаковать в ту же папку.
