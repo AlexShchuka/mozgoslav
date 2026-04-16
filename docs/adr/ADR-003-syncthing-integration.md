@@ -166,21 +166,25 @@ Flow:
 
 1. **BDD**: `sync.feature` — полный набор сценариев: fresh install → QR → phone pairing → folder appears → file roundtrip → edit on both sides → conflict file generated → user resolves manually.
 
-2. **Backend — под-namespace Infrastructure/Syncthing/** (не новый проект в solution — избегаем разрастания):
+2. **Backend — под-namespace Infrastructure/Services/ + Api/Endpoints/** (не новый проект в solution — избегаем разрастания):
    - `ISyncthingClient` в `Mozgoslav.Application.Interfaces/`.
    - `SyncthingHttpClient` (typed HttpClient через `IHttpClientFactory`) в `Mozgoslav.Infrastructure.Services/`.
-   - `SyncthingLifecycleService` (`IHostedService`) — запуск/остановка child process. Реиспользует паттерн **существующего** `QueueBackgroundService`.
+   - `SyncthingLifecycleService` (`IHostedService`) — запуск/остановка child process. Реиспользует паттерн **существующего** `QueueBackgroundService` (`backend/src/Mozgoslav.Api/BackgroundServices/`).
    - `SyncthingConfigService` — генерация начального config.xml.
-   - `SyncthingFolderInitializer` (extend **существующего** `DatabaseInitializer`) — создаёт 3 папки + `.stignore` при первом запуске.
-   - `GET /api/sync/status` endpoint — для curl/дебага (реиспользует существующий endpoint-модуль паттерн).
+   - `SyncthingFolderInitializer` — создаёт 3 папки + `.stignore` при первом запуске. Extend'им **существующий** `DatabaseInitializer` (`backend/src/Mozgoslav.Infrastructure/Seed/DatabaseInitializer.cs`) или делаем отдельный `IHostedService` с зависимостью от него.
+   - Sync-секция в `AppSettingsDto` (`backend/src/Mozgoslav.Application/Interfaces/AppSettingsDto.cs` уже расширён Dictation-агентом — добавляем свои поля там же) + парсеры в `EfAppSettings` (`backend/src/Mozgoslav.Infrastructure/Services/EfAppSettings.cs` — паттерн расширения keys, как Dictation сделал с 12 своими полями).
+   - `SyncEndpoints.cs` в `backend/src/Mozgoslav.Api/Endpoints/` с `GET /api/sync/status`, `GET /api/sync/pairing-qr`, `POST /api/sync/accept-device`. Pattern — как существующие `DictationEndpoints.cs`.
 
-3. **Electron main** — модуль `src/syncthing/`:
-   - `spawnSyncthing()` — child_process.spawn с управлением PID. Graceful shutdown через REST `/rest/system/shutdown`.
+3. **Electron main** — модуль `frontend/electron/syncthing/` (feature-folder, как `frontend/electron/dictation/` который уже создан):
+   - `SpawnSyncthing.ts` — child_process.spawn с управлением PID. Graceful shutdown через REST `/rest/system/shutdown`.
+   - `TrayIntegration.ts` — добавляет пункт `Show pairing QR…` в **существующий `TrayManager`** из `frontend/electron/dictation/TrayManager.ts`. НЕ создавать новый Tray.
    - Прокидывает stdout/stderr в существующий Serilog log через backend API.
 
 4. **Frontend** — минимум:
-   - Tray-пункт `Show pairing QR…` открывает модальное окно (реиспользуем существующий modal-компонент).
+   - Новая feature `frontend/src/features/SyncPairing/` (SyncPairingModal.tsx + .style.ts + index.ts, как стандартный feature-паттерн проекта).
+   - Реиспользуем **существующий** `frontend/src/components/Modal/Modal.tsx`.
    - `qrcode` npm dependency.
+   - Локализация через `frontend/src/locales/ru.json` + `en.json` (как Dictation делал).
    - **НЕ добавляем:** Settings → Sync секцию, paired devices list, conflict-view (отдельный ADR).
 
 5. **Build** (electron-builder):
