@@ -2,7 +2,7 @@ using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Domain.Entities;
 
-public class Recording
+public sealed class Recording
 {
     public Guid Id { get; init; } = Guid.NewGuid();
     public string FileName { get; init; } = string.Empty;

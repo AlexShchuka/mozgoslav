@@ -2,7 +2,7 @@ using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Domain.Entities;
 
-public class Profile
+public sealed class Profile
 {
     public Guid Id { get; init; } = Guid.NewGuid();
     public string Name { get; set; } = string.Empty;

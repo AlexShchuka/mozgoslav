@@ -5,7 +5,7 @@ using Mozgoslav.Infrastructure.Services;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public class EfAppSettingsTests
+public sealed class EfAppSettingsTests
 {
     [TestMethod]
     public async Task LoadAsync_EmptyDatabase_ReturnsDefaults()

@@ -7,7 +7,7 @@ using Mozgoslav.Domain.ValueObjects;
 namespace Mozgoslav.Tests.Application;
 
 [TestClass]
-public class MarkdownGeneratorTests
+public sealed class MarkdownGeneratorTests
 {
     [TestMethod]
     public void Generate_IncludesFrontmatterAndSummary()

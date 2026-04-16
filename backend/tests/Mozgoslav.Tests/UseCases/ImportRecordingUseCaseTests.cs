@@ -8,7 +8,7 @@ using NSubstitute;
 namespace Mozgoslav.Tests.UseCases;
 
 [TestClass]
-public class ImportRecordingUseCaseTests
+public sealed class ImportRecordingUseCaseTests
 {
     [TestMethod]
     public async Task ExecuteAsync_MissingFile_ThrowsFileNotFoundException()

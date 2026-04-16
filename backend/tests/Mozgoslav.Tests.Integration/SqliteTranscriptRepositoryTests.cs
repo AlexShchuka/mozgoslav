@@ -6,7 +6,7 @@ using Mozgoslav.Infrastructure.Repositories;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public class EfTranscriptRepositoryTests
+public sealed class EfTranscriptRepositoryTests
 {
     [TestMethod]
     public async Task AddAsync_SerializesSegmentsAsJson()

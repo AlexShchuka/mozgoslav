@@ -7,7 +7,7 @@ using Mozgoslav.Infrastructure.Seed;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public class EfProfileRepositoryTests
+public sealed class EfProfileRepositoryTests
 {
     [TestMethod]
     public async Task AddAsync_ThenGetById_RoundTripsPreservingTags()

@@ -9,7 +9,7 @@ using NSubstitute;
 namespace Mozgoslav.Tests.Application;
 
 [TestClass]
-public class ReprocessUseCaseTests
+public sealed class ReprocessUseCaseTests
 {
     [TestMethod]
     public async Task ExecuteAsync_MissingRecording_Throws()

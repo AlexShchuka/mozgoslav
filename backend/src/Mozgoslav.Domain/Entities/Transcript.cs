@@ -2,7 +2,7 @@ using Mozgoslav.Domain.ValueObjects;
 
 namespace Mozgoslav.Domain.Entities;
 
-public class Transcript
+public sealed class Transcript
 {
     public Guid Id { get; init; } = Guid.NewGuid();
     public Guid RecordingId { get; init; }

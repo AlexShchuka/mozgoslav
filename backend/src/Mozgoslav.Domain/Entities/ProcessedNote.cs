@@ -3,7 +3,7 @@ using Mozgoslav.Domain.ValueObjects;
 
 namespace Mozgoslav.Domain.Entities;
 
-public class ProcessedNote
+public sealed class ProcessedNote
 {
     public Guid Id { get; init; } = Guid.NewGuid();
     public Guid TranscriptId { get; init; }

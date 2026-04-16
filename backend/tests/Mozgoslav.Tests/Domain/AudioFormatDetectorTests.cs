@@ -5,7 +5,7 @@ using Mozgoslav.Domain.Services;
 namespace Mozgoslav.Tests.Domain;
 
 [TestClass]
-public class AudioFormatDetectorTests
+public sealed class AudioFormatDetectorTests
 {
     [TestMethod]
     [DataRow(".mp3", AudioFormat.Mp3)]

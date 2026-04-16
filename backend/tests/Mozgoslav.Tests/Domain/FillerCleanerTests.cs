@@ -5,7 +5,7 @@ using Mozgoslav.Domain.Services;
 namespace Mozgoslav.Tests.Domain;
 
 [TestClass]
-public class FillerCleanerTests
+public sealed class FillerCleanerTests
 {
     [TestMethod]
     public void Clean_NoneLevel_ReturnsOriginalText()

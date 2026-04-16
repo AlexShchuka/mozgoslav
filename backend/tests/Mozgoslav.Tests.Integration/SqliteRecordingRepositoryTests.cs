@@ -6,7 +6,7 @@ using Mozgoslav.Infrastructure.Repositories;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public class EfRecordingRepositoryTests
+public sealed class EfRecordingRepositoryTests
 {
     [TestMethod]
     public async Task AddAsync_ThenGetById_ReturnsPersistedRecording()

@@ -11,7 +11,7 @@ using NSubstitute;
 namespace Mozgoslav.Tests.Application;
 
 [TestClass]
-public class ProcessQueueWorkerTests
+public sealed class ProcessQueueWorkerTests
 {
     [TestMethod]
     public async Task ProcessNextAsync_EmptyQueue_ReturnsFalse()

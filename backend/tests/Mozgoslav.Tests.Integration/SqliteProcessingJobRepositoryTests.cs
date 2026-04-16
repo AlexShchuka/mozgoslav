@@ -6,7 +6,7 @@ using Mozgoslav.Infrastructure.Repositories;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public class EfProcessingJobRepositoryTests
+public sealed class EfProcessingJobRepositoryTests
 {
     [TestMethod]
     public async Task EnqueueAsync_ThenDequeueNext_ReturnsQueuedJob()

@@ -2,7 +2,7 @@ using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Domain.Entities;
 
-public class ProcessingJob
+public sealed class ProcessingJob
 {
     public Guid Id { get; init; } = Guid.NewGuid();
     public Guid RecordingId { get; init; }

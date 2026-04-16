@@ -4,7 +4,7 @@ using Mozgoslav.Infrastructure.Seed;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public class BuiltInProfilesTests
+public sealed class BuiltInProfilesTests
 {
     [TestMethod]
     public void All_ContainsThreeProfiles()

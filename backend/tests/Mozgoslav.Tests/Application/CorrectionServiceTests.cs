@@ -6,7 +6,7 @@ using Mozgoslav.Domain.Enums;
 namespace Mozgoslav.Tests.Application;
 
 [TestClass]
-public class CorrectionServiceTests
+public sealed class CorrectionServiceTests
 {
     private readonly CorrectionService _service = new();
 

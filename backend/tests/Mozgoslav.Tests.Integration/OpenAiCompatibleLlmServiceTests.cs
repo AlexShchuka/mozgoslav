@@ -18,7 +18,7 @@ namespace Mozgoslav.Tests.Integration;
 /// graceful degradation on server errors.
 /// </summary>
 [TestClass]
-public class OpenAiCompatibleLlmServiceTests
+public sealed class OpenAiCompatibleLlmServiceTests
 {
     private WireMockServer _server = null!;
     private IAppSettings _settings = null!;

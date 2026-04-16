@@ -1,16 +1,5 @@
 namespace Mozgoslav.Api.Models;
 
-public sealed record CatalogEntry(
-    string Id,
-    string Name,
-    string Description,
-    string Url,
-    int SizeMb,
-    ModelKind Kind,
-    bool IsDefault);
-
-public enum ModelKind { Stt, Vad, Llm }
-
 /// <summary>
 /// Publicly-hosted models Mozgoslav can download. URLs point to HuggingFace so
 /// downloads are verifiable against the original publishers. Default pick is the

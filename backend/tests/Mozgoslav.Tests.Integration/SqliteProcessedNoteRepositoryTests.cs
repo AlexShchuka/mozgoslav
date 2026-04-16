@@ -7,7 +7,7 @@ using Mozgoslav.Infrastructure.Repositories;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public class EfProcessedNoteRepositoryTests
+public sealed class EfProcessedNoteRepositoryTests
 {
     [TestMethod]
     public async Task AddAsync_RoundTripsAllStructuredFields()

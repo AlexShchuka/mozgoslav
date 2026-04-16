@@ -13,7 +13,7 @@ namespace Mozgoslav.Tests.Integration;
 /// Core Sqlite + built-in profile seeding) against a temp SQLite file.
 /// </summary>
 [TestClass]
-public class ApiEndpointsTests
+public sealed class ApiEndpointsTests
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 

@@ -5,7 +5,7 @@ using Mozgoslav.Domain.Services;
 namespace Mozgoslav.Tests.Domain;
 
 [TestClass]
-public class HashCalculatorTests
+public sealed class HashCalculatorTests
 {
     [TestMethod]
     public async Task Sha256Async_SameContent_ProducesSameHash()
