@@ -8,11 +8,13 @@ pre-commit:
       stage_fixed: true
     eslint:
       glob: "frontend/**/*.{ts,tsx,js,jsx}"
-      run: cd frontend && npx eslint --fix {staged_files}
+      root: frontend
+      run: npx eslint --fix {staged_files}
       stage_fixed: true
     prettier:
       glob: "frontend/**/*.{ts,tsx,css,md,json}"
-      run: cd frontend && npx prettier --write {staged_files}
+      root: frontend
+      run: npx prettier --write {staged_files}
       stage_fixed: true
     ruff:
       glob: "python-sidecar/**/*.py"

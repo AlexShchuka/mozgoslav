@@ -170,7 +170,23 @@
     "step2": { "title": "Models", "hint": "Grab Whisper + VAD — one time, ~1.5 GB." },
     "step3": { "title": "Obsidian", "hint": "Pick your vault; we'll prepare folders." },
     "step4": { "title": "LLM", "hint": "Local LM Studio or Ollama endpoint." },
-    "step5": { "title": "Ready", "hint": "All set. Import your first conversation." },
+    "step5": {
+      "title": "Microphone access",
+      "hint": "Mozgoslav needs the microphone to transcribe when you press mouse button 5. macOS shows the prompt on first use; you can enable it proactively here."
+    },
+    "step6": {
+      "title": "Accessibility",
+      "hint": "Inserting text into the focused app (VSCode, Slack, Mail) requires Accessibility. Open Settings → Privacy & Security → Accessibility and add Mozgoslav."
+    },
+    "step7": {
+      "title": "Input Monitoring",
+      "hint": "Watching mouse button 5 globally needs Input Monitoring. Open Settings → Privacy & Security → Input Monitoring and add Mozgoslav."
+    },
+    "step8": {
+      "title": "Ready",
+      "hint": "All set. Import your first conversation or dictate with mouse button 5."
+    },
+    "openSystemPreferences": "Open System Preferences",
     "skip": "Skip"
   },
   "hotkeys": {
@@ -197,5 +213,16 @@
   "batch": {
     "hintLabel": "Context for LLM (one sentence)",
     "hintPlaceholder": "e.g. Q2 planning call, Ivan and Olga"
+  },
+  "dictation": {
+    "overlay": {
+      "idle": "Dictation",
+      "recording": "Listening",
+      "processing": "Processing",
+      "injecting": "Injecting",
+      "error": "Error",
+      "listening": "go ahead, I'm listening…",
+      "finalizing": "wrapping up…"
+    }
   }
 }

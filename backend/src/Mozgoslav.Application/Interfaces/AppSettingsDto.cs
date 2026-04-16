@@ -16,7 +16,19 @@ public sealed record AppSettingsDto(
     string VadModelPath,
     string Language,
     string ThemeMode,
-    int WhisperThreads)
+    int WhisperThreads,
+    bool DictationEnabled,
+    string DictationHotkeyType,
+    int DictationMouseButton,
+    string DictationKeyboardHotkey,
+    string DictationLanguage,
+    string DictationWhisperModelId,
+    int DictationCaptureSampleRate,
+    bool DictationLlmPolish,
+    string DictationInjectMode,
+    bool DictationOverlayEnabled,
+    string DictationOverlayPosition,
+    bool DictationSoundFeedback)
 {
     public static AppSettingsDto Defaults { get; } = new(
         VaultPath: string.Empty,
@@ -29,5 +41,17 @@ public sealed record AppSettingsDto(
         VadModelPath: string.Empty,
         Language: "ru",
         ThemeMode: "system",
-        WhisperThreads: 0);
+        WhisperThreads: 0,
+        DictationEnabled: true,
+        DictationHotkeyType: "mouse",
+        DictationMouseButton: 5,
+        DictationKeyboardHotkey: "Right-Option",
+        DictationLanguage: "ru",
+        DictationWhisperModelId: "whisper-large-v3-russian-antony66",
+        DictationCaptureSampleRate: 48000,
+        DictationLlmPolish: false,
+        DictationInjectMode: "auto",
+        DictationOverlayEnabled: true,
+        DictationOverlayPosition: "cursor",
+        DictationSoundFeedback: true);
 }

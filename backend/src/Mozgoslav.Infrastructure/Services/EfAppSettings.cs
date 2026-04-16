@@ -36,6 +36,18 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     public string Language => Snapshot.Language;
     public string ThemeMode => Snapshot.ThemeMode;
     public int WhisperThreads => Snapshot.WhisperThreads;
+    public bool DictationEnabled => Snapshot.DictationEnabled;
+    public string DictationHotkeyType => Snapshot.DictationHotkeyType;
+    public int DictationMouseButton => Snapshot.DictationMouseButton;
+    public string DictationKeyboardHotkey => Snapshot.DictationKeyboardHotkey;
+    public string DictationLanguage => Snapshot.DictationLanguage;
+    public string DictationWhisperModelId => Snapshot.DictationWhisperModelId;
+    public int DictationCaptureSampleRate => Snapshot.DictationCaptureSampleRate;
+    public bool DictationLlmPolish => Snapshot.DictationLlmPolish;
+    public string DictationInjectMode => Snapshot.DictationInjectMode;
+    public bool DictationOverlayEnabled => Snapshot.DictationOverlayEnabled;
+    public string DictationOverlayPosition => Snapshot.DictationOverlayPosition;
+    public bool DictationSoundFeedback => Snapshot.DictationSoundFeedback;
     public AppSettingsDto Snapshot { get; private set; } = AppSettingsDto.Defaults;
 
     public async Task<AppSettingsDto> LoadAsync(CancellationToken ct)
@@ -55,7 +67,19 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             VadModelPath: map.GetValueOrDefault(Keys.VadModelPath, defaults.VadModelPath),
             Language: map.GetValueOrDefault(Keys.Language, defaults.Language),
             ThemeMode: map.GetValueOrDefault(Keys.ThemeMode, defaults.ThemeMode),
-            WhisperThreads: int.TryParse(map.GetValueOrDefault(Keys.WhisperThreads, "0"), out var t) ? t : 0);
+            WhisperThreads: int.TryParse(map.GetValueOrDefault(Keys.WhisperThreads, "0"), out var t) ? t : 0,
+            DictationEnabled: ParseBool(map, Keys.DictationEnabled, defaults.DictationEnabled),
+            DictationHotkeyType: map.GetValueOrDefault(Keys.DictationHotkeyType, defaults.DictationHotkeyType),
+            DictationMouseButton: ParseInt(map, Keys.DictationMouseButton, defaults.DictationMouseButton),
+            DictationKeyboardHotkey: map.GetValueOrDefault(Keys.DictationKeyboardHotkey, defaults.DictationKeyboardHotkey),
+            DictationLanguage: map.GetValueOrDefault(Keys.DictationLanguage, defaults.DictationLanguage),
+            DictationWhisperModelId: map.GetValueOrDefault(Keys.DictationWhisperModelId, defaults.DictationWhisperModelId),
+            DictationCaptureSampleRate: ParseInt(map, Keys.DictationCaptureSampleRate, defaults.DictationCaptureSampleRate),
+            DictationLlmPolish: ParseBool(map, Keys.DictationLlmPolish, defaults.DictationLlmPolish),
+            DictationInjectMode: map.GetValueOrDefault(Keys.DictationInjectMode, defaults.DictationInjectMode),
+            DictationOverlayEnabled: ParseBool(map, Keys.DictationOverlayEnabled, defaults.DictationOverlayEnabled),
+            DictationOverlayPosition: map.GetValueOrDefault(Keys.DictationOverlayPosition, defaults.DictationOverlayPosition),
+            DictationSoundFeedback: ParseBool(map, Keys.DictationSoundFeedback, defaults.DictationSoundFeedback));
 
         await _lock.WaitAsync(ct);
         try { Snapshot = dto; }
@@ -81,6 +105,18 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             (Keys.Language, dto.Language),
             (Keys.ThemeMode, dto.ThemeMode),
             (Keys.WhisperThreads, dto.WhisperThreads.ToString(CultureInfo.InvariantCulture)),
+            (Keys.DictationEnabled, BoolToString(dto.DictationEnabled)),
+            (Keys.DictationHotkeyType, dto.DictationHotkeyType),
+            (Keys.DictationMouseButton, dto.DictationMouseButton.ToString(CultureInfo.InvariantCulture)),
+            (Keys.DictationKeyboardHotkey, dto.DictationKeyboardHotkey),
+            (Keys.DictationLanguage, dto.DictationLanguage),
+            (Keys.DictationWhisperModelId, dto.DictationWhisperModelId),
+            (Keys.DictationCaptureSampleRate, dto.DictationCaptureSampleRate.ToString(CultureInfo.InvariantCulture)),
+            (Keys.DictationLlmPolish, BoolToString(dto.DictationLlmPolish)),
+            (Keys.DictationInjectMode, dto.DictationInjectMode),
+            (Keys.DictationOverlayEnabled, BoolToString(dto.DictationOverlayEnabled)),
+            (Keys.DictationOverlayPosition, dto.DictationOverlayPosition),
+            (Keys.DictationSoundFeedback, BoolToString(dto.DictationSoundFeedback)),
         };
 
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
@@ -112,6 +148,17 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         await LoadAsync(ct);
     }
 
+    private static int ParseInt(IReadOnlyDictionary<string, string> map, string key, int fallback) =>
+        map.TryGetValue(key, out var raw) && int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
+            ? value
+            : fallback;
+
+    private static bool ParseBool(IReadOnlyDictionary<string, string> map, string key, bool fallback) =>
+        map.TryGetValue(key, out var raw) && bool.TryParse(raw, out var value) ? value : fallback;
+
+    private static string BoolToString(bool value) =>
+        value ? "true" : "false";
+
     private static class Keys
     {
         public const string VaultPath = "vault_path";
@@ -125,5 +172,17 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         public const string Language = "language";
         public const string ThemeMode = "theme_mode";
         public const string WhisperThreads = "whisper_threads";
+        public const string DictationEnabled = "dictation_enabled";
+        public const string DictationHotkeyType = "dictation_hotkey_type";
+        public const string DictationMouseButton = "dictation_mouse_button";
+        public const string DictationKeyboardHotkey = "dictation_keyboard_hotkey";
+        public const string DictationLanguage = "dictation_language";
+        public const string DictationWhisperModelId = "dictation_whisper_model_id";
+        public const string DictationCaptureSampleRate = "dictation_capture_sample_rate";
+        public const string DictationLlmPolish = "dictation_llm_polish";
+        public const string DictationInjectMode = "dictation_inject_mode";
+        public const string DictationOverlayEnabled = "dictation_overlay_enabled";
+        public const string DictationOverlayPosition = "dictation_overlay_position";
+        public const string DictationSoundFeedback = "dictation_sound_feedback";
     }
 }

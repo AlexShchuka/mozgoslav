@@ -78,3 +78,16 @@ jobs:
         run: cd python-sidecar && source .venv/bin/activate && ruff check .
       - name: Pytest
         run: cd python-sidecar && source .venv/bin/activate && pytest
+
+  dictation-helper:
+    name: Dictation helper (macOS Swift)
+    # The helper links AppKit / AVFoundation / ApplicationServices (macOS-only),
+    # so we only build and test it on a macOS runner. Core JSON-RPC / strategy
+    # logic still has unit coverage on the same runner.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: cd helpers/MozgoslavDictationHelper && swift build -c release
+      - name: Test
+        run: cd helpers/MozgoslavDictationHelper && swift test

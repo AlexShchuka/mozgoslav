@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import { Layout } from "./components/Layout";
 import Dashboard from "./features/Dashboard";
@@ -13,12 +13,27 @@ import Logs from "./features/Logs";
 import Backups from "./features/Backups";
 import Obsidian from "./features/Obsidian";
 import Onboarding from "./features/Onboarding";
+import DictationOverlay from "./features/DictationOverlay";
 import CommandPalette from "./features/CommandPalette";
 import { useGlobalHotkeys } from "./hooks/useGlobalHotkeys";
 import { ROUTES } from "./constants/routes";
 
+const OVERLAY_ROUTE = "/dictation-overlay";
+
 const App: FC = () => {
   useGlobalHotkeys();
+  const location = useLocation();
+  const isOverlay = location.pathname === OVERLAY_ROUTE;
+
+  if (isOverlay) {
+    // The overlay window runs in its own BrowserWindow; it should NOT inherit
+    // the main-app Layout (sidebar, header) or the command palette.
+    return (
+      <Routes>
+        <Route path={OVERLAY_ROUTE} element={<DictationOverlay />} />
+      </Routes>
+    );
+  }
 
   return (
     <>
