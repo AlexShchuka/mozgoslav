@@ -31,7 +31,7 @@ public sealed class DictationSessionManagerTests
         fixture.ArrangeEmptyStream();
         fixture.Manager.Start();
 
-        var act = () => fixture.Manager.Start();
+        var act = fixture.Manager.Start;
 
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*already active*");
@@ -236,9 +236,7 @@ public sealed class DictationSessionManagerTests
         public FakeStreamingService Streaming { get; } = new();
         public bool LlmPolish { get; init; }
 
-        private DictationSessionManager? _manager;
-
-        public DictationSessionManager Manager => _manager ??= new DictationSessionManager(
+        public DictationSessionManager Manager => field ??= new DictationSessionManager(
             Streaming,
             Llm,
             Settings,

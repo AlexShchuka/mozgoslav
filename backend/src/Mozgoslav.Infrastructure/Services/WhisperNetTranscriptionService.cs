@@ -54,7 +54,7 @@ public sealed class WhisperNetTranscriptionService : ITranscriptionService, IStr
         _logger.LogInformation("Transcribing {AudioPath} with model {Model}", audioPath, Path.GetFileName(modelPath));
 
         using var whisperFactory = WhisperFactory.FromPath(modelPath);
-        using var processor = BuildProcessor(whisperFactory, language, initialPrompt);
+        await using var processor = BuildProcessor(whisperFactory, language, initialPrompt);
 
         var segments = new List<TranscriptSegment>();
         await using var audioStream = File.OpenRead(audioPath);
@@ -145,7 +145,7 @@ public sealed class WhisperNetTranscriptionService : ITranscriptionService, IStr
         string? initialPrompt,
         CancellationToken ct)
     {
-        using var processor = BuildProcessor(whisperFactory, language, initialPrompt);
+        await using var processor = BuildProcessor(whisperFactory, language, initialPrompt);
 
         var parts = new List<string>();
         await foreach (var segment in processor.ProcessAsync(samples, ct).WithCancellation(ct))

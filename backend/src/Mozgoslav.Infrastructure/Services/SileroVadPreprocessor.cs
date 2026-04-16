@@ -57,9 +57,9 @@ public sealed class SileroVadPreprocessor : IVadPreprocessor
     private static float ComputeRms(ReadOnlySpan<float> samples)
     {
         double sum = 0;
-        for (int i = 0; i < samples.Length; i++)
+        foreach (var t in samples)
         {
-            sum += samples[i] * samples[i];
+            sum += t * t;
         }
         return (float)Math.Sqrt(sum / samples.Length);
     }

@@ -20,7 +20,7 @@ public sealed class DictationEndpointsTests
     [TestMethod]
     public async Task Start_ReturnsSessionId()
     {
-        using var factory = new ApiFactory();
+        await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
         using var response = await client.PostAsync("/api/dictation/start", content: null);
@@ -37,7 +37,7 @@ public sealed class DictationEndpointsTests
     [TestMethod]
     public async Task Start_WhenSessionAlreadyActive_ReturnsConflict()
     {
-        using var factory = new ApiFactory();
+        await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
         using var first = await client.PostAsync("/api/dictation/start", content: null);
@@ -53,7 +53,7 @@ public sealed class DictationEndpointsTests
     [TestMethod]
     public async Task Push_UnknownSession_Returns404()
     {
-        using var factory = new ApiFactory();
+        await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
         var payload = new
@@ -71,7 +71,7 @@ public sealed class DictationEndpointsTests
     [TestMethod]
     public async Task Push_EmptySamples_Returns400()
     {
-        using var factory = new ApiFactory();
+        await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
         using var start = await client.PostAsync("/api/dictation/start", content: null);
@@ -94,7 +94,7 @@ public sealed class DictationEndpointsTests
     [TestMethod]
     public async Task Cancel_ClearsActiveSessionAndAllowsNewStart()
     {
-        using var factory = new ApiFactory();
+        await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
         using var start1 = await client.PostAsync("/api/dictation/start", content: null);
@@ -115,7 +115,7 @@ public sealed class DictationEndpointsTests
     [TestMethod]
     public async Task Cancel_UnknownSession_ReturnsOk()
     {
-        using var factory = new ApiFactory();
+        await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
         using var response = await client.PostAsync(
@@ -127,7 +127,7 @@ public sealed class DictationEndpointsTests
     [TestMethod]
     public async Task Stream_UnknownSession_Returns404()
     {
-        using var factory = new ApiFactory();
+        await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
         using var response = await client.GetAsync($"/api/dictation/stream/{Guid.NewGuid()}");
@@ -138,7 +138,7 @@ public sealed class DictationEndpointsTests
     [TestMethod]
     public async Task Stop_UnknownSession_Returns404()
     {
-        using var factory = new ApiFactory();
+        await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
         using var response = await client.PostAsync(
