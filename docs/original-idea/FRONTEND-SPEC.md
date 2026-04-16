@@ -4,27 +4,27 @@
 
 ---
 
-## 1. Tech Stack (по reference React+Redux+Saga project)
+## 1. Tech Stack (по типичный feature-based React + Redux-Saga проект)
 
-| Что | Технология | Как в reference frontend project |
+| Что | Технология | Как в feature-based референс |
 |---|---|---|
-| Desktop shell | **Electron** | Новое (reference frontend project — SPA в браузере) |
-| Bundler | **Vite** | reference frontend project: webpack через shared-configs |
-| UI framework | **React 18+** | ✅ как в reference frontend project |
+| Desktop shell | **Electron** | Новое (feature-based референс — SPA в браузере) |
+| Bundler | **Vite** | feature-based референс: webpack через shared-configs |
+| UI framework | **React 18+** | ✅ как в feature-based референс |
 | Language | **TypeScript strict** | ✅ |
-| State | **Redux + Redux-Saga** | ✅ как в reference frontend project (actionCreator → reducer → saga → selectors) |
-| Styling | **styled-components** | ✅ как в reference frontend project |
-| HTTP client | **Axios** | ✅ как в reference frontend project (BaseApi + ApiFactory) |
+| State | **Redux + Redux-Saga** | ✅ как в feature-based референс (actionCreator → reducer → saga → selectors) |
+| Styling | **styled-components** | ✅ как в feature-based референс |
+| HTTP client | **Axios** | ✅ как в feature-based референс (BaseApi + ApiFactory) |
 | UI components | **корпоративный ui-kit** или свои | В pet-project: свои styled-components |
-| Routing | **@reach/router** или React Router | reference frontend project: @reach/router |
-| Forms | По месту (controlled inputs) | Как в reference frontend project |
-| Tests | **Jest + React Testing Library** | ✅ как в reference frontend project |
+| Routing | **@reach/router** или React Router | feature-based референс: @reach/router |
+| Forms | По месту (controlled inputs) | Как в feature-based референс |
+| Tests | **Jest + React Testing Library** | ✅ как в feature-based референс |
 | Code generation | **Plop** | ✅ generators для features/states |
 | Lint | **ESLint** (shared-configs) | ✅ |
 
 ---
 
-## 2. Project Structure (по паттерну reference React+Redux+Saga project)
+## 2. Project Structure (по паттерну типичный feature-based React + Redux-Saga проект)
 
 ```
 frontend/
@@ -38,7 +38,7 @@ frontend/
 ├── src/
 │   ├── index.tsx                      ← entry point
 │   │
-│   ├── api/                           ← HTTP layer (как в reference frontend project)
+│   ├── api/                           ← HTTP layer (как в feature-based референс)
 │   │   ├── BaseApi.ts                 ← Axios wrapper: get/post/put/delete
 │   │   ├── apiFactory.ts             ← создание всех API классов
 │   │   ├── service.ts                ← base URL resolution
@@ -68,7 +68,7 @@ frontend/
 │   │   └── utils/
 │   │       └── cache.ts
 │   │
-│   ├── models/                        ← доменные типы (как в reference frontend project)
+│   ├── models/                        ← доменные типы (как в feature-based референс)
 │   │   ├── recording.ts              ← Recording, AudioFormat, SourceType, RecordingStatus
 │   │   ├── transcript.ts             ← Transcript, TranscriptSegment
 │   │   ├── processedNote.ts          ← ProcessedNote, ActionItem, ConversationType
@@ -76,7 +76,7 @@ frontend/
 │   │   ├── job.ts                    ← ProcessingJob, JobStatus
 │   │   └── settings.ts              ← AppSettings
 │   │
-│   ├── core/                          ← бизнес-логика без UI (как в reference frontend project)
+│   ├── core/                          ← бизнес-логика без UI (как в feature-based референс)
 │   │   ├── index.ts
 │   │   ├── recording/
 │   │   │   ├── audioFormatUtils.ts   ← поддерживаемые форматы, валидация
@@ -95,7 +95,7 @@ frontend/
 │   │       ├── time.ts              ← formatDuration, formatDate
 │   │       └── index.ts
 │   │
-│   ├── store/                         ← Redux store (как в reference frontend project)
+│   ├── store/                         ← Redux store (как в feature-based референс)
 │   │   ├── index.ts                  ← createStore, rootReducer, rootSaga
 │   │   ├── context.ts               ← React context для store
 │   │   ├── sagas.ts                  ← rootSaga (fork all)
@@ -175,7 +175,7 @@ frontend/
 │   │       ├── mutations.ts
 │   │       └── index.ts
 │   │
-│   ├── features/                      ← feature-based UI (как в reference frontend project)
+│   ├── features/                      ← feature-based UI (как в feature-based референс)
 │   │   ├── Dashboard/
 │   │   │   ├── Dashboard.tsx         ← presentational component
 │   │   │   ├── Dashboard.style.ts    ← styled-components
@@ -252,7 +252,7 @@ frontend/
 │   │       │   └── Sidebar.style.ts
 │   │       └── index.ts
 │   │
-│   ├── components/                    ← shared UI components (как в reference frontend project)
+│   ├── components/                    ← shared UI components (как в feature-based референс)
 │   │   ├── Modal/
 │   │   │   ├── Modal.tsx
 │   │   │   └── Modal.style.ts
@@ -276,7 +276,7 @@ frontend/
 │   │       ├── AudioPlayer.tsx
 │   │       └── AudioPlayer.style.ts
 │   │
-│   ├── hooks/                         ← global hooks (как в reference frontend project)
+│   ├── hooks/                         ← global hooks (как в feature-based референс)
 │   │   ├── useAnimation.ts
 │   │   ├── useHover.ts
 │   │   ├── useIsMountedRef.ts
@@ -285,7 +285,7 @@ frontend/
 │   │   └── permissions/
 │   │       └── usePermissions.ts
 │   │
-│   ├── constants/                     ← (как в reference frontend project)
+│   ├── constants/                     ← (как в feature-based референс)
 │   │   ├── routes.ts
 │   │   ├── audioFormats.ts
 │   │   └── jobStatuses.ts
@@ -297,14 +297,14 @@ frontend/
 │   ├── types/                         ← global utility types
 │   │   └── utilityTypes.ts
 │   │
-│   ├── testUtils/                     ← test helpers (как в reference frontend project)
+│   ├── testUtils/                     ← test helpers (как в feature-based референс)
 │   │   ├── renderWithStore.tsx
 │   │   └── mockApi.ts
 │   │
 │   └── styles/
 │       └── theme.ts                  ← styled-components ThemeProvider
 │
-├── plop-templates/                    ← Plop generators (как в reference frontend project)
+├── plop-templates/                    ← Plop generators (как в feature-based референс)
 │   ├── feature/
 │   │   ├── Component.tsx.hbs
 │   │   ├── Component.style.ts.hbs
@@ -337,7 +337,7 @@ frontend/
 
 ---
 
-## 3. Паттерны (из reference React+Redux+Saga project)
+## 3. Паттерны (из типичный feature-based React + Redux-Saga проект)
 
 ### 3.1 Component Pattern: Presentational + Container
 
@@ -758,10 +758,10 @@ export interface Profile {
 
 ---
 
-## 5. Testing (по reference frontend project)
+## 5. Testing (по feature-based референс)
 
 ### Подход
-- **Jest** (не Vitest) — как в reference frontend project
+- **Jest** (не Vitest) — как в feature-based референс
 - **React Testing Library** для компонентов
 - **redux-saga-test-plan** для saga тестов
 - Тесты рядом с кодом: `__tests__/` папки внутри features/store
@@ -810,10 +810,10 @@ describe("Dashboard", () => {
 
 ---
 
-## 6. Code Style (из reference React+Redux+Saga project)
+## 6. Code Style (из типичный feature-based React + Redux-Saga проект)
 
 - **FC** (FunctionComponent) для компонентов, не arrow function с explicit return type
-- **default export** для компонентов и containers (как в reference frontend project)
+- **default export** для компонентов и containers (как в feature-based референс)
 - **named export** для utilities, types, selectors
 - **Папка на компонент**: Component.tsx + Component.style.ts + Component.container.ts + types.ts + index.ts
 - **Hooks**: `use` prefix, отдельные файлы, `hooks/` папка
@@ -827,7 +827,7 @@ describe("Dashboard", () => {
 
 ---
 
-## 7. Electron Layer (НОВОЕ, не из reference frontend project)
+## 7. Electron Layer (НОВОЕ, не из feature-based референс)
 
 ```typescript
 // electron/main.ts
@@ -880,13 +880,13 @@ app.on("window-all-closed", () => app.quit());
 
 ## 8. Key Decisions (Frontend)
 
-1. **Redux + Saga, не Zustand** — как в reference frontend project, знакомо команде
-2. **styled-components, не Tailwind** — как в reference frontend project
-3. **Axios, не fetch** — BaseApi + ApiFactory как в reference frontend project
-4. **Container/Presentational** — connect() pattern как в reference frontend project
+1. **Redux + Saga, не Zustand** — как в feature-based референс, знакомо команде
+2. **styled-components, не Tailwind** — как в feature-based референс
+3. **Axios, не fetch** — BaseApi + ApiFactory как в feature-based референс
+4. **Container/Presentational** — connect() pattern как в feature-based референс
 5. **Feature-based structure** — features/Dashboard/, features/Queue/ и т.д.
 6. **Plop generators** — scaffolding новых features и store slices
-7. **Jest, не Vitest** — как в reference frontend project
+7. **Jest, не Vitest** — как в feature-based референс
 8. **SSE через redux-saga eventChannel** — real-time updates из backend
 9. **Electron** — desktop shell, startBackend() при запуске
 10. **Types in models/** — доменные типы отдельно от API DTOs

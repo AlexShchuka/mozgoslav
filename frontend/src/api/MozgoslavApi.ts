@@ -1,0 +1,109 @@
+import axios, { AxiosInstance } from "axios";
+
+import { API_ENDPOINTS, BACKEND_URL } from "../constants/api";
+import { AppSettings } from "../models/Settings";
+import { ModelEntry } from "../models/Model";
+import { ProcessedNote } from "../models/ProcessedNote";
+import { ProcessingJob } from "../models/ProcessingJob";
+import { Profile } from "../models/Profile";
+import { Recording } from "../models/Recording";
+
+/**
+ * Typed thin wrapper over the backend REST API. The frontend consumes this via
+ * sagas or directly from components. Single client instance keeps baseURL,
+ * timeout, and interceptors consistent.
+ */
+export class MozgoslavApi {
+  private readonly client: AxiosInstance;
+
+  constructor(baseURL: string = BACKEND_URL) {
+    this.client = axios.create({ baseURL, timeout: 30_000 });
+  }
+
+  // --- health ---
+  health = async (): Promise<{ status: string }> =>
+    (await this.client.get(API_ENDPOINTS.health)).data;
+
+  llmHealth = async (): Promise<boolean> =>
+    (await this.client.get<{ available: boolean }>(API_ENDPOINTS.llmHealth)).data.available;
+
+  // --- recordings ---
+  listRecordings = async (): Promise<Recording[]> =>
+    (await this.client.get<Recording[]>(API_ENDPOINTS.recordings)).data;
+
+  importByPaths = async (filePaths: string[], profileId?: string): Promise<Recording[]> =>
+    (await this.client.post<Recording[]>(API_ENDPOINTS.recordingsImport, { filePaths, profileId })).data;
+
+  uploadFiles = async (files: File[], profileId?: string): Promise<Recording[]> => {
+    const form = new FormData();
+    files.forEach((f) => form.append("files", f));
+    if (profileId) form.append("profileId", profileId);
+    const res = await this.client.post<Recording[]>(API_ENDPOINTS.recordingsUpload, form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  };
+
+  reprocess = async (recordingId: string, profileId: string): Promise<ProcessedNote> =>
+    (await this.client.post<ProcessedNote>(API_ENDPOINTS.reprocess(recordingId), { profileId })).data;
+
+  // --- jobs ---
+  listJobs = async (): Promise<ProcessingJob[]> =>
+    (await this.client.get<ProcessingJob[]>(API_ENDPOINTS.jobs)).data;
+
+  listActiveJobs = async (): Promise<ProcessingJob[]> =>
+    (await this.client.get<ProcessingJob[]>(API_ENDPOINTS.jobsActive)).data;
+
+  // --- notes ---
+  listNotes = async (): Promise<ProcessedNote[]> =>
+    (await this.client.get<ProcessedNote[]>(API_ENDPOINTS.notes)).data;
+
+  getNote = async (id: string): Promise<ProcessedNote> =>
+    (await this.client.get<ProcessedNote>(API_ENDPOINTS.note(id))).data;
+
+  exportNote = async (id: string): Promise<ProcessedNote> =>
+    (await this.client.post<ProcessedNote>(API_ENDPOINTS.noteExport(id))).data;
+
+  // --- profiles ---
+  listProfiles = async (): Promise<Profile[]> =>
+    (await this.client.get<Profile[]>(API_ENDPOINTS.profiles)).data;
+
+  createProfile = async (payload: Omit<Profile, "id" | "isBuiltIn">): Promise<Profile> =>
+    (await this.client.post<Profile>(API_ENDPOINTS.profiles, payload)).data;
+
+  updateProfile = async (id: string, payload: Omit<Profile, "id" | "isBuiltIn">): Promise<Profile> =>
+    (await this.client.put<Profile>(API_ENDPOINTS.profile(id), payload)).data;
+
+  // --- settings ---
+  getSettings = async (): Promise<AppSettings> =>
+    (await this.client.get<AppSettings>(API_ENDPOINTS.settings)).data;
+
+  saveSettings = async (settings: AppSettings): Promise<AppSettings> =>
+    (await this.client.put<AppSettings>(API_ENDPOINTS.settings, settings)).data;
+
+  // --- models ---
+  listModels = async (): Promise<ModelEntry[]> =>
+    (await this.client.get<ModelEntry[]>(API_ENDPOINTS.models)).data;
+
+  downloadModel = async (id: string): Promise<{ id: string; destinationPath: string }> =>
+    (await this.client.post(API_ENDPOINTS.modelDownload, { id })).data;
+
+  // --- meetily ---
+  importFromMeetily = async (meetilyDatabasePath: string) =>
+    (await this.client.post(API_ENDPOINTS.meetilyImport, { meetilyDatabasePath })).data;
+
+  // --- obsidian ---
+  setupObsidian = async (vaultPath?: string) =>
+    (await this.client.post(API_ENDPOINTS.obsidianSetup, { vaultPath })).data;
+
+  // --- backup ---
+  listBackups = async () => (await this.client.get(API_ENDPOINTS.backup)).data;
+  createBackup = async () => (await this.client.post(API_ENDPOINTS.backupCreate)).data;
+
+  // --- logs ---
+  listLogs = async () => (await this.client.get(API_ENDPOINTS.logs)).data;
+  tailLog = async (file?: string, lines = 200) =>
+    (await this.client.get(API_ENDPOINTS.logsTail, { params: { file, lines } })).data;
+}
+
+export const api = new MozgoslavApi();

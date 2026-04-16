@@ -1,0 +1,11 @@
+[project]
+name = "mozgoslav-python-sidecar"
+version = "0.1.0"
+description = "Python ML sidecar for Mozgoslav: diarization, gender, emotion, NER, filler cleanup."
+requires-python = ">=3.11"
+readme = "README.md"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+pythonpath = ["."]

@@ -1,0 +1,216 @@
+{
+  "app": {
+    "name": "Мозгослав",
+    "tagline": "Локальный второй мозг для разговоров"
+  },
+  "nav": {
+    "dashboard": "Дашборд",
+    "queue": "Очередь",
+    "notes": "Заметки",
+    "profiles": "Профили",
+    "models": "Модели",
+    "settings": "Настройки",
+    "logs": "Логи",
+    "backup": "Бэкапы"
+  },
+  "common": {
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "close": "Закрыть",
+    "back": "Назад",
+    "next": "Дальше",
+    "yes": "Да",
+    "no": "Нет",
+    "loading": "Загружаем…",
+    "empty": "Пока пусто",
+    "error": "Ошибка",
+    "copy": "Скопировать",
+    "copied": "Скопировано",
+    "reveal": "Показать",
+    "hide": "Скрыть",
+    "add": "Добавить",
+    "remove": "Убрать",
+    "download": "Скачать",
+    "retry": "Повторить",
+    "apply": "Применить",
+    "search": "Поиск…"
+  },
+  "backendHealth": {
+    "online": "Бэкенд на связи",
+    "offline": "Бэкенд не отвечает",
+    "hint": "Запусти backend: `dotnet run` в папке backend/"
+  },
+  "dashboard": {
+    "title": "Дашборд",
+    "importTitle": "Добавить запись",
+    "dropzonePrompt": "Перетащи аудио сюда или нажми, чтобы выбрать",
+    "dropzoneHint": "Поддерживается mp3 / m4a / wav / mp4 / ogg / flac",
+    "recordStart": "Записать",
+    "recordStop": "Остановить",
+    "recordUnsupported": "Запись доступна только на macOS",
+    "recentTitle": "Последние записи",
+    "empty": "Записей пока нет — импортируй или запиши первую."
+  },
+  "queue": {
+    "title": "Очередь обработки",
+    "empty": "Очередь пуста. Импортируй новую запись, чтобы запустить обработку.",
+    "status": {
+      "Queued": "В очереди",
+      "Transcribing": "Транскрибация",
+      "Correcting": "Коррекция",
+      "Summarizing": "LLM-суммаризация",
+      "Exporting": "Экспорт",
+      "Done": "Готово",
+      "Failed": "Ошибка"
+    }
+  },
+  "note": {
+    "title": "Заметка",
+    "actions": {
+      "reprocess": "Перепрогнать",
+      "export": "Экспорт в vault",
+      "copyMarkdown": "Скопировать markdown"
+    },
+    "sections": {
+      "summary": "Summary",
+      "keyPoints": "Ключевые тезисы",
+      "decisions": "Решения",
+      "actionItems": "Action Items",
+      "questions": "Вопросы без ответа",
+      "participants": "Участники",
+      "cleanTranscript": "Очищенный текст",
+      "fullTranscript": "Полный текст"
+    }
+  },
+  "profiles": {
+    "title": "Профили обработки",
+    "addNew": "Создать профиль",
+    "defaultBadge": "По умолчанию",
+    "builtInBadge": "Встроенный",
+    "fields": {
+      "name": "Название",
+      "systemPrompt": "System prompt для LLM",
+      "transcriptionPromptOverride": "Инициальный prompt для Whisper (опционально)",
+      "cleanupLevel": "Уровень очистки",
+      "exportFolder": "Папка экспорта",
+      "autoTags": "Авто-теги",
+      "makeDefault": "Сделать профилем по умолчанию"
+    },
+    "cleanup": {
+      "None": "Ничего не чистим",
+      "Light": "Лёгкая очистка",
+      "Aggressive": "Агрессивная"
+    }
+  },
+  "settings": {
+    "title": "Настройки",
+    "tabs": {
+      "general": "Общие",
+      "storage": "Хранилище",
+      "llm": "LLM",
+      "whisper": "Whisper",
+      "obsidian": "Obsidian",
+      "profiles": "Профили",
+      "advanced": "Продвинутые"
+    },
+    "fields": {
+      "language": "Язык интерфейса",
+      "theme": "Тема",
+      "vaultPath": "Путь к Obsidian vault",
+      "llmEndpoint": "LLM endpoint",
+      "llmModel": "LLM модель",
+      "llmApiKey": "LLM API key (если требуется)",
+      "whisperModelPath": "Путь к Whisper модели (.bin)",
+      "vadModelPath": "Путь к VAD модели",
+      "whisperThreads": "Whisper threads (0 = авто)",
+      "obsidianApiHost": "Obsidian Local REST API host",
+      "obsidianApiToken": "Obsidian Local REST API token"
+    },
+    "theme": {
+      "system": "Как в системе",
+      "light": "Светлая",
+      "dark": "Тёмная"
+    },
+    "testConnection": "Проверить соединение",
+    "tokenHint": "Хранится локально в SQLite. Никогда не отправляется никуда, кроме указанного endpoint.",
+    "savedToast": "Настройки сохранены"
+  },
+  "models": {
+    "title": "Модели",
+    "subtitle": "Скачай то, что нужно для работы — всё хранится локально.",
+    "installed": "Установлена",
+    "notInstalled": "Не скачана",
+    "download": "Скачать",
+    "sizeMb": "{{size}} МБ"
+  },
+  "obsidian": {
+    "title": "Obsidian vault",
+    "setupTitle": "Подготовить vault",
+    "setupHint": "Выбери, какие папки создать в твоём vault. Это просто структура — содержимое ты заполняешь сам.",
+    "folders": {
+      "_inbox": "_inbox — сюда падают новые заметки",
+      "People": "People — связки по людям",
+      "Projects": "Projects — по проектам",
+      "Topics": "Topics — по темам",
+      "Archive": "Archive — архив",
+      "Templates": "Templates — шаблоны Templater"
+    },
+    "templateHint": "Добавим шаблон Mozgoslav для Templater, если включить Templates.",
+    "applyButton": "Создать структуру",
+    "setupSuccess": "Готово — {{created}} новых папок",
+    "tagsTitle": "Авто-теги",
+    "tagsHint": "Теги, которые будут добавляться во frontmatter новых заметок."
+  },
+  "onboarding": {
+    "title": "Добро пожаловать в Мозгослав",
+    "subtitle": "Давай быстро настроим всё, чтобы работа началась с первого созвона.",
+    "step1": {
+      "title": "Язык",
+      "hint": "На каком языке тебе удобнее?"
+    },
+    "step2": {
+      "title": "Модели",
+      "hint": "Скачаем Whisper и VAD — это разово, ~1.5 ГБ."
+    },
+    "step3": {
+      "title": "Obsidian",
+      "hint": "Укажи путь к vault, подготовим нужные папки."
+    },
+    "step4": {
+      "title": "LLM",
+      "hint": "Endpoint локальной LM Studio или Ollama."
+    },
+    "step5": {
+      "title": "Готово",
+      "hint": "Всё настроено. Можно импортировать первый разговор."
+    },
+    "skip": "Пропустить"
+  },
+  "hotkeys": {
+    "title": "Горячие клавиши",
+    "import": "Импортировать файлы",
+    "commandPalette": "Открыть командный поиск",
+    "settings": "Настройки",
+    "reprocess": "Перепрогнать заметку",
+    "exportNote": "Экспортировать заметку",
+    "toggleRecord": "Записать / остановить"
+  },
+  "logs": {
+    "title": "Логи",
+    "download": "Скачать файл",
+    "refresh": "Обновить",
+    "empty": "Логи пустые — запусти пайплайн, чтобы что-то появилось."
+  },
+  "backup": {
+    "title": "Бэкапы",
+    "create": "Создать бэкап",
+    "empty": "Бэкапов пока нет. Один клик — и всё в безопасности.",
+    "successToast": "Бэкап создан"
+  },
+  "batch": {
+    "hintLabel": "Контекст для LLM (1 предложение)",
+    "hintPlaceholder": "Например: созвон про Q2, участники Иван и Ольга"
+  }
+}

@@ -1,0 +1,18 @@
+import type { AnyAction } from "redux";
+
+export interface {{pascalCase name}}State {
+  isLoading: boolean;
+  error: string | null;
+}
+
+export const initial{{pascalCase name}}State: {{pascalCase name}}State = {
+  isLoading: false,
+  error: null,
+};
+
+export const {{camelCase name}}Reducer = (
+  state: {{pascalCase name}}State = initial{{pascalCase name}}State,
+  _action: AnyAction
+): {{pascalCase name}}State => {
+  return state;
+};

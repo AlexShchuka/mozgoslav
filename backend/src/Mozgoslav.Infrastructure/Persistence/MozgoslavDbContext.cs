@@ -1,0 +1,154 @@
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Mozgoslav.Domain.Entities;
+using Mozgoslav.Domain.Enums;
+using Mozgoslav.Domain.ValueObjects;
+
+namespace Mozgoslav.Infrastructure.Persistence;
+
+/// <summary>
+/// EF Core DbContext for Mozgoslav. Follows the team C# service pattern:
+/// thin entity configurations, enums stored as strings, collections/value objects
+/// stored as JSON via value converters. Schema is created via
+/// <see cref="DatabaseFacadeExtensions.EnsureCreated"/> during startup.
+/// </summary>
+public sealed class MozgoslavDbContext : DbContext
+{
+    public MozgoslavDbContext(DbContextOptions<MozgoslavDbContext> options) : base(options)
+    {
+    }
+
+    public DbSet<Recording> Recordings => Set<Recording>();
+    public DbSet<Transcript> Transcripts => Set<Transcript>();
+    public DbSet<ProcessedNote> ProcessedNotes => Set<ProcessedNote>();
+    public DbSet<Profile> Profiles => Set<Profile>();
+    public DbSet<ProcessingJob> ProcessingJobs => Set<ProcessingJob>();
+    public DbSet<AppSetting> Settings => Set<AppSetting>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        var stringListConverter = new ValueConverter<List<string>, string>(
+            v => JsonSerializer.Serialize(v ?? new List<string>(), (JsonSerializerOptions?)null),
+            v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>());
+
+        var actionItemListConverter = new ValueConverter<List<ActionItem>, string>(
+            v => JsonSerializer.Serialize(v ?? new List<ActionItem>(), (JsonSerializerOptions?)null),
+            v => JsonSerializer.Deserialize<List<ActionItem>>(v, (JsonSerializerOptions?)null) ?? new List<ActionItem>());
+
+        var segmentListConverter = new ValueConverter<List<TranscriptSegment>, string>(
+            v => JsonSerializer.Serialize(v ?? new List<TranscriptSegment>(), (JsonSerializerOptions?)null),
+            v => JsonSerializer.Deserialize<List<TranscriptSegment>>(v, (JsonSerializerOptions?)null) ?? new List<TranscriptSegment>());
+
+        modelBuilder.Entity<Recording>(e =>
+        {
+            e.ToTable("recordings");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.FileName).HasColumnName("file_name").IsRequired();
+            e.Property(x => x.FilePath).HasColumnName("file_path").IsRequired();
+            e.Property(x => x.Sha256).HasColumnName("sha256").IsRequired();
+            e.Property(x => x.Duration).HasColumnName("duration_ms")
+                .HasConversion(v => (long)v.TotalMilliseconds, v => TimeSpan.FromMilliseconds(v));
+            e.Property(x => x.Format).HasColumnName("format").HasConversion<string>().IsRequired();
+            e.Property(x => x.SourceType).HasColumnName("source_type").HasConversion<string>().IsRequired();
+            e.Property(x => x.Status).HasColumnName("status").HasConversion<string>().IsRequired();
+            e.Property(x => x.CreatedAt).HasColumnName("created_at");
+            e.HasIndex(x => x.Sha256).IsUnique();
+            e.HasIndex(x => x.CreatedAt);
+        });
+
+        modelBuilder.Entity<Transcript>(e =>
+        {
+            e.ToTable("transcripts");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.RecordingId).HasColumnName("recording_id");
+            e.Property(x => x.ModelUsed).HasColumnName("model_used").IsRequired();
+            e.Property(x => x.Language).HasColumnName("language").IsRequired();
+            e.Property(x => x.RawText).HasColumnName("raw_text").IsRequired();
+            e.Property(x => x.Segments).HasColumnName("segments_json")
+                .HasConversion(segmentListConverter)
+                .HasColumnType("TEXT");
+            e.Property(x => x.CreatedAt).HasColumnName("created_at");
+            e.HasIndex(x => x.RecordingId);
+        });
+
+        modelBuilder.Entity<ProcessedNote>(e =>
+        {
+            e.ToTable("processed_notes");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.TranscriptId).HasColumnName("transcript_id");
+            e.Property(x => x.ProfileId).HasColumnName("profile_id");
+            e.Property(x => x.Version).HasColumnName("version");
+            e.Property(x => x.Summary).HasColumnName("summary");
+            e.Property(x => x.KeyPoints).HasColumnName("key_points_json").HasConversion(stringListConverter);
+            e.Property(x => x.Decisions).HasColumnName("decisions_json").HasConversion(stringListConverter);
+            e.Property(x => x.ActionItems).HasColumnName("action_items_json").HasConversion(actionItemListConverter);
+            e.Property(x => x.UnresolvedQuestions).HasColumnName("unresolved_questions_json").HasConversion(stringListConverter);
+            e.Property(x => x.Participants).HasColumnName("participants_json").HasConversion(stringListConverter);
+            e.Property(x => x.Topic).HasColumnName("topic");
+            e.Property(x => x.ConversationType).HasColumnName("conversation_type").HasConversion<string>();
+            e.Property(x => x.CleanTranscript).HasColumnName("clean_transcript");
+            e.Property(x => x.FullTranscript).HasColumnName("full_transcript");
+            e.Property(x => x.Tags).HasColumnName("tags_json").HasConversion(stringListConverter);
+            e.Property(x => x.MarkdownContent).HasColumnName("markdown_content");
+            e.Property(x => x.ExportedToVault).HasColumnName("exported_to_vault");
+            e.Property(x => x.VaultPath).HasColumnName("vault_path");
+            e.Property(x => x.CreatedAt).HasColumnName("created_at");
+            e.HasIndex(x => x.TranscriptId);
+        });
+
+        modelBuilder.Entity<Profile>(e =>
+        {
+            e.ToTable("profiles");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.Name).HasColumnName("name").IsRequired();
+            e.Property(x => x.SystemPrompt).HasColumnName("system_prompt").IsRequired();
+            e.Property(x => x.TranscriptionPromptOverride).HasColumnName("transcription_prompt_override");
+            e.Property(x => x.OutputTemplate).HasColumnName("output_template");
+            e.Property(x => x.CleanupLevel).HasColumnName("cleanup_level").HasConversion<string>().IsRequired();
+            e.Property(x => x.ExportFolder).HasColumnName("export_folder").IsRequired();
+            e.Property(x => x.AutoTags).HasColumnName("auto_tags_json").HasConversion(stringListConverter);
+            e.Property(x => x.IsDefault).HasColumnName("is_default");
+            e.Property(x => x.IsBuiltIn).HasColumnName("is_built_in");
+        });
+
+        modelBuilder.Entity<ProcessingJob>(e =>
+        {
+            e.ToTable("processing_jobs");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.RecordingId).HasColumnName("recording_id");
+            e.Property(x => x.ProfileId).HasColumnName("profile_id");
+            e.Property(x => x.Status).HasColumnName("status").HasConversion<string>().IsRequired();
+            e.Property(x => x.Progress).HasColumnName("progress");
+            e.Property(x => x.CurrentStep).HasColumnName("current_step");
+            e.Property(x => x.ErrorMessage).HasColumnName("error_message");
+            e.Property(x => x.UserHint).HasColumnName("user_hint");
+            e.Property(x => x.CreatedAt).HasColumnName("created_at");
+            e.Property(x => x.StartedAt).HasColumnName("started_at");
+            e.Property(x => x.FinishedAt).HasColumnName("finished_at");
+            e.HasIndex(x => x.Status);
+            e.HasIndex(x => x.RecordingId);
+        });
+
+        modelBuilder.Entity<AppSetting>(e =>
+        {
+            e.ToTable("settings");
+            e.HasKey(x => x.Key);
+            e.Property(x => x.Key).HasColumnName("key");
+            e.Property(x => x.Value).HasColumnName("value").IsRequired();
+        });
+    }
+}
+
+public sealed class AppSetting
+{
+    public string Key { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
+}

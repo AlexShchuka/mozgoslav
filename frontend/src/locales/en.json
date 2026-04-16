@@ -1,0 +1,201 @@
+{
+  "app": {
+    "name": "Mozgoslav",
+    "tagline": "Local second brain for conversations"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "queue": "Queue",
+    "notes": "Notes",
+    "profiles": "Profiles",
+    "models": "Models",
+    "settings": "Settings",
+    "logs": "Logs",
+    "backup": "Backups"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "yes": "Yes",
+    "no": "No",
+    "loading": "Loading…",
+    "empty": "Nothing here yet",
+    "error": "Error",
+    "copy": "Copy",
+    "copied": "Copied",
+    "reveal": "Reveal",
+    "hide": "Hide",
+    "add": "Add",
+    "remove": "Remove",
+    "download": "Download",
+    "retry": "Retry",
+    "apply": "Apply",
+    "search": "Search…"
+  },
+  "backendHealth": {
+    "online": "Backend is live",
+    "offline": "Backend not responding",
+    "hint": "Start the backend: `dotnet run` inside backend/"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "importTitle": "Add recording",
+    "dropzonePrompt": "Drop audio here or click to pick files",
+    "dropzoneHint": "Accepts mp3 / m4a / wav / mp4 / ogg / flac",
+    "recordStart": "Record",
+    "recordStop": "Stop",
+    "recordUnsupported": "Recording is macOS-only",
+    "recentTitle": "Recent recordings",
+    "empty": "No recordings yet — import or record your first one."
+  },
+  "queue": {
+    "title": "Processing queue",
+    "empty": "Queue is empty. Import a recording to start processing.",
+    "status": {
+      "Queued": "Queued",
+      "Transcribing": "Transcribing",
+      "Correcting": "Correcting",
+      "Summarizing": "Summarizing",
+      "Exporting": "Exporting",
+      "Done": "Done",
+      "Failed": "Failed"
+    }
+  },
+  "note": {
+    "title": "Note",
+    "actions": {
+      "reprocess": "Reprocess",
+      "export": "Export to vault",
+      "copyMarkdown": "Copy markdown"
+    },
+    "sections": {
+      "summary": "Summary",
+      "keyPoints": "Key points",
+      "decisions": "Decisions",
+      "actionItems": "Action items",
+      "questions": "Unresolved questions",
+      "participants": "Participants",
+      "cleanTranscript": "Clean transcript",
+      "fullTranscript": "Full transcript"
+    }
+  },
+  "profiles": {
+    "title": "Processing profiles",
+    "addNew": "New profile",
+    "defaultBadge": "Default",
+    "builtInBadge": "Built-in",
+    "fields": {
+      "name": "Name",
+      "systemPrompt": "System prompt for LLM",
+      "transcriptionPromptOverride": "Whisper initial prompt (optional)",
+      "cleanupLevel": "Cleanup level",
+      "exportFolder": "Export folder",
+      "autoTags": "Auto tags",
+      "makeDefault": "Make default profile"
+    },
+    "cleanup": {
+      "None": "Keep everything",
+      "Light": "Light cleanup",
+      "Aggressive": "Aggressive"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "tabs": {
+      "general": "General",
+      "storage": "Storage",
+      "llm": "LLM",
+      "whisper": "Whisper",
+      "obsidian": "Obsidian",
+      "profiles": "Profiles",
+      "advanced": "Advanced"
+    },
+    "fields": {
+      "language": "UI language",
+      "theme": "Theme",
+      "vaultPath": "Obsidian vault path",
+      "llmEndpoint": "LLM endpoint",
+      "llmModel": "LLM model",
+      "llmApiKey": "LLM API key (if required)",
+      "whisperModelPath": "Whisper model path (.bin)",
+      "vadModelPath": "VAD model path",
+      "whisperThreads": "Whisper threads (0 = auto)",
+      "obsidianApiHost": "Obsidian Local REST API host",
+      "obsidianApiToken": "Obsidian Local REST API token"
+    },
+    "theme": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "testConnection": "Test connection",
+    "tokenHint": "Stored locally in SQLite. Never leaves your machine except to the configured endpoint.",
+    "savedToast": "Settings saved"
+  },
+  "models": {
+    "title": "Models",
+    "subtitle": "Download what you need — everything stays local.",
+    "installed": "Installed",
+    "notInstalled": "Not downloaded",
+    "download": "Download",
+    "sizeMb": "{{size}} MB"
+  },
+  "obsidian": {
+    "title": "Obsidian vault",
+    "setupTitle": "Prepare vault",
+    "setupHint": "Pick which folders to create in your vault. Content stays yours.",
+    "folders": {
+      "_inbox": "_inbox — new notes land here",
+      "People": "People — links per person",
+      "Projects": "Projects — by project",
+      "Topics": "Topics — by topic",
+      "Archive": "Archive",
+      "Templates": "Templates — Templater scripts"
+    },
+    "templateHint": "We drop a Mozgoslav Templater template if Templates is on.",
+    "applyButton": "Create structure",
+    "setupSuccess": "Done — {{created}} new folders",
+    "tagsTitle": "Auto tags",
+    "tagsHint": "Tags appended to every new note's frontmatter."
+  },
+  "onboarding": {
+    "title": "Welcome to Mozgoslav",
+    "subtitle": "Quick setup so your first call works out of the box.",
+    "step1": { "title": "Language", "hint": "Which language feels natural?" },
+    "step2": { "title": "Models", "hint": "Grab Whisper + VAD — one time, ~1.5 GB." },
+    "step3": { "title": "Obsidian", "hint": "Pick your vault; we'll prepare folders." },
+    "step4": { "title": "LLM", "hint": "Local LM Studio or Ollama endpoint." },
+    "step5": { "title": "Ready", "hint": "All set. Import your first conversation." },
+    "skip": "Skip"
+  },
+  "hotkeys": {
+    "title": "Keyboard shortcuts",
+    "import": "Import files",
+    "commandPalette": "Command palette",
+    "settings": "Settings",
+    "reprocess": "Reprocess note",
+    "exportNote": "Export note",
+    "toggleRecord": "Record / stop"
+  },
+  "logs": {
+    "title": "Logs",
+    "download": "Download file",
+    "refresh": "Refresh",
+    "empty": "No log lines yet — run the pipeline."
+  },
+  "backup": {
+    "title": "Backups",
+    "create": "Create backup",
+    "empty": "No backups yet. One click and you're covered.",
+    "successToast": "Backup created"
+  },
+  "batch": {
+    "hintLabel": "Context for LLM (one sentence)",
+    "hintPlaceholder": "e.g. Q2 planning call, Ivan and Olga"
+  }
+}

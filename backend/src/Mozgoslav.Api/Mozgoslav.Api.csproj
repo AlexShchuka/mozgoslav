@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>Mozgoslav.Api</RootNamespace>
+    <AssemblyName>Mozgoslav.Api</AssemblyName>
+    <UserSecretsId>mozgoslav-backend</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Mozgoslav.Application\Mozgoslav.Application.csproj" />
+    <ProjectReference Include="..\Mozgoslav.Domain\Mozgoslav.Domain.csproj" />
+    <ProjectReference Include="..\Mozgoslav.Infrastructure\Mozgoslav.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

@@ -77,9 +77,9 @@
 | Desktop shell | Electron |
 | Backend язык | C# / ASP.NET Minimal API / .NET 9 |
 | Frontend framework | React 18 + TypeScript strict |
-| State management | Redux + Redux-Saga (как в reference React+Redux+Saga project) |
-| Styling | styled-components (как в reference React+Redux+Saga project) |
-| HTTP client | Axios + BaseApi + ApiFactory (как в reference React+Redux+Saga project) |
+| State management | Redux + Redux-Saga (как в типичный feature-based React + Redux-Saga проект) |
+| Styling | styled-components (как в типичный feature-based React + Redux-Saga проект) |
+| HTTP client | Axios + BaseApi + ApiFactory (как в типичный feature-based React + Redux-Saga проект) |
 | Component pattern | Container/Presentational + connect() |
 | ORM | Dapper + Microsoft.Data.Sqlite (не EF Core) |
 | STT | Whisper.net (NuGet, CoreML) |
@@ -229,8 +229,8 @@ mozgoslav/
 | **Text-only LLM refine в приложении** | Тоже убрали — Templater в Obsidian уже это делает. Не дублируем. |
 | **Tauri** вместо Electron | Tauri = Rust. Команда не знает Rust. |
 | **Rust backend** | Команда C#-разработчики. |
-| **Zustand** вместо Redux | В reference React+Redux+Saga project используют Redux+Saga. Не меняем стек. |
-| **Tailwind** вместо styled-components | В reference React+Redux+Saga project используют styled-components. Не меняем. |
+| **Zustand** вместо Redux | В типичный feature-based React + Redux-Saga проект используют Redux+Saga. Не меняем стек. |
+| **Tailwind** вместо styled-components | В типичный feature-based React + Redux-Saga проект используют styled-components. Не меняем. |
 | **TanStack Query** вместо Axios+Saga | Не паттерн команды. |
 | **EF Core** вместо Dapper | Overkill для desktop app с SQLite. |
 | **Микросервисы** | Всё локально, один бинарник C# + один Python sidecar. |

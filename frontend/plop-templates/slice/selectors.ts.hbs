@@ -1,0 +1,9 @@
+import { createSelector } from "reselect";
+import type { GlobalState } from "../../rootReducer";
+
+const select{{pascalCase name}}State = (state: GlobalState) => state.{{camelCase name}};
+
+export const select{{pascalCase name}}Loading = createSelector(
+  select{{pascalCase name}}State,
+  (slice) => slice.isLoading
+);

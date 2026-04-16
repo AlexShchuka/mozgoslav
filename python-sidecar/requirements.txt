@@ -1,0 +1,27 @@
+# Production dependencies for the Mozgoslav Python ML sidecar.
+# Versions mirror docs/original-idea/DEFAULT-CONFIG.md §4.
+# These are declared for packaging/production but NOT installed in the
+# local sandbox: the ML stack (torch, transformers, ...) weighs ~4 GB.
+# For local development, install requirements-dev.txt instead.
+
+# --- Web framework ---
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.18
+
+# --- ML runtime ---
+torch>=2.6.0
+torchaudio>=2.6.0
+transformers>=4.49.0
+huggingface_hub>=0.29.0
+soundfile>=0.13.0
+librosa>=0.10.2
+numpy>=2.2.0
+
+# --- Diarization stack ---
+silero-vad>=5.1.2
+resemblyzer>=0.1.4
+scikit-learn>=1.6.1
+
+# --- NER ---
+natasha>=1.6.0

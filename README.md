@@ -2,18 +2,18 @@
 
 Локальный second brain для разговоров и созвонов. Аудио → очистка → транскрибация → коррекция → суммаризация → structured markdown → Obsidian.
 
-Desktop-приложение для macOS Apple Silicon. Всё локально, privacy-first.
+Desktop-приложение для macOS Apple Silicon. Всё локально, privacy-first. Ничего не уходит наружу, кроме запросов к LLM-endpoint, который ты сам указал в настройках.
 
 ## Состав
 
 ```
 mozgoslav/
-├── backend/           C# / ASP.NET Minimal API — доменная модель, pipeline, SQLite
-├── frontend/          Electron + React + TypeScript + Redux + Saga
-├── python-sidecar/    FastAPI — ML эндпоинты (diarize / NER / emotion) — V3
+├── backend/           C# 14 / .NET 10 ASP.NET Minimal API — EF Core, Whisper.net, OpenAI SDK, Serilog, OpenTelemetry metrics
+├── frontend/          Electron + React 19 + TypeScript + Redux-Saga + styled-components + i18n (ru/en)
+├── python-sidecar/    FastAPI — ML endpoints (diarize / NER / emotion / gender / cleanup) — stubs до V3
 └── docs/
-    ├── README.md              ← как это работает
-    └── original-idea/         ← исходные спеки по которым писалось
+    ├── README.md                       как устроено
+    └── original-idea/                  исходные спеки (ADR, BACKEND-SPEC, FRONTEND-SPEC, …)
 ```
 
 ## Требования
@@ -21,71 +21,124 @@ mozgoslav/
 | Компонент | Версия | Где |
 |---|---|---|
 | macOS | 14+ (Apple Silicon) | — |
-| .NET SDK | 9.0+ | https://dotnet.microsoft.com/download |
+| .NET SDK | **10.0+** | https://dotnet.microsoft.com/download |
 | Node.js | 20+ (лучше 24) | https://nodejs.org |
 | Python | 3.11+ | https://python.org |
 | JetBrains Rider | любая актуальная | https://jetbrains.com/rider |
 | ffmpeg | любая | `brew install ffmpeg` |
 
-Для полноценной работы — опционально:
-- Whisper-модель `ggml-large-v3-q8_0.bin` (~1.5 GB). Кладётся в `~/Library/Application Support/Mozgoslav/models/`
-- LM Studio или Ollama на `localhost:1234` / `localhost:11434`
-- Obsidian vault
+## Модели
 
-## Сборка и запуск (быстро)
+### STT / VAD (встроенный каталог в Settings → Models)
 
-### Backend (C#)
+| Модель | Размер | Назначение | Источник |
+|---|---|---|---|
+| `ggml-large-v3-q8_0.bin` | ~1.5 GB | STT мультиязык — дефолт | huggingface.co/ggerganov/whisper.cpp |
+| `ggml-large-v3-turbo-q8_0.bin` | ~0.9 GB | STT (быстрее, чуть хуже) | huggingface.co/ggerganov/whisper.cpp |
+| `ggml-medium-q8_0.bin` | ~0.5 GB | STT (для слабых машин) | huggingface.co/ggerganov/whisper.cpp |
+| `ggml-silero-v6.2.0.bin` | ~4 MB | VAD | huggingface.co/ggml-org/whisper-vad |
+
+### STT — русский fine-tune (выше качество на RU, ставить руками)
+
+Качать в `~/Library/Application Support/Mozgoslav/models/` и указать путь в **Settings → Whisper**:
+
+| Модель | WER ru | Формат | Замечания |
+|---|---|---|---|
+| **`antony66/whisper-large-v3-russian`** | **6.39%** | ggml / safetensors | лучший open-source whisper-fine-tune на русском |
+| `bond005/whisper-large-v3-ru-podlodka` | ~10% | ggml / safetensors | тренирован на подкастах, живая речь |
+| `ai-sage/GigaAM-v3` | SOTA (−50% vs whisper-large-v3) | Conformer (NeMo) | не ggml — через отдельный inference-стек, не Whisper.net напрямую |
+| `ggerganov/whisper-large-v3-q8_0` | 9.84% | ggml ✅ встроено в каталог | мультиязык, дефолт |
+
+### LLM (внешний endpoint: LM Studio / Ollama)
+
+Приложение не качает LLM — выбираешь в LM Studio / Ollama и указываешь endpoint в **Settings → LLM**. Для M3 36 GB на 2026-04:
+
+| Модель | Размер (Q4_K_M) | Почему |
+|---|---|---|
+| **Qwen3-32B-Instruct** | ~19 GB | **топовый open-source в ~27-32B**, сильнее Gemma 3 27B по общим бенчам, отличный русский |
+| Qwen3-14B-Instruct | ~9 GB | быстрый дефолт при RAM-дефиците, качество заметно выше Qwen2.5-14B |
+| RuadaptQwen3-32B | ~19 GB | RU fine-tune Qwen3-32B — максимальный русский среди open-source |
+| Gemma 3 27B-it | ~16 GB | 128K контекст, slightly weaker reasoning, но длинные transcript'ы в один проход |
+| Qwen3-235B-A22B (MoE) | ~130 GB всего | если доступно много RAM — активных параметров 22B, отличный multilingual |
+| Vikhr-Nemo-12B | ~7 GB | RU fine-tune Mistral-Nemo, лёгкий |
+| GigaChat-lite (Sber) | варьируется | Russian-native MoE, коммерческий open-release |
+| Claude Opus / GPT-5 | — | облако, не privacy-first — не используем |
+
+Приложение выставляет `temperature=0.1` и `response_format=json_schema`. Всё зашито в `OpenAiCompatibleLlmService`.
+
+Пути скачанных STT/VAD моделей сохраняются в `~/Library/Application Support/Mozgoslav/models/`.
+
+## Быстрый старт в Rider
+
+1. Открой `backend/Mozgoslav.sln` в Rider. Запусти профиль **Mozgoslav.Api** — бэк поднимется на http://localhost:5050.
+2. В другой вкладке:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev              # Electron-окно откроется автоматически
+   ```
+3. (опционально, V3) python-sidecar:
+   ```bash
+   cd python-sidecar
+   python3 -m venv .venv && source .venv/bin/activate
+   pip install -r requirements-dev.txt
+   uvicorn app.main:app --host 127.0.0.1 --port 5060 --reload
+   ```
+
+## Из терминала
 
 ```bash
-cd backend
-dotnet restore
-dotnet build
-dotnet run --project src/Mozgoslav.Api
-# → http://localhost:5050/api/health
+cd backend && dotnet run --project src/Mozgoslav.Api -maxcpucount:1
+# в другой вкладке
+cd frontend && npm install && npm run dev
 ```
 
-В Rider: открой `backend/Mozgoslav.sln`, запусти профиль `Mozgoslav.Api`.
-
-### Frontend (Electron)
+Сборка `.dmg`:
 
 ```bash
-cd frontend
-npm install
-npm run dev
-# → Electron окно открывается, подключается к бэкенду
+cd frontend && npm run dist:mac
 ```
 
-### Python sidecar (опционально, V3)
+## Первая настройка
 
-```bash
-cd python-sidecar
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --host 127.0.0.1 --port 5060 --reload
-# → http://localhost:5060/health
-```
+1. Запусти LM Studio / Ollama, загрузи Qwen2.5-14B-Instruct-Q4.
+2. **Settings → LLM** — endpoint (`http://localhost:1234` для LM Studio), при необходимости API-key.
+3. **Settings → Whisper** или **Models → Download** — скачай `ggml-large-v3-q8_0.bin` и `ggml-silero-v6.2.0.bin`.
+4. **Settings → Storage** — укажи путь к Obsidian vault. Потом на странице **Obsidian** подготовь папки (`_inbox / People / Projects / Topics / Templates`) одной кнопкой.
+5. Есть Meetily.app? В **Import from Meetily** укажи путь к `meeting_minutes.sqlite` — все встречи подтянутся.
 
-## Порядок запуска всего
+## Privacy & security
 
-1. **LM Studio / Ollama** — загрузить модель (Qwen2.5-14B-Instruct рекомендуется).
-2. **Backend** — `dotnet run` в `backend/`.
-3. **Frontend** — `npm run dev` в `frontend/`.
-4. **Python sidecar** — по желанию, для V3-фич.
+- Electron: `contextIsolation: true`, `sandbox: true`, `nodeIntegration: false`. Preload whitelistит только `openAudioFiles / openFolder / openPath`.
+- Content-Security-Policy: `default-src 'self'`, `connect-src 'self' http://localhost:5050 ws://localhost:5173 http://localhost:5173`. Никаких внешних адресов.
+- Kestrel слушает **только** `localhost:5050`. CORS — localhost и `app://mozgoslav`.
+- Все секреты (LLM API key, Obsidian token) живут в SQLite `settings` table. Никогда не передаются никуда, кроме endpoint'а, куда явно адресованы.
+- Zero telemetry. Никаких crash-reporters / analytics / auto-update checks.
+- Логи — только локально в `~/Library/Application Support/Mozgoslav/logs/`. Просматривать можно прямо в UI (Logs page).
+- Downloads моделей — только HuggingFace HTTPS URL из встроенного каталога (`ModelCatalog.cs`).
 
-## Статус / ограничения
+## Бэкапы
 
-Это первая итерация — скелет трёх частей. Что работает, а что помечено как TODO — см. `TODO.md` в каждой подпапке.
+UI → **Backups → Create**, или `POST /api/backup/create`. Складывается zip в `~/Library/Application Support/Mozgoslav/backups/` (база + конфиг, без логов). Восстановить — распаковать в ту же папку.
 
-Сборка `.dmg` через `electron-builder --mac`, запуск Whisper.net CoreML и реальная транскрипция — требуют macOS и не проверяются в CI / Linux-среде.
+## Ограничения
+
+- `electron-builder --mac` сборка и CoreML-ускорение Whisper — только на macOS.
+- Запись с микрофона — сейчас `NoopAudioRecorder` (интерфейс готов, native macOS реализация — следующая итерация).
+- V3 ML (diarize / gender / emotion / NER) — только stubs в python-sidecar.
+- Подробный roadmap см. `docs/original-idea/ADR-001-meetily-fork-architecture.md` §15.
 
 ## Документация
 
-- `docs/README.md` — как это устроено
+- `docs/README.md` — устройство и pipeline
 - `docs/original-idea/ADR-001-meetily-fork-architecture.md` — видение и архитектура
-- `docs/original-idea/BACKEND-SPEC.md` — спека бэкенда
-- `docs/original-idea/FRONTEND-SPEC.md` — спека фронтенда
-- `docs/original-idea/PYTHON-SIDECAR-SPEC.md` — спека python sidecar
-- `docs/original-idea/DEFAULT-CONFIG.md` — дефолтные версии и настройки
-- `docs/original-idea/CLAUDE-IMPLEMENTATION-GUIDE.md` — порядок реализации
+- `docs/original-idea/BACKEND-SPEC.md` / `FRONTEND-SPEC.md` / `PYTHON-SIDECAR-SPEC.md` — спеки
+- `docs/original-idea/DEFAULT-CONFIG.md` — дефолтные версии, модели, промпты
+- `docs/original-idea/CLAUDE-IMPLEMENTATION-GUIDE.md` — порядок реализации по итерациям
 - `docs/original-idea/SPIKE-CHECKLIST.md` — pre-implementation проверки
+- `CLAUDE.md` / `backend/CLAUDE.md` / `frontend/CLAUDE.md` / `python-sidecar/CLAUDE.md` — гиды для AI-агентов
+- `SELF-REVIEW.md` — сверка реализации с ADR и командными стандартами
+
+## Лицензия
+
+MIT — см. [LICENSE](LICENSE).

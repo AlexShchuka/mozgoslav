@@ -1,0 +1,31 @@
+export const BACKEND_URL = "http://localhost:5050";
+
+export const HEALTH_POLL_INTERVAL_MS = 5000;
+
+export const API_ENDPOINTS = {
+  health: "/api/health",
+  llmHealth: "/api/health/llm",
+  recordings: "/api/recordings",
+  recordingsImport: "/api/recordings/import",
+  recordingsUpload: "/api/recordings/upload",
+  recording: (id: string) => `/api/recordings/${id}`,
+  recordingNotes: (id: string) => `/api/recordings/${id}/notes`,
+  reprocess: (id: string) => `/api/recordings/${id}/reprocess`,
+  jobs: "/api/jobs",
+  jobsActive: "/api/jobs/active",
+  jobsStream: "/api/jobs/stream",
+  notes: "/api/notes",
+  note: (id: string) => `/api/notes/${id}`,
+  noteExport: (id: string) => `/api/notes/${id}/export`,
+  profiles: "/api/profiles",
+  profile: (id: string) => `/api/profiles/${id}`,
+  settings: "/api/settings",
+  models: "/api/models",
+  modelDownload: "/api/models/download",
+  meetilyImport: "/api/meetily/import",
+  obsidianSetup: "/api/obsidian/setup",
+  logs: "/api/logs",
+  logsTail: "/api/logs/tail",
+  backup: "/api/backup",
+  backupCreate: "/api/backup/create",
+} as const;
