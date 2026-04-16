@@ -3,6 +3,7 @@ using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.Enums;
+using Mozgoslav.Domain.ValueObjects;
 
 namespace Mozgoslav.Application.UseCases;
 
@@ -178,16 +179,16 @@ public sealed class ProcessQueueWorker
         ProfileId = profile.Id,
         Version = version,
         Summary = llm?.Summary ?? string.Empty,
-        KeyPoints = llm?.KeyPoints ?? [],
-        Decisions = llm?.Decisions ?? [],
-        ActionItems = llm?.ActionItems ?? [],
-        UnresolvedQuestions = llm?.UnresolvedQuestions ?? [],
-        Participants = llm?.Participants ?? [],
+        KeyPoints = llm?.KeyPoints.ToList() ?? new List<string>(),
+        Decisions = llm?.Decisions.ToList() ?? new List<string>(),
+        ActionItems = llm?.ActionItems.ToList() ?? new List<ActionItem>(),
+        UnresolvedQuestions = llm?.UnresolvedQuestions.ToList() ?? new List<string>(),
+        Participants = llm?.Participants.ToList() ?? new List<string>(),
         Topic = llm?.Topic ?? Path.GetFileNameWithoutExtension(recording.FileName),
         ConversationType = llm?.ConversationType ?? ConversationType.Other,
         CleanTranscript = cleanText,
         FullTranscript = transcript.RawText,
-        Tags = llm?.Tags ?? [],
+        Tags = llm?.Tags.ToList() ?? new List<string>(),
     };
 
     private async Task TransitionAsync(ProcessingJob job, JobStatus status, int progress, string? step, CancellationToken ct)

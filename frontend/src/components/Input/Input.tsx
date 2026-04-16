@@ -1,4 +1,4 @@
-import React, { forwardRef, InputHTMLAttributes, useState } from "react";
+import { forwardRef, InputHTMLAttributes, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 import { InputField, InputRow, InputLabel, ToggleButton, Hint, Error } from "./Input.style";

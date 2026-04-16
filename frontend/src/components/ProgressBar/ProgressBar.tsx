@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import { FC } from "react";
 
 import { Track, Fill, Label, Shimmer, Wrapper } from "./ProgressBar.style";
 

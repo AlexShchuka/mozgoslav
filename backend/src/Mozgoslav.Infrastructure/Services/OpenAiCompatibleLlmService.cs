@@ -180,7 +180,8 @@ public sealed class OpenAiCompatibleLlmService : ILlmService
         return a + "\n\n" + b;
     }
 
-    private static List<T> Combine<T>(List<T> a, List<T> b) => a.Concat(b).Distinct().ToList();
+    private static IReadOnlyList<T> Combine<T>(IReadOnlyList<T> a, IReadOnlyList<T> b) =>
+        a.Concat(b).Distinct().ToList();
 
     private static LlmProcessingResult Empty() => new(
         Summary: string.Empty,

@@ -11,6 +11,7 @@
     <PackageVersion Include="OpenAI" Version="2.*" />
 
     <!-- Data access -->
+    <PackageVersion Include="Dapper" Version="2.*" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.*" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.*" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.*" />

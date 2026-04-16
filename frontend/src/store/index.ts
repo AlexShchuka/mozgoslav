@@ -1,18 +1,23 @@
-import { applyMiddleware, createStore, type Store } from "redux";
+import { applyMiddleware, createStore } from "redux";
 import createSagaMiddleware, { type SagaMiddleware } from "redux-saga";
-import { rootReducer, type GlobalState } from "./rootReducer";
+import { rootReducer } from "./rootReducer";
 import { rootSaga } from "./rootSaga";
 
 export type { GlobalState } from "./rootReducer";
 
 export interface ConfiguredStore {
-  store: Store<GlobalState>;
+  store: ReturnType<typeof createAppStore>["store"];
   sagaMiddleware: SagaMiddleware;
 }
 
-export const configureAppStore = (): ConfiguredStore => {
+const createAppStore = () => {
   const sagaMiddleware = createSagaMiddleware();
   const store = createStore(rootReducer, applyMiddleware(sagaMiddleware));
+  return { store, sagaMiddleware };
+};
+
+export const configureAppStore = (): ConfiguredStore => {
+  const { store, sagaMiddleware } = createAppStore();
   sagaMiddleware.run(rootSaga);
   return { store, sagaMiddleware };
 };

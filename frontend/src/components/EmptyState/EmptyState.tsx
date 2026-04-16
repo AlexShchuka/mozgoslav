@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import { FC } from "react";
 import { Inbox } from "lucide-react";
 
 import { Root, Icon, Title, Body } from "./EmptyState.style";

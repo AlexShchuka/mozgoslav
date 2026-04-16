@@ -1,4 +1,4 @@
-import React, { FC, ReactNode } from "react";
+import { FC, ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Archive, Brain, Database, FolderCog, LayoutDashboard, ListChecks, ListTree, Settings, Sparkles, Wrench } from "lucide-react";

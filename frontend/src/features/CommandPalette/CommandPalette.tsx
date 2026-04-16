@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useMemo, useState, KeyboardEvent } from "react";
+import { FC, useEffect, useMemo, useState, KeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useHotkeys } from "react-hotkeys-hook";

@@ -1,3 +1,4 @@
+import type { Reducer } from "redux";
 import {
   LOAD_RECORDINGS,
   LOAD_RECORDINGS_FAILURE,
@@ -7,11 +8,12 @@ import {
 } from "./actions";
 import { initialRecordingState, type RecordingState } from "./types";
 
-export const recordingReducer = (
+export const recordingReducer: Reducer<RecordingState> = (
   state: RecordingState = initialRecordingState,
-  action: RecordingAction
+  action
 ): RecordingState => {
-  switch (action.type) {
+  const typed = action as RecordingAction;
+  switch (typed.type) {
     case LOAD_RECORDINGS:
       return {
         ...state,
@@ -20,13 +22,11 @@ export const recordingReducer = (
         isBackendUnavailable: false,
       };
     case LOAD_RECORDINGS_SUCCESS: {
-      const byId = action.payload.reduce<Record<string, (typeof action.payload)[number]>>(
-        (acc, recording) => {
-          acc[recording.id] = recording;
-          return acc;
-        },
-        {}
-      );
+      const payload = (typed as { payload: RecordingState["recordings"][string][] }).payload;
+      const byId = payload.reduce<RecordingState["recordings"]>((acc, recording) => {
+        acc[recording.id] = recording;
+        return acc;
+      }, {});
       return {
         ...state,
         recordings: byId,
@@ -39,7 +39,7 @@ export const recordingReducer = (
       return {
         ...state,
         isLoading: false,
-        error: action.payload,
+        error: (typed as { payload: string }).payload,
         isBackendUnavailable: false,
       };
     case LOAD_RECORDINGS_UNAVAILABLE:

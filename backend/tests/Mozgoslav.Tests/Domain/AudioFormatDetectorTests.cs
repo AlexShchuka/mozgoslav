@@ -7,16 +7,16 @@ namespace Mozgoslav.Tests.Domain;
 [TestClass]
 public class AudioFormatDetectorTests
 {
-    [Theory]
-    [InlineData(".mp3", AudioFormat.Mp3)]
-    [InlineData(".MP3", AudioFormat.Mp3)]
-    [InlineData("m4a", AudioFormat.M4a)]
-    [InlineData(".wav", AudioFormat.Wav)]
-    [InlineData(".mp4", AudioFormat.Mp4)]
-    [InlineData(".ogg", AudioFormat.Ogg)]
-    [InlineData(".flac", AudioFormat.Flac)]
-    [InlineData(".webm", AudioFormat.Webm)]
-    [InlineData(".aac", AudioFormat.Aac)]
+    [TestMethod]
+    [DataRow(".mp3", AudioFormat.Mp3)]
+    [DataRow(".MP3", AudioFormat.Mp3)]
+    [DataRow("m4a", AudioFormat.M4a)]
+    [DataRow(".wav", AudioFormat.Wav)]
+    [DataRow(".mp4", AudioFormat.Mp4)]
+    [DataRow(".ogg", AudioFormat.Ogg)]
+    [DataRow(".flac", AudioFormat.Flac)]
+    [DataRow(".webm", AudioFormat.Webm)]
+    [DataRow(".aac", AudioFormat.Aac)]
     public void FromExtension_KnownFormat_ReturnsExpectedEnum(string extension, AudioFormat expected)
     {
         var result = AudioFormatDetector.FromExtension(extension);

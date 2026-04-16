@@ -52,8 +52,13 @@ public sealed class WhisperNetTranscriptionService : ITranscriptionService
         using var whisperFactory = WhisperFactory.FromPath(modelPath);
         var builder = whisperFactory.CreateBuilder()
             .WithLanguage(language)
-            .WithBeamSearchSamplingStrategy()
             .WithPrompt(string.IsNullOrWhiteSpace(initialPrompt) ? DefaultPrompt : initialPrompt);
+
+        var beamStrategy = builder.WithBeamSearchSamplingStrategy();
+        if (beamStrategy is BeamSearchSamplingStrategyBuilder beamBuilder)
+        {
+            beamBuilder.WithBeamSize(BeamSize);
+        }
 
         using var processor = builder.Build();
 

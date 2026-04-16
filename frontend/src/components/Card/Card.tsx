@@ -1,12 +1,12 @@
-import React, { FC, PropsWithChildren, HTMLAttributes } from "react";
+import { FC, PropsWithChildren, HTMLAttributes, ReactNode } from "react";
 
 import { CardRoot, CardHeader, CardTitle, CardSubtitle, CardBody, CardFooter } from "./Card.style";
 
-export interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  title?: React.ReactNode;
-  subtitle?: React.ReactNode;
-  headerAction?: React.ReactNode;
-  footer?: React.ReactNode;
+export interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+  title?: ReactNode;
+  subtitle?: ReactNode;
+  headerAction?: ReactNode;
+  footer?: ReactNode;
   elevated?: boolean;
 }
 

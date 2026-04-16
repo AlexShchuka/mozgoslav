@@ -1,4 +1,4 @@
-import React, { FC, PropsWithChildren, useEffect, useState } from "react";
+import { FC, PropsWithChildren, useEffect, useState } from "react";
 import { ThemeProvider as StyledThemeProvider } from "styled-components";
 
 import { darkTheme, lightTheme, pickTheme, resolveSystemMode, Theme, ThemeMode } from "./theme";

@@ -1,4 +1,4 @@
-import React, { ButtonHTMLAttributes, forwardRef } from "react";
+import { ButtonHTMLAttributes, forwardRef } from "react";
 
 import { StyledButton, ButtonVariant, ButtonSize } from "./Button.style";
 
