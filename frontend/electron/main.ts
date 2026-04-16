@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, session, shell } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { DictationOrchestrator } from "./dictation/DictationOrchestrator";
 import { stopBackend, tryStartBackend } from "./utils/backendLauncher";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -10,6 +11,7 @@ const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 const BACKEND_ORIGIN = "http://localhost:5050";
 
 let mainWindow: BrowserWindow | null = null;
+let dictationOrchestrator: DictationOrchestrator | null = null;
 
 const createWindow = (): void => {
   mainWindow = new BrowserWindow({
@@ -113,12 +115,41 @@ app.whenReady().then(async () => {
 
   createWindow();
 
+  if (process.platform === "darwin") {
+    void initializeDictation();
+  }
+
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
   });
 });
+
+const initializeDictation = async (): Promise<void> => {
+  try {
+    const helperBinaryPath = path.join(
+      process.resourcesPath ?? path.join(__dirname, ".."),
+      "mozgoslav-dictation-helper"
+    );
+    dictationOrchestrator = new DictationOrchestrator({
+      helperBinaryPath,
+      mouseButton: 5,
+      keyboardFallbackKeycode: null,
+      sampleRate: 48_000,
+      injectMode: "auto",
+      overlayEnabled: true,
+    });
+    await dictationOrchestrator.initialize(() => {
+      dictationOrchestrator?.destroy();
+      dictationOrchestrator = null;
+      app.quit();
+    });
+  } catch (error) {
+    console.error("[dictation] initialization failed:", error);
+    dictationOrchestrator = null;
+  }
+};
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
@@ -127,5 +158,7 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
+  dictationOrchestrator?.destroy();
+  dictationOrchestrator = null;
   stopBackend();
 });
