@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
@@ -20,6 +22,8 @@ public sealed class SyncthingHttpClient : ISyncthingClient
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
+
+    private const int EventsPollTimeoutSeconds = 60;
 
     private readonly HttpClient _http;
     private readonly ILogger<SyncthingHttpClient> _logger;
@@ -67,6 +71,93 @@ public sealed class SyncthingHttpClient : ISyncthingClient
         return new SyncStatusSnapshot(folders, devices);
     }
 
+    public async IAsyncEnumerable<SyncthingEvent> StreamEventsAsync(
+        [EnumeratorCancellation] CancellationToken ct)
+    {
+        long lastSeen = 0;
+        while (!ct.IsCancellationRequested)
+        {
+            List<SyncthingEvent>? batch = null;
+            try
+            {
+                var url = $"/rest/events?since={lastSeen}&timeout={EventsPollTimeoutSeconds}";
+                using var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+                response.EnsureSuccessStatusCode();
+                var payload = await response.Content.ReadAsStringAsync(ct);
+                batch = [.. SyncthingSseEventParser.ParseBatch(payload)];
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                yield break;
+            }
+            catch (HttpRequestException ex)
+            {
+                // Syncthing restart, transient TCP reset, etc. — back off and retry.
+                _logger.LogDebug(ex, "Syncthing event poll failed; retrying in 2 s");
+                await SafeDelay(TimeSpan.FromSeconds(2), ct);
+                continue;
+            }
+
+            if (batch is { Count: > 0 })
+            {
+                foreach (var evt in batch)
+                {
+                    if (evt.Id > lastSeen)
+                    {
+                        lastSeen = evt.Id;
+                    }
+                    yield return evt;
+                }
+            }
+        }
+    }
+
+    public async Task AcceptPendingDeviceAsync(
+        string deviceId,
+        string deviceName,
+        IReadOnlyList<string> folderIds,
+        CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
+        ArgumentNullException.ThrowIfNull(folderIds);
+
+        var body = new
+        {
+            deviceID = deviceId,
+            name = deviceName,
+            autoAcceptFolders = true,
+            sharedFolders = folderIds,
+        };
+
+        using var response = await _http.PostAsJsonAsync(
+            $"/rest/cluster/pending/devices?device={Uri.EscapeDataString(deviceId)}",
+            body,
+            JsonOptions,
+            ct);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task ShutdownAsync(CancellationToken ct)
+    {
+        using var response = await _http.PostAsync("/rest/system/shutdown", content: null, ct);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<string> GetConfigAsync(CancellationToken ct)
+    {
+        using var response = await _http.GetAsync("/rest/system/config", ct);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync(ct);
+    }
+
+    public async Task ReplaceConfigAsync(string configJson, CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(configJson);
+        using var content = new StringContent(configJson, Encoding.UTF8, "application/json");
+        using var response = await _http.PutAsync("/rest/system/config", content, ct);
+        response.EnsureSuccessStatusCode();
+    }
+
     private async Task<IReadOnlyList<SyncFolderStatus>> FetchAndParseFoldersAsync(CancellationToken ct)
     {
         using var configResponse = await _http.GetAsync("/rest/config/folders", ct);
@@ -97,7 +188,9 @@ public sealed class SyncthingHttpClient : ISyncthingClient
                 Id: folder.Id,
                 State: status.State ?? "unknown",
                 CompletionPct: completion,
-                Conflicts: 0)); // conflicts aren't surfaced by /rest/db/status; left at 0 until we surface them from /rest/events
+                // Conflicts aren't surfaced by /rest/db/status; the SSE parser
+                // side-channels them via SyncthingEvent.FileConflict.
+                Conflicts: 0));
         }
         return results;
     }
@@ -120,6 +213,12 @@ public sealed class SyncthingHttpClient : ISyncthingClient
                 Connected: kv.Value.Connected,
                 LastSeen: kv.Value.ConnectedAt ?? kv.Value.StartedAt))
             .ToArray();
+    }
+
+    private static async Task SafeDelay(TimeSpan delay, CancellationToken ct)
+    {
+        try { await Task.Delay(delay, ct); }
+        catch (TaskCanceledException) { }
     }
 
     private sealed record SystemStatusDto(string MyID);

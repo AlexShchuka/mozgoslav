@@ -29,7 +29,18 @@ public sealed record AppSettingsDto(
     bool DictationOverlayEnabled,
     string DictationOverlayPosition,
     bool DictationSoundFeedback,
-    IReadOnlyList<string> DictationVocabulary)
+    IReadOnlyList<string> DictationVocabulary,
+    // ADR-004 R4 — Whisper idle unload timer (minutes).
+    int DictationModelUnloadMinutes,
+    // ADR-004 R5 — override path for the temp PCM ring-file directory; empty = use platform default.
+    string DictationTempAudioPath,
+    // ADR-004 R2 — per-application correction profile overrides. Key: macOS bundle id (or hostname for web apps);
+    // value: profile id from <c>IProfileRepository</c>. Missing key ⇒ default profile.
+    IReadOnlyDictionary<string, string> DictationAppProfiles,
+    // ADR-003 — top-level enable flag for the bundled Syncthing process.
+    bool SyncthingEnabled,
+    // ADR-003 D4 — absolute path to the user's Obsidian vault; empty = vault not synced.
+    string SyncthingObsidianVaultPath)
 {
     public static AppSettingsDto Defaults { get; } = new(
         VaultPath: string.Empty,
@@ -55,5 +66,16 @@ public sealed record AppSettingsDto(
         DictationOverlayEnabled: true,
         DictationOverlayPosition: "cursor",
         DictationSoundFeedback: true,
-        DictationVocabulary: []);
+        DictationVocabulary: [],
+        DictationModelUnloadMinutes: 10,
+        DictationTempAudioPath: string.Empty,
+        DictationAppProfiles: new Dictionary<string, string>
+        {
+            // ADR-004 R2 seeds — UI to edit later lands in a separate ADR.
+            ["com.microsoft.VSCode"] = "code-profile",
+            ["com.google.Chrome"] = "default",
+            ["slack.com"] = "informal-profile",
+        },
+        SyncthingEnabled: true,
+        SyncthingObsidianVaultPath: string.Empty);
 }
