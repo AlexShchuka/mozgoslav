@@ -24,6 +24,7 @@ python-sidecar/
 - `POST /api/gender` — stub (audeering/wav2vec2-large-robust-24-ft-age-gender — V3)
 - `POST /api/emotion` — stub (audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim — V3)
 - `POST /api/ner` — stub (Natasha — V3)
+- `POST /api/embed` — real on macOS (sentence-transformers/all-MiniLM-L6-v2); falls back to a deterministic SHA-256-bucketed bag-of-words on dev boxes that cannot install PyTorch. Both modes return 384-dim L2-normalised vectors so the C# consumer never sees a contract change.
 
 Stubs return contract-correct dummy payloads so the C# backend can be written against the real API contract today.
 

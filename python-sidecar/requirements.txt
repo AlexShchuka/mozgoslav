@@ -25,3 +25,6 @@ scikit-learn>=1.6.1
 
 # --- NER ---
 natasha>=1.6.0
+
+# --- Embeddings (ADR-005 RAG swap-in) ---
+sentence-transformers>=3.0.0
