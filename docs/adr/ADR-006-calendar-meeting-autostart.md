@@ -152,7 +152,29 @@ Every foreground/background pair in light and dark themes is verified against WC
 
 ### D-7 — Brain-icon launcher (Obsidian Second Brain vibe)
 
-<!-- TODO: decision + alternatives + consequences -->
+**Decision.** Ship a single `BrainLauncher` React component — a stylised SVG brain (`lucide-react`'s `Brain` is the base glyph, MIT-licensed) wrapped in `m.button` with Motion animations and a `useReducedMotion` gate. The launcher is the app's hero CTA: it opens the dictation session / replaces the current Dashboard "Record" button, and sits in the tray as a smaller variant.
+
+**Visual states.**
+
+| State              | Fill                                                                                          | Outer glow                                                             |
+| ------------------ | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Idle (default)     | `linear-gradient(135deg, #64D2FF 0%, #0A84FF 50%, #5E5CE6 100%)`                              | `0 0 24px rgba(10,132,255,.55), 0 0 48px rgba(94,92,230,.35)` (blue)   |
+| Active / recording | `linear-gradient(135deg, #FF9F0A 0%, #FF375F 55%, #FF453A 100%)`                               | pink-dominant glow, ramps in over a 280 ms crossfade                   |
+
+**Motion table (subset of D-3).**
+
+- Idle: scale `1 ↔ 1.05` over 2.4 s `ease-in-out` infinite (breathing pulse).
+- Hover: scale `1.08` + glow ×1.3, 160 ms spring.
+- Press: scale `0.92` + glow ×0.7, 90 ms.
+- Active-recording pulse: 0.8 s loop.
+
+**Sizes.** 28–32 px for the toolbar / tray; 40–48 px for the Dashboard / dock-like launcher.
+
+**Alternatives considered.**
+- *Bundled raster PNG.* Rejected: doesn't scale crisply, can't re-tint between states without extra assets.
+- *Pure CSS blob (radial gradient, no icon).* Rejected: loses the "second brain" reading — users need the glyph to understand the affordance.
+
+**Consequences.** One new shared component `src/components/BrainLauncher/`. Reused by Dashboard (D-8), tray (V2), and command palette action (V2, B14). All decorative animations respect `prefers-reduced-motion`.
 
 ### D-8 — Record button enabled, wired to DictationSessionManager
 
