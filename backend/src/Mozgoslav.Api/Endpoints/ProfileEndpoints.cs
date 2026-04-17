@@ -13,7 +13,8 @@ public static class ProfileEndpoints
         CleanupLevel CleanupLevel,
         string? ExportFolder,
         IReadOnlyList<string>? AutoTags,
-        bool IsDefault);
+        bool IsDefault,
+        string? TranscriptionPromptOverride = null);
 
     public static IEndpointRouteBuilder MapProfileEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -48,6 +49,7 @@ public static class ProfileEndpoints
             {
                 Name = request.Name.Trim(),
                 SystemPrompt = request.SystemPrompt ?? string.Empty,
+                TranscriptionPromptOverride = request.TranscriptionPromptOverride ?? string.Empty,
                 OutputTemplate = request.OutputTemplate ?? string.Empty,
                 CleanupLevel = request.CleanupLevel,
                 ExportFolder = string.IsNullOrWhiteSpace(request.ExportFolder) ? "_inbox" : request.ExportFolder,
@@ -79,6 +81,7 @@ public static class ProfileEndpoints
 
             existing.Name = request.Name.Trim();
             existing.SystemPrompt = request.SystemPrompt ?? string.Empty;
+            existing.TranscriptionPromptOverride = request.TranscriptionPromptOverride ?? string.Empty;
             existing.OutputTemplate = request.OutputTemplate ?? string.Empty;
             existing.CleanupLevel = request.CleanupLevel;
             existing.ExportFolder = string.IsNullOrWhiteSpace(request.ExportFolder) ? "_inbox" : request.ExportFolder;
@@ -92,6 +95,24 @@ public static class ProfileEndpoints
 
             await repository.UpdateAsync(existing, ct);
             return Results.Ok(existing);
+        });
+
+        endpoints.MapDelete("/api/profiles/{id:guid}", async (
+            Guid id,
+            IProfileRepository repository,
+            CancellationToken ct) =>
+        {
+            var existing = await repository.GetByIdAsync(id, ct);
+            if (existing is null)
+            {
+                return Results.NotFound();
+            }
+            if (existing.IsBuiltIn)
+            {
+                return Results.Conflict(new { error = "Built-in profiles cannot be deleted." });
+            }
+            var deleted = await repository.DeleteAsync(id, ct);
+            return deleted ? Results.NoContent() : Results.Conflict(new { error = "Delete failed." });
         });
 
         return endpoints;

@@ -48,4 +48,16 @@ public sealed class EfProfileRepository : IProfileRepository
         _db.Profiles.Update(profile);
         await _db.SaveChangesAsync(ct);
     }
+
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken ct)
+    {
+        var profile = await _db.Profiles.FirstOrDefaultAsync(p => p.Id == id, ct);
+        if (profile is null || profile.IsBuiltIn)
+        {
+            return false;
+        }
+        _db.Profiles.Remove(profile);
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
 }

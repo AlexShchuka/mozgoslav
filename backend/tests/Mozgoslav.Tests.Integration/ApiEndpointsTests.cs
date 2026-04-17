@@ -101,6 +101,57 @@ public sealed class ApiEndpointsTests
     }
 
     [TestMethod]
+    public async Task Profiles_Delete_UserCreated_ReturnsNoContentAndRemoves()
+    {
+        await using var factory = new ApiFactory();
+        using var client = factory.CreateClient();
+
+        using var create = await client.PostAsJsonAsync(
+            "/api/profiles",
+            new
+            {
+                name = "Delete me",
+                systemPrompt = "p",
+                cleanupLevel = CleanupLevel.Light,
+                isDefault = false
+            }, cancellationToken: TestContext.CancellationToken);
+        var created = await create.Content.ReadFromJsonAsync<Profile>(Json, TestContext.CancellationToken);
+
+        using var delete = await client.DeleteAsync($"/api/profiles/{created!.Id}", TestContext.CancellationToken);
+        delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        using var fetch = await client.GetAsync($"/api/profiles/{created.Id}", TestContext.CancellationToken);
+        fetch.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [TestMethod]
+    public async Task Profiles_Delete_BuiltIn_ReturnsConflict()
+    {
+        await using var factory = new ApiFactory();
+        using var client = factory.CreateClient();
+
+        using var list = await client.GetAsync("/api/profiles", TestContext.CancellationToken);
+        var profiles = await list.Content.ReadFromJsonAsync<List<Profile>>(Json, TestContext.CancellationToken);
+        var builtIn = profiles!.First(p => p.IsBuiltIn);
+
+        using var delete = await client.DeleteAsync($"/api/profiles/{builtIn.Id}", TestContext.CancellationToken);
+        delete.StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        using var stillThere = await client.GetAsync($"/api/profiles/{builtIn.Id}", TestContext.CancellationToken);
+        stillThere.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [TestMethod]
+    public async Task Profiles_Delete_UnknownId_ReturnsNotFound()
+    {
+        await using var factory = new ApiFactory();
+        using var client = factory.CreateClient();
+
+        using var response = await client.DeleteAsync($"/api/profiles/{Guid.NewGuid()}", TestContext.CancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [TestMethod]
     public async Task Recordings_Get_EmptyList_OnFreshDb()
     {
         await using var factory = new ApiFactory();

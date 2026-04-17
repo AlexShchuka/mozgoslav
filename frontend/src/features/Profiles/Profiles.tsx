@@ -1,14 +1,14 @@
 import { FC, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import Badge from "../../components/Badge";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
 import { api } from "../../api/MozgoslavApi";
-import { Profile } from "../../models/Profile";
+import { Profile } from "../../types/Profile";
 import ProfileEditor, { ProfileDraft } from "./ProfileEditor";
 import { PageRoot, PageTitle, Row, RowActions, RowDescription, RowName } from "./Profiles.style";
 
@@ -40,28 +40,38 @@ const Profiles: FC = () => {
     setEditorOpen(true);
   };
 
+  const handleDelete = async (profile: Profile) => {
+    if (profile.isBuiltIn) {
+      toast.info(t("profiles.builtInDeleteHint"));
+      return;
+    }
+    const confirmed = window.confirm(t("profiles.deleteConfirm", { name: profile.name }));
+    if (!confirmed) return;
+    try {
+      await api.deleteProfile(profile.id);
+      toast.success(t("profiles.deletedToast"));
+      await refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    }
+  };
+
   const handleSave = async (draft: ProfileDraft) => {
     try {
+      const payload = {
+        name: draft.name,
+        systemPrompt: draft.systemPrompt,
+        transcriptionPromptOverride: draft.transcriptionPromptOverride,
+        outputTemplate: "",
+        cleanupLevel: draft.cleanupLevel,
+        exportFolder: draft.exportFolder,
+        autoTags: draft.autoTags,
+        isDefault: draft.isDefault,
+      };
       if (draft.id) {
-        await api.updateProfile(draft.id, {
-          name: draft.name,
-          systemPrompt: draft.systemPrompt,
-          outputTemplate: "",
-          cleanupLevel: draft.cleanupLevel,
-          exportFolder: draft.exportFolder,
-          autoTags: draft.autoTags,
-          isDefault: draft.isDefault,
-        });
+        await api.updateProfile(draft.id, payload);
       } else {
-        await api.createProfile({
-          name: draft.name,
-          systemPrompt: draft.systemPrompt,
-          outputTemplate: "",
-          cleanupLevel: draft.cleanupLevel,
-          exportFolder: draft.exportFolder,
-          autoTags: draft.autoTags,
-          isDefault: draft.isDefault,
-        });
+        await api.createProfile(payload);
       }
       toast.success(t("settings.savedToast"));
       await refresh();
@@ -98,6 +108,15 @@ const Profiles: FC = () => {
                 <Button variant="ghost" leftIcon={<Pencil size={14} />} onClick={() => openEdit(profile)}>
                   {t("common.edit")}
                 </Button>
+                {!profile.isBuiltIn && (
+                  <Button
+                    variant="ghost"
+                    leftIcon={<Trash2 size={14} />}
+                    onClick={() => void handleDelete(profile)}
+                  >
+                    {t("common.delete")}
+                  </Button>
+                )}
               </Row.Badges>
             </Row>
           ))}

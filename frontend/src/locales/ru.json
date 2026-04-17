@@ -97,6 +97,9 @@
     "addNew": "Создать профиль",
     "defaultBadge": "По умолчанию",
     "builtInBadge": "Встроенный",
+    "deleteConfirm": "Удалить профиль «{{name}}»? Это нельзя отменить.",
+    "deletedToast": "Профиль удалён",
+    "builtInDeleteHint": "Встроенные профили нельзя удалить",
     "fields": {
       "name": "Название",
       "systemPrompt": "System prompt для LLM",

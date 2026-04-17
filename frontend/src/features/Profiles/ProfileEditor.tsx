@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
 import Modal from "../../components/Modal";
-import { Profile, CleanupLevel } from "../../models/Profile";
+import { Profile, CleanupLevel } from "../../types/Profile";
 import { Column, SelectBox, SelectOption, TagEditor, TagPill, TextArea, ToggleRow } from "./ProfileEditor.style";
 
 export interface ProfileEditorProps {

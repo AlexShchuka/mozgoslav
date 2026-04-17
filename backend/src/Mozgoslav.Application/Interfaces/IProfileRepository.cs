@@ -9,4 +9,10 @@ public interface IProfileRepository
     Task<Profile?> TryGetDefaultAsync(CancellationToken ct);
     Task<IReadOnlyList<Profile>> GetAllAsync(CancellationToken ct);
     Task UpdateAsync(Profile profile, CancellationToken ct);
+
+    /// <summary>
+    /// Deletes a user-created profile. Built-in profiles cannot be removed and
+    /// the call returns <c>false</c> for them (and for unknown ids).
+    /// </summary>
+    Task<bool> DeleteAsync(Guid id, CancellationToken ct);
 }

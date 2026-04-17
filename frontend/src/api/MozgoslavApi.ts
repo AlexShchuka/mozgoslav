@@ -5,7 +5,7 @@ import { AppSettings } from "../models/Settings";
 import { ModelEntry } from "../models/Model";
 import { ProcessedNote } from "../models/ProcessedNote";
 import { ProcessingJob } from "../models/ProcessingJob";
-import { Profile } from "../models/Profile";
+import { Profile } from "../types/Profile";
 import { Recording } from "../models/Recording";
 
 /**
@@ -73,6 +73,10 @@ export class MozgoslavApi {
 
   updateProfile = async (id: string, payload: Omit<Profile, "id" | "isBuiltIn">): Promise<Profile> =>
     (await this.client.put<Profile>(API_ENDPOINTS.profile(id), payload)).data;
+
+  deleteProfile = async (id: string): Promise<void> => {
+    await this.client.delete(API_ENDPOINTS.profile(id));
+  };
 
   // --- settings ---
   getSettings = async (): Promise<AppSettings> =>

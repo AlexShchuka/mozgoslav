@@ -97,6 +97,9 @@
     "addNew": "New profile",
     "defaultBadge": "Default",
     "builtInBadge": "Built-in",
+    "deleteConfirm": "Delete profile \"{{name}}\"? This cannot be undone.",
+    "deletedToast": "Profile deleted",
+    "builtInDeleteHint": "Built-in profiles cannot be deleted",
     "fields": {
       "name": "Name",
       "systemPrompt": "System prompt for LLM",
