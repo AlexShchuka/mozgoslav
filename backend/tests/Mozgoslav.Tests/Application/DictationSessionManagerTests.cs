@@ -172,6 +172,36 @@ public sealed class DictationSessionManagerTests
     }
 
     [TestMethod]
+    public async Task Start_PassesDictationVocabularyToStreamingAsInitialPrompt()
+    {
+        var fixture = new Fixture();
+        fixture.Settings.DictationVocabulary.Returns<IReadOnlyList<string>>(
+            ["Mozgoslav", "scenarios", "LRT", "кафка"]);
+        fixture.ArrangeEmptyStream();
+
+        var session = fixture.Manager.Start();
+        await fixture.Manager.CancelAsync(session.Id, CancellationToken.None);
+
+        fixture.Streaming.InitialPrompt.Should().NotBeNull();
+        fixture.Streaming.InitialPrompt.Should().Contain("Mozgoslav");
+        fixture.Streaming.InitialPrompt.Should().Contain("кафка");
+    }
+
+    [TestMethod]
+    public async Task Start_WithoutVocabulary_PassesNullInitialPrompt()
+    {
+        var fixture = new Fixture();
+        fixture.Settings.DictationVocabulary.Returns<IReadOnlyList<string>>([]);
+        fixture.ArrangeEmptyStream();
+
+        var session = fixture.Manager.Start();
+        await fixture.Manager.CancelAsync(session.Id, CancellationToken.None);
+
+        fixture.Streaming.InitialPrompt.Should().BeNull(
+            "empty vocabulary must not override Whisper's default domain prompt");
+    }
+
+    [TestMethod]
     public async Task SubscribePartialsAsync_YieldsPartialsEmittedByStreamingService()
     {
         var fixture = new Fixture();
@@ -211,6 +241,7 @@ public sealed class DictationSessionManagerTests
     {
         public List<AudioChunk> Chunks { get; } = [];
         public List<PartialTranscript> Partials { get; } = [];
+        public string? InitialPrompt { get; private set; }
 
         public async IAsyncEnumerable<PartialTranscript> TranscribeStreamAsync(
             IAsyncEnumerable<AudioChunk> chunks,
@@ -218,6 +249,7 @@ public sealed class DictationSessionManagerTests
             string? initialPrompt,
             [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct)
         {
+            InitialPrompt = initialPrompt;
             await foreach (var chunk in chunks.WithCancellation(ct))
             {
                 Chunks.Add(chunk);

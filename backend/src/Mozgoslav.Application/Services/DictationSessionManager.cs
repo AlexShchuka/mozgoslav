@@ -201,7 +201,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
             await foreach (var partial in _streaming.TranscribeStreamAsync(
                 audioStream,
                 _settings.DictationLanguage,
-                initialPrompt: null,
+                initialPrompt: BuildInitialPrompt(_settings.DictationVocabulary),
                 runtime.Cts.Token))
             {
                 runtime.LastPartialText = partial.Text;
@@ -216,6 +216,25 @@ public sealed class DictationSessionManager : IDictationSessionManager
         {
             MarkError(runtime, ex);
         }
+    }
+
+    /// <summary>
+    /// Assembles the <c>initial_prompt</c> (ADR-004 R1) that biases Whisper toward
+    /// domain-specific vocabulary. Returning <c>null</c> preserves the transcription
+    /// service's built-in default so an empty vocabulary is not a regression.
+    /// </summary>
+    private static string? BuildInitialPrompt(IReadOnlyList<string> vocabulary)
+    {
+        if (vocabulary is null || vocabulary.Count == 0)
+        {
+            return null;
+        }
+        var cleaned = vocabulary
+            .Where(term => !string.IsNullOrWhiteSpace(term))
+            .Select(term => term.Trim())
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        return cleaned.Length == 0 ? null : string.Join(", ", cleaned);
     }
 
     private void MarkError(SessionRuntime runtime, Exception ex)

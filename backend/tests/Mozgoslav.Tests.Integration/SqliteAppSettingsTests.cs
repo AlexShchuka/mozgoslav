@@ -55,4 +55,34 @@ public sealed class EfAppSettingsTests
         settings.Language.Should().Be("de");
         settings.Snapshot.Language.Should().Be("de");
     }
+
+    [TestMethod]
+    public async Task SaveAsync_RoundtripsDictationVocabulary_AsJsonList()
+    {
+        await using var db = new TestDatabase();
+        using var settings = new EfAppSettings(db.CreateFactory());
+
+        var dto = AppSettingsDto.Defaults with
+        {
+            DictationVocabulary = ["Mozgoslav", "LRT", "Kafka", "кафка"],
+        };
+
+        await settings.SaveAsync(dto, CancellationToken.None);
+
+        using var fresh = new EfAppSettings(db.CreateFactory());
+        var loaded = await fresh.LoadAsync(CancellationToken.None);
+
+        loaded.DictationVocabulary.Should().BeEquivalentTo(new[] { "Mozgoslav", "LRT", "Kafka", "кафка" });
+    }
+
+    [TestMethod]
+    public async Task LoadAsync_WithNoVocabularyStored_ReturnsEmptyList()
+    {
+        await using var db = new TestDatabase();
+        using var settings = new EfAppSettings(db.CreateFactory());
+
+        var loaded = await settings.LoadAsync(CancellationToken.None);
+
+        loaded.DictationVocabulary.Should().BeEmpty();
+    }
 }

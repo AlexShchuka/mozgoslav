@@ -28,7 +28,8 @@ public sealed record AppSettingsDto(
     string DictationInjectMode,
     bool DictationOverlayEnabled,
     string DictationOverlayPosition,
-    bool DictationSoundFeedback)
+    bool DictationSoundFeedback,
+    IReadOnlyList<string> DictationVocabulary)
 {
     public static AppSettingsDto Defaults { get; } = new(
         VaultPath: string.Empty,
@@ -53,5 +54,6 @@ public sealed record AppSettingsDto(
         DictationInjectMode: "auto",
         DictationOverlayEnabled: true,
         DictationOverlayPosition: "cursor",
-        DictationSoundFeedback: true);
+        DictationSoundFeedback: true,
+        DictationVocabulary: []);
 }

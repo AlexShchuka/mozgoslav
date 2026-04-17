@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Infrastructure.Persistence;
@@ -45,6 +46,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     public bool DictationOverlayEnabled => Snapshot.DictationOverlayEnabled;
     public string DictationOverlayPosition => Snapshot.DictationOverlayPosition;
     public bool DictationSoundFeedback => Snapshot.DictationSoundFeedback;
+    public IReadOnlyList<string> DictationVocabulary => Snapshot.DictationVocabulary;
     public AppSettingsDto Snapshot { get; private set; } = AppSettingsDto.Defaults;
 
     public async Task<AppSettingsDto> LoadAsync(CancellationToken ct)
@@ -76,7 +78,8 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             DictationInjectMode: map.GetValueOrDefault(Keys.DictationInjectMode, defaults.DictationInjectMode),
             DictationOverlayEnabled: ParseBool(map, Keys.DictationOverlayEnabled, defaults.DictationOverlayEnabled),
             DictationOverlayPosition: map.GetValueOrDefault(Keys.DictationOverlayPosition, defaults.DictationOverlayPosition),
-            DictationSoundFeedback: ParseBool(map, Keys.DictationSoundFeedback, defaults.DictationSoundFeedback));
+            DictationSoundFeedback: ParseBool(map, Keys.DictationSoundFeedback, defaults.DictationSoundFeedback),
+            DictationVocabulary: ParseStringList(map, Keys.DictationVocabulary, defaults.DictationVocabulary));
 
         await _lock.WaitAsync(ct);
         try { Snapshot = dto; }
@@ -113,7 +116,8 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             (Keys.DictationInjectMode, dto.DictationInjectMode),
             (Keys.DictationOverlayEnabled, BoolToString(dto.DictationOverlayEnabled)),
             (Keys.DictationOverlayPosition, dto.DictationOverlayPosition),
-            (Keys.DictationSoundFeedback, BoolToString(dto.DictationSoundFeedback))
+            (Keys.DictationSoundFeedback, BoolToString(dto.DictationSoundFeedback)),
+            (Keys.DictationVocabulary, SerializeStringList(dto.DictationVocabulary)),
         };
 
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
@@ -153,6 +157,29 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     private static string BoolToString(bool value) =>
         value ? "true" : "false";
 
+    private static IReadOnlyList<string> ParseStringList(
+        IReadOnlyDictionary<string, string> map,
+        string key,
+        IReadOnlyList<string> fallback)
+    {
+        if (!map.TryGetValue(key, out var raw) || string.IsNullOrWhiteSpace(raw))
+        {
+            return fallback;
+        }
+        try
+        {
+            var parsed = JsonSerializer.Deserialize<List<string>>(raw);
+            return parsed ?? [.. fallback];
+        }
+        catch (JsonException)
+        {
+            return fallback;
+        }
+    }
+
+    private static string SerializeStringList(IReadOnlyList<string> values) =>
+        JsonSerializer.Serialize(values ?? []);
+
     private static class Keys
     {
         public const string VaultPath = "vault_path";
@@ -178,5 +205,6 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         public const string DictationOverlayEnabled = "dictation_overlay_enabled";
         public const string DictationOverlayPosition = "dictation_overlay_position";
         public const string DictationSoundFeedback = "dictation_sound_feedback";
+        public const string DictationVocabulary = "dictation_vocabulary";
     }
 }

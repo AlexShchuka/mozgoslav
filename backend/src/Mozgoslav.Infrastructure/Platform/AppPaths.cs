@@ -18,6 +18,13 @@ public static class AppPaths
     public static string Logs => Path.Combine(Root, "logs");
     public static string Temp => Path.Combine(Root, "temp");
 
+    // ADR-003 D6: Syncthing-managed data roots. Created by SyncthingFolderInitializer
+    // on first boot and referenced by the generated Syncthing config.xml.
+    public static string Data => Path.Combine(Root, "data");
+    public static string Recordings => Path.Combine(Data, "recordings");
+    public static string Notes => Path.Combine(Data, "notes");
+    public static string SyncthingHome => Path.Combine(Root, "syncthing");
+
     public static string DefaultWhisperModelPath =>
         Path.Combine(Models, "ggml-large-v3-q8_0.bin");
 
