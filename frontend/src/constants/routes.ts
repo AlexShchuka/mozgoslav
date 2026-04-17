@@ -4,6 +4,7 @@ export const ROUTES = {
   queue: "/queue",
   notes: "/notes",
   note: "/notes/:id",
+  rag: "/rag",
   profiles: "/profiles",
   models: "/models",
   settings: "/settings",

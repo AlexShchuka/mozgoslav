@@ -158,6 +158,25 @@ public sealed class SyncthingHttpClient : ISyncthingClient
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<IReadOnlyDictionary<string, FolderVersioning>> GetFolderVersioningsAsync(
+        CancellationToken ct)
+    {
+        using var response = await _http.GetAsync("/rest/config/folders", ct);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return new Dictionary<string, FolderVersioning>();
+        }
+        response.EnsureSuccessStatusCode();
+        var folders = await response.Content
+            .ReadFromJsonAsync<IReadOnlyList<FolderWithVersioningDto>>(JsonOptions, ct) ?? [];
+
+        return folders.ToDictionary(
+            f => f.Id,
+            f => new FolderVersioning(
+                f.Versioning?.Type ?? "none",
+                f.Versioning?.Params ?? new Dictionary<string, string>()));
+    }
+
     private async Task<IReadOnlyList<SyncFolderStatus>> FetchAndParseFoldersAsync(CancellationToken ct)
     {
         using var configResponse = await _http.GetAsync("/rest/config/folders", ct);
@@ -226,6 +245,14 @@ public sealed class SyncthingHttpClient : ISyncthingClient
     private sealed record FolderConfigDto(
         [property: JsonPropertyName("id")] string Id,
         [property: JsonPropertyName("label")] string? Label);
+
+    private sealed record FolderWithVersioningDto(
+        [property: JsonPropertyName("id")] string Id,
+        [property: JsonPropertyName("versioning")] FolderVersioningDto? Versioning);
+
+    private sealed record FolderVersioningDto(
+        [property: JsonPropertyName("type")] string? Type,
+        [property: JsonPropertyName("params")] IReadOnlyDictionary<string, string>? Params);
 
     private sealed class DbStatusDto
     {

@@ -31,6 +31,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
     private readonly IStreamingTranscriptionService _streaming;
     private readonly ILlmService _llm;
     private readonly IAppSettings _settings;
+    private readonly IPerAppCorrectionProfiles _perAppProfiles;
     private readonly ILogger<DictationSessionManager> _logger;
 
     private readonly ConcurrentDictionary<Guid, SessionRuntime> _sessions = new();
@@ -42,11 +43,13 @@ public sealed class DictationSessionManager : IDictationSessionManager
         IStreamingTranscriptionService streaming,
         ILlmService llm,
         IAppSettings settings,
+        IPerAppCorrectionProfiles perAppProfiles,
         ILogger<DictationSessionManager> logger)
     {
         _streaming = streaming;
         _llm = llm;
         _settings = settings;
+        _perAppProfiles = perAppProfiles;
         _logger = logger;
     }
 
@@ -119,7 +122,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
         }
     }
 
-    public async Task<FinalTranscript> StopAsync(Guid sessionId, CancellationToken ct)
+    public async Task<FinalTranscript> StopAsync(Guid sessionId, CancellationToken ct, string? bundleId = null)
     {
         var runtime = GetRuntimeOrThrow(sessionId);
 
@@ -144,10 +147,13 @@ public sealed class DictationSessionManager : IDictationSessionManager
         var duration = DateTime.UtcNow - runtime.Session.StartedAt;
         var rawText = runtime.LastPartialText;
 
-        var polished = rawText;
-        if (_settings.DictationLlmPolish && !string.IsNullOrWhiteSpace(rawText))
+        var profile = _perAppProfiles.Resolve(bundleId);
+        var glossaryApplied = ApplyGlossary(rawText, profile);
+
+        var polished = glossaryApplied;
+        if (_settings.DictationLlmPolish && !string.IsNullOrWhiteSpace(glossaryApplied))
         {
-            polished = await PolishAsync(rawText, ct);
+            polished = await PolishAsync(glossaryApplied, profile, ct);
         }
 
         runtime.Session.State = DictationState.Injecting;
@@ -366,7 +372,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
         _logger.LogError(ex, "Dictation session {SessionId} failed", runtime.Session.Id);
     }
 
-    private async Task<string> PolishAsync(string rawText, CancellationToken ct)
+    private async Task<string> PolishAsync(string rawText, PerAppCorrectionProfile profile, CancellationToken ct)
     {
         try
         {
@@ -376,12 +382,15 @@ public sealed class DictationSessionManager : IDictationSessionManager
                 return rawText;
             }
 
-            const string SystemPrompt =
+            const string BasePrompt =
                 "Ты редактор русского текста. Тебе дают расшифровку голосового ввода. " +
                 "Исправь пунктуацию, капитализацию, очевидные ошибки распознавания. " +
                 "НЕ меняй смысл, НЕ добавляй ничего от себя, НЕ перефразируй. " +
                 "Выведи только отредактированный текст — ничего больше.";
-            var result = await _llm.ProcessAsync(rawText, SystemPrompt, ct);
+            var systemPrompt = string.IsNullOrWhiteSpace(profile.SystemPromptSuffix)
+                ? BasePrompt
+                : $"{BasePrompt} {profile.SystemPromptSuffix}";
+            var result = await _llm.ProcessAsync(rawText, systemPrompt, ct);
             return string.IsNullOrWhiteSpace(result.Summary) ? rawText : result.Summary.Trim();
         }
         catch (Exception ex)
@@ -389,6 +398,23 @@ public sealed class DictationSessionManager : IDictationSessionManager
             _logger.LogWarning(ex, "Dictation LLM polish failed, returning raw text");
             return rawText;
         }
+    }
+
+    private static string ApplyGlossary(string text, PerAppCorrectionProfile profile)
+    {
+        if (string.IsNullOrEmpty(text) || profile.Glossary.Count == 0)
+        {
+            return text;
+        }
+        var result = text;
+        foreach (var (from, to) in profile.Glossary)
+        {
+            if (!string.IsNullOrEmpty(from))
+            {
+                result = result.Replace(from, to, StringComparison.Ordinal);
+            }
+        }
+        return result;
     }
 
     private sealed class SessionRuntime : IDisposable

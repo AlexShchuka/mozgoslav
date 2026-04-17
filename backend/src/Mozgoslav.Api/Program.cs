@@ -102,6 +102,7 @@ try
     builder.Services.AddSingleton<ILlmService, OpenAiCompatibleLlmService>();
     builder.Services.AddSingleton<IMarkdownExporter, FileMarkdownExporter>();
     builder.Services.AddSingleton<IAudioRecorder, NoopAudioRecorder>();
+    builder.Services.AddSingleton<IPerAppCorrectionProfiles, InMemoryPerAppCorrectionProfiles>();
     builder.Services.AddSingleton<IDictationSessionManager, DictationSessionManager>();
     builder.Services.AddScoped<MeetilyImporterService>();
     builder.Services.AddScoped<ObsidianSetupService>();
@@ -111,10 +112,43 @@ try
     builder.Services.AddSingleton<SyncthingConfigService>();
 
     // --- ADR-005 RAG stack ---
-    // Bag-of-words is the zero-dependency fallback; swap in a sidecar- or
-    // ONNX-backed IEmbeddingService without touching the rest of the pipeline.
-    builder.Services.AddSingleton<IEmbeddingService>(_ => new BagOfWordsEmbeddingService());
-    builder.Services.AddSingleton<IVectorIndex, InMemoryVectorIndex>();
+    // Bag-of-words is the zero-dependency fallback; production points
+    // ``Mozgoslav:PythonSidecar:BaseUrl`` at the sidecar so we get
+    // sentence-transformer vectors with graceful degradation on outage.
+    builder.Services.AddSingleton<BagOfWordsEmbeddingService>(_ => new BagOfWordsEmbeddingService());
+    var sidecarBaseUrl = builder.Configuration["Mozgoslav:PythonSidecar:BaseUrl"];
+    if (!string.IsNullOrWhiteSpace(sidecarBaseUrl))
+    {
+        const string SidecarClientName = "Mozgoslav.PythonSidecar";
+        builder.Services.AddHttpClient(SidecarClientName, client =>
+        {
+            client.BaseAddress = new Uri(sidecarBaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+        builder.Services.AddSingleton<IEmbeddingService>(sp =>
+            new PythonSidecarEmbeddingService(
+                sp.GetRequiredService<IHttpClientFactory>().CreateClient(SidecarClientName),
+                sp.GetRequiredService<BagOfWordsEmbeddingService>(),
+                sp.GetRequiredService<ILogger<PythonSidecarEmbeddingService>>()));
+    }
+    else
+    {
+        builder.Services.AddSingleton<IEmbeddingService>(sp =>
+            sp.GetRequiredService<BagOfWordsEmbeddingService>());
+    }
+    // Default: in-memory index. Flip ``Mozgoslav:Rag:Persist=true`` to use
+    // the SQLite-backed store so the vector index survives restarts. The
+    // backend uses brute-force cosine on both paths; swap in ``sqlite-vss``
+    // via the same interface when the native extension is bundled.
+    var persistRag = builder.Configuration.GetValue<bool>("Mozgoslav:Rag:Persist");
+    if (persistRag)
+    {
+        builder.Services.AddSingleton<IVectorIndex>(_ => new SqliteVectorIndex(connectionString));
+    }
+    else
+    {
+        builder.Services.AddSingleton<IVectorIndex, InMemoryVectorIndex>();
+    }
     builder.Services.AddSingleton<IRagService, RagService>();
 
     // ADR-003 D3: Syncthing REST client. Base address is configurable — in
@@ -141,6 +175,7 @@ try
 
     builder.Services.AddHostedService<DatabaseInitializer>();
     builder.Services.AddHostedService<QueueBackgroundService>();
+    builder.Services.AddHostedService<SyncthingVersioningVerifier>();
 
     var app = builder.Build();
 

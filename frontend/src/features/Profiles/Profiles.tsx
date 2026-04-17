@@ -8,7 +8,7 @@ import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
 import { api } from "../../api/MozgoslavApi";
-import { Profile } from "../../models/Profile";
+import { Profile } from "../../domain/Profile";
 import ProfileEditor, { ProfileDraft } from "./ProfileEditor";
 import { PageRoot, PageTitle, Row, RowActions, RowDescription, RowName } from "./Profiles.style";
 
@@ -46,6 +46,7 @@ const Profiles: FC = () => {
         await api.updateProfile(draft.id, {
           name: draft.name,
           systemPrompt: draft.systemPrompt,
+          transcriptionPromptOverride: "",
           outputTemplate: "",
           cleanupLevel: draft.cleanupLevel,
           exportFolder: draft.exportFolder,
@@ -56,6 +57,7 @@ const Profiles: FC = () => {
         await api.createProfile({
           name: draft.name,
           systemPrompt: draft.systemPrompt,
+          transcriptionPromptOverride: "",
           outputTemplate: "",
           cleanupLevel: draft.cleanupLevel,
           exportFolder: draft.exportFolder,

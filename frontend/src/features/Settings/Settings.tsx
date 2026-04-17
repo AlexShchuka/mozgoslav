@@ -8,11 +8,12 @@ import Button from "../../components/Button";
 import Card from "../../components/Card";
 import Input from "../../components/Input";
 import { api } from "../../api/MozgoslavApi";
-import { AppSettings, DEFAULT_SETTINGS } from "../../models/Settings";
+import { AppSettings, DEFAULT_SETTINGS } from "../../domain/Settings";
 import { setThemeMode } from "../../styles/ThemeProvider";
+import SyncPairing from "../SyncPairing";
 import { PageRoot, PageTitle, Tabs, Tab, FormGrid, Toolbar, Row, SelectBox, SelectOption } from "./Settings.style";
 
-type TabKey = "general" | "storage" | "llm" | "whisper" | "obsidian";
+type TabKey = "general" | "storage" | "llm" | "whisper" | "obsidian" | "sync";
 
 const Settings: FC = () => {
   const { t } = useTranslation();
@@ -85,6 +86,7 @@ const Settings: FC = () => {
       { key: "llm" as TabKey, label: t("settings.tabs.llm") },
       { key: "whisper" as TabKey, label: t("settings.tabs.whisper") },
       { key: "obsidian" as TabKey, label: t("settings.tabs.obsidian") },
+      { key: "sync" as TabKey, label: t("settings.tabs.sync") },
     ]),
     [t],
   );
@@ -198,6 +200,8 @@ const Settings: FC = () => {
         </Card>
       )}
 
+      {tab === "sync" && <SyncPairing />}
+
       {tab === "obsidian" && (
         <Card>
           <FormGrid>
@@ -217,11 +221,13 @@ const Settings: FC = () => {
         </Card>
       )}
 
-      <Toolbar>
-        <Button variant="primary" isLoading={saving} onClick={save}>
-          {t("common.save")}
-        </Button>
-      </Toolbar>
+      {tab !== "sync" && (
+        <Toolbar>
+          <Button variant="primary" isLoading={saving} onClick={save}>
+            {t("common.save")}
+          </Button>
+        </Toolbar>
+      )}
     </PageRoot>
   );
 };

@@ -9,7 +9,7 @@ import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
 import Badge from "../../components/Badge";
 import { api } from "../../api/MozgoslavApi";
-import { Recording } from "../../models/Recording";
+import { Recording } from "../../domain/Recording";
 import { formatDuration } from "../../core/utils/format";
 import {
   DashboardRoot,

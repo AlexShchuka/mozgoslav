@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import Settings, get_settings
 from app.models.common import HealthResponse
-from app.routers import cleanup, diarize, emotion, gender, ner
+from app.routers import cleanup, diarize, embed, emotion, gender, ner
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -52,6 +52,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(emotion.router)
     app.include_router(ner.router)
     app.include_router(cleanup.router)
+    app.include_router(embed.router)
 
     return app
 

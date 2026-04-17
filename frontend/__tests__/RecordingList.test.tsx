@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import RecordingList from "../src/features/RecordingList/RecordingList";
-import type { Recording } from "../src/models";
+import type { Recording } from "../src/domain";
 
 const buildRecording = (overrides: Partial<Recording> = {}): Recording => ({
   id: "1",
@@ -8,7 +8,7 @@ const buildRecording = (overrides: Partial<Recording> = {}): Recording => ({
   filePath: "/tmp/meeting.m4a",
   sha256: "abc",
   duration: "135",
-  format: "M4a",
+  format: "M4A",
   sourceType: "Imported",
   status: "Transcribed",
   createdAt: new Date("2026-04-16T12:00:00Z").toISOString(),

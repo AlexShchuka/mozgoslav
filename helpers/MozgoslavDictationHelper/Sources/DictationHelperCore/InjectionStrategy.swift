@@ -10,6 +10,12 @@ public enum InjectionStrategy: String, Codable, Sendable {
     /// directly into the focused element. Required for Electron-based apps
     /// which swallow raw HID events. ~10-30 ms per character but always works.
     case accessibility
+
+    /// Last-resort path — copy the text to the system pasteboard and
+    /// synthesize a ⌘V keystroke. Not every app handles this cleanly (e.g.,
+    /// password fields reject it) but it is the only path that works when
+    /// AX requests hang. ADR-004 R3.
+    case clipboard
 }
 
 /// Selects the right injection API for a given focused app.
@@ -50,6 +56,8 @@ public enum InjectionStrategySelector {
             return .cgEvent
         case "accessibility":
             return .accessibility
+        case "clipboard":
+            return .clipboard
         default:
             guard let id = bundleId, !id.isEmpty else { return .cgEvent }
             return electronBundleIds.contains(id) ? .accessibility : .cgEvent

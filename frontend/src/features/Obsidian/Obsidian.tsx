@@ -6,7 +6,7 @@ import { CheckCircle2, Circle, FolderTree } from "lucide-react";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import { api } from "../../api/MozgoslavApi";
-import { AppSettings, DEFAULT_SETTINGS } from "../../models/Settings";
+import { AppSettings, DEFAULT_SETTINGS } from "../../domain/Settings";
 import { FolderGrid, FolderItem, FolderHint, PageRoot, PageTitle, Subtitle, VaultRow } from "./Obsidian.style";
 
 const PRESET_FOLDERS = [

@@ -11,16 +11,27 @@ import AppKit
 
 /// Writes a string into whatever app currently owns the keyboard focus.
 ///
-/// Two backends:
+/// Three backends — listed in preferred order for `auto` mode:
 ///  - `CGEventPost(kCGHIDEventTap, …)` synthesizes Unicode keyboard events.
 ///    Fast (~1-5 ms / char), works in any native-Cocoa app.
 ///  - `AXUIElement + AXSetValue(kAXValueAttribute, …)` writes the string
 ///    directly into the focused element. Slower (~10-30 ms / char) but the
 ///    only reliable path for Electron apps that swallow raw HID events.
+///  - `NSPasteboard + ⌘V` (ADR-004 R3) — last-resort path when both above
+///    misbehave. Touches the user's clipboard history so we save & restore
+///    the previous clipboard contents around the injection.
 ///
-/// Selection is made by `InjectionStrategySelector` based on the focused app's
-/// bundle id, so this class stays a narrow executor.
+/// Strategy selection is made by `InjectionStrategySelector` based on the
+/// focused app's bundle id, so this class stays a narrow executor.
+/// AX injection guards itself with a timeout (ADR-004 R3) and falls back to
+/// the clipboard path on hang so the dictation UI never freezes waiting for
+/// a misbehaving app to respond to `AXUIElementSetAttributeValue`.
 public final class TextInjectionService {
+    /// Wall-clock budget for a single AX injection call. Values larger than
+    /// ~500 ms feel broken to the user; AX calls that take that long are
+    /// almost always a sign of a non-responsive focused app.
+    public static let accessibilityTimeoutSeconds: Double = 0.5
+
     public init() {}
 
     public func inject(text: String, strategy: InjectionStrategy) throws {
@@ -30,7 +41,9 @@ public final class TextInjectionService {
         case .cgEvent:
             try injectViaCgEvent(text)
         case .accessibility:
-            try injectViaAccessibility(text)
+            try injectViaAccessibilityWithFallback(text)
+        case .clipboard:
+            try injectViaClipboard(text)
         }
     }
 
@@ -66,8 +79,52 @@ public final class TextInjectionService {
         #endif
     }
 
-    private func injectViaAccessibility(_ text: String) throws {
+    private func injectViaAccessibilityWithFallback(_ text: String) throws {
         #if canImport(ApplicationServices)
+        let semaphore = DispatchSemaphore(value: 0)
+        var result: AXInjectionResult = .timeout
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self else {
+                semaphore.signal()
+                return
+            }
+            result = self.injectViaAccessibility(text)
+            semaphore.signal()
+        }
+
+        let deadline = DispatchTime.now() + Self.accessibilityTimeoutSeconds
+        if semaphore.wait(timeout: deadline) == .timedOut {
+            // AX call is wedged; bail to clipboard so the user still gets
+            // their text and the dictation loop stays responsive.
+            try injectViaClipboard(text)
+            return
+        }
+
+        switch result {
+        case .success:
+            return
+        case .retryViaCgEvent:
+            try injectViaCgEvent(text)
+        case .retryViaClipboard:
+            try injectViaClipboard(text)
+        case .timeout:
+            try injectViaClipboard(text)
+        }
+        #else
+        _ = text
+        throw HelperError(code: -32020, message: "AX injection is only available on macOS")
+        #endif
+    }
+
+    #if canImport(ApplicationServices)
+    private enum AXInjectionResult {
+        case success
+        case retryViaCgEvent
+        case retryViaClipboard
+        case timeout
+    }
+
+    private func injectViaAccessibility(_ text: String) -> AXInjectionResult {
         let systemElement = AXUIElementCreateSystemWide()
         var focusedValue: AnyObject?
         let focusStatus = AXUIElementCopyAttributeValue(
@@ -76,9 +133,9 @@ public final class TextInjectionService {
             &focusedValue
         )
         guard focusStatus == .success, let focused = focusedValue else {
-            // Fall back to CGEvent rather than failing outright — better UX.
-            try injectViaCgEvent(text)
-            return
+            // No focused element visible via AX — CGEvent is the safer
+            // fallback than clipboard (doesn't clobber pasteboard).
+            return .retryViaCgEvent
         }
 
         let element = focused as! AXUIElement
@@ -87,14 +144,62 @@ public final class TextInjectionService {
         let existing = (existingValue as? String) ?? ""
         let newValue = existing + text
 
-        let setStatus = AXUIElementSetAttributeValue(element, kAXValueAttribute as CFString, newValue as CFString)
-        if setStatus != .success {
-            // Some Electron apps accept selection-based insertion better.
-            try injectViaCgEvent(text)
+        let setStatus = AXUIElementSetAttributeValue(
+            element,
+            kAXValueAttribute as CFString,
+            newValue as CFString
+        )
+        if setStatus == .success {
+            return .success
+        }
+        // Electron apps that refuse AX writes usually accept a paste instead.
+        return .retryViaClipboard
+    }
+    #endif
+
+    private func injectViaClipboard(_ text: String) throws {
+        #if canImport(AppKit) && canImport(ApplicationServices)
+        let pasteboard = NSPasteboard.general
+        let saved = pasteboard.string(forType: .string)
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+
+        try synthesizeCommandV()
+
+        // Restore the prior clipboard entry — but only after the paste
+        // has had a chance to land. 200 ms is well above the longest
+        // observed paste latency (~30 ms) without being user-visible.
+        if let saved {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                pasteboard.clearContents()
+                pasteboard.setString(saved, forType: .string)
+            }
         }
         #else
         _ = text
-        throw HelperError(code: -32020, message: "AX injection is only available on macOS")
+        throw HelperError(code: -32020, message: "Clipboard injection is only available on macOS")
         #endif
     }
+
+    #if canImport(AppKit) && canImport(ApplicationServices)
+    private func synthesizeCommandV() throws {
+        guard let source = CGEventSource(stateID: .combinedSessionState) else {
+            throw HelperError(code: -32032, message: "Failed to create CGEventSource for paste")
+        }
+
+        // kVK_ANSI_V is 0x09 — defined in Carbon.HIToolbox but that umbrella
+        // header is deprecated on modern toolchains. Inline constants keep
+        // the helper slim and avoid pulling in Carbon just for a keycode.
+        let keyV: CGKeyCode = 0x09
+
+        guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: keyV, keyDown: true),
+              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: keyV, keyDown: false) else {
+            throw HelperError(code: -32033, message: "Failed to create paste CGEvent")
+        }
+        keyDown.flags = .maskCommand
+        keyUp.flags = .maskCommand
+        keyDown.post(tap: .cghidEventTap)
+        keyUp.post(tap: .cghidEventTap)
+    }
+    #endif
 }

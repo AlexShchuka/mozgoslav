@@ -233,8 +233,8 @@ public sealed class OpenAiCompatibleLlmService : ILlmService
 
     private sealed class ActionItemDto
     {
-        [JsonPropertyName("person")] public string Person => string.Empty;
-        [JsonPropertyName("task")] public string Task => string.Empty;
+        [JsonPropertyName("person")] public string Person { get; init; } = string.Empty;
+        [JsonPropertyName("task")] public string Task { get; init; } = string.Empty;
         [JsonPropertyName("deadline")] public string? Deadline { get; init; }
 
         public ActionItem ToDomain() => new(Person, Task, Deadline);

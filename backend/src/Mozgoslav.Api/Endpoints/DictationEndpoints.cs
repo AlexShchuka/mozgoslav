@@ -18,6 +18,14 @@ public static class DictationEndpoints
         int SampleRate,
         double OffsetSeconds);
 
+    /// <summary>
+    /// ADR-004 R2 — optional finalize payload. When the Electron main process
+    /// knows which app currently owns keyboard focus it forwards the macOS
+    /// bundle identifier here so the session manager can apply a per-app
+    /// correction profile to the polished transcript.
+    /// </summary>
+    public sealed record StopSessionRequest(string? BundleId);
+
     public static IEndpointRouteBuilder MapDictationEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/api/dictation/start", (IDictationSessionManager manager) =>
@@ -98,12 +106,13 @@ public static class DictationEndpoints
 
         endpoints.MapPost("/api/dictation/stop/{sessionId:guid}", async (
             Guid sessionId,
+            [FromBody] StopSessionRequest? body,
             IDictationSessionManager manager,
             CancellationToken ct) =>
         {
             try
             {
-                var result = await manager.StopAsync(sessionId, ct);
+                var result = await manager.StopAsync(sessionId, ct, body?.BundleId);
                 return Results.Ok(new
                 {
                     rawText = result.RawText,

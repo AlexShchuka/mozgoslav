@@ -28,4 +28,11 @@ export const API_ENDPOINTS = {
   logsTail: "/api/logs/tail",
   backup: "/api/backup",
   backupCreate: "/api/backup/create",
+  syncStatus: "/api/sync/status",
+  syncHealth: "/api/sync/health",
+  syncPairingPayload: "/api/sync/pairing-payload",
+  syncAcceptDevice: "/api/sync/accept-device",
+  syncEvents: "/api/sync/events",
+  ragQuery: "/api/rag/query",
+  ragReindex: "/api/rag/reindex",
 } as const;
