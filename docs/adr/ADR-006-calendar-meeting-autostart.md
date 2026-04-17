@@ -1,84 +1,101 @@
-# ADR-006: Calendar & Meeting-app Autostart
+# ADR-006: Calendar meeting autostart + UX / LM Studio / V2 polish
 
-- **Status:** Proposed — **future iteration, не для текущего launch MR**
-- **Date:** 2026-04-16
-- **Related:** ADR-002 (Dictation), ADR-003 (Syncthing)
+- **Status:** Accepted
+- **Date:** 2026-04-17 (extended from 2026-04-16 draft)
+- **Related:** ADR-002 (Dictation), ADR-003 (Syncthing), ADR-004 (Dictation/Sync refinements), ADR-005 (Local RAG)
 
+<!-- SECTION: Context -->
 ## Context
 
-Granola / Fireflies / Fathom делают одну вещь, которую mozgoslav пока делает руками: когда пользователь начинает meeting (Zoom / Google Meet / Teams / Webex), приложение **само включает запись + транскрипцию**, без кликов. Для use-case «сценарий из операции» — ценнейшая фича: не забыть записать, не кликать между дейли-делами.
+<!-- TODO: context paragraph -->
 
-## Decision (draft)
+<!-- SECTION: Decisions -->
+## Decisions
 
-### D1. Источники событий
+### D-calendar — Calendar & meeting-app autostart (original ADR-006 scope)
 
-- **Apple Calendar (EventKit)** — запрашиваем доступ, читаем events на сегодня. Extract URLs / Zoom Meeting IDs / Google Meet codes.
-- **Meeting-app detection через running processes** — `zoom.us` / `Google Chrome (с meet.google.com)` / `Teams` / `Webex`. Native helper (уже будет после ADR-002) может мониторить.
-- **Combination:** calendar event → expected meeting time ± 5 мин window; when meeting-app process spawns AND there's matching event → trigger autostart.
+<!-- TODO: preserved original D1-D5 + Consequences + Alternatives + Implementation plan (future) -->
 
-### D2. Autostart flow
+### D-1 — Button size ramp and macOS HIG 44pt hit target
 
-1. При старте mozgoslav — подписываемся на calendar events (EventKit).
-2. За 2 мин до event — pre-warm Whisper (load model).
-3. При detect'е matching meeting-app spawning → показываем toast:  
-   **«🎙 Meeting started: [title]. Recording will begin in 10s. [Cancel]»** → через 10 сек начинаем запись.
-4. Pre-fill recording metadata: title, date, attendees (из event), conversation type = `Meeting`.
-5. По окончании meeting-app process → auto-stop recording + enqueue для обычного pipeline (transcribe + LLM + export).
+<!-- TODO: decision + alternatives + consequences -->
 
-### D3. Permissions
+### D-2 — Modular scale 1.25 for body/UI, golden 1.618 for hero
 
-- **EventKit** — TCC `NSCalendarsFullAccessUsageDescription` в Info.plist + onboarding-step.
-- **Screen Recording** — для записи system audio во время meeting (мик + «speakers» как в meetily).
-- **Automation** — если хотим читать Zoom app state напрямую (опц.).
+<!-- TODO: decision + alternatives + consequences -->
 
-### D4. UX
+### D-3 — Press / release spring animations
 
-- **Opt-in** — дефолт выкл (`settings.autoRecord.enabled = false`). Пользователь включает явно.
-- **Toast cancel window** (10 сек) — даём возможность не записывать если meeting персональный.
-- **Do-not-record list** — domain/title blacklist (`settings.autoRecord.blockedPatterns`).
-- Для opt-in и blacklist — без UI, через `settings.db`.
+<!-- TODO: decision + alternatives + consequences -->
 
-### D5. Reuse existing
+### D-4 — Liquid Glass chrome (hand-rolled backdrop-filter)
 
-- `IAudioRecorder` (будет реализован в рамках V2 roadmap) — используется.
-- `ImportRecordingUseCase` — для enqueue обработки.
-- Native helper из ADR-002 — monitor processes + bridge.
+<!-- TODO: decision + alternatives + consequences -->
 
+### D-5 — Motion (ex-Framer Motion) with LazyMotion + domAnimation
+
+<!-- TODO: decision + alternatives + consequences -->
+
+### D-6 — Palette tokens (#F5F5F7 / #1C1C1E + 4 system accents)
+
+<!-- TODO: decision + alternatives + consequences -->
+
+### D-7 — Brain-icon launcher (Obsidian Second Brain vibe)
+
+<!-- TODO: decision + alternatives + consequences -->
+
+### D-8 — Record button enabled, wired to DictationSessionManager
+
+<!-- TODO: decision + alternatives + consequences -->
+
+### D-9 — Queue cancel endpoint + AnimatePresence row removal
+
+<!-- TODO: decision + alternatives + consequences -->
+
+### D-10 — i18n audit + ru/en parity enforcement
+
+<!-- TODO: decision + alternatives + consequences -->
+
+### D-11 — LM Studio discovery via /v1/models, no bundled downloader
+
+<!-- TODO: decision + alternatives + consequences -->
+
+### D-12 — README one-liners for dev + prod
+
+<!-- TODO: decision + alternatives + consequences -->
+
+### D-13 — Accessibility baseline (prefers-reduced-motion, WCAG AA, focus rings)
+
+<!-- TODO: decision + alternatives + consequences -->
+
+### D-14 — ILlmProvider abstraction (OpenAI-compat + Anthropic + Ollama)
+
+<!-- TODO: decision + alternatives + consequences -->
+
+### D-15 — V2 scaffolding: AVFoundation recorder, profile CRUD, kbar palette, onboarding wizard
+
+<!-- TODO: decision + alternatives + consequences -->
+
+<!-- SECTION: ImplementationPlan -->
+## Implementation plan (this PR)
+
+<!-- TODO: ordered list of B-sections as they land -->
+
+<!-- SECTION: Migration -->
+## Migration / breaking changes
+
+None. Every change is additive — new settings default off or preserve prior behaviour, new tokens slot into the existing theme shape, new endpoints sit under new routes.
+
+<!-- SECTION: Consequences -->
 ## Consequences
 
-### Положительные
-- Killer-фича для «сценарий из операции».
-- Нулевое friction: «зашёл на meeting → получил заметку».
-- Reuse existing pipeline 95%.
+<!-- TODO: bundle size delta, maintenance, dependency matrix -->
 
-### Отрицательные
-- Требует **реального `IAudioRecorder`** (сейчас stub). Блокер — сначала замена Noop на AVFoundation.
-- Permissions — EventKit + Screen Recording + возможно Automation. Onboarding удлиняется.
-- False positives (пользователь открыл Zoom но не на meeting) — решается calendar-event matching + pre-meeting prompt.
-- Privacy concerns: calendar access = sensitive. Никакого external sharing; явно заявляем в Privacy Policy.
-
-### Out of scope
-- Multi-participant speaker diarization (см ADR-005 / python-sidecar V3).
-- Auto-join meeting (клик-за-пользователя) — NO, чистый observer.
-- Live transcript в overlay для meeting — возможно добавить позже, reuse dictation streaming.
-
-## Alternatives considered
-
-**A1. Только ручной запуск.** Статус-кво. Отвергаем — User preference (Granola-style).
-
-**A2. Hotkey-only (без calendar).** Без EventKit — проще, но теряем «не забыть».
-
-**A3. OCR скриншотов Zoom (чтоб понять что начался).** Слишком нагружено, privacy-минусы.
-
-## Implementation plan (future)
-
-- Phase 1: real `IAudioRecorder` (prerequisite, отдельный ADR или TODO.md item).
-- Phase 2: EventKit integration (Swift helper).
-- Phase 3: Meeting-app process detection.
-- Phase 4: Autostart orchestration + settings.
-- Phase 5: Tests — mock EventKit + process spawn simulation.
-
+<!-- SECTION: References -->
 ## References
-- [Apple EventKit docs](https://developer.apple.com/documentation/eventkit)
-- Granola / Fireflies / Fathom — коммерческие референсы.
-- [Screen Recording permission on macOS](https://developer.apple.com/documentation/screencapturekit)
+
+- PR #2 — EnsureCreated RCA + dictation R1 + Syncthing skeleton — <https://github.com/AlexShchuka/mozgoslav/pull/2>
+- ADR-005 — Local RAG Q&A (context for LM Studio embedding plans)
+- [Motion (ex-Framer Motion)](https://motion.dev/)
+- [Nielsen Norman Group — Golden ratio in UI design](https://www.nngroup.com/articles/golden-ratio-ui-design/)
+- [Apple Human Interface Guidelines — Inputs](https://developer.apple.com/design/human-interface-guidelines/inputs)
