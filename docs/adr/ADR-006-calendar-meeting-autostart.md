@@ -69,9 +69,16 @@ Granola / Fireflies / Fathom делают одну вещь, которую mozg
 
 **Consequences.** One-file change to `Button.style.ts`. The `lg` row in the Dashboard and Onboarding gets a little airier. Accessibility improves: every primary tap target now crosses the 42 px ceiling that WCAG 2.5.5 "Target Size (Enhanced)" recommends.
 
-### D-2 — Modular scale 1.25 for body/UI, golden 1.618 for hero
+### D-2 — Modular scale 1.25 for body/UI, golden 1.618 for hero only
 
-<!-- TODO: decision + alternatives + consequences -->
+**Decision.** Body and UI chrome use a Major-Third modular scale (ratio 1.25) anchored at 15 px. Resulting ramp: `xs = 12`, `sm = 13`, `md = 15`, `lg = 18–19`, `xl = 24`. Hero / display copy jumps one golden step from body: 24 → 39 px (≈ 1.618 × 24). Nothing between the body ramp and the hero tier — deliberately skipping the in-between 30 px tier keeps hierarchy obvious at a glance. Golden ratio is kept out of the body ramp because density matters more than mathematical beauty when a user scans 20 queue rows.
+
+**Alternatives considered.**
+- *Pure golden ratio through the whole ramp.* Rejected: the 24→39 jump is dramatic, and applying the same 1.618 step between body sizes loses density in list-dense screens like Queue / Logs (NN/G's density caveat).
+- *Perfect-Fourth 1.333.* Rejected: steps too coarse for the four-tier body we actually use.
+- *Fifth-letter (1.5).* Rejected: similar density penalty as 1.333; no readability upside.
+
+**Consequences.** `theme.ts` body sizes adjust to the 1.25 ramp (`md` was 14 → becomes 15). Hero tokens land in a new `theme.font.size.hero = 39px` bucket, used only by Dashboard hero and onboarding first screen.
 
 ### D-3 — Press / release spring animations
 
