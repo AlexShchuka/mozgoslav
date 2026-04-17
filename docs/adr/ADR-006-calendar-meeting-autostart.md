@@ -82,7 +82,23 @@ Granola / Fireflies / Fathom делают одну вещь, которую mozg
 
 ### D-3 — Press / release spring animations
 
-<!-- TODO: decision + alternatives + consequences -->
+**Decision.** Adopt a single table of motion tokens used across every interactive surface. All values live in `src/styles/motion.ts` and are shared between plain styled-components transitions (for fallbacks) and Motion's `transition` prop.
+
+| Interaction            | Shape                                                                     | Duration          |
+| ---------------------- | ------------------------------------------------------------------------- | ----------------- |
+| Button press-down      | spring `{ stiffness: 420, damping: 28 }`, scale 0.96, opacity 0.82         | 80–120 ms         |
+| Button release         | spring `{ stiffness: 300, damping: 20 }`, scale → 1, ≤ 3 % overshoot       | 200–260 ms        |
+| Modal enter            | cubic-bezier(0.22, 1, 0.36, 1), scale 0.96→1, y 8→0, opacity 0→1            | 220–280 ms        |
+| Modal exit             | cubic-bezier(0.32, 0, 0.67, 0)                                             | 160–200 ms        |
+| Page / tab cross-fade  | ease-out                                                                  | 180 ms            |
+| Tray icon state        | soft spring + colour/glow tween                                           | 400 ms            |
+| Toast slide-in         | spring `{ stiffness: 260, damping: 22 }`                                   | 240 ms            |
+| List item enter        | ease-out, 40 ms stagger                                                   | 120 ms per item   |
+| Queue row cancel       | fade + collapse height → 0                                                | 180 ms            |
+
+**Alternatives considered.** *Tween everything with CSS transitions.* Rejected: springs give the 3 % overshoot that makes press-release feel tactile; tweening lands flat. *Framer Motion `mass/stiffness/damping` presets.* Rejected: Motion's explicit numeric knobs are clearer in code review than opaque preset names, and let us keep the table above as the single source of truth.
+
+**Consequences.** All decorative animations gate on `useReducedMotion()` (see D-13): when `true`, every entry collapses to a 0 ms fade — no scale, no spring overshoot. This keeps the app accessible and prevents motion-sickness regressions.
 
 ### D-4 — Liquid Glass chrome (hand-rolled backdrop-filter)
 
