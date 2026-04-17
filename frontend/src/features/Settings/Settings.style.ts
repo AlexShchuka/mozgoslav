@@ -97,3 +97,63 @@ export const Toolbar = styled.div`
   justify-content: flex-end;
   gap: ${({ theme }) => theme.space(2)};
 `;
+
+export const LmStudioSection = styled.section`
+  margin-top: ${({ theme }) => theme.space(5)};
+  padding-top: ${({ theme }) => theme.space(4)};
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.space(2)};
+`;
+
+export const LmStudioHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: ${({ theme }) => theme.space(2)};
+  color: ${({ theme }) => theme.colors.text};
+`;
+
+export const LmStudioHint = styled.p`
+  margin: 0;
+  font-size: ${({ theme }) => theme.font.size.sm};
+  color: ${({ theme }) => theme.colors.textMuted};
+`;
+
+export const LmStudioEmpty = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.space(1)};
+  padding: ${({ theme }) => theme.space(3)};
+  border: 1px dashed ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radii.md};
+  color: ${({ theme }) => theme.colors.textMuted};
+  font-size: ${({ theme }) => theme.font.size.sm};
+
+  a {
+    color: ${({ theme }) => theme.colors.accent};
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+`;
+
+export const LmStudioList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.space(1.5)};
+`;
+
+export const LmStudioItem = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: ${({ theme }) => `${theme.space(1.5)} ${theme.space(3)}`};
+  background: ${({ theme }) => theme.colors.surface};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radii.md};
+  font-family: ${({ theme }) => theme.font.familyMono};
+  font-size: ${({ theme }) => theme.font.size.sm};
+  color: ${({ theme }) => theme.colors.text};
+`;

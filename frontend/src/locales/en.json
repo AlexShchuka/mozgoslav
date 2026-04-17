@@ -141,7 +141,14 @@
     },
     "testConnection": "Test connection",
     "tokenHint": "Stored locally in SQLite. Never leaves your machine except to the configured endpoint.",
-    "savedToast": "Settings saved"
+    "savedToast": "Settings saved",
+    "lmStudio": {
+      "title": "LM Studio models",
+      "hint": "We read the list of loaded models via the OpenAI-compatible /v1/models endpoint. Model downloads happen in LM Studio — Mozgoslav doesn't bundle them.",
+      "empty": "LM Studio is not responding. Start it, load a model, then click Retry.",
+      "use": "Use",
+      "selected": "Selected"
+    }
   },
   "models": {
     "title": "Models",

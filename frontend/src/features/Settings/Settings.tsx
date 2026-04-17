@@ -2,7 +2,7 @@ import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { toast } from "react-toastify";
-import { FolderOpen, Play } from "lucide-react";
+import { FolderOpen, Play, ExternalLink, RefreshCw } from "lucide-react";
 
 import Button from "../../components/Button";
 import Card from "../../components/Card";
@@ -10,7 +10,23 @@ import Input from "../../components/Input";
 import { api } from "../../api/MozgoslavApi";
 import { AppSettings, DEFAULT_SETTINGS } from "../../models/Settings";
 import { setThemeMode } from "../../styles/ThemeProvider";
-import { PageRoot, PageTitle, Tabs, Tab, FormGrid, Toolbar, Row, SelectBox, SelectOption } from "./Settings.style";
+import {
+  PageRoot,
+  PageTitle,
+  Tabs,
+  Tab,
+  FormGrid,
+  Toolbar,
+  Row,
+  SelectBox,
+  SelectOption,
+  LmStudioSection,
+  LmStudioHeader,
+  LmStudioHint,
+  LmStudioEmpty,
+  LmStudioList,
+  LmStudioItem,
+} from "./Settings.style";
 
 type TabKey = "general" | "storage" | "llm" | "whisper" | "obsidian";
 
@@ -19,6 +35,19 @@ const Settings: FC = () => {
   const [tab, setTab] = useState<TabKey>("general");
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [saving, setSaving] = useState(false);
+  const [lmModels, setLmModels] = useState<{ id: string; object: string }[]>([]);
+  const [lmLoading, setLmLoading] = useState(false);
+
+  const refreshLmModels = useCallback(async () => {
+    setLmLoading(true);
+    try {
+      setLmModels(await api.listLmStudioModels());
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLmLoading(false);
+    }
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -32,6 +61,10 @@ const Settings: FC = () => {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (tab === "llm") void refreshLmModels();
+  }, [tab, refreshLmModels]);
 
   const update = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) =>
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -167,6 +200,55 @@ const Settings: FC = () => {
               {t("settings.testConnection")}
             </Button>
           </FormGrid>
+          <LmStudioSection>
+            <LmStudioHeader>
+              <strong>{t("settings.lmStudio.title")}</strong>
+              <Button
+                variant="ghost"
+                size="sm"
+                leftIcon={<RefreshCw size={14} />}
+                onClick={refreshLmModels}
+                isLoading={lmLoading}
+              >
+                {t("common.retry")}
+              </Button>
+            </LmStudioHeader>
+            <LmStudioHint>{t("settings.lmStudio.hint")}</LmStudioHint>
+            {lmModels.length === 0 ? (
+              <LmStudioEmpty>
+                <span>{t("settings.lmStudio.empty")}</span>
+                <a
+                  href="https://lmstudio.ai"
+                  onClick={(e) => {
+                    if (window.mozgoslav) {
+                      e.preventDefault();
+                      void window.mozgoslav.openPath?.("https://lmstudio.ai");
+                    }
+                  }}
+                >
+                  lmstudio.ai <ExternalLink size={12} />
+                </a>
+              </LmStudioEmpty>
+            ) : (
+              <LmStudioList>
+                {lmModels.map((model) => (
+                  <LmStudioItem key={model.id}>
+                    <span>{model.id}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => update("llmModel", model.id)}
+                      disabled={settings.llmModel === model.id}
+                    >
+                      {settings.llmModel === model.id
+                        ? t("settings.lmStudio.selected")
+                        : t("settings.lmStudio.use")}
+                    </Button>
+                  </LmStudioItem>
+                ))}
+              </LmStudioList>
+            )}
+          </LmStudioSection>
         </Card>
       )}
 
