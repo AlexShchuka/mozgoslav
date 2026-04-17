@@ -270,9 +270,23 @@ Queue page (explicitly reported as missing translations) is migrated first; ever
 
 **Consequences.** One shared `focusRing` + `useMotionPreset` + the D-6 palette cover every interactive component without per-component logic. A11y regressions surface the moment a component introduces inline styles — caught at review.
 
-### D-14 — ILlmProvider abstraction (OpenAI-compat + Anthropic + Ollama)
+### D-14 — `ILlmProvider` abstraction (OpenAI-compat + Anthropic + Ollama)
 
-<!-- TODO: decision + alternatives + consequences -->
+**Decision.** Introduce a port `ILlmProvider` alongside the existing `ILlmService`. `ILlmService` stays as the app-facing "process this transcript" abstraction; `ILlmProvider` is the *transport* — one interface, three implementations:
+
+- `OpenAiCompatibleLlmProvider` — wraps today's `OpenAiCompatibleLlmService`. Targets LM Studio, Ollama's `/v1`, OpenRouter, Groq, DeepSeek, any other OpenAI-REST speaker. Configurable base URL + API key.
+- `AnthropicLlmProvider` — calls the Messages API directly. Streaming + non-streaming. Lives in its own file because the wire schema differs enough that a thin shim would be lossy.
+- `OllamaLlmProvider` — uses `/api/chat` so users who want Ollama-specific params (temperature schedule, mirostat, num_ctx) aren't funnelled through the OpenAI shim.
+
+**Settings shape.** `AppSettingsDto.Llm` becomes a nested record `{ Provider: enum {OpenAiCompat, Anthropic, Ollama}, Endpoint: string, ApiKey: string, Model: string }`. Seed default on fresh install: `OpenAiCompat`, `http://localhost:1234`, no key (LM Studio). All secrets remain in the SQLite `settings` table — never in config files or remote logs (privacy invariant).
+
+The chunk/merge strategy (`Chunk`, `Merge` inside `OpenAiCompatibleLlmService`) is promoted to a shared helper `LlmChunker` used by all three providers; this is where the planned sync with `meetily transcript_processor.py` lands.
+
+**Alternatives considered.**
+- *Keep one provider and force everyone through OpenAI-compat.* Rejected — Anthropic's tool-use / thinking blocks and Ollama's raw-params control are exactly what power users who pick those providers are there for.
+- *Plug a LangChain-style abstraction.* Rejected — heavyweight dependency for a three-provider surface.
+
+**Consequences.** Three providers, one shared chunker. Each provider has unit-tests against mocked HTTP; an opt-in smoke test runs against a real LM Studio when `ENABLE_LM_STUDIO_SMOKE=1`. The existing `OpenAiCompatibleLlmService` can move behind the new `OpenAiCompatibleLlmProvider` cleanly — no call-site churn outside DI registration.
 
 ### D-15 — V2 scaffolding: AVFoundation recorder, profile CRUD, kbar palette, onboarding wizard
 
