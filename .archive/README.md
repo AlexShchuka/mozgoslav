@@ -8,3 +8,4 @@ Layout:
 - `docs/` — older top-level docs (`SELF-REVIEW.md`, `TODO.md` snapshots before v0.8).
 - `original-idea/` — first-iteration spec and brief — baseline against which the skeleton was scaffolded.
 - `reports/` — scaffolding and agent progress reports from earlier iterations.
+- `plans/` — per-version development plans after they ship (e.g. `plans/v0.8/` — checkpoint summaries of the blocks that built v0.8).
