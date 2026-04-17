@@ -100,9 +100,17 @@ Granola / Fireflies / Fathom делают одну вещь, которую mozg
 
 **Consequences.** All decorative animations gate on `useReducedMotion()` (see D-13): when `true`, every entry collapses to a 0 ms fade — no scale, no spring overshoot. This keeps the app accessible and prevents motion-sickness regressions.
 
-### D-4 — Liquid Glass chrome (hand-rolled backdrop-filter)
+### D-4 — Liquid Glass chrome (hand-rolled `backdrop-filter`)
 
-<!-- TODO: decision + alternatives + consequences -->
+**Decision.** Adopt the macOS-26/Tahoe-style Liquid Glass aesthetic for app chrome (sidebar, modal backdrop, toast surfaces) using a hand-rolled CSS recipe: `backdrop-filter: blur(20px) saturate(180%)` plus a layered `::before` highlight (2 px inset white-alpha stroke + radial gradient) for the glassy rim. No external library for these surfaces — one mixin in `src/styles/liquidGlass.ts` re-used everywhere.
+
+**Exception.** The hero CTA (brain-icon launcher, see D-7) is allowed to render through `rdev/liquid-glass-react` (MIT) because that surface demands the physically-shaded refraction effect that is painful to hand-roll. One dependency, one component, zero creep into regular chrome.
+
+**Alternatives considered.**
+- *`@developer-hub/liquid-glass` / other wrappers for all surfaces.* Rejected: bundle cost and style-lock-in; our chrome only needs blur + saturate + rim highlight.
+- *Skip Liquid Glass entirely, keep flat panels.* Rejected: misses the macOS 26 alignment user asked for; flat panels visibly lag behind the system chrome.
+
+**Consequences.** Adds `motion` (≈ 18 KB gzipped — D-5) and `liquid-glass-react` (≈ 7 KB). On Linux dev boxes where `backdrop-filter: blur` is less performant the mixin falls back (via `@supports not`) to an opaque translucent fill so the UI never flickers. Every glass surface keeps WCAG AA copy contrast (D-6) because the `::before` rim darkens the base enough to pass 4.5:1.
 
 ### D-5 — Motion (ex-Framer Motion) with LazyMotion + domAnimation
 
