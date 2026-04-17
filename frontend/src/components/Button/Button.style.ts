@@ -1,5 +1,7 @@
 import styled, { css } from "styled-components";
 
+import { disabledState, focusRing } from "../../styles/mixins";
+
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
 
@@ -70,15 +72,11 @@ export const StyledButton = styled.button<{ $variant: ButtonVariant; $size: Butt
     border-color ${({ theme }) => theme.motion.fast};
 
   &:focus-visible {
-    outline: 2px solid ${({ theme }) => theme.colors.focusRing};
-    outline-offset: 2px;
-    box-shadow: inset 0 0 0 2px ${({ theme }) => theme.colors.accent};
+    ${focusRing}
   }
 
   &:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-    pointer-events: none;
+    ${disabledState}
     transition: none;
   }
 

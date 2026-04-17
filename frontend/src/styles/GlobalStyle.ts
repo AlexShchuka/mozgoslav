@@ -1,5 +1,7 @@
 import { createGlobalStyle } from "styled-components";
 
+import { focusRing } from "./mixins";
+
 export const GlobalStyle = createGlobalStyle`
   :root {
     color-scheme: ${({ theme }) => theme.mode};
@@ -45,6 +47,26 @@ export const GlobalStyle = createGlobalStyle`
 
   a:hover {
     text-decoration: underline;
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    ${focusRing}
+  }
+
+  /* B9: global reduced-motion guard. Any css @keyframes animation is
+     neutralised system-wide when the user opts out. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 
   /* scrollbar */

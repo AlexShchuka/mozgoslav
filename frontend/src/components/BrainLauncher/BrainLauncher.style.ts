@@ -1,5 +1,7 @@
 import styled, { css, keyframes } from "styled-components";
 
+import { disabledState, focusRing } from "../../styles/mixins";
+
 export type BrainLauncherState = "idle" | "recording";
 export type BrainLauncherSize = "tray" | "dock";
 
@@ -50,16 +52,18 @@ export const LauncherButton = styled.button<{
       animation: ${pulse} ${$state === "recording" ? "0.8s" : "2.4s"} ease-in-out infinite;
     `}
 
+  /* CSS-level belt-and-braces: even if the JS hook somehow fails to gate the
+     animation, honour the user's OS-level preference. */
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+
   &:focus-visible {
-    outline: 2px solid ${({ theme }) => theme.colors.accent};
-    outline-offset: 3px;
+    ${focusRing}
   }
 
   &:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-    pointer-events: none;
-    animation: none;
+    ${disabledState}
   }
 `;
 
