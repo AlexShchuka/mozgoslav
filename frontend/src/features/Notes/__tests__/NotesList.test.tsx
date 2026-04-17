@@ -1,39 +1,28 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
-import { ThemeProvider } from "styled-components";
 
 import NotesList from "../NotesList";
-import { lightTheme } from "../../../styles/theme";
 import { ProcessedNote } from "../../../domain/ProcessedNote";
+import { renderWithRouter } from "../../../testUtils";
+import type { MockApiBundle } from "../../../testUtils";
 import "../../../i18n";
 
 jest.mock("../../../api", () => {
   const actual = jest.requireActual("../../../api");
-  const notesStub = {
-    list: jest.fn(),
-    getById: jest.fn(),
-    create: jest.fn(),
-    exportNote: jest.fn(),
-  };
+  const {
+    createMockApi,
+  } = jest.requireActual("../../../testUtils/mockApi") as typeof import("../../../testUtils/mockApi");
+  const bundle = createMockApi();
   return {
     ...actual,
-    apiFactory: {
-      ...actual.apiFactory,
-      createNotesApi: () => notesStub,
-    },
-    __notesStub: notesStub,
+    apiFactory: bundle.factory,
+    __bundle: bundle,
   };
 });
 
-const notesStub = (
-  jest.requireMock("../../../api") as { __notesStub: Record<string, jest.Mock> }
-).__notesStub;
-
-const api = {
-  listNotes: notesStub.list,
-  createNote: notesStub.create,
-};
+const mockApi = (
+  jest.requireMock("../../../api") as { __bundle: MockApiBundle }
+).__bundle;
 
 const buildNote = (patch: Partial<ProcessedNote>): ProcessedNote => ({
   id: patch.id ?? "n1",
@@ -57,22 +46,15 @@ const buildNote = (patch: Partial<ProcessedNote>): ProcessedNote => ({
   createdAt: patch.createdAt ?? new Date().toISOString(),
 });
 
-const renderNotes = () =>
-  render(
-    <MemoryRouter>
-      <ThemeProvider theme={lightTheme}>
-        <NotesList />
-      </ThemeProvider>
-    </MemoryRouter>,
-  );
-
 describe("NotesList — add note (BC-022 / Bug 4)", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   it("NotesList_AddNote_OpensEditor", async () => {
-    api.listNotes.mockResolvedValue([]);
+    mockApi.notesApi.list.mockResolvedValue([]);
 
-    renderNotes();
+    renderWithRouter(<NotesList />);
 
     const btn = await screen.findByTestId("notes-add-button");
     await userEvent.click(btn);
@@ -82,15 +64,15 @@ describe("NotesList — add note (BC-022 / Bug 4)", () => {
   });
 
   it("NotesList_AddNote_SubmitsAndInserts", async () => {
-    api.listNotes.mockResolvedValue([]);
+    mockApi.notesApi.list.mockResolvedValue([]);
     const created = buildNote({
       id: "new-1",
       topic: "handwritten",
       markdownContent: "Hello",
     });
-    api.createNote.mockResolvedValue(created);
+    mockApi.notesApi.create.mockResolvedValue(created);
 
-    renderNotes();
+    renderWithRouter(<NotesList />);
 
     await userEvent.click(await screen.findByTestId("notes-add-button"));
     await userEvent.type(screen.getByTestId("notes-add-title"), "handwritten");
@@ -98,18 +80,17 @@ describe("NotesList — add note (BC-022 / Bug 4)", () => {
     await userEvent.click(screen.getByTestId("notes-add-submit"));
 
     await waitFor(() =>
-      expect(api.createNote).toHaveBeenCalledWith({
+      expect(mockApi.notesApi.create).toHaveBeenCalledWith({
         title: "handwritten",
         body: "Hello",
       }),
     );
-    // New note appears in the list
     expect(await screen.findByText("handwritten")).toBeInTheDocument();
   });
 
   it("NotesList_EmptyState", async () => {
-    api.listNotes.mockResolvedValue([]);
-    renderNotes();
+    mockApi.notesApi.list.mockResolvedValue([]);
+    renderWithRouter(<NotesList />);
     await waitFor(() =>
       expect(
         screen.getByText(/Пока пусто|Nothing here yet/),

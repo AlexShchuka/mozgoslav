@@ -1,11 +1,10 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
-import { ThemeProvider } from "styled-components";
 
 import Profiles from "../Profiles";
-import { lightTheme } from "../../../styles/theme";
 import { Profile } from "../../../domain/Profile";
+import { renderWithRouter } from "../../../testUtils";
+import type { MockApiBundle } from "../../../testUtils";
 import "../../../i18n";
 
 jest.mock("react-toastify", () => ({
@@ -18,37 +17,20 @@ jest.mock("react-toastify", () => ({
 
 jest.mock("../../../api", () => {
   const actual = jest.requireActual("../../../api");
-  // One shared stub for the whole test file so the `api.xxx` aliases used
-  // inside arrange blocks observe the same jest.fn instances the feature
-  // calls through.
-  const profilesStub = {
-    list: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    remove: jest.fn(),
-    duplicate: jest.fn(),
-  };
+  const {
+    createMockApi,
+  } = jest.requireActual("../../../testUtils/mockApi") as typeof import("../../../testUtils/mockApi");
+  const bundle = createMockApi();
   return {
     ...actual,
-    apiFactory: {
-      ...actual.apiFactory,
-      createProfilesApi: () => profilesStub,
-    },
-    __profilesStub: profilesStub,
+    apiFactory: bundle.factory,
+    __bundle: bundle,
   };
 });
 
-const profilesApiStub = (
-  jest.requireMock("../../../api") as { __profilesStub: Record<string, jest.Mock> }
-).__profilesStub;
-
-const api = {
-  listProfiles: profilesApiStub.list,
-  createProfile: profilesApiStub.create,
-  updateProfile: profilesApiStub.update,
-  deleteProfile: profilesApiStub.remove,
-  duplicateProfile: profilesApiStub.duplicate,
-};
+const mockApi = (
+  jest.requireMock("../../../api") as { __bundle: MockApiBundle }
+).__bundle;
 
 const buildProfile = (patch: Partial<Profile>): Profile => ({
   id: patch.id ?? "p1",
@@ -63,50 +45,40 @@ const buildProfile = (patch: Partial<Profile>): Profile => ({
   isBuiltIn: patch.isBuiltIn ?? false,
 });
 
-const renderProfiles = () =>
-  render(
-    <MemoryRouter>
-      <ThemeProvider theme={lightTheme}>
-        <Profiles />
-      </ThemeProvider>
-    </MemoryRouter>,
-  );
-
 describe("Profiles — CRUD UI", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    api.listProfiles.mockResolvedValue([]);
+    mockApi.profilesApi.list.mockResolvedValue([]);
   });
 
   it("Profiles_List_RendersWithBadges", async () => {
-    api.listProfiles.mockResolvedValue([
+    mockApi.profilesApi.list.mockResolvedValue([
       buildProfile({ id: "b1", name: "Built-in", isBuiltIn: true, isDefault: true }),
       buildProfile({ id: "u1", name: "Mine", isBuiltIn: false }),
     ]);
 
-    renderProfiles();
+    renderWithRouter(<Profiles />);
 
     expect(await screen.findByText("Built-in")).toBeInTheDocument();
     expect(screen.getByText("Mine")).toBeInTheDocument();
-    // Built-in row carries both badges; user row carries none
     expect(screen.getByTestId("profile-row-b1")).toHaveAttribute("data-builtin", "true");
     expect(screen.getByTestId("profile-row-u1")).toHaveAttribute("data-builtin", "false");
   });
 
   it("Profiles_Create_OpensEditor_PostsAndInserts", async () => {
-    api.listProfiles.mockResolvedValue([]);
+    mockApi.profilesApi.list.mockResolvedValue([]);
     const created = buildProfile({ id: "new", name: "Fresh" });
-    api.createProfile.mockResolvedValueOnce(created);
-    api.listProfiles.mockResolvedValueOnce([]).mockResolvedValue([created]);
+    mockApi.profilesApi.create.mockResolvedValueOnce(created);
+    mockApi.profilesApi.list.mockResolvedValueOnce([]).mockResolvedValue([created]);
 
-    renderProfiles();
+    renderWithRouter(<Profiles />);
 
     await userEvent.click(await screen.findByTestId("profiles-create"));
     await userEvent.type(screen.getByTestId("profile-field-name"), "Fresh");
     await userEvent.click(screen.getByTestId("profile-editor-save"));
 
     await waitFor(() => {
-      expect(api.createProfile).toHaveBeenCalledWith(
+      expect(mockApi.profilesApi.create).toHaveBeenCalledWith(
         expect.objectContaining({ name: "Fresh" }),
       );
     });
@@ -115,13 +87,13 @@ describe("Profiles — CRUD UI", () => {
 
   it("Profiles_Edit_OpensEditor_PutsAndRefreshes", async () => {
     const existing = buildProfile({ id: "u1", name: "Mine" });
-    api.listProfiles.mockResolvedValue([existing]);
-    api.updateProfile.mockResolvedValueOnce({
+    mockApi.profilesApi.list.mockResolvedValue([existing]);
+    mockApi.profilesApi.update.mockResolvedValueOnce({
       ...existing,
       name: "Mine-renamed",
     });
 
-    renderProfiles();
+    renderWithRouter(<Profiles />);
 
     await userEvent.click(await screen.findByTestId("profile-row-edit-u1"));
     const nameField = screen.getByTestId("profile-field-name") as HTMLInputElement;
@@ -130,7 +102,7 @@ describe("Profiles — CRUD UI", () => {
     await userEvent.click(screen.getByTestId("profile-editor-save"));
 
     await waitFor(() => {
-      expect(api.updateProfile).toHaveBeenCalledWith(
+      expect(mockApi.profilesApi.update).toHaveBeenCalledWith(
         "u1",
         expect.objectContaining({ name: "Mine-renamed" }),
       );
@@ -140,38 +112,37 @@ describe("Profiles — CRUD UI", () => {
   it("Profiles_Duplicate_PostsAndInserts", async () => {
     const existing = buildProfile({ id: "u1", name: "Mine" });
     const copy = buildProfile({ id: "u2", name: "Mine (copy)" });
-    api.listProfiles
+    mockApi.profilesApi.list
       .mockResolvedValueOnce([existing])
       .mockResolvedValue([existing, copy]);
-    api.duplicateProfile.mockResolvedValueOnce(copy);
+    mockApi.profilesApi.duplicate.mockResolvedValueOnce(copy);
 
-    renderProfiles();
+    renderWithRouter(<Profiles />);
 
     await userEvent.click(await screen.findByTestId("profile-row-duplicate-u1"));
 
     await waitFor(() => {
-      expect(api.duplicateProfile).toHaveBeenCalledWith("u1");
+      expect(mockApi.profilesApi.duplicate).toHaveBeenCalledWith("u1");
     });
     expect(await screen.findByText("Mine (copy)")).toBeInTheDocument();
   });
 
   it("Profiles_Delete_UserCreated_RemovesRow", async () => {
     const existing = buildProfile({ id: "u1", name: "Mine", isBuiltIn: false });
-    api.listProfiles
+    mockApi.profilesApi.list
       .mockResolvedValueOnce([existing])
       .mockResolvedValue([]);
-    api.deleteProfile.mockResolvedValueOnce(undefined);
+    mockApi.profilesApi.remove.mockResolvedValueOnce(undefined);
 
-    // Auto-confirm the window.confirm dialog
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true);
 
     try {
-      renderProfiles();
+      renderWithRouter(<Profiles />);
 
       await userEvent.click(await screen.findByTestId("profile-row-delete-u1"));
 
       await waitFor(() => {
-        expect(api.deleteProfile).toHaveBeenCalledWith("u1");
+        expect(mockApi.profilesApi.remove).toHaveBeenCalledWith("u1");
       });
       await waitFor(() => {
         expect(screen.queryByText("Mine")).not.toBeInTheDocument();
@@ -183,22 +154,19 @@ describe("Profiles — CRUD UI", () => {
 
   it("Profiles_Delete_BuiltIn_ShowsErrorToast_RowStays", async () => {
     const builtIn = buildProfile({ id: "b1", name: "Built-in", isBuiltIn: true });
-    api.listProfiles.mockResolvedValue([builtIn]);
+    mockApi.profilesApi.list.mockResolvedValue([builtIn]);
 
-    // Either the delete button is disabled or the server answers 409 —
-    // either way the row must stay put. We simulate the 409 path.
-    api.deleteProfile.mockRejectedValueOnce(
+    mockApi.profilesApi.remove.mockRejectedValueOnce(
       new Error("Conflict: built-in profiles cannot be deleted"),
     );
     const { toast } = jest.requireMock("react-toastify") as {
       toast: { error: jest.Mock };
     };
 
-    renderProfiles();
+    renderWithRouter(<Profiles />);
 
     const deleteBtn = await screen.findByTestId("profile-row-delete-b1");
 
-    // Built-in row: either disabled (preferred) or invokes the API and fails.
     if (!(deleteBtn as HTMLButtonElement).disabled) {
       const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true);
       try {
@@ -213,16 +181,14 @@ describe("Profiles — CRUD UI", () => {
   });
 
   it("ProfileEditor_SubmitEmptyName_ShowsValidation", async () => {
-    api.listProfiles.mockResolvedValue([]);
+    mockApi.profilesApi.list.mockResolvedValue([]);
 
-    renderProfiles();
+    renderWithRouter(<Profiles />);
 
     await userEvent.click(await screen.findByTestId("profiles-create"));
-    // Do not type any name — submit.
     await userEvent.click(screen.getByTestId("profile-editor-save"));
 
-    // The editor should show a validation message and not call createProfile.
-    expect(api.createProfile).not.toHaveBeenCalled();
+    expect(mockApi.profilesApi.create).not.toHaveBeenCalled();
     expect(await screen.findByTestId("profile-field-name-error")).toBeInTheDocument();
   });
 });
