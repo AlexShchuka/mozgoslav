@@ -142,9 +142,16 @@ try
     // downloads succeed; the resilience handler only covers retry + circuit
     // breaker (the 30 s total-request timeout is explicitly overridden by the
     // ModelDownloadService for the streaming case, see that file).
-    builder.Services.AddHttpClient("models")
+    builder.Services.AddHttpClient("models", client =>
+        {
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozgoslav/1.0");
+        })
         .AddStandardResilienceHandler(options =>
         {
+            // ADR-011 step 9 — the bespoke retry loop in ModelDownloadService is
+            // replaced by HttpResilience's retry + circuit-breaker. Per-attempt
+            // budget is generous (30 min) so multi-GB HuggingFace transfers
+            // never time out mid-download; retries back off exponentially.
             options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(30);
             options.AttemptTimeout.Timeout = TimeSpan.FromMinutes(30);
             options.Retry.MaxRetryAttempts = 3;

@@ -8,8 +8,14 @@ namespace Mozgoslav.Infrastructure.Services;
 
 /// <summary>
 /// Downloads Whisper / VAD models from their public URLs (HuggingFace) with
-/// streaming progress reporting, size validation, and atomic writes (<c>.tmp</c>
-/// rename on success). URLs and defaults come from the in-app model catalog.
+/// streaming progress reporting and atomic writes (<c>.tmp</c> rename on
+/// success). URLs and defaults come from the in-app model catalog.
+/// <para>
+/// ADR-011 step 9 — retry / timeout / circuit-breaker live on the named
+/// <c>"models"</c> HttpClient in <c>Program.cs</c> via
+/// <c>AddStandardResilienceHandler</c>. This service no longer rolls its own
+/// retry loop or timeout override.
+/// </para>
 /// </summary>
 public sealed class ModelDownloadService
 {
@@ -44,9 +50,10 @@ public sealed class ModelDownloadService
             File.Delete(tempPath);
         }
 
+        // The "models" named HttpClient owns timeout, retry and circuit-breaker
+        // via HttpResilience (see Program.cs). User-Agent is attached as a
+        // default header on that client so it lives on every retry attempt.
         using var client = _httpClientFactory.CreateClient("models");
-        client.Timeout = TimeSpan.FromMinutes(30);
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozgoslav/1.0");
 
         using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
         response.EnsureSuccessStatusCode();
@@ -84,6 +91,4 @@ public sealed class ModelDownloadService
         var hash = await SHA256.HashDataAsync(stream, ct);
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
-
-    public async Task<string> DownloadAsync(Uri url, string destinationPath, IProgress<Progress>? progress, CancellationToken ct) => throw new NotImplementedException();
 }
