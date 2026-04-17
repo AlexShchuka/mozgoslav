@@ -188,9 +188,18 @@ The frontend does **not** own audio capture in this ADR — it triggers the serv
 
 **Consequences.** Dashboard gains an `onRecordClick` handler; one React Testing Library test asserts state transitions on click + error. No backend changes.
 
-### D-9 — Queue cancel endpoint + AnimatePresence row removal
+### D-9 — Queue cancel endpoint + `AnimatePresence` row removal
 
-<!-- TODO: decision + alternatives + consequences -->
+**Decision.** Add cancellation support to both backend and frontend:
+
+- **Backend.** New endpoint `DELETE /api/queue/{id}` in `JobEndpoints.cs`. Semantics — a job whose `Status == Queued` is removed outright; a job that is already running is marked `Failed` with `ErrorMessage = "Cancelled by user"` and its `FinishedAt` stamped, so the running worker surfaces the termination naturally and the record stays around for history. Repository gains `CancelAsync(Guid id, ct)` encapsulating this branching so endpoint logic stays thin.
+- **Frontend.** Each `Queue` row wraps in `m.div` under `AnimatePresence`. Cancelling issues an optimistic local removal with `exit={{ opacity: 0, height: 0, transition: { duration: 0.18 } }}` per the D-3 table. If the server rejects the DELETE (404 / conflict) the row re-enters via the same entrance animation and a toast explains the error.
+
+**Alternatives considered.**
+- *`POST /api/queue/{id}/cancel` instead of `DELETE`.* Acceptable, but `DELETE` is the natural REST verb for "remove this queued work item"; the branch for in-flight jobs is internal semantics, not an HTTP verb question.
+- *Full Redux saga flow.* Rejected at this step — the Queue page already uses direct API + local `useState`; a saga migration is tracked separately.
+
+**Consequences.** One new endpoint, one new repository method, one migration (none — existing schema carries `Status = Failed`), an animation wrapper on the existing row component. Server-side integration test spins a real SQLite via `TestDatabase` and verifies both branches (Queued → gone, Running → Failed).
 
 ### D-10 — i18n audit + ru/en parity enforcement
 
