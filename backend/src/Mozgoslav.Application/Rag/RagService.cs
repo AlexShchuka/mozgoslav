@@ -1,0 +1,146 @@
+using System.Text;
+using Microsoft.Extensions.Logging;
+using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Domain.Entities;
+
+namespace Mozgoslav.Application.Rag;
+
+/// <summary>
+/// ADR-005 — orchestrates the full retrieval-augmented QA pipeline:
+///   1. chunk the note via <see cref="NoteChunker"/>
+///   2. embed each chunk and the incoming question via <see cref="IEmbeddingService"/>
+///   3. store / search chunks in <see cref="IVectorIndex"/>
+///   4. pass the question + top-K chunks to the LLM for answer synthesis
+///
+/// The LLM step is best-effort: if the local endpoint is down we still
+/// return the citations so the user gets useful output (ADR-005 D6 —
+/// graceful degradation).
+/// </summary>
+public sealed class RagService : IRagService
+{
+    private const int MinTopK = 1;
+    private const int MaxTopK = 20;
+
+    private readonly IEmbeddingService _embedding;
+    private readonly IVectorIndex _index;
+    private readonly ILlmService _llm;
+    private readonly ILogger<RagService> _logger;
+
+    public RagService(
+        IEmbeddingService embedding,
+        IVectorIndex index,
+        ILlmService llm,
+        ILogger<RagService> logger)
+    {
+        _embedding = embedding;
+        _index = index;
+        _llm = llm;
+        _logger = logger;
+    }
+
+    public async Task IndexAsync(ProcessedNote note, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(note);
+        var text = string.IsNullOrWhiteSpace(note.MarkdownContent)
+            ? note.CleanTranscript
+            : note.MarkdownContent;
+        var chunks = NoteChunker.Chunk(text);
+
+        await _index.RemoveByNoteAsync(note.Id, ct);
+        for (var i = 0; i < chunks.Count; i++)
+        {
+            var embedding = await _embedding.EmbedAsync(chunks[i], ct);
+            await _index.UpsertAsync(
+                new NoteChunk(
+                    Id: $"{note.Id:D}:{i}",
+                    NoteId: note.Id,
+                    Text: chunks[i],
+                    Embedding: embedding),
+                ct);
+        }
+        _logger.LogInformation("Indexed note {NoteId} ({ChunkCount} chunks)", note.Id, chunks.Count);
+    }
+
+    public async Task<RagAnswer> AnswerAsync(string question, int topK, CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(question);
+        topK = Math.Clamp(topK, MinTopK, MaxTopK);
+
+        var queryEmbedding = await _embedding.EmbedAsync(question, ct);
+        var hits = await _index.SearchAsync(queryEmbedding, topK, ct);
+        if (hits.Count == 0)
+        {
+            return new RagAnswer(
+                Answer: "В базе не нашлось заметок, относящихся к вопросу.",
+                Citations: [],
+                LlmAvailable: true);
+        }
+
+        var llmAvailable = await SafeIsAvailableAsync(ct);
+        if (!llmAvailable)
+        {
+            _logger.LogWarning("LLM unavailable — returning citations without synthesised answer");
+            return new RagAnswer(
+                Answer: "LLM недоступен — ниже фрагменты заметок, наиболее близкие к запросу.",
+                Citations: hits,
+                LlmAvailable: false);
+        }
+
+        var answer = await SafeLlmAnswerAsync(question, hits, ct);
+        return new RagAnswer(answer, hits, LlmAvailable: true);
+    }
+
+    private async Task<bool> SafeIsAvailableAsync(CancellationToken ct)
+    {
+        try
+        {
+            return await _llm.IsAvailableAsync(ct);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            return false;
+        }
+    }
+
+    private async Task<string> SafeLlmAnswerAsync(
+        string question,
+        IReadOnlyList<NoteChunkHit> hits,
+        CancellationToken ct)
+    {
+        var userPrompt = BuildUserPrompt(question, hits);
+        const string SystemPrompt =
+            "Ты помощник, который отвечает на вопросы, опираясь ТОЛЬКО на фрагменты заметок, " +
+            "приведённые ниже. Если ответа в них нет — честно скажи, что не знаешь. " +
+            "Не выдумывай фактов. Отвечай кратко, по-русски.";
+        try
+        {
+            var result = await _llm.ProcessAsync(userPrompt, SystemPrompt, ct);
+            return string.IsNullOrWhiteSpace(result.Summary)
+                ? FallbackCitationSummary(hits)
+                : result.Summary.Trim();
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            _logger.LogWarning(ex, "LLM call failed during RAG answer synthesis");
+            return FallbackCitationSummary(hits);
+        }
+    }
+
+    private static string BuildUserPrompt(string question, IReadOnlyList<NoteChunkHit> hits)
+    {
+        var sb = new StringBuilder();
+        sb.Append("Вопрос: ").AppendLine(question);
+        sb.AppendLine();
+        sb.AppendLine("Фрагменты заметок:");
+        for (var i = 0; i < hits.Count; i++)
+        {
+            sb.Append('[').Append(i + 1).Append("] ").AppendLine(hits[i].Chunk.Text);
+        }
+        return sb.ToString();
+    }
+
+    private static string FallbackCitationSummary(IReadOnlyList<NoteChunkHit> hits) =>
+        string.Join(
+            "\n\n",
+            hits.Select((h, i) => $"[{i + 1}] {h.Chunk.Text}"));
+}
