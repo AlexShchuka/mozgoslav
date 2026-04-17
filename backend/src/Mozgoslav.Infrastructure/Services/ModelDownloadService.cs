@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
+
 using Microsoft.Extensions.Logging;
+
 using Mozgoslav.Infrastructure.Platform;
 
 namespace Mozgoslav.Infrastructure.Services;

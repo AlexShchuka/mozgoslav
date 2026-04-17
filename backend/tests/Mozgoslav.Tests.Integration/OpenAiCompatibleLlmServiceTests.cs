@@ -1,10 +1,16 @@
 using System.Net;
+using System.Text.Json;
+
 using FluentAssertions;
+
 using Microsoft.Extensions.Logging.Abstractions;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Domain.Enums;
 using Mozgoslav.Infrastructure.Services;
+
 using NSubstitute;
+
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
@@ -186,7 +192,7 @@ public sealed class OpenAiCompatibleLlmServiceTests
               "choices": [
                 {
                   "index": 0,
-                  "message": { "role": "assistant", "content": {{System.Text.Json.JsonSerializer.Serialize(content)}} },
+                  "message": { "role": "assistant", "content": {{JsonSerializer.Serialize(content)}} },
                   "finish_reason": "stop"
                 }
               ],

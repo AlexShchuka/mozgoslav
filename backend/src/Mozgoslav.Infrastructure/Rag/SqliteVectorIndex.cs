@@ -1,6 +1,8 @@
 using System.Buffers.Binary;
 using System.Globalization;
+
 using Microsoft.Data.Sqlite;
+
 using Mozgoslav.Application.Rag;
 
 namespace Mozgoslav.Infrastructure.Rag;

@@ -1,8 +1,10 @@
 using FluentAssertions;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.UseCases;
 using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.Enums;
+
 using NSubstitute;
 
 namespace Mozgoslav.Tests.UseCases;

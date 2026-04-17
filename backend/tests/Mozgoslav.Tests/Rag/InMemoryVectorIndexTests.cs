@@ -1,4 +1,5 @@
 using FluentAssertions;
+
 using Mozgoslav.Application.Rag;
 using Mozgoslav.Infrastructure.Rag;
 
@@ -23,8 +24,8 @@ public sealed class InMemoryVectorIndexTests
     public async Task Upsert_ThenCount_Reflects()
     {
         var idx = new InMemoryVectorIndex();
-        await idx.UpsertAsync(MakeChunk("a", new[] { 1f, 0f, 0f }), CancellationToken.None);
-        await idx.UpsertAsync(MakeChunk("b", new[] { 0f, 1f, 0f }), CancellationToken.None);
+        await idx.UpsertAsync(MakeChunk("a", [1f, 0f, 0f]), CancellationToken.None);
+        await idx.UpsertAsync(MakeChunk("b", [0f, 1f, 0f]), CancellationToken.None);
 
         idx.Count.Should().Be(2);
     }
@@ -34,9 +35,9 @@ public sealed class InMemoryVectorIndexTests
     {
         var idx = new InMemoryVectorIndex();
         var queryAxis = new[] { 1f, 0f, 0f };
-        var close = MakeChunk("close", new[] { 0.9f, 0.1f, 0f });
-        var mid = MakeChunk("mid", new[] { 0.5f, 0.5f, 0f });
-        var far = MakeChunk("far", new[] { 0f, 0f, 1f });
+        var close = MakeChunk("close", [0.9f, 0.1f, 0f]);
+        var mid = MakeChunk("mid", [0.5f, 0.5f, 0f]);
+        var far = MakeChunk("far", [0f, 0f, 1f]);
         await idx.UpsertAsync(close, CancellationToken.None);
         await idx.UpsertAsync(mid, CancellationToken.None);
         await idx.UpsertAsync(far, CancellationToken.None);
@@ -53,10 +54,10 @@ public sealed class InMemoryVectorIndexTests
     public async Task Search_MismatchedDimension_Skipped()
     {
         var idx = new InMemoryVectorIndex();
-        await idx.UpsertAsync(MakeChunk("ok", new[] { 1f, 0f }), CancellationToken.None);
-        await idx.UpsertAsync(MakeChunk("bad", new[] { 1f, 0f, 0f }), CancellationToken.None);
+        await idx.UpsertAsync(MakeChunk("ok", [1f, 0f]), CancellationToken.None);
+        await idx.UpsertAsync(MakeChunk("bad", [1f, 0f, 0f]), CancellationToken.None);
 
-        var hits = await idx.SearchAsync(new[] { 1f, 0f }, topK: 5, CancellationToken.None);
+        var hits = await idx.SearchAsync([1f, 0f], topK: 5, CancellationToken.None);
 
         hits.Should().ContainSingle().Which.Chunk.Id.Should().Be("ok");
     }
@@ -74,7 +75,7 @@ public sealed class InMemoryVectorIndexTests
         await idx.RemoveByNoteAsync(noteA, CancellationToken.None);
 
         idx.Count.Should().Be(1);
-        var hits = await idx.SearchAsync(new[] { 0f, 1f }, topK: 10, CancellationToken.None);
+        var hits = await idx.SearchAsync([0f, 1f], topK: 10, CancellationToken.None);
         hits.Should().ContainSingle().Which.Chunk.NoteId.Should().Be(noteB);
     }
 
@@ -82,7 +83,7 @@ public sealed class InMemoryVectorIndexTests
     public async Task Search_OnEmptyIndex_ReturnsEmpty()
     {
         var idx = new InMemoryVectorIndex();
-        var hits = await idx.SearchAsync(new[] { 1f, 0f }, 5, CancellationToken.None);
+        var hits = await idx.SearchAsync([1f, 0f], 5, CancellationToken.None);
         hits.Should().BeEmpty();
     }
 
@@ -95,7 +96,7 @@ public sealed class InMemoryVectorIndexTests
         await idx.UpsertAsync(new NoteChunk("same", noteId, "new", [0f, 1f]), CancellationToken.None);
 
         idx.Count.Should().Be(1);
-        var hits = await idx.SearchAsync(new[] { 0f, 1f }, 1, CancellationToken.None);
+        var hits = await idx.SearchAsync([0f, 1f], 1, CancellationToken.None);
         hits.Single().Chunk.Text.Should().Be("new");
     }
 

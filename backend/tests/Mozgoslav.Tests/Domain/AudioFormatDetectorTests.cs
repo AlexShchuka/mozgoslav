@@ -1,4 +1,5 @@
 using FluentAssertions;
+
 using Mozgoslav.Domain.Enums;
 using Mozgoslav.Domain.Services;
 

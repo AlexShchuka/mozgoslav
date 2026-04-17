@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.Enums;

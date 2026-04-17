@@ -1,6 +1,9 @@
 using System.Xml.Linq;
+
 using FluentAssertions;
+
 using Microsoft.Extensions.Logging.Abstractions;
+
 using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Tests.Application;
@@ -27,12 +30,10 @@ public sealed class SyncthingConfigServiceTests
         var doc = SyncthingConfigService.Build(SampleInputs);
 
         var ids = doc.Root!.Elements("folder").Select(f => (string)f.Attribute("id")!).ToArray();
-        ids.Should().BeEquivalentTo(new[]
-        {
+        ids.Should().BeEquivalentTo(
             SyncthingConfigService.RecordingsFolderId,
-            SyncthingConfigService.NotesFolderId,
-            SyncthingConfigService.VaultFolderId,
-        });
+        SyncthingConfigService.NotesFolderId,
+        SyncthingConfigService.VaultFolderId);
     }
 
     [TestMethod]

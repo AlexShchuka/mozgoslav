@@ -1,4 +1,5 @@
 using FluentAssertions;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Infrastructure.Services;
 
@@ -72,7 +73,7 @@ public sealed class EfAppSettingsTests
         using var fresh = new EfAppSettings(db.CreateFactory());
         var loaded = await fresh.LoadAsync(CancellationToken.None);
 
-        loaded.DictationVocabulary.Should().BeEquivalentTo(new[] { "Mozgoslav", "LRT", "Kafka", "кафка" });
+        loaded.DictationVocabulary.Should().BeEquivalentTo("Mozgoslav", "LRT", "Kafka", "кафка");
     }
 
     [TestMethod]

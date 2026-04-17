@@ -1,6 +1,8 @@
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+
 using Microsoft.Extensions.Logging;
+
 using Mozgoslav.Application.Rag;
 
 namespace Mozgoslav.Infrastructure.Rag;
@@ -27,7 +29,6 @@ public sealed class PythonSidecarEmbeddingService : IEmbeddingService
     private readonly HttpClient _httpClient;
     private readonly IEmbeddingService _fallback;
     private readonly ILogger<PythonSidecarEmbeddingService> _logger;
-    private int _sidecarDimensions;
 
     public PythonSidecarEmbeddingService(
         HttpClient httpClient,
@@ -39,10 +40,10 @@ public sealed class PythonSidecarEmbeddingService : IEmbeddingService
         _logger = logger;
         // Until we've heard from the sidecar, advertise the fallback
         // dimensions so the RAG layer can size its buffers.
-        _sidecarDimensions = fallback.Dimensions;
+        Dimensions = fallback.Dimensions;
     }
 
-    public int Dimensions => _sidecarDimensions;
+    public int Dimensions { get; set; }
 
     public async Task<float[]> EmbedAsync(string text, CancellationToken ct)
     {
@@ -60,19 +61,19 @@ public sealed class PythonSidecarEmbeddingService : IEmbeddingService
                 throw new InvalidOperationException("Sidecar returned empty vector");
             }
 
-            if (_sidecarDimensions != body.Dimensions)
+            if (Dimensions != body.Dimensions)
             {
-                if (_sidecarDimensions != _fallback.Dimensions)
+                if (Dimensions != _fallback.Dimensions)
                 {
                     _logger.LogWarning(
                         "Python sidecar dimension drift detected: was {Old}, now {New}. "
                         + "Keeping the original dimension until restart to avoid index corruption.",
-                        _sidecarDimensions,
+                        Dimensions,
                         body.Dimensions);
                 }
                 else
                 {
-                    _sidecarDimensions = body.Dimensions;
+                    Dimensions = body.Dimensions;
                 }
             }
 

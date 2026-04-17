@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Threading.Channels;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Domain.Entities;
 
@@ -29,7 +31,7 @@ public sealed class ChannelJobProgressNotifier : IJobProgressNotifier, IDisposab
     }
 
     public async IAsyncEnumerable<ProcessingJob> SubscribeAsync(
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct)
+        [EnumeratorCancellation] CancellationToken ct)
     {
         var id = Guid.NewGuid();
         var channel = Channel.CreateUnbounded<ProcessingJob>(new UnboundedChannelOptions

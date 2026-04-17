@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
+
 using FluentAssertions;
+
 using Mozgoslav.Domain.Entities;
 
 namespace Mozgoslav.Tests.Integration;

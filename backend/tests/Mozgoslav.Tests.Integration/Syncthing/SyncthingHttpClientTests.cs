@@ -1,7 +1,10 @@
 using FluentAssertions;
+
 using Microsoft.Extensions.Logging.Abstractions;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Infrastructure.Services;
+
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;

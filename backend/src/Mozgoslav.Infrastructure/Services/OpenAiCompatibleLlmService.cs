@@ -1,10 +1,13 @@
 using System.ClientModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+
 using Microsoft.Extensions.Logging;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Domain.Enums;
 using Mozgoslav.Domain.ValueObjects;
+
 using OpenAI;
 using OpenAI.Chat;
 

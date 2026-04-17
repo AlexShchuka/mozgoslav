@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+
 using Mozgoslav.Infrastructure.Persistence;
 
 namespace Mozgoslav.Tests.Integration;

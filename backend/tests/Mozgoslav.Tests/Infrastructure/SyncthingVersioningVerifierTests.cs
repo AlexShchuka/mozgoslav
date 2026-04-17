@@ -1,9 +1,12 @@
 using FluentAssertions;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Infrastructure.Seed;
 using Mozgoslav.Infrastructure.Services;
+
 using NSubstitute;
 
 namespace Mozgoslav.Tests.Infrastructure;

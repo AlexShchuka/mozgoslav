@@ -1,9 +1,14 @@
+using System.Runtime.CompilerServices;
+
 using FluentAssertions;
+
 using Microsoft.Extensions.Logging.Abstractions;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Domain.Enums;
 using Mozgoslav.Domain.ValueObjects;
+
 using NSubstitute;
 
 namespace Mozgoslav.Tests.Application;
@@ -347,7 +352,7 @@ public sealed class DictationSessionManagerTests
             IAsyncEnumerable<AudioChunk> chunks,
             string language,
             string? initialPrompt,
-            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct)
+            [EnumeratorCancellation] CancellationToken ct)
         {
             InitialPrompt = initialPrompt;
             await foreach (var chunk in chunks.WithCancellation(ct))

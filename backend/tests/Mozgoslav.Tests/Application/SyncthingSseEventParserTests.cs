@@ -1,4 +1,7 @@
+using System.Text.Json;
+
 using FluentAssertions;
+
 using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Tests.Application;
@@ -177,7 +180,7 @@ public sealed class SyncthingSseEventParserTests
     [TestMethod]
     public void Parse_NonObjectInput_ReturnsNull()
     {
-        using var doc = System.Text.Json.JsonDocument.Parse("\"not an event\"");
+        using var doc = JsonDocument.Parse("\"not an event\"");
         SyncthingSseEventParser.Parse(doc.RootElement).Should().BeNull();
     }
 }

@@ -1,5 +1,8 @@
+using System.ComponentModel;
 using System.Diagnostics;
+
 using Microsoft.Extensions.Logging;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Infrastructure.Platform;
 
@@ -56,7 +59,7 @@ public sealed class FfmpegAudioConverter : IAudioConverter
         {
             process.Start();
         }
-        catch (System.ComponentModel.Win32Exception ex)
+        catch (Win32Exception ex)
         {
             throw new InvalidOperationException(
                 "ffmpeg binary not found on PATH. Install via 'brew install ffmpeg' on macOS.", ex);

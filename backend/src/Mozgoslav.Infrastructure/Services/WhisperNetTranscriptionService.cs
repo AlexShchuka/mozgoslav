@@ -1,7 +1,10 @@
 using System.Runtime.CompilerServices;
+
 using Microsoft.Extensions.Logging;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Domain.ValueObjects;
+
 using Whisper.net;
 
 namespace Mozgoslav.Infrastructure.Services;

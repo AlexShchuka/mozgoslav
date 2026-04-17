@@ -1,4 +1,5 @@
 using FluentAssertions;
+
 using Mozgoslav.Application.Rag;
 
 namespace Mozgoslav.Tests.Rag;
@@ -66,6 +67,6 @@ public sealed class NoteChunkerTests
 
         var chunks = NoteChunker.Chunk(note);
 
-        chunks.Should().BeEquivalentTo(["Первый абзац.", "Второй абзац."]);
+        chunks.Should().BeEquivalentTo("Первый абзац.", "Второй абзац.");
     }
 }

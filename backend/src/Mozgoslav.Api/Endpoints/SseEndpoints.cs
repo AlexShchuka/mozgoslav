@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+
 using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Api.Endpoints;

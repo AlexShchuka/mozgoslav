@@ -1,4 +1,5 @@
 using FluentAssertions;
+
 using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Tests.Infrastructure;

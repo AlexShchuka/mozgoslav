@@ -1,6 +1,10 @@
+using System.Globalization;
+
 using Dapper;
+
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.Enums;
@@ -136,8 +140,8 @@ public sealed class MeetilyImporterService
         {
             return DateTime.UtcNow;
         }
-        return DateTime.TryParse(value, System.Globalization.CultureInfo.InvariantCulture,
-            System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal,
+        return DateTime.TryParse(value, CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
             out var parsed)
             ? parsed
             : DateTime.UtcNow;

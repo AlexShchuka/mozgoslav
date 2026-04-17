@@ -1,8 +1,11 @@
 using FluentAssertions;
+
 using Microsoft.Extensions.Logging.Abstractions;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Domain.ValueObjects;
 using Mozgoslav.Infrastructure.Services;
+
 using NSubstitute;
 
 namespace Mozgoslav.Tests.Application;

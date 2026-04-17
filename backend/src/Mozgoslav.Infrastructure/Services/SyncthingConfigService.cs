@@ -1,6 +1,8 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
+
 using Microsoft.Extensions.Logging;
 
 namespace Mozgoslav.Infrastructure.Services;
@@ -131,7 +133,7 @@ public sealed class SyncthingConfigService
         public static Versioning Staggered30Days { get; } = new("staggered", new Dictionary<string, string>
         {
             ["cleanInterval"] = "3600",
-            ["maxAge"] = (30 * 24 * 3600).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["maxAge"] = (30 * 24 * 3600).ToString(CultureInfo.InvariantCulture),
             ["versionsPath"] = string.Empty,
         });
 

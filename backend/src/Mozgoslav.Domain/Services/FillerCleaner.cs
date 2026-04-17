@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+
 using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Domain.Services;

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
+
 using Mozgoslav.Api.BackgroundServices;
 using Mozgoslav.Api.Endpoints;
 using Mozgoslav.Application.Interfaces;
@@ -13,7 +14,9 @@ using Mozgoslav.Infrastructure.Rag;
 using Mozgoslav.Infrastructure.Repositories;
 using Mozgoslav.Infrastructure.Seed;
 using Mozgoslav.Infrastructure.Services;
+
 using OpenTelemetry.Metrics;
+
 using Serilog;
 using Serilog.Events;
 

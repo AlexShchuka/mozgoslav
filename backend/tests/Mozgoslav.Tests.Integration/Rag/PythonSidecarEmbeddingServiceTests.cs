@@ -1,7 +1,12 @@
+using System.Globalization;
 using System.Net;
+
 using FluentAssertions;
+
 using Microsoft.Extensions.Logging.Abstractions;
+
 using Mozgoslav.Infrastructure.Rag;
+
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
@@ -54,7 +59,7 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
     [TestMethod]
     public async Task EmbedAsync_HappyPath_ReturnsSidecarVector_AndAdvertisesDimensions()
     {
-        var sidecarVector = new float[] { 0.1f, 0.2f, 0.3f, 0.4f };
+        var sidecarVector = new[] { 0.1f, 0.2f, 0.3f, 0.4f };
         _server.Given(Request.Create().WithPath("/api/embed").UsingPost())
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
@@ -114,8 +119,8 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
     [TestMethod]
     public async Task EmbedAsync_DimensionDrift_AfterFirstCall_IsIgnored()
     {
-        var first = new float[] { 0.1f, 0.2f, 0.3f, 0.4f };
-        var drifted = new float[] { 0.5f, 0.5f, 0.5f, 0.5f, 0.5f };
+        var first = new[] { 0.1f, 0.2f, 0.3f, 0.4f };
+        var drifted = new[] { 0.5f, 0.5f, 0.5f, 0.5f, 0.5f };
 
         _server.Given(Request.Create().WithPath("/api/embed").UsingPost())
             .InScenario("drift")
@@ -150,7 +155,7 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
     {
         var vectorsJson = string.Join(
             ",",
-            vectors.Select(v => "[" + string.Join(",", v.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]"));
+            vectors.Select(v => "[" + string.Join(",", v.Select(f => f.ToString(CultureInfo.InvariantCulture))) + "]"));
         return $"{{\"model\":\"{model}\",\"dimensions\":{dimensions},\"vectors\":[{vectorsJson}]}}";
     }
 }

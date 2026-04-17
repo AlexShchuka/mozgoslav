@@ -1,5 +1,7 @@
 using FluentAssertions;
+
 using Microsoft.Extensions.Logging.Abstractions;
+
 using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Tests.Application;

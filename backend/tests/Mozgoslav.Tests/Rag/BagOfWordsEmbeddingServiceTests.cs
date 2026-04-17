@@ -1,4 +1,5 @@
 using FluentAssertions;
+
 using Mozgoslav.Infrastructure.Rag;
 
 namespace Mozgoslav.Tests.Rag;
