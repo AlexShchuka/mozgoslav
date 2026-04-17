@@ -1,7 +1,7 @@
 import { FC, ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Archive, Brain, Database, FolderCog, LayoutDashboard, ListChecks, ListTree, Settings, Sparkles, Wrench } from "lucide-react";
+import { Archive, Brain, Database, FolderCog, LayoutDashboard, ListChecks, ListTree, MessageSquare, Settings, Sparkles, Wrench } from "lucide-react";
 
 import { useBackendHealth } from "../../hooks/useBackendHealth";
 import { ROUTES } from "../../constants/routes";
@@ -47,6 +47,9 @@ const Layout: FC<LayoutProps> = ({ children }) => {
             </NavItem>
             <NavItem to={ROUTES.notes} icon={<Brain size={16} />}>
               {t("nav.notes")}
+            </NavItem>
+            <NavItem to={ROUTES.rag} icon={<MessageSquare size={16} />}>
+              {t("nav.rag")}
             </NavItem>
           </SidebarGroup>
 

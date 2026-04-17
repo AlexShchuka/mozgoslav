@@ -7,11 +7,22 @@
     "dashboard": "Dashboard",
     "queue": "Queue",
     "notes": "Notes",
+    "rag": "Q&A",
     "profiles": "Profiles",
     "models": "Models",
     "settings": "Settings",
     "logs": "Logs",
     "backup": "Backups"
+  },
+  "rag": {
+    "title": "Q&A over notes",
+    "welcome": "Ask something about your notes.",
+    "askPlaceholder": "Type a question…",
+    "ask": "Ask",
+    "reindex": "Reindex",
+    "reindexedToast": "Indexed notes: {{count}}",
+    "llmUnavailable": "LLM unavailable — only citations below.",
+    "openNote": "Open note"
   },
   "common": {
     "save": "Save",

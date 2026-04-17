@@ -6,6 +6,7 @@ import Dashboard from "./features/Dashboard";
 import Queue from "./features/Queue";
 import NotesList from "./features/Notes/NotesList";
 import NoteViewer from "./features/Notes/NoteViewer";
+import RagChat from "./features/RagChat";
 import Profiles from "./features/Profiles";
 import Models from "./features/Models";
 import SettingsPage from "./features/Settings";
@@ -44,6 +45,7 @@ const App: FC = () => {
           <Route path={ROUTES.queue} element={<Queue />} />
           <Route path={ROUTES.notes} element={<NotesList />} />
           <Route path={ROUTES.note} element={<NoteViewer />} />
+          <Route path={ROUTES.rag} element={<RagChat />} />
           <Route path={ROUTES.profiles} element={<Profiles />} />
           <Route path={ROUTES.models} element={<Models />} />
           <Route path={ROUTES.settings} element={<SettingsPage />} />
