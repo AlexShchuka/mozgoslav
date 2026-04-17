@@ -46,4 +46,29 @@ final class InjectionStrategyTests: XCTestCase {
     func testElectronBlocklistIsNotEmpty() {
         XCTAssertGreaterThan(InjectionStrategySelector.electronBundleIds.count, 5)
     }
+
+    func testExplicitClipboardModeOverridesAutoSelection() {
+        let strategy = InjectionStrategySelector.strategy(
+            forBundleId: "com.apple.TextEdit",
+            mode: "clipboard"
+        )
+        XCTAssertEqual(strategy, .clipboard)
+    }
+
+    func testUnknownModeFallsBackToAutoSelection() {
+        // Defensive contract — JSON-RPC callers may send a typo or a future
+        // mode the helper version does not know about yet. Falling back to
+        // the app-aware auto path is safer than erroring out.
+        let strategy = InjectionStrategySelector.strategy(
+            forBundleId: "md.obsidian",
+            mode: "totally-unknown-mode"
+        )
+        XCTAssertEqual(strategy, .accessibility)
+    }
+
+    func testClipboardStrategyRoundTripsThroughCodable() throws {
+        let encoded = try JSONEncoder().encode(InjectionStrategy.clipboard)
+        let decoded = try JSONDecoder().decode(InjectionStrategy.self, from: encoded)
+        XCTAssertEqual(decoded, .clipboard)
+    }
 }

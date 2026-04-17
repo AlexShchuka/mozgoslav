@@ -28,7 +28,15 @@ public interface IDictationSessionManager
     /// optionally runs the LLM polish pass, and returns the text that the
     /// client should inject into the focused app.
     /// </summary>
-    Task<FinalTranscript> StopAsync(Guid sessionId, CancellationToken ct);
+    /// <param name="sessionId">Session identifier returned by <see cref="Start"/>.</param>
+    /// <param name="ct">Cancellation token for the finalize pipeline.</param>
+    /// <param name="bundleId">
+    /// ADR-004 R2: macOS bundle identifier of the focused app at finalize time,
+    /// reported by the Swift helper. When set, the session manager consults
+    /// <see cref="IPerAppCorrectionProfiles"/> to tweak the polish prompt.
+    /// Pass <c>null</c> for generic polish (default behavior).
+    /// </param>
+    Task<FinalTranscript> StopAsync(Guid sessionId, CancellationToken ct, string? bundleId = null);
 
     /// <summary>Aborts a session without producing or injecting any text.</summary>
     Task CancelAsync(Guid sessionId, CancellationToken ct);

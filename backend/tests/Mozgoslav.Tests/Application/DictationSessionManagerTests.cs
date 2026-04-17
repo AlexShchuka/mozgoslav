@@ -46,6 +46,9 @@ public sealed class DictationSessionManagerTests
 
         var chunk = new AudioChunk(new float[1600], 16_000, TimeSpan.Zero);
         await fixture.Manager.PushAudioAsync(session.Id, chunk, CancellationToken.None);
+        // The transcription loop consumes the audio channel asynchronously; wait for
+        // the sink before cancelling so the test doesn't race the background reader.
+        await WaitForAsync(() => sink.Chunks.Count >= 1, TimeSpan.FromSeconds(2));
         await fixture.Manager.CancelAsync(session.Id, CancellationToken.None);
 
         sink.Chunks.Should().ContainSingle();
@@ -119,6 +122,46 @@ public sealed class DictationSessionManagerTests
         final.PolishedText.Should().Be("тест");
         await fixture.Llm.DidNotReceive().ProcessAsync(
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [TestMethod]
+    public async Task StopAsync_WithBundleId_AppliesGlossaryAndAppendsSystemPromptSuffix()
+    {
+        var fixture = new Fixture { LlmPolish = true };
+        fixture.ArrangeStreamWithPartial("привет мозгслав");
+        fixture.PerAppProfiles.Resolve("com.tinyspeck.slackmacgap").Returns(
+            new PerAppCorrectionProfile(
+                "com.tinyspeck.slackmacgap",
+                "Контекст: Slack — деловая переписка.",
+                new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["мозгслав"] = "Mozgoslav"
+                }));
+        fixture.Llm.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
+        fixture.Llm.ProcessAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new LlmProcessingResult(
+                Summary: "Привет, Mozgoslav.",
+                KeyPoints: [],
+                Decisions: [],
+                ActionItems: [],
+                UnresolvedQuestions: [],
+                Participants: [],
+                Topic: string.Empty,
+                ConversationType: ConversationType.Other,
+                Tags: []));
+
+        var session = fixture.Manager.Start();
+        var final = await fixture.Manager.StopAsync(
+            session.Id, CancellationToken.None, bundleId: "com.tinyspeck.slackmacgap");
+
+        final.RawText.Should().Be("привет мозгслав",
+            "RawText preserves the untouched Whisper output");
+        final.PolishedText.Should().Be("Привет, Mozgoslav.");
+        await fixture.Llm.Received(1).ProcessAsync(
+            Arg.Is<string>(s => s.Contains("Mozgoslav", StringComparison.Ordinal)
+                             && !s.Contains("мозгслав", StringComparison.Ordinal)),
+            Arg.Is<string>(p => p.Contains("Slack", StringComparison.Ordinal)),
+            Arg.Any<CancellationToken>());
     }
 
     [TestMethod]
@@ -322,6 +365,8 @@ public sealed class DictationSessionManagerTests
     {
         public ILlmService Llm { get; } = Substitute.For<ILlmService>();
         public IAppSettings Settings { get; } = Substitute.For<IAppSettings>();
+        public IPerAppCorrectionProfiles PerAppProfiles { get; } =
+            Substitute.For<IPerAppCorrectionProfiles>();
         public FakeStreamingService Streaming { get; } = new();
         public bool LlmPolish { get; init; }
 
@@ -329,12 +374,14 @@ public sealed class DictationSessionManagerTests
             Streaming,
             Llm,
             Settings,
+            PerAppProfiles,
             NullLogger<DictationSessionManager>.Instance);
 
         public FakeStreamingService ArrangeEmptyStream()
         {
             Settings.DictationLanguage.Returns("ru");
             Settings.DictationLlmPolish.Returns(LlmPolish);
+            PerAppProfiles.Resolve(Arg.Any<string?>()).Returns(PerAppCorrectionProfile.Empty);
             return Streaming;
         }
 

@@ -87,6 +87,10 @@ public final class DictationHelper {
             return JsonRpcResponse(id: request.id, result: .object([
                 "injected": .int(text.count),
                 "strategy": .string(strategy.rawValue),
+                // Reported so the C# backend can resolve ADR-004 R2
+                // per-app correction profiles keyed on the focused app.
+                "bundleId": .string(focused.bundleId ?? ""),
+                "appName": .string(focused.appName ?? ""),
             ]))
 
         case "inject.detectTarget":
