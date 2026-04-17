@@ -3,6 +3,7 @@ import { net } from "electron";
 import { HotkeyMonitor } from "./HotkeyMonitor";
 import { NativeHelperClient } from "./NativeHelperClient";
 import { OverlayWindow } from "./OverlayWindow";
+import { PhaseSoundPlayer } from "./PhaseSoundPlayer";
 import { TrayManager } from "./TrayManager";
 import type { AudioChunkPayload, DictationPhase, FinalTranscript } from "./types";
 
@@ -33,6 +34,7 @@ export class DictationOrchestrator {
   private readonly helper: NativeHelperClient;
   private readonly overlay: OverlayWindow;
   private readonly tray: TrayManager;
+  private readonly sound: PhaseSoundPlayer;
   private sessionId: string | null = null;
   private phase: DictationPhase = "idle";
   private partialText = "";
@@ -43,6 +45,7 @@ export class DictationOrchestrator {
     this.helper = new NativeHelperClient(options.helperBinaryPath);
     this.overlay = new OverlayWindow();
     this.tray = new TrayManager();
+    this.sound = new PhaseSoundPlayer();
   }
 
   async initialize(onQuit: () => void): Promise<void> {
@@ -130,6 +133,7 @@ export class DictationOrchestrator {
   private setPhase(phase: DictationPhase): void {
     this.phase = phase;
     this.tray.setPhase(phase);
+    this.sound.handleTransition(phase);
   }
 
   private startSseSubscription(sessionId: string): void {
