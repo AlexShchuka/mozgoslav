@@ -112,9 +112,18 @@ Granola / Fireflies / Fathom делают одну вещь, которую mozg
 
 **Consequences.** Adds `motion` (≈ 18 KB gzipped — D-5) and `liquid-glass-react` (≈ 7 KB). On Linux dev boxes where `backdrop-filter: blur` is less performant the mixin falls back (via `@supports not`) to an opaque translucent fill so the UI never flickers. Every glass surface keeps WCAG AA copy contrast (D-6) because the `::before` rim darkens the base enough to pass 4.5:1.
 
-### D-5 — Motion (ex-Framer Motion) with LazyMotion + domAnimation
+### D-5 — Motion (ex-Framer Motion) with `LazyMotion` + `domAnimation`
 
-<!-- TODO: decision + alternatives + consequences -->
+**Decision.** Standardise on Motion (the current name for what shipped as `framer-motion`) as the only animation library in the renderer. Mount a single `<LazyMotion features={domAnimation} strict>` at the app root; every animated surface uses the `m.*` primitives inside that boundary. `strict` enforces the `m.*` shorthand and blocks accidental use of the heavy full-feature `motion.*` component — tree-shaking the library down to ~18 KB gzipped.
+
+Because `framer-motion@12` (already a dep) and `motion@12` (new package name) are the same codebase under different names, we install the new `motion` package and migrate imports in one sweep; the old `framer-motion` dep is kept until all imports flip, then removed in the B1 commit.
+
+**Alternatives considered.**
+- *React Spring.* Rejected: less ergonomic API for declarative lists + stagger, and we lose the `useReducedMotion` hook which Motion ships out of the box.
+- *GSAP.* Rejected: imperative model fights React reconciliation, plus licence nuances when used commercially even though we're MIT.
+- *Keep plain CSS transitions.* Rejected: we need the spring overshoot and orchestration (AnimatePresence exit + stagger) for D-3 / D-9 / B3 to look right.
+
+**Consequences.** Single animation mental model across the codebase. ≈ 18 KB gzipped into the renderer chunk; Vite code-splits it cleanly. `strict` mode surfaces any future "accidentally imported `motion.div`" as a runtime warning in dev, which keeps the tree-shake honest.
 
 ### D-6 — Palette tokens (#F5F5F7 / #1C1C1E + 4 system accents)
 
