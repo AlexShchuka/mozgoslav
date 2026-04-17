@@ -23,6 +23,12 @@ export const JobHeader = styled.div`
   margin-bottom: ${({ theme }) => theme.space(3)};
 `;
 
+export const JobStatusGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.space(1)};
+`;
+
 export const JobMeta = styled.div`
   font-size: ${({ theme }) => theme.font.size.xs};
   color: ${({ theme }) => theme.colors.textSubtle};

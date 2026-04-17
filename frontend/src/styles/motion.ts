@@ -1,5 +1,11 @@
 import type { Transition } from "motion/react";
 
+/**
+ * ADR-006 D-3 motion table — single source of truth for durations, easings
+ * and spring shapes. Call sites inline the preset they need; a hook-wrapped
+ * version was removed in the cleanup pass because every animated surface
+ * reads its preset once at mount via destructuring, so the hook was dead code.
+ */
 export type MotionPresetName =
   | "buttonPress"
   | "buttonRelease"
@@ -61,22 +67,3 @@ export const motionPresets: Record<MotionPresetName, MotionPreset> = {
     transition: { duration: 0.18, ease: "easeOut" },
   },
 };
-
-const reducedTransition: Transition = { duration: 0 };
-const reducedAnimate = { opacity: 1, scale: 1, y: 0, height: "auto", marginBottom: undefined };
-
-export const resolveMotionPreset = (
-  name: MotionPresetName,
-  reduced: boolean,
-): MotionPreset => {
-  const base = motionPresets[name];
-  if (!reduced) return base;
-  return {
-    animate: { ...base.animate, ...reducedAnimate },
-    initial: base.initial ? { ...base.initial, ...reducedAnimate } : undefined,
-    exit: base.exit ? { ...base.exit, ...reducedAnimate } : undefined,
-    transition: reducedTransition,
-  };
-};
-
-export const listStaggerMs = 40;

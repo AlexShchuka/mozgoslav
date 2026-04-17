@@ -12,7 +12,7 @@ import ProgressBar from "../../components/ProgressBar";
 import { api } from "../../api/MozgoslavApi";
 import { ProcessingJob } from "../../types/ProcessingJob";
 import { BACKEND_URL, API_ENDPOINTS } from "../../constants/api";
-import { PageRoot, JobRow, JobHeader, JobMeta, JobMotionWrapper, PageTitle } from "./Queue.style";
+import { PageRoot, JobRow, JobHeader, JobMeta, JobMotionWrapper, JobStatusGroup, PageTitle } from "./Queue.style";
 
 const TERMINAL: ProcessingJob["status"][] = ["Done", "Failed"];
 
@@ -120,7 +120,7 @@ const Queue: FC = () => {
                       {job.id.slice(0, 8)} · {new Date(job.createdAt).toLocaleString()}
                     </JobMeta>
                   </div>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <JobStatusGroup>
                     <Badge tone={toneFor(job.status)}>{t(`queue.status.${job.status}` as const)}</Badge>
                     {!TERMINAL.includes(job.status) && (
                       <Button
@@ -134,7 +134,7 @@ const Queue: FC = () => {
                         {t("common.cancel")}
                       </Button>
                     )}
-                  </div>
+                  </JobStatusGroup>
                 </JobHeader>
                 <JobRow>
                   <ProgressBar

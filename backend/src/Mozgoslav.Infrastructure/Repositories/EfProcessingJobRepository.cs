@@ -53,15 +53,6 @@ public sealed class EfProcessingJobRepository : IProcessingJobRepository
             .OrderByDescending(j => j.CreatedAt)
             .ToListAsync(ct);
 
-    public async Task<bool> CancelQueuedAsync(Guid id, CancellationToken ct)
-    {
-        var job = await _db.ProcessingJobs.FirstOrDefaultAsync(j => j.Id == id, ct);
-        if (job is null || job.Status != JobStatus.Queued) return false;
-        _db.ProcessingJobs.Remove(job);
-        await _db.SaveChangesAsync(ct);
-        return true;
-    }
-
     public async Task<CancelJobResult> CancelAsync(Guid id, CancellationToken ct)
     {
         var job = await _db.ProcessingJobs.FirstOrDefaultAsync(j => j.Id == id, ct);

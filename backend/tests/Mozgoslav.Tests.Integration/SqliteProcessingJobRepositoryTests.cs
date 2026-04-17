@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.Enums;
 using Mozgoslav.Infrastructure.Repositories;
@@ -80,7 +81,7 @@ public sealed class EfProcessingJobRepositoryTests
     }
 
     [TestMethod]
-    public async Task CancelQueuedAsync_QueuedJob_RemovesAndReturnsTrue()
+    public async Task CancelAsync_QueuedJob_RemovesAndReturnsRemovedFromQueue()
     {
         await using var db = new TestDatabase();
         await using var ctx = db.CreateContext();
@@ -94,8 +95,8 @@ public sealed class EfProcessingJobRepositoryTests
         await repo.EnqueueAsync(job, CancellationToken.None);
 
         await using var freshCtx = db.CreateContext();
-        var cancelled = await new EfProcessingJobRepository(freshCtx).CancelQueuedAsync(job.Id, CancellationToken.None);
-        cancelled.Should().BeTrue();
+        var outcome = await new EfProcessingJobRepository(freshCtx).CancelAsync(job.Id, CancellationToken.None);
+        outcome.Should().Be(CancelJobResult.RemovedFromQueue);
 
         await using var verifyCtx = db.CreateContext();
         var remaining = await new EfProcessingJobRepository(verifyCtx).GetAllAsync(CancellationToken.None);
@@ -103,7 +104,7 @@ public sealed class EfProcessingJobRepositoryTests
     }
 
     [TestMethod]
-    public async Task CancelQueuedAsync_InFlightJob_ReturnsFalseAndKeeps()
+    public async Task CancelAsync_InFlightJob_MarksFailedWithCancelledMessage()
     {
         await using var db = new TestDatabase();
         await using var ctx = db.CreateContext();
@@ -117,21 +118,24 @@ public sealed class EfProcessingJobRepositoryTests
         await repo.EnqueueAsync(job, CancellationToken.None);
 
         await using var freshCtx = db.CreateContext();
-        var cancelled = await new EfProcessingJobRepository(freshCtx).CancelQueuedAsync(job.Id, CancellationToken.None);
-        cancelled.Should().BeFalse();
+        var outcome = await new EfProcessingJobRepository(freshCtx).CancelAsync(job.Id, CancellationToken.None);
+        outcome.Should().Be(CancelJobResult.MarkedFailed);
 
         await using var verifyCtx = db.CreateContext();
-        var remaining = await new EfProcessingJobRepository(verifyCtx).GetAllAsync(CancellationToken.None);
-        remaining.Should().HaveCount(1);
+        var all = await new EfProcessingJobRepository(verifyCtx).GetAllAsync(CancellationToken.None);
+        all.Should().HaveCount(1);
+        all[0].Status.Should().Be(JobStatus.Failed);
+        all[0].ErrorMessage.Should().Be("Cancelled by user");
+        all[0].FinishedAt.Should().NotBeNull();
     }
 
     [TestMethod]
-    public async Task CancelQueuedAsync_UnknownId_ReturnsFalse()
+    public async Task CancelAsync_UnknownId_ReturnsNotFound()
     {
         await using var db = new TestDatabase();
         await using var ctx = db.CreateContext();
-        var cancelled = await new EfProcessingJobRepository(ctx).CancelQueuedAsync(Guid.NewGuid(), CancellationToken.None);
-        cancelled.Should().BeFalse();
+        var outcome = await new EfProcessingJobRepository(ctx).CancelAsync(Guid.NewGuid(), CancellationToken.None);
+        outcome.Should().Be(CancelJobResult.NotFound);
     }
 
     [TestMethod]

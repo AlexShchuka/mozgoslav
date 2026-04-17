@@ -59,7 +59,4 @@ public static class ModelCatalog
             Kind: ModelKind.Vad,
             IsDefault: true)
     ];
-
-    public static CatalogEntry? TryGet(string id) =>
-        All.FirstOrDefault(e => e.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
 }
