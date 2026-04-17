@@ -290,7 +290,16 @@ The chunk/merge strategy (`Chunk`, `Merge` inside `OpenAiCompatibleLlmService`) 
 
 ### D-15 — V2 scaffolding: AVFoundation recorder, profile CRUD, kbar palette, onboarding wizard
 
-<!-- TODO: decision + alternatives + consequences -->
+**Decision.** Four V2 workstreams tracked together because they share an invariant — they each put a user-visible surface on top of infrastructure that is already partly in place, and none can land in isolation without contradicting the post-this-PR roadmap.
+
+- **D-15.a — AVFoundation audio recorder.** Replace `NoopAudioRecorder` with a real `AVFoundationAudioRecorder` driving `AVCaptureSession` via an extension of the existing `helpers/MozgoslavDictationHelper` Swift bundle. Format: 16 kHz mono float32 PCM (Whisper.net-native). JSON-RPC stays the transport; the `IAudioRecorder` interface signature does not change. Permission prompt + graceful "not granted" handling reuses the onboarding copy already in `ru.json` / `en.json`. Tests: JSON-RPC framing unit test (mocked transport); 1-sec silent-buffer round-trip integration test, skipped on Linux CI, runs on macOS.
+- **D-15.b — Profile CRUD.** Full modal editor for `CorrectionProfile` (create / rename / duplicate / delete) + a per-app assignment table (bundleId → profileId, from ADR-004 R2) wired to new `POST /api/profiles`, `PUT /api/profiles/{id}`, `DELETE /api/profiles/{id}`. The existing list + badges component is reused; we add edit affordances rather than re-shelling it.
+- **D-15.c — kbar command palette.** Replace the hand-rolled `CommandPalette` with `kbar` (already a dep, just unused). ⌘K globally opens it; actions come from a decentralised registration hook so each feature (Queue, Syncthing, Profiles, Calendar, Backup, Obsidian vault reveal-in-Finder) owns its own entries. Keyboard nav, fuzzy search, `localStorage` recent-actions memory. One React Testing Library spec: palette opens, query filters, action dispatches correct Redux-Saga action.
+- **D-15.d — Onboarding wizard.** First-run wizard (triggered when `settings.onboarding_complete == false`) that walks the user through: welcome + privacy → mic permission (uses D-15.a hook) → AX permission (ADR-004 hook) → Syncthing pairing (D5 QR from ADR-003) → LLM provider pick (D-14) → Obsidian vault path picker → done. Re-entrant via Settings → Onboarding. i18n keys mostly exist under `onboarding.*`; any gaps picked up in D-10 audit.
+
+**Alternatives considered.** Split each V2 track into its own ADR. Rejected — they share the same "infrastructure exists, user-surface missing" property and their commit ordering is naturally linear inside this PR when time allows. If any track is cut for time, it reaches `main` as an ADR-tracked **DEFERRED** item with its root cause captured in the PR body and `agent-b-report.md`.
+
+**Consequences.** The four tracks represent the "V2 line" for this PR; the backlog is explicit and prioritised in the Implementation Plan below. No API breaks: every new endpoint sits under a new route, every new settings key is opt-in-by-default, and the wizard is cosmetic from the backend's point of view.
 
 <!-- SECTION: ImplementationPlan -->
 ## Implementation plan (this PR)
