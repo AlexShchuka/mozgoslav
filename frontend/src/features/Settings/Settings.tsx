@@ -194,6 +194,17 @@ const Settings: FC = () => {
       {tab === "llm" && (
         <Card>
           <FormGrid>
+            <div>
+              <label>{t("settings.fields.llmProvider")}</label>
+              <SelectBox
+                value={settings.llmProvider}
+                onChange={(e) => update("llmProvider", e.target.value as AppSettings["llmProvider"])}
+              >
+                <SelectOption value="openai_compatible">{t("settings.llmProvider.openai_compatible")}</SelectOption>
+                <SelectOption value="anthropic">{t("settings.llmProvider.anthropic")}</SelectOption>
+                <SelectOption value="ollama_native">{t("settings.llmProvider.ollama_native")}</SelectOption>
+              </SelectBox>
+            </div>
             <Input
               label={t("settings.fields.llmEndpoint")}
               value={settings.llmEndpoint}

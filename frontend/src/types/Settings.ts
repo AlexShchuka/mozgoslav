@@ -6,6 +6,8 @@ export type DictationInjectMode = "auto" | "clipboard";
 
 export type DictationOverlayPosition = "cursor" | "corner" | "center";
 
+export type LlmProviderKind = "openai_compatible" | "anthropic" | "ollama_native";
+
 export interface AppSettings {
   vaultPath: string;
   llmEndpoint: string;

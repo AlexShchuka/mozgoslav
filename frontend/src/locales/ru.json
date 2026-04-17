@@ -139,6 +139,7 @@
       "language": "Язык интерфейса",
       "theme": "Тема",
       "vaultPath": "Путь к Obsidian vault",
+      "llmProvider": "LLM-провайдер",
       "llmEndpoint": "LLM endpoint",
       "llmModel": "LLM модель",
       "llmApiKey": "LLM API key (если требуется)",
@@ -156,6 +157,11 @@
     "testConnection": "Проверить соединение",
     "tokenHint": "Хранится локально в SQLite. Никогда не отправляется никуда, кроме указанного endpoint.",
     "savedToast": "Настройки сохранены",
+    "llmProvider": {
+      "openai_compatible": "OpenAI-совместимый (LM Studio / Ollama /v1 / OpenAI)",
+      "anthropic": "Anthropic (Claude)",
+      "ollama_native": "Ollama native (/api/chat)"
+    },
     "lmStudio": {
       "installedTitle": "Загружены через LM Studio",
       "suggestedTitle": "Рекомендуемые",

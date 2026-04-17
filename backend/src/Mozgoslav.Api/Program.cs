@@ -98,6 +98,12 @@ try
     builder.Services.AddSingleton<ITranscriptionService>(sp => sp.GetRequiredService<WhisperNetTranscriptionService>());
     builder.Services.AddSingleton<IStreamingTranscriptionService>(sp => sp.GetRequiredService<WhisperNetTranscriptionService>());
     builder.Services.AddSingleton<ILlmService, OpenAiCompatibleLlmService>();
+    builder.Services.AddSingleton<ILlmProviderFactory, LlmProviderFactory>();
+    builder.Services.AddSingleton<ILlmProvider, OpenAiCompatibleLlmProvider>();
+    builder.Services.AddSingleton<ILlmProvider, AnthropicLlmProvider>();
+    builder.Services.AddSingleton<ILlmProvider, OllamaLlmProvider>();
+    builder.Services.AddHttpClient(AnthropicLlmProvider.HttpClientName);
+    builder.Services.AddHttpClient(OllamaLlmProvider.HttpClientName);
     builder.Services.AddSingleton<IMarkdownExporter, FileMarkdownExporter>();
     // B11 / ADR-006 D-15.a: real mic capture on macOS via ffmpeg's AVFoundation
     // input (no new bundled binary — ffmpeg is already a README prerequisite).

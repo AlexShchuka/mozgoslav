@@ -139,6 +139,7 @@
       "language": "UI language",
       "theme": "Theme",
       "vaultPath": "Obsidian vault path",
+      "llmProvider": "LLM provider",
       "llmEndpoint": "LLM endpoint",
       "llmModel": "LLM model",
       "llmApiKey": "LLM API key (if required)",
@@ -156,6 +157,11 @@
     "testConnection": "Test connection",
     "tokenHint": "Stored locally in SQLite. Never leaves your machine except to the configured endpoint.",
     "savedToast": "Settings saved",
+    "llmProvider": {
+      "openai_compatible": "OpenAI-compatible (LM Studio / Ollama /v1 / OpenAI)",
+      "anthropic": "Anthropic (Claude)",
+      "ollama_native": "Ollama native (/api/chat)"
+    },
     "lmStudio": {
       "installedTitle": "Installed via LM Studio",
       "suggestedTitle": "Suggested",

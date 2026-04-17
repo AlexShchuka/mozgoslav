@@ -31,7 +31,8 @@ public sealed record AppSettingsDto(
     bool DictationSoundFeedback,
     IReadOnlyList<string> DictationVocabulary,
     IReadOnlyDictionary<string, string> DictationAppProfiles,
-    bool OnboardingComplete)
+    bool OnboardingComplete,
+    string LlmProvider)
 {
     public static AppSettingsDto Defaults { get; } = new(
         VaultPath: string.Empty,
@@ -66,5 +67,6 @@ public sealed record AppSettingsDto(
             ["com.google.Chrome"] = "default",
             ["com.tinyspeck.slackmacgap"] = "informal-profile",
         },
-        OnboardingComplete: false);
+        OnboardingComplete: false,
+        LlmProvider: "openai_compatible");
 }

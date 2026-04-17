@@ -33,6 +33,7 @@ public interface IAppSettings
     IReadOnlyList<string> DictationVocabulary { get; }
     IReadOnlyDictionary<string, string> DictationAppProfiles { get; }
     bool OnboardingComplete { get; }
+    string LlmProvider { get; }
 
     AppSettingsDto Snapshot { get; }
 

@@ -49,6 +49,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     public IReadOnlyList<string> DictationVocabulary => Snapshot.DictationVocabulary;
     public IReadOnlyDictionary<string, string> DictationAppProfiles => Snapshot.DictationAppProfiles;
     public bool OnboardingComplete => Snapshot.OnboardingComplete;
+    public string LlmProvider => Snapshot.LlmProvider;
     public AppSettingsDto Snapshot { get; private set; } = AppSettingsDto.Defaults;
 
     public async Task<AppSettingsDto> LoadAsync(CancellationToken ct)
@@ -83,7 +84,8 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             DictationSoundFeedback: ParseBool(map, Keys.DictationSoundFeedback, defaults.DictationSoundFeedback),
             DictationVocabulary: ParseStringList(map, Keys.DictationVocabulary, defaults.DictationVocabulary),
             DictationAppProfiles: ParseStringMap(map, Keys.DictationAppProfiles, defaults.DictationAppProfiles),
-            OnboardingComplete: ParseBool(map, Keys.OnboardingComplete, defaults.OnboardingComplete));
+            OnboardingComplete: ParseBool(map, Keys.OnboardingComplete, defaults.OnboardingComplete),
+            LlmProvider: map.GetValueOrDefault(Keys.LlmProvider, defaults.LlmProvider));
 
         await _lock.WaitAsync(ct);
         try { Snapshot = dto; }
@@ -124,6 +126,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             (Keys.DictationVocabulary, SerializeStringList(dto.DictationVocabulary)),
             (Keys.DictationAppProfiles, JsonSerializer.Serialize(dto.DictationAppProfiles)),
             (Keys.OnboardingComplete, BoolToString(dto.OnboardingComplete)),
+            (Keys.LlmProvider, dto.LlmProvider),
         };
 
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
@@ -234,5 +237,6 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         public const string DictationVocabulary = "dictation_vocabulary";
         public const string DictationAppProfiles = "dictation_app_profiles";
         public const string OnboardingComplete = "onboarding_complete";
+        public const string LlmProvider = "llm_provider";
     }
 }
