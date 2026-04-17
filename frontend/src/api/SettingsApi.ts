@@ -1,5 +1,5 @@
 import BaseApi from "./BaseApi";
-import { AppSettings } from "../models/Settings";
+import { AppSettings } from "../types/Settings";
 import { API_ENDPOINTS } from "../constants/api";
 
 export class SettingsApi extends BaseApi {

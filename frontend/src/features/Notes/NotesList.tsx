@@ -7,7 +7,7 @@ import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
 import Badge from "../../components/Badge";
 import { api } from "../../api/MozgoslavApi";
-import { ProcessedNote } from "../../models/ProcessedNote";
+import { ProcessedNote } from "../../types/ProcessedNote";
 import { noteRoute } from "../../constants/routes";
 import { PageRoot, PageTitle, NoteRow, NoteTopic, NoteMeta } from "./NotesList.style";
 

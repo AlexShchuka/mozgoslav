@@ -1,12 +1,12 @@
 import axios, { AxiosInstance } from "axios";
 
 import { API_ENDPOINTS, BACKEND_URL } from "../constants/api";
-import { AppSettings } from "../models/Settings";
-import { ModelEntry } from "../models/Model";
-import { ProcessedNote } from "../models/ProcessedNote";
-import { ProcessingJob } from "../models/ProcessingJob";
+import { AppSettings } from "../types/Settings";
+import { ModelEntry } from "../types/Model";
+import { ProcessedNote } from "../types/ProcessedNote";
+import { ProcessingJob } from "../types/ProcessingJob";
 import { Profile } from "../types/Profile";
-import { Recording } from "../models/Recording";
+import { Recording } from "../types/Recording";
 
 /**
  * Typed thin wrapper over the backend REST API. The frontend consumes this via

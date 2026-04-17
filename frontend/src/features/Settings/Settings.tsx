@@ -8,7 +8,7 @@ import Button from "../../components/Button";
 import Card from "../../components/Card";
 import Input from "../../components/Input";
 import { api, LmStudioDiscoveryResponse } from "../../api/MozgoslavApi";
-import { AppSettings, DEFAULT_SETTINGS } from "../../models/Settings";
+import { AppSettings, DEFAULT_SETTINGS } from "../../types/Settings";
 import { setThemeMode } from "../../styles/ThemeProvider";
 import {
   PageRoot,

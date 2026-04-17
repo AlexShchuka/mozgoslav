@@ -10,7 +10,7 @@ import EmptyState from "../../components/EmptyState";
 import Badge from "../../components/Badge";
 import BrainLauncher from "../../components/BrainLauncher";
 import { api } from "../../api/MozgoslavApi";
-import { Recording } from "../../models/Recording";
+import { Recording } from "../../types/Recording";
 import { formatDuration } from "../../core/utils/format";
 import {
   DashboardRoot,

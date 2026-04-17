@@ -8,7 +8,7 @@ import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
 import { api } from "../../api/MozgoslavApi";
-import { ModelEntry } from "../../models/Model";
+import { ModelEntry } from "../../types/Model";
 import { PageRoot, PageTitle, Subtitle, ModelCard, ModelMeta, ModelHeader } from "./Models.style";
 
 /**
