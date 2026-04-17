@@ -8,13 +8,6 @@ files:
   - dist/**/*
   - dist-electron/**/*
   - package.json
-extraResources:
-  # The push-to-talk helper is built separately on macOS CI
-  # (helpers/MozgoslavDictationHelper, `swift build -c release`) and copied
-  # into the app bundle as a resource. Electron main spawns it at runtime.
-  - from: ../helpers/MozgoslavDictationHelper/.build/release/mozgoslav-dictation-helper
-    to: mozgoslav-dictation-helper
-    filter: ["**/*"]
 mac:
   category: public.app-category.productivity
   target:
@@ -24,6 +17,35 @@ mac:
   artifactName: ${productName}-${version}-${arch}.${ext}
   hardenedRuntime: false
   gatekeeperAssess: false
+  extraResources:
+    # Push-to-talk helper — built from helpers/MozgoslavDictationHelper
+    # via `swift build -c release` on macOS CI and copied into the bundle.
+    - from: ../helpers/MozgoslavDictationHelper/.build/release/mozgoslav-dictation-helper
+      to: mozgoslav-dictation-helper
+      filter: ["**/*"]
+    # Syncthing binaries — populated by scripts/fetch-syncthing.sh (ADR-003 D4).
+    # Both darwin archs are bundled so universal builds and cross-arch
+    # dev iteration work without extra plumbing. Runtime selection is
+    # handled by electron/utils/syncthingLauncher.ts.
+    - from: resources/syncthing/darwin-arm64
+      to: syncthing/darwin-arm64
+      filter: ["**/*"]
+    - from: resources/syncthing/darwin-amd64
+      to: syncthing/darwin-amd64
+      filter: ["**/*"]
+win:
+  extraResources:
+    - from: resources/syncthing/windows-amd64
+      to: syncthing/windows-amd64
+      filter: ["**/*"]
+linux:
+  extraResources:
+    - from: resources/syncthing/linux-amd64
+      to: syncthing/linux-amd64
+      filter: ["**/*"]
+    - from: resources/syncthing/linux-arm64
+      to: syncthing/linux-arm64
+      filter: ["**/*"]
 dmg:
   iconSize: 100
   contents:

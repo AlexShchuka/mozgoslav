@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { DictationOrchestrator } from "./dictation/DictationOrchestrator";
 import { stopBackend, tryStartBackend } from "./utils/backendLauncher";
+import { stopSyncthing, tryStartSyncthing } from "./utils/syncthingLauncher";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -87,7 +88,22 @@ app.whenReady().then(async () => {
   });
 
   const userDataDir = app.getPath("userData");
-  await tryStartBackend(userDataDir);
+
+  // ADR-003 D5: boot Syncthing first so we can forward its REST endpoint
+  // + API key to the backend via CLI overrides. If the binary is missing
+  // we log and continue — the backend still starts and the user falls
+  // back to running Syncthing manually on the default port 8384.
+  const syncthingConfig = await tryStartSyncthing({
+    userDataDir,
+    resourcesRoot: process.resourcesPath ?? path.join(__dirname, ".."),
+  });
+  const backendExtraArgs = syncthingConfig
+    ? [
+        `--Mozgoslav:SyncthingBaseUrl=${syncthingConfig.baseUrl}`,
+        `--Mozgoslav:SyncthingApiKey=${syncthingConfig.apiKey}`,
+      ]
+    : [];
+  await tryStartBackend(userDataDir, { extraArgs: backendExtraArgs });
 
   ipcMain.handle("dialog:openAudioFiles", async () => {
     if (!mainWindow) return { filePaths: [] };
@@ -161,4 +177,5 @@ app.on("before-quit", () => {
   dictationOrchestrator?.destroy();
   dictationOrchestrator = null;
   stopBackend();
+  void stopSyncthing();
 });
