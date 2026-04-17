@@ -28,4 +28,9 @@ export const API_ENDPOINTS = {
   logsTail: "/api/logs/tail",
   backup: "/api/backup",
   backupCreate: "/api/backup/create",
+  dictationStart: "/api/dictation/start",
+  dictationStop: (sessionId: string) => `/api/dictation/stop/${sessionId}`,
+  dictationCancel: (sessionId: string) => `/api/dictation/cancel/${sessionId}`,
+  queueCancel: (id: string) => `/api/queue/${id}`,
+  lmStudioModels: "/api/lmstudio/models",
 } as const;
