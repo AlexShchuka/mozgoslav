@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 using FluentAssertions;
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -88,7 +90,7 @@ public sealed class DictationSessionSourceTests
             IAsyncEnumerable<AudioChunk> chunks,
             string language,
             string? initialPrompt,
-            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct)
+            [EnumeratorCancellation] CancellationToken ct)
         {
             await foreach (var _ in chunks.WithCancellation(ct))
             {

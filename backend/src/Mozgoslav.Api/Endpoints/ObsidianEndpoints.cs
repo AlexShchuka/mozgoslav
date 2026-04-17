@@ -142,8 +142,8 @@ public static class ObsidianEndpoints
             {
                 return Results.BadRequest(new { error = "Vault path is not configured and REST is unreachable." });
             }
-            var absolute = System.IO.Path.Combine(vault, request.Path);
-            if (!System.IO.File.Exists(absolute))
+            var absolute = Path.Combine(vault, request.Path);
+            if (!File.Exists(absolute))
             {
                 return Results.NotFound(new { error = $"Note not found: {absolute}" });
             }
@@ -156,14 +156,14 @@ public static class ObsidianEndpoints
             var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             string[] candidates =
             [
-                System.IO.Path.Combine(home, "Documents", "Obsidian Vault"),
-                System.IO.Path.Combine(home, "Obsidian"),
-                System.IO.Path.Combine(home, "Documents", "Obsidian"),
+                Path.Combine(home, "Documents", "Obsidian Vault"),
+                Path.Combine(home, "Obsidian"),
+                Path.Combine(home, "Documents", "Obsidian"),
             ];
             var matches = candidates
-                .Where(System.IO.Directory.Exists)
-                .Where(p => System.IO.Directory.Exists(System.IO.Path.Combine(p, ".obsidian")))
-                .Select(p => new { path = p, name = System.IO.Path.GetFileName(p) })
+                .Where(Directory.Exists)
+                .Where(p => Directory.Exists(Path.Combine(p, ".obsidian")))
+                .Select(p => new { path = p, name = Path.GetFileName(p) })
                 .ToList();
             return Results.Ok(new { detected = matches, searched = candidates });
         });

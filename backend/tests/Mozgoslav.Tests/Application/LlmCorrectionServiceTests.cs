@@ -106,7 +106,7 @@ public sealed class LlmCorrectionServiceTests
     [TestMethod]
     public void MergeChunks_SingleChunk_ReturnsAsIs()
     {
-        var merged = LlmCorrectionService.MergeChunks(new[] { "first chunk" }, 100);
+        var merged = LlmCorrectionService.MergeChunks(["first chunk"], 100);
         merged.Should().Be("first chunk");
     }
 
@@ -115,7 +115,7 @@ public sealed class LlmCorrectionServiceTests
     {
         var first = "aaaaaaaaaaBBBBB"; // 15 chars total, 5 trailing to drop
         var second = "CCCCCDDDDDDDDDD";
-        var merged = LlmCorrectionService.MergeChunks(new[] { first, second }, 5);
+        var merged = LlmCorrectionService.MergeChunks([first, second], 5);
         // Last 5 of first are dropped → "aaaaaaaaaa" + "CCCCCDDDDDDDDDD".
         merged.Should().Be("aaaaaaaaaaCCCCCDDDDDDDDDD");
     }

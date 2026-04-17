@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Infrastructure.Persistence;
+using Mozgoslav.Infrastructure.Persistence.Migrations;
 
 namespace Mozgoslav.Infrastructure.Services;
 
@@ -233,7 +234,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     {
         public const string VaultPath = "vault_path";
         // Migration 0012 — active LLM provider discriminator.
-        public const string LlmProvider = Persistence.Migrations.Migration0012LlmProvider.LlmProviderKey;
+        public const string LlmProvider = Migration0012LlmProvider.LlmProviderKey;
         public const string LlmEndpoint = "llm_endpoint";
         public const string LlmModel = "llm_model";
         public const string LlmApiKey = "llm_api_key";
@@ -263,7 +264,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         public const string SyncthingEnabled = "syncthing_enabled";
         public const string SyncthingObsidianVaultPath = "syncthing_obsidian_vault_path";
         // ADR-007-shared §2.8 / Migration 0010.
-        public const string SyncthingApiKey = Persistence.Migrations.Migration0010SyncthingSettings.SyncthingApiKeyKey;
-        public const string SyncthingBaseUrl = Persistence.Migrations.Migration0010SyncthingSettings.SyncthingBaseUrlKey;
+        public const string SyncthingApiKey = Migration0010SyncthingSettings.SyncthingApiKeyKey;
+        public const string SyncthingBaseUrl = Migration0010SyncthingSettings.SyncthingBaseUrlKey;
     }
 }

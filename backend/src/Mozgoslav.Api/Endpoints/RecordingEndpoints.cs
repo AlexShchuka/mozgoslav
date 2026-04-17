@@ -102,9 +102,7 @@ public static class RecordingEndpoints
                         : OperatingSystem.IsWindows()
                             ? "windows"
                             : "other",
-                permissionsRequired = OperatingSystem.IsMacOS()
-                    ? new[] { "microphone" }
-                    : Array.Empty<string>(),
+                permissionsRequired = OperatingSystem.IsMacOS() ? ["microphone"] : Array.Empty<string>()
             });
         });
 
@@ -158,7 +156,7 @@ public static class RecordingEndpoints
             }
 
             var path = await recorder.StopAsync(ct);
-            var imported = await importUseCase.ExecuteAsync(new[] { path }, null, ct);
+            var imported = await importUseCase.ExecuteAsync([path], null, ct);
             return Results.Ok(new
             {
                 sessionId,

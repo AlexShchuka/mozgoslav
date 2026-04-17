@@ -87,7 +87,7 @@ public sealed class LogsController : ControllerBase
     private static async Task<List<string>> ReadAllLinesAsync(string path, CancellationToken ct)
     {
         var results = new List<string>();
-        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         using var reader = new StreamReader(stream);
         string? line;
         while ((line = await reader.ReadLineAsync(ct)) is not null)

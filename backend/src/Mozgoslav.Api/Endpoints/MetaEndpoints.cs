@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Reflection;
 
 namespace Mozgoslav.Api.Endpoints;
@@ -21,7 +22,7 @@ public static class MetaEndpoints
                 ?? Environment.GetEnvironmentVariable("GIT_COMMIT")
                 ?? string.Empty).Trim();
             var buildDate = File.GetLastWriteTimeUtc(assembly.Location)
-                .ToString("O", System.Globalization.CultureInfo.InvariantCulture);
+                .ToString("O", CultureInfo.InvariantCulture);
 
             return Results.Ok(new
             {

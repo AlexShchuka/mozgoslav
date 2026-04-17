@@ -1,3 +1,5 @@
+using System.Text;
+
 using Microsoft.Extensions.Logging;
 
 using Mozgoslav.Application.Interfaces;
@@ -127,7 +129,7 @@ public sealed class LlmCorrectionService
         // boundary tokens. This is heuristic; the summarisation step
         // tolerates small overlaps gracefully.
         var first = corrected[0];
-        var builder = new System.Text.StringBuilder(first, first.Length + corrected.Count * 128);
+        var builder = new StringBuilder(first, first.Length + corrected.Count * 128);
         for (var i = 1; i < corrected.Count; i++)
         {
             // Trim the overlap from the end of the running text so the next

@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 
 using Microsoft.Extensions.Logging;
 
@@ -56,7 +57,7 @@ public sealed class FfmpegPcmDecoder : IAudioPcmDecoder
         psi.ArgumentList.Add("-ac");
         psi.ArgumentList.Add("1");
         psi.ArgumentList.Add("-ar");
-        psi.ArgumentList.Add(TargetSampleRate.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        psi.ArgumentList.Add(TargetSampleRate.ToString(CultureInfo.InvariantCulture));
         psi.ArgumentList.Add("pipe:1");
 
         using var process = new Process { StartInfo = psi, EnableRaisingEvents = true };

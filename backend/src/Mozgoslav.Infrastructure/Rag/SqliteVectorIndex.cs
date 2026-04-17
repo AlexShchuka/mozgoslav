@@ -60,8 +60,8 @@ public sealed class SqliteVectorIndex : IVectorIndex, IAsyncDisposable
         await _mutex.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            using var conn = Open();
-            using var cmd = conn.CreateCommand();
+            await using var conn = Open();
+            await using var cmd = conn.CreateCommand();
             cmd.CommandText = """
                 INSERT INTO rag_chunks (id, note_id, text, embedding, dimensions)
                 VALUES ($id, $note_id, $text, $embedding, $dimensions)
@@ -91,8 +91,8 @@ public sealed class SqliteVectorIndex : IVectorIndex, IAsyncDisposable
         await _mutex.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            using var conn = Open();
-            using var cmd = conn.CreateCommand();
+            await using var conn = Open();
+            await using var cmd = conn.CreateCommand();
             cmd.CommandText = "DELETE FROM rag_chunks WHERE note_id = $note_id";
             cmd.Parameters.AddWithValue("$note_id", noteId.ToString("D"));
             await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
@@ -120,10 +120,10 @@ public sealed class SqliteVectorIndex : IVectorIndex, IAsyncDisposable
         await _mutex.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            using var conn = Open();
-            using var cmd = conn.CreateCommand();
+            await using var conn = Open();
+            await using var cmd = conn.CreateCommand();
             cmd.CommandText = "SELECT id, note_id, text, embedding, dimensions FROM rag_chunks";
-            using var reader = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            await using var reader = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
             while (await reader.ReadAsync(ct).ConfigureAwait(false))
             {
                 var dimensions = reader.GetInt32(4);

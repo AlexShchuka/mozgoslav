@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
@@ -94,7 +95,7 @@ public sealed class ObsidianRestApiClient : IObsidianRestClient
         var path = vaultRelativePath.TrimEnd('/') + "/";
         var uri = new Uri(host.TrimEnd('/') + "/vault/" + path);
         using var response = await client.PutAsync(uri, content: null, ct);
-        if ((int)response.StatusCode >= 400 && response.StatusCode != System.Net.HttpStatusCode.Conflict)
+        if ((int)response.StatusCode >= 400 && response.StatusCode != HttpStatusCode.Conflict)
         {
             response.EnsureSuccessStatusCode();
         }

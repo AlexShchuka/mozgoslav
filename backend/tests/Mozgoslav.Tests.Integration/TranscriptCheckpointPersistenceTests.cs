@@ -54,14 +54,12 @@ public sealed class TranscriptCheckpointPersistenceTests
         };
         await transcripts.AddAsync(transcript, TestContext.CancellationToken);
 
-        using (var verify = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MozgoslavDbContext>>().CreateDbContext())
-        {
-            var loaded = await verify.Transcripts.AsNoTracking().SingleAsync(t => t.Id == transcript.Id, TestContext.CancellationToken);
-            loaded.Segments.Should().HaveCount(2);
-            loaded.Segments[0].CheckpointAt.Should().BeNull();
-            loaded.Segments[1].CheckpointAt.Should().NotBeNull();
-            loaded.Segments[1].CheckpointAt!.Value.Should().BeCloseTo(checkpoint, TimeSpan.FromMilliseconds(50));
-        }
+        await using var verify = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MozgoslavDbContext>>().CreateDbContext();
+        var loaded = await verify.Transcripts.AsNoTracking().SingleAsync(t => t.Id == transcript.Id, TestContext.CancellationToken);
+        loaded.Segments.Should().HaveCount(2);
+        loaded.Segments[0].CheckpointAt.Should().BeNull();
+        loaded.Segments[1].CheckpointAt.Should().NotBeNull();
+        loaded.Segments[1].CheckpointAt!.Value.Should().BeCloseTo(checkpoint, TimeSpan.FromMilliseconds(50));
     }
 
     public TestContext TestContext { get; set; } = null!;

@@ -138,10 +138,10 @@ public sealed class PythonSidecarClientTests : IDisposable
 
         var result = await _client.NerAsync("sample text", TestContext.CancellationToken);
 
-        result.People.Should().BeEquivalentTo(new[] { "Иван", "Мария" });
-        result.Orgs.Should().BeEquivalentTo(new[] { "Яндекс" });
-        result.Locations.Should().BeEquivalentTo(new[] { "Москва" });
-        result.Dates.Should().BeEquivalentTo(new[] { "15.5.2024" });
+        result.People.Should().BeEquivalentTo("Иван", "Мария");
+        result.Orgs.Should().BeEquivalentTo("Яндекс");
+        result.Locations.Should().BeEquivalentTo("Москва");
+        result.Dates.Should().BeEquivalentTo("15.5.2024");
     }
 
     [TestMethod]

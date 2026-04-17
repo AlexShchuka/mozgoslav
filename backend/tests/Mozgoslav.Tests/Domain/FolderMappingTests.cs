@@ -30,13 +30,13 @@ public sealed class FolderMappingTests
     public void ParaCategory_CoversAllFourBuckets()
     {
         var values = Enum.GetValues<ParaCategory>();
-        values.Should().Contain(new[]
-        {
+        values.Should().Contain(
+        [
             ParaCategory.Project,
             ParaCategory.Area,
             ParaCategory.Resource,
-            ParaCategory.Archive,
-        });
+            ParaCategory.Archive
+        ]);
     }
 
     [TestMethod]

@@ -1,5 +1,6 @@
 using FluentAssertions;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Mozgoslav.Application.Interfaces;
@@ -116,22 +117,22 @@ public sealed class LlmProviderFactoryTests
         return provider;
     }
 
-    private sealed class ListLogger<T> : Microsoft.Extensions.Logging.ILogger<T>
+    private sealed class ListLogger<T> : ILogger<T>
     {
         public List<string> WarnMessages { get; } = [];
 
-        IDisposable? Microsoft.Extensions.Logging.ILogger.BeginScope<TState>(TState state) => null;
+        IDisposable? ILogger.BeginScope<TState>(TState state) => null;
 
-        public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) => true;
+        public bool IsEnabled(LogLevel logLevel) => true;
 
         public void Log<TState>(
-            Microsoft.Extensions.Logging.LogLevel logLevel,
-            Microsoft.Extensions.Logging.EventId eventId,
+            LogLevel logLevel,
+            EventId eventId,
             TState state,
             Exception? exception,
             Func<TState, Exception?, string> formatter)
         {
-            if (logLevel == Microsoft.Extensions.Logging.LogLevel.Warning)
+            if (logLevel == LogLevel.Warning)
             {
                 WarnMessages.Add(formatter(state, exception));
             }

@@ -54,20 +54,20 @@ public sealed class ModelScanEndpointTests
         {
             await File.WriteAllBytesAsync(
                 Path.Combine(dir, "ggml-large-v3-q8_0.bin"),
-                new byte[] { 1, 2, 3, 4 },
+                [1, 2, 3, 4],
                 TestContext.CancellationToken);
             await File.WriteAllBytesAsync(
                 Path.Combine(dir, "ggml-silero-v6.2.0.bin"),
-                new byte[] { 5, 6, 7 },
+                [5, 6, 7],
                 TestContext.CancellationToken);
             await File.WriteAllBytesAsync(
                 Path.Combine(dir, "some-custom-model.gguf"),
-                new byte[] { 8, 9 },
+                [8, 9],
                 TestContext.CancellationToken);
             // Non-matching extension — must be excluded from results.
             await File.WriteAllBytesAsync(
                 Path.Combine(dir, "notes.txt"),
-                new byte[] { 0 },
+                [0],
                 TestContext.CancellationToken);
 
             await using var factory = new ApiFactory();

@@ -21,6 +21,8 @@ using OpenTelemetry.Metrics;
 using Serilog;
 using Serilog.Events;
 
+using Whisper.net;
+
 AppPaths.EnsureExist();
 
 Log.Logger = new LoggerConfiguration()
@@ -120,11 +122,11 @@ try
     // ADR-004 R4 / ADR-007-phase2-backend §2.4 Step 2 — the WhisperFactory cache is
     // now an injected port; the factory delegate resolves the configured model path
     // on first use and throws a helpful error if it is missing from disk.
-    builder.Services.AddSingleton<IIdleResourceCache<Whisper.net.WhisperFactory>>(sp =>
+    builder.Services.AddSingleton<IIdleResourceCache<WhisperFactory>>(sp =>
     {
         var settings = sp.GetRequiredService<IAppSettings>();
-        var logger = sp.GetRequiredService<ILogger<IdleResourceCache<Whisper.net.WhisperFactory>>>();
-        return new IdleResourceCache<Whisper.net.WhisperFactory>(
+        var logger = sp.GetRequiredService<ILogger<IdleResourceCache<WhisperFactory>>>();
+        return new IdleResourceCache<WhisperFactory>(
             factory: () =>
             {
                 var modelPath = settings.WhisperModelPath;
@@ -135,7 +137,7 @@ try
                         "Download it via the Models page in Settings.");
                 }
                 logger.LogInformation("Loading Whisper model {Model}", Path.GetFileName(modelPath));
-                return Whisper.net.WhisperFactory.FromPath(modelPath);
+                return WhisperFactory.FromPath(modelPath);
             },
             idleTimeoutProvider: () =>
                 TimeSpan.FromMinutes(Math.Max(0, settings.DictationModelUnloadMinutes)));

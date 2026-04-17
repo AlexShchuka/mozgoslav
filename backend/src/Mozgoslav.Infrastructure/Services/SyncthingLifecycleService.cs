@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -102,7 +103,7 @@ public sealed class SyncthingLifecycleService : IHostedService, IAsyncDisposable
         {
             _process = Process.Start(psi);
         }
-        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
         {
             _logger.LogWarning(ex,
                 "Failed to spawn Syncthing at {Binary}; lifecycle service is a no-op for this run",

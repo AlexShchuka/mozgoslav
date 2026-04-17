@@ -79,7 +79,7 @@ public sealed class DictationCrashRecoveryTests
                     "chunks are tee'd to disk so the user can recover audio after an unclean shutdown");
 
                 // Read via a shared-read stream since the session still holds the write handle.
-                using var readStream = new FileStream(
+                await using var readStream = new FileStream(
                     pcmPath,
                     FileMode.Open,
                     FileAccess.Read,
@@ -109,7 +109,7 @@ public sealed class DictationCrashRecoveryTests
 
         // Drop an orphan BEFORE starting the manager.
         var orphanPath = Path.Combine(tempDir, $"dictation-{Guid.NewGuid():D}.pcm");
-        await File.WriteAllBytesAsync(orphanPath, new byte[] { 1, 2, 3, 4 }, TestContext.CancellationToken);
+        await File.WriteAllBytesAsync(orphanPath, [1, 2, 3, 4], TestContext.CancellationToken);
 
         var captured = new ConcurrentQueue<string>();
 
