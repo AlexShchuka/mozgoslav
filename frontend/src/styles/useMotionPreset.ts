@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "motion/react";
 
 import { MotionPreset, MotionPresetName, resolveMotionPreset } from "./motion";
 

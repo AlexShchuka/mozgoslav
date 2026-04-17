@@ -1,7 +1,7 @@
 import { FC, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { AnimatePresence, m, useReducedMotion } from "framer-motion";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { Check, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 
 import Button from "../../components/Button";

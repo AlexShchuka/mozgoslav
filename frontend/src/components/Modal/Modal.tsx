@@ -1,6 +1,6 @@
 import { FC, PropsWithChildren, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
 
 import { Backdrop, Dialog, Header, Title, CloseButton, Body, Footer } from "./Modal.style";

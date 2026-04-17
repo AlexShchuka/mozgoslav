@@ -1,5 +1,5 @@
 import { ButtonHTMLAttributes, forwardRef } from "react";
-import { useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "motion/react";
 import { Brain } from "lucide-react";
 
 import { LauncherButton, IconSlot, BrainLauncherState, BrainLauncherSize } from "./BrainLauncher.style";

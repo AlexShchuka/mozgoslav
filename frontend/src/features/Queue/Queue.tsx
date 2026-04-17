@@ -1,6 +1,6 @@
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AnimatePresence, useReducedMotion } from "framer-motion";
+import { AnimatePresence, useReducedMotion } from "motion/react";
 import { ListChecks, X } from "lucide-react";
 import { toast } from "react-toastify";
 

@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { LazyMotion, domAnimation } from "framer-motion";
+import { LazyMotion, domAnimation } from "motion/react";
 import { Provider } from "react-redux";
 import { HashRouter } from "react-router-dom";
 import { ToastContainer } from "react-toastify";

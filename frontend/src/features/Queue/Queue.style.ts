@@ -1,4 +1,4 @@
-import { m } from "framer-motion";
+import { m } from "motion/react";
 import styled from "styled-components";
 
 export const PageRoot = styled.div`
