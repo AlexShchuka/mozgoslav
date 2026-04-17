@@ -255,9 +255,20 @@ Queue page (explicitly reported as missing translations) is migrated first; ever
 
 **Consequences.** Two new files (`scripts/dev.mjs`, `scripts/build.mjs`) and two new root-level npm scripts. Stale README sections (prior multi-step instructions) migrate to `docs/.archive/` — nothing is deleted, just no longer in the main entry-point.
 
-### D-13 — Accessibility baseline (prefers-reduced-motion, WCAG AA, focus rings)
+### D-13 — Accessibility baseline (`prefers-reduced-motion`, WCAG AA, focus rings)
 
-<!-- TODO: decision + alternatives + consequences -->
+**Decision.** Four always-on rules policed by code review and the parity audit:
+
+1. **Motion.** Every decorative animation is gated on Motion's `useReducedMotion()` hook. When it returns `true`, the animation reduces to a 0 ms fade — no scale, no spring. The gate lives in a single helper `useMotionPreset(preset)` (`src/styles/motion.ts`) so we don't scatter conditionals.
+2. **Contrast.** Every foreground/background pair must pass WCAG AA (4.5:1 body, 3:1 large). The palette audit in D-6 already verifies the light / dark theme baseline; any new surface that introduces an `accent-*` foreground must be rechecked against `--neutral-bg*`.
+3. **Focus rings.** 2 px inset + 2 px outer ring drawn in `--accent-primary`, radius matching the target component (`theme.radii.md` for buttons, `theme.radii.sm` for inputs). Applied via a shared `focusRing` CSS mixin and invoked through the `:focus-visible` pseudo-class only.
+4. **Disabled state.** `opacity: 0.45` + `pointer-events: none`, **no animation**. The disabled state is visually distinct enough to read as "not actionable" without trapping reduced-motion users in a spinner or pulse.
+
+**Alternatives considered.**
+- *Rely on user OS setting globally.* Rejected: without a hook gate we still paint hover/press animations on mount, which is exactly the case `prefers-reduced-motion` is meant to prevent.
+- *Higher contrast (WCAG AAA).* Desirable, but would force palette contrast changes that clash with macOS system accents we align to. Deferred as a follow-up if user complains.
+
+**Consequences.** One shared `focusRing` + `useMotionPreset` + the D-6 palette cover every interactive component without per-component logic. A11y regressions surface the moment a component introduces inline styles — caught at review.
 
 ### D-14 — ILlmProvider abstraction (OpenAI-compat + Anthropic + Ollama)
 
