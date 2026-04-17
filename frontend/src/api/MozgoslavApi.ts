@@ -104,6 +104,26 @@ export class MozgoslavApi {
   listLogs = async () => (await this.client.get(API_ENDPOINTS.logs)).data;
   tailLog = async (file?: string, lines = 200) =>
     (await this.client.get(API_ENDPOINTS.logsTail, { params: { file, lines } })).data;
+
+  // --- dictation ---
+  startDictation = async (profileId?: string): Promise<{ sessionId: string }> =>
+    (await this.client.post<{ sessionId: string }>(API_ENDPOINTS.dictationStart, { profileId })).data;
+
+  stopDictation = async (sessionId: string): Promise<Recording> =>
+    (await this.client.post<Recording>(API_ENDPOINTS.dictationStop(sessionId))).data;
+
+  cancelDictation = async (sessionId: string): Promise<void> => {
+    await this.client.post(API_ENDPOINTS.dictationCancel(sessionId));
+  };
+
+  // --- queue ---
+  cancelQueueJob = async (id: string): Promise<void> => {
+    await this.client.delete(API_ENDPOINTS.queueCancel(id));
+  };
+
+  // --- lm studio ---
+  listLmStudioModels = async (): Promise<{ id: string; object: string }[]> =>
+    (await this.client.get<{ data: { id: string; object: string }[] }>(API_ENDPOINTS.lmStudioModels)).data.data;
 }
 
 export const api = new MozgoslavApi();
