@@ -1,11 +1,11 @@
 # Archive
 
-Это исторические материалы ранних итераций. Агенты Claude их НЕ читают и не используют как источник правды.
+Historical documents. Agents do NOT read them as source of truth — the code plus active ADRs in `/docs/adr/` are authoritative.
 
-Что здесь:
-- `original-idea/` — первоначальные ADR и спецификации, по которым делался первый scaffold. Часть решений уже пересмотрена в коде.
-- `SELF-REVIEW.md` — самоотчёт ранних агентов, не всегда соответствует текущему состоянию.
-- `AGENT-REPORT.md` — отчёт scaffold-агента на .NET 9 + Dapper. Устарел: проект переехал на .NET 10 + EF Core.
-- `TODO.md` — backlog ранних итераций, частично выполнен.
+Layout:
 
-Источник правды сейчас — код и CLAUDE.md.
+- `adrs/` — all superseded ADRs (ADR-001..008 + ADR-007 iteration family).
+- `docs/` — older top-level docs (`SELF-REVIEW.md`, `TODO.md` snapshots before v0.8).
+- `original-idea/` — first-iteration spec and brief — baseline against which the skeleton was scaffolded.
+- `reports/` — scaffolding and agent progress reports from earlier iterations.
+- `plans/` — per-version development plans after they ship (e.g. `plans/v0.8/` — checkpoint summaries of the blocks that built v0.8).

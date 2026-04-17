@@ -1,17 +1,14 @@
 # Architecture Decision Records
 
-Current iteration:
+Active policies:
 
 | # | Document | Status |
 |---|----------|--------|
-| 007 | [Iteration 7 — Scope, Business Cases & Test Plan](ADR-007-iteration-7.md) | Accepted |
-| 007 | [Iteration 7 — Execution Plan (agent prompts + wave order)](ADR-007-execution-plan.md) | Accepted (sibling to ADR-007) |
+| 009 | [Production readiness, no stubs](ADR-009-production-readiness-no-stubs.md) | Accepted |
+| 010 | [Bundled Russian models](ADR-010-bundled-russian-models.md) | Accepted |
+| 011 | [Backend: libraries over homebrew reinvention](ADR-011-no-reinvention-libraries-over-homebrew.md) | Proposed |
+| 012 | [Frontend conventions](ADR-012-frontend-conventions.md) | Proposed |
+| 013 | [UX design system](ADR-013-ux-design-system.md) | Proposed |
+| 014 | [Unrealized backlog (living)](ADR-014-unrealized-backlog.md) | Living |
 
-Historical ADRs (archived for reference; not source of truth for current scope):
-
-- `.archive/adrs/ADR-001-meetily-fork-architecture.md`
-- `.archive/adrs/ADR-002-global-dictation-shortcut.md`
-- `.archive/adrs/ADR-003-syncthing-integration.md`
-- `.archive/adrs/ADR-004-dictation-sync-refinements.md`
-- `.archive/adrs/ADR-005-local-rag-qa.md`
-- `.archive/adrs/ADR-006-calendar-meeting-autostart.md`
+Historical ADRs are under [`/.archive/adrs/`](../../.archive/adrs/) — traceability only, not source of truth.

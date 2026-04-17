@@ -1,7 +1,7 @@
 import { BrowserWindow, globalShortcut } from "electron";
 
 /**
- * TODO-1 — global dictation shortcut helper. Electron's `globalShortcut` API
+ * Global dictation shortcut helper. Electron's `globalShortcut` API
  * only exists in the main process, so the renderer is notified via a broadcast
  * IPC event on every open `BrowserWindow`. The renderer Dashboard subscribes
  * through the preload bridge (`window.mozgoslav.onGlobalHotkey`) and kicks off

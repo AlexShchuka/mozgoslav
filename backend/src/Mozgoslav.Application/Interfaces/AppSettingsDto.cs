@@ -7,7 +7,7 @@ namespace Mozgoslav.Application.Interfaces;
 /// </summary>
 public sealed record AppSettingsDto(
     string VaultPath,
-    // TODO-3 / BC-036 — discriminator for <see cref="ILlmProviderFactory"/>.
+    // BC-036 discriminator for <see cref="ILlmProviderFactory"/>.
     // "openai_compatible" (LM Studio / Ollama OpenAI adapter), "anthropic"
     // (Claude Messages API) or "ollama" (native /api/chat). Unknown values
     // fall back to "openai_compatible" with a WARN log.

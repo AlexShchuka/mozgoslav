@@ -41,7 +41,7 @@ const renderPalette = () =>
     </MemoryRouter>,
   );
 
-describe("CommandPalette — kbar integration (TODO-5)", () => {
+describe("CommandPalette — kbar integration", () => {
   beforeEach(() => {
     lastNavigatedTo = null;
   });

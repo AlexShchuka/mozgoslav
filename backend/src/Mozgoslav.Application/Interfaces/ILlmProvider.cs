@@ -1,7 +1,7 @@
 namespace Mozgoslav.Application.Interfaces;
 
 /// <summary>
-/// TODO-3 / BC-036 — a single LLM transport. Each implementation talks to one
+/// BC-036 a single LLM transport. Each implementation talks to one
 /// back-end (OpenAI-compatible / Anthropic / Ollama) and is selected at runtime
 /// by <see cref="ILlmProviderFactory"/> based on the persisted
 /// <see cref="IAppSettings.LlmProvider"/> value. All methods are graceful: a

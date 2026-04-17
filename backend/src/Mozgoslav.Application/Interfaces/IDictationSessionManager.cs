@@ -13,7 +13,7 @@ public interface IDictationSessionManager
 {
     /// <summary>Creates and starts a new session; fails if one is already active.</summary>
     /// <param name="source">
-    /// TODO-1 — origin tag of the session: <c>"mouse5"</c>, <c>"dashboard"</c>,
+    /// Origin tag of the session: <c>"mouse5"</c>, <c>"dashboard"</c>,
     /// <c>"global-hotkey"</c> or <c>null</c> for legacy callers. Stored on the
     /// returned <see cref="DictationSession.Source"/> for observability.
     /// </param>

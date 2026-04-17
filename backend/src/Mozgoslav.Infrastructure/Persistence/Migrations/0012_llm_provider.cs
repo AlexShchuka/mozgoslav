@@ -1,7 +1,7 @@
 namespace Mozgoslav.Infrastructure.Persistence.Migrations;
 
 /// <summary>
-/// Migration marker #0012 — TODO-3 / BC-036.
+/// Migration marker #0012 — BC-036.
 /// <para>
 /// Adds the <c>llm_provider</c> row to the key/value <c>settings</c> table
 /// so <c>EfAppSettings</c> knows which <c>ILlmProvider</c> the factory should

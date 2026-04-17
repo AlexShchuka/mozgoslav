@@ -98,7 +98,7 @@ final class InjectionStrategyTests: XCTestCase {
         func paste() throws { pasteCalls += 1 }
     }
 
-    final class SpyPasteboard: Pasteboard {
+    final class SpyPasteboard: DictationHelperCore.Pasteboard {
         var value: String? = "prior content"
         var writes: [String] = []
         func readString() -> String? { value }

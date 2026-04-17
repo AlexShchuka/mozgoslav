@@ -2,7 +2,7 @@
 
 > Агент, читающий этот CLAUDE.md: папку `.archive/` **игнорируй** — там устаревшие материалы. Не используй их как источник правды.
 
-Локальный second-brain для разговоров. macOS-first desktop-app. Electron UI ↔ ASP.NET Minimal API backend ↔ Python FastAPI ML sidecar (V3).
+Локальный second-brain для разговоров. macOS-first desktop-app. Electron UI ↔ ASP.NET Minimal API backend ↔ Python FastAPI ML sidecar (real impl since v0.8).
 
 ## Layout
 
@@ -10,11 +10,14 @@
 mozgoslav/
 ├── backend/           C# 14 / .NET 10 ASP.NET Minimal API, EF Core Sqlite, Serilog, OpenTelemetry metrics
 ├── frontend/          Electron + React 19 + TypeScript strict + Redux-Saga + styled-components + i18next
-├── python-sidecar/    FastAPI app (V3 ML endpoints — stubs today)
+├── python-sidecar/    FastAPI app — diarize / NER (real, v0.8) + gender / emotion (downloadable, 503 envelope until model fetched)
 ├── docs/
-│   └── README.md                       what each piece does
+│   ├── README.md                       what each piece does
+│   └── adr/                            architecture decisions (008/009/010 active; .archive-v1/ + .archive-v2/ historical)
+├── plan/v0.8/                          release plan, block-by-block
 ├── LICENSE            MIT
-└── README.md          user-facing "how to run on macOS"
+├── README.md          user-facing "install + first run on macOS"
+└── CONTRIBUTING.md    developer setup (Rider, tests, lefthook, conventions)
 ```
 
 ## Key conventions
@@ -25,6 +28,15 @@ mozgoslav/
 - Tests: MSTest (`[TestClass]` / `[TestMethod]`) + FluentAssertions + NSubstitute. Integration tests spin real SQLite temp files via `TestDatabase` helper.
 - Frontend: feature-based (Component + .style.ts + .container.ts + types.ts). Shared components live in `src/components/`. State in Redux+Saga store slices (recording slice is the canonical scaffold).
 - No primary constructors in frontend (see `.editorconfig`). styled-components for all styling; zero inline CSS.
+- `dotnet` commands always pass `-maxcpucount:1` (sandbox CPU rule).
+
+## Active ADRs
+
+- `docs/adr/ADR-008-web-rag.md` — groomed, NOT in v0.8.
+- `docs/adr/ADR-009-production-readiness-no-stubs.md` — accepted, drives v0.8: real ML, no Noop fallbacks where prod expected.
+- `docs/adr/ADR-010-bundled-russian-models.md` — accepted, drives v0.8: Tier 1 models bundled into DMG, Tier 2 downloadable (`ModelCatalog`).
+
+Iteration-7 ADRs (007 family) shipped — archived in `docs/adr/.archive-v2/`.
 
 ## Privacy & security
 
@@ -37,11 +49,11 @@ mozgoslav/
 
 - `backend/CLAUDE.md` — backend architecture, DI wiring, extension points.
 - `frontend/CLAUDE.md` — React feature structure, store conventions, Electron bridge.
-- `python-sidecar/CLAUDE.md` — FastAPI structure, V3 stubs, how to flesh out ML services.
+- `python-sidecar/CLAUDE.md` — FastAPI structure, real ML services, `ModelNotAvailableError` 503 envelope.
 
-## Out of scope (today)
+## Out of scope (Phase 2, not v0.8)
 
-- Real ML in sidecar (diarization / gender / emotion / NER). Stubs only — implement when downloading models.
-- Live transcription, speaker-based aggregated notes, PARA routing — roadmap in `TODO.md`.
-- macOS `IAudioRecorder` (native mic capture) — interface present, `NoopAudioRecorder` is the fallback.
-- `electron-builder --mac` packaging — requires macOS host; config ready, not executed in CI.
+- Apple Developer ID signing + notarisation (DMG ships unsigned in v0.8 — `plan/v0.8/07-dmg-and-release.md` §8).
+- Web-aware RAG (groomed in ADR-008).
+- Calendar / meeting autostart.
+- GigaAM-v3 STT integration (current STT: Whisper.cpp Tier 1 bundled + Tier 2 downloadable).

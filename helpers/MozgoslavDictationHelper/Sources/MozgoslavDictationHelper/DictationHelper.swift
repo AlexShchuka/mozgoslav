@@ -77,6 +77,44 @@ public final class DictationHelper {
             audioCapture.stop()
             return JsonRpcResponse(id: request.id, result: .object(["stopped": .bool(true)]))
 
+        case "capture.startFile":
+            let params = request.params?.objectValue() ?? [:]
+            let sessionId = params["sessionId"]?.stringValue() ?? ""
+            let outputPath = params["outputPath"]?.stringValue() ?? ""
+            let sampleRate = params["sampleRate"]?.intValue() ?? 16_000
+            guard !sessionId.isEmpty, !outputPath.isEmpty else {
+                throw HelperError(code: -32602, message: "capture.startFile requires sessionId and outputPath")
+            }
+            try audioCapture.startFileCapture(
+                sessionId: sessionId,
+                outputPath: outputPath,
+                sampleRate: sampleRate
+            )
+            return JsonRpcResponse(id: request.id, result: .object([
+                "started": .bool(true),
+                "sessionId": .string(sessionId),
+            ]))
+
+        case "capture.stopFile":
+            let params = request.params?.objectValue() ?? [:]
+            let sessionId = params["sessionId"]?.stringValue() ?? ""
+            let result = try audioCapture.stopFileCapture(sessionId: sessionId)
+            return JsonRpcResponse(id: request.id, result: .object([
+                "success": .bool(true),
+                "path": .string(result.path),
+                "durationMs": .int(result.durationMs),
+            ]))
+
+        case "permission.check":
+            let microphone = PermissionProbe.microphoneStatus()
+            let accessibility = PermissionProbe.accessibilityStatus()
+            let inputMonitoring = PermissionProbe.inputMonitoringStatus()
+            return JsonRpcResponse(id: request.id, result: .object([
+                "microphone": .string(microphone),
+                "accessibility": .string(accessibility),
+                "inputMonitoring": .string(inputMonitoring),
+            ]))
+
         case "inject.text":
             let params = request.params?.objectValue() ?? [:]
             let text = params["text"]?.stringValue() ?? ""

@@ -150,6 +150,10 @@ public sealed class MozgoslavDbContext : DbContext
             autoTagsProperty.Metadata.SetValueComparer(stringListComparer);
             e.Property(x => x.IsDefault).HasColumnName("is_default");
             e.Property(x => x.IsBuiltIn).HasColumnName("is_built_in");
+            // Plan v0.8 Block 5 — glossary + LLM correction opt-in.
+            var glossaryProperty = e.Property(x => x.Glossary).HasColumnName("glossary_json").HasConversion(stringListConverter);
+            glossaryProperty.Metadata.SetValueComparer(stringListComparer);
+            e.Property(x => x.LlmCorrectionEnabled).HasColumnName("llm_correction_enabled");
         });
 
         modelBuilder.Entity<ProcessingJob>(e =>

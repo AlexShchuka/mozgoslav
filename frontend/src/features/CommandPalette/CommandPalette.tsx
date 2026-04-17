@@ -25,7 +25,7 @@ import {
  * `useCommandPaletteActions` from the provider tree in main.tsx; this
  * component only renders the portal + result list.
  *
- * TODO-5 — Cmd+K / Ctrl+K toggle is handled by kbar out-of-the-box
+ * Cmd+K / Ctrl+K toggle is handled by kbar out-of-the-box
  * (`toggleShortcut` defaults to `$mod+k`).
  */
 const RenderItem = forwardRef<

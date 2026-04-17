@@ -59,6 +59,54 @@ export class NativeHelperClient extends EventEmitter {
     await this.send<object>("capture.stop", undefined);
   }
 
+  /**
+   * Plan v0.8 Block 3 §2.4 — start recording directly into a WAV file
+   * (distinct from the streaming `capture.start` used for live dictation).
+   * The helper echoes every audio callback into the given output path using
+   * AVAudioEngine + a resampler node to the 16 kHz mono format Whisper
+   * expects.
+   */
+  async startFileCapture(outputPath: string, sessionId: string): Promise<void> {
+    await this.send<object>("capture.startFile", {
+      outputPath,
+      sessionId,
+      sampleRate: 16000,
+      channels: 1,
+      format: "wav",
+    });
+  }
+
+  async stopFileCapture(sessionId: string): Promise<{ path: string; durationMs: number }> {
+    const result = (await this.send<{ path: string; durationMs: number }>(
+      "capture.stopFile",
+      { sessionId },
+    )) ?? { path: "", durationMs: 0 };
+    return result;
+  }
+
+  /**
+   * Plan v0.8 Block 3 §2.4 — single-shot permission probe. Returns the
+   * three macOS authorization states that gate the recording + dictation
+   * features (Onboarding Block 4 uses this to auto-advance the permissions
+   * card).
+   */
+  async checkPermissions(): Promise<{
+    microphone: "granted" | "denied" | "undetermined";
+    accessibility: "granted" | "denied" | "undetermined";
+    inputMonitoring: "granted" | "denied" | "undetermined";
+  }> {
+    const result = (await this.send<{
+      microphone?: string;
+      accessibility?: string;
+      inputMonitoring?: string;
+    }>("permission.check", undefined)) ?? {};
+    return {
+      microphone: normalizePermission(result.microphone),
+      accessibility: normalizePermission(result.accessibility),
+      inputMonitoring: normalizePermission(result.inputMonitoring),
+    };
+  }
+
   async injectText(text: string, mode: "auto" | "cgevent" | "accessibility"): Promise<void> {
     await this.send<object>("inject.text", { text, mode });
   }
@@ -141,3 +189,11 @@ interface HelperMessage {
   result?: { event?: string; params?: unknown } & Record<string, unknown>;
   error?: { code: number; message: string };
 }
+
+const normalizePermission = (
+  raw: string | undefined,
+): "granted" | "denied" | "undetermined" => {
+  if (raw === "granted") return "granted";
+  if (raw === "denied") return "denied";
+  return "undetermined";
+};
