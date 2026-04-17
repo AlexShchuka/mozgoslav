@@ -17,6 +17,9 @@ public sealed class ProcessQueueWorker
 {
     private const int TranscribeEnd = 50;
     private const int CorrectionEnd = 60;
+    // Plan v0.8 Block 5 — LLM correction stage sits between filler cleanup
+    // (60) and summarisation (85). Progress weighting matches the plan.
+    private const int LlmCorrectionEnd = 70;
     private const int SummarizeEnd = 85;
     private const int ExportEnd = 100;
 
@@ -30,6 +33,8 @@ public sealed class ProcessQueueWorker
     private readonly ILlmService _llmService;
     private readonly IMarkdownExporter _exporter;
     private readonly CorrectionService _correctionService;
+    private readonly GlossaryApplicator _glossary;
+    private readonly LlmCorrectionService _llmCorrection;
     private readonly IAppSettings _settings;
     private readonly IJobProgressNotifier _progressNotifier;
     private readonly ILogger<ProcessQueueWorker> _logger;
@@ -45,6 +50,8 @@ public sealed class ProcessQueueWorker
         ILlmService llmService,
         IMarkdownExporter exporter,
         CorrectionService correctionService,
+        GlossaryApplicator glossary,
+        LlmCorrectionService llmCorrection,
         IAppSettings settings,
         IJobProgressNotifier progressNotifier,
         ILogger<ProcessQueueWorker> logger)
@@ -59,6 +66,8 @@ public sealed class ProcessQueueWorker
         _llmService = llmService;
         _exporter = exporter;
         _correctionService = correctionService;
+        _glossary = glossary;
+        _llmCorrection = llmCorrection;
         _settings = settings;
         _progressNotifier = progressNotifier;
         _logger = logger;
@@ -103,8 +112,11 @@ public sealed class ProcessQueueWorker
         var wavPath = await _audioConverter.ConvertToWavAsync(recording.FilePath, ct);
 
         var segmentProgress = new Progress<int>(p => _ = UpdateProgressAsync(job, ScaleProgress(p, 0, TranscribeEnd), ct));
+        // Plan v0.8 Block 5 — glossary drives Whisper `initial_prompt`. Empty
+        // glossary → null → existing behaviour (no prompt override).
+        var whisperInitialPrompt = _glossary.TryBuildInitialPrompt(profile);
         var segments = await _transcriptionService.TranscribeAsync(
-            wavPath, _settings.Language, profile.SystemPrompt, segmentProgress, ct);
+            wavPath, _settings.Language, whisperInitialPrompt, segmentProgress, ct);
 
         var transcript = new Transcript
         {
@@ -121,11 +133,22 @@ public sealed class ProcessQueueWorker
         await TransitionAsync(job, JobStatus.Correcting, CorrectionEnd, "Cleaning transcript", ct);
         var cleanText = _correctionService.Correct(transcript.RawText, profile);
 
-        await TransitionAsync(job, JobStatus.Summarizing, CorrectionEnd, "Summarizing via LLM", ct);
+        // Plan v0.8 Block 5 — optional LLM correction pass. When the profile
+        // opts in and the LLM is reachable, rewrite the transcript to fix
+        // homophones / proper-noun spellings / punctuation. On any failure
+        // the service returns the raw text, so the pipeline never stalls.
+        if (profile.LlmCorrectionEnabled && await _llmService.IsAvailableAsync(ct))
+        {
+            await TransitionAsync(job, JobStatus.Correcting, LlmCorrectionEnd, "LLM correction", ct);
+            cleanText = await _llmCorrection.CorrectAsync(cleanText, profile, ct);
+        }
+
+        await TransitionAsync(job, JobStatus.Summarizing, LlmCorrectionEnd, "Summarizing via LLM", ct);
         LlmProcessingResult? llmResult = null;
         if (await _llmService.IsAvailableAsync(ct))
         {
-            llmResult = await _llmService.ProcessAsync(cleanText, profile.SystemPrompt, ct);
+            var summarisationSystemPrompt = ComposeSummarisationPrompt(profile);
+            llmResult = await _llmService.ProcessAsync(cleanText, summarisationSystemPrompt, ct);
         }
         else
         {
@@ -220,5 +243,13 @@ public sealed class ProcessQueueWorker
     {
         var clamped = Math.Clamp(inputPercent, 0, 100);
         return rangeStart + (int)((rangeEnd - rangeStart) * (clamped / 100.0));
+    }
+
+    private string ComposeSummarisationPrompt(Profile profile)
+    {
+        var suffix = _glossary.TryBuildLlmSystemPromptSuffix(profile);
+        return string.IsNullOrWhiteSpace(suffix)
+            ? profile.SystemPrompt
+            : profile.SystemPrompt + "\n\n" + suffix;
     }
 }

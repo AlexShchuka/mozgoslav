@@ -174,3 +174,16 @@ After agent pushes this block, shuka:
    - `[✓/✗] Record → transcribed note`
    - `[✓/✗] Global hotkey round-trip`
    - Any log snippets for failures.
+
+---
+
+## 8. Checkpoint summary (Agent B, 2026-04-17)
+
+- Backend: `AVFoundationAudioRecorder` (talks to Electron via `MOZGOSLAV_ELECTRON_INTERNAL_PORT` loopback HTTP), `PlatformUnsupportedAudioRecorder` (non-macOS gate), `NoopAudioRecorder` deleted, `Program.cs` platform-aware registration, `GET /api/audio/capabilities`, `POST /api/recordings/start`, `POST /api/recordings/stop/{sessionId}`.
+- Electron: `RecordingBridge` (internal HTTP on random port, proxies to Swift helper), `NativeHelperClient.startFileCapture` / `stopFileCapture` / `checkPermissions`, `preload.ts` `startNativeRecording` / `stopNativeRecording`, `main.ts` wiring, `backendLauncher.ts` `extraEnv` option.
+- Swift helper: `AudioCaptureService` file-capture mode (AVAudioEngine + resampler + `AVAudioFile` per session), `DictationHelper.swift` three new methods (`capture.startFile`, `capture.stopFile`, `permission.check`), `PermissionProbe.swift`.
+- Tests: `PlatformUnsupportedAudioRecorderTests` (3 methods, 100% platform-gated contract), `AVFoundationAudioRecorderTests` (WireMock bridge, 3 methods), `RecordingBridge.test.ts` (4 Jest methods).
+- Global hotkey verification: diagnostic log line at register/unregister already present in `globalHotkey.ts`; full round-trip verification falls to shuka on Mac (§3.5).
+- Dashboard UI: existing BC-004 Record button already wired through `/api/dictation/*`; left intact. The new backend-driven `/api/recordings/start` endpoint is available for future UX flows but the Dashboard keeps its existing path for v0.8.
+- Open: shuka runs Mac validation per §7; if hotkey round-trip fails the `Mozgoslav:FeatureFlags:GlobalDictationHotkey=false` fallback from §3.5 is the escape hatch.
+

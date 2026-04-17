@@ -13,7 +13,10 @@ public static class ProfileEndpoints
         CleanupLevel CleanupLevel,
         string? ExportFolder,
         IReadOnlyList<string>? AutoTags,
-        bool IsDefault);
+        bool IsDefault,
+        // Plan v0.8 Block 5 — new profile surface.
+        IReadOnlyList<string>? Glossary = null,
+        bool LlmCorrectionEnabled = false);
 
     public static IEndpointRouteBuilder MapProfileEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -52,6 +55,8 @@ public static class ProfileEndpoints
                 CleanupLevel = request.CleanupLevel,
                 ExportFolder = string.IsNullOrWhiteSpace(request.ExportFolder) ? "_inbox" : request.ExportFolder,
                 AutoTags = request.AutoTags?.ToList() ?? [],
+                Glossary = request.Glossary?.ToList() ?? [],
+                LlmCorrectionEnabled = request.LlmCorrectionEnabled,
                 IsDefault = request.IsDefault,
                 IsBuiltIn = false
             };
@@ -88,6 +93,8 @@ public static class ProfileEndpoints
                 CleanupLevel = source.CleanupLevel,
                 ExportFolder = source.ExportFolder,
                 AutoTags = source.AutoTags.ToList(),
+                Glossary = source.Glossary.ToList(),
+                LlmCorrectionEnabled = source.LlmCorrectionEnabled,
                 IsDefault = false,
                 IsBuiltIn = false,
             };
@@ -113,6 +120,8 @@ public static class ProfileEndpoints
             existing.CleanupLevel = request.CleanupLevel;
             existing.ExportFolder = string.IsNullOrWhiteSpace(request.ExportFolder) ? "_inbox" : request.ExportFolder;
             existing.AutoTags = request.AutoTags?.ToList() ?? [];
+            existing.Glossary = request.Glossary?.ToList() ?? [];
+            existing.LlmCorrectionEnabled = request.LlmCorrectionEnabled;
 
             if (request.IsDefault && !existing.IsDefault)
             {

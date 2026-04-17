@@ -10,6 +10,18 @@ public static class RecordingEndpoints
 {
     private sealed record ImportByPathRequest(IReadOnlyList<string> FilePaths, Guid? ProfileId);
 
+    private sealed record StartRecordingRequest(string? OutputPath);
+
+    private sealed record ActiveSession(string SessionId, string OutputPath, DateTime StartedAtUtc);
+
+    /// <summary>
+    /// In-memory bookkeeping for the currently-active native recording session.
+    /// We keep a single slot because the native helper does not support
+    /// multiplexing; attempting a concurrent start returns 409.
+    /// </summary>
+    private static ActiveSession? _activeSession;
+    private static readonly Lock ActiveSessionLock = new();
+
     public static IEndpointRouteBuilder MapRecordingEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapGet("/api/recordings", async (
@@ -76,7 +88,106 @@ public static class RecordingEndpoints
             return await ExecuteImportAsync(useCase, savedPaths, profileId, ct);
         }).DisableAntiforgery();
 
+        // ADR-009 §2.1 row 1 — native audio capture contract. Frontend
+        // queries capabilities to decide whether to render the Record button.
+        endpoints.MapGet("/api/audio/capabilities", (IAudioRecorder recorder) =>
+        {
+            return Results.Ok(new
+            {
+                isSupported = recorder.IsSupported,
+                detectedPlatform = OperatingSystem.IsMacOS()
+                    ? "macos"
+                    : OperatingSystem.IsLinux()
+                        ? "linux"
+                        : OperatingSystem.IsWindows()
+                            ? "windows"
+                            : "other",
+                permissionsRequired = OperatingSystem.IsMacOS()
+                    ? new[] { "microphone" }
+                    : Array.Empty<string>(),
+            });
+        });
+
+        endpoints.MapPost("/api/recordings/start", async (
+            StartRecordingRequest request,
+            IAudioRecorder recorder,
+            CancellationToken ct) =>
+        {
+            if (!recorder.IsSupported)
+            {
+                return Results.StatusCode(501);
+            }
+            lock (ActiveSessionLock)
+            {
+                if (_activeSession is not null)
+                {
+                    return Results.Conflict(new { error = "A recording session is already active.", sessionId = _activeSession.SessionId });
+                }
+            }
+
+            Directory.CreateDirectory(AppPaths.Recordings);
+            var outputPath = string.IsNullOrWhiteSpace(request.OutputPath)
+                ? Path.Combine(AppPaths.Recordings, $"recording-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}.wav")
+                : request.OutputPath!;
+
+            var sessionId = Guid.NewGuid().ToString("N");
+            var started = new ActiveSession(sessionId, outputPath, DateTime.UtcNow);
+            lock (ActiveSessionLock)
+            {
+                _activeSession = started;
+            }
+
+            return await StartAsync(recorder, started, ct);
+        });
+
+        endpoints.MapPost("/api/recordings/stop/{sessionId}", async (
+            string sessionId,
+            IAudioRecorder recorder,
+            ImportRecordingUseCase importUseCase,
+            CancellationToken ct) =>
+        {
+            ActiveSession? snapshot;
+            lock (ActiveSessionLock)
+            {
+                snapshot = _activeSession;
+                if (snapshot is null || !string.Equals(snapshot.SessionId, sessionId, StringComparison.Ordinal))
+                {
+                    return Results.NotFound(new { error = "No active session with that id." });
+                }
+                _activeSession = null;
+            }
+
+            var path = await recorder.StopAsync(ct);
+            var imported = await importUseCase.ExecuteAsync(new[] { path }, null, ct);
+            return Results.Ok(new
+            {
+                sessionId,
+                path,
+                recordings = imported,
+            });
+        });
+
         return endpoints;
+    }
+
+    private static async Task<IResult> StartAsync(IAudioRecorder recorder, ActiveSession session, CancellationToken ct)
+    {
+        try
+        {
+            await recorder.StartAsync(session.OutputPath, ct);
+            return Results.Ok(new { sessionId = session.SessionId, outputPath = session.OutputPath });
+        }
+        catch (Exception ex)
+        {
+            lock (ActiveSessionLock)
+            {
+                if (ReferenceEquals(_activeSession, session))
+                {
+                    _activeSession = null;
+                }
+            }
+            return Results.BadRequest(new { error = ex.Message });
+        }
     }
 
     private static async Task<IResult> ExecuteImportAsync(

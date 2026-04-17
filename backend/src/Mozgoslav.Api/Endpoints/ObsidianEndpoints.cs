@@ -7,6 +7,8 @@ public static class ObsidianEndpoints
 {
     public sealed record SetupRequest(string? VaultPath);
 
+    public sealed record OpenNoteRequest(string Path);
+
     public static IEndpointRouteBuilder MapObsidianEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/api/obsidian/setup", async (
@@ -70,6 +72,100 @@ public static class ObsidianEndpoints
             {
                 return Results.BadRequest(new { error = ex.Message });
             }
+        });
+
+        // Plan v0.8 Block 6 — REST health probe so Settings → Obsidian can
+        // surface "Connected (v1.2.3)" / "Unreachable — using file-I/O".
+        endpoints.MapGet("/api/obsidian/rest-health", async (
+            IObsidianRestClient client,
+            IAppSettings settings,
+            CancellationToken ct) =>
+        {
+            var host = settings.ObsidianApiHost;
+            var reachable = await client.IsReachableAsync(ct);
+            if (!reachable)
+            {
+                return Results.Ok(new
+                {
+                    reachable = false,
+                    host,
+                    version = (string?)null,
+                    diagnostic = string.IsNullOrWhiteSpace(settings.ObsidianApiToken)
+                        ? "Token is empty — fill in Settings → Obsidian to enable REST."
+                        : "Plugin unreachable or token invalid.",
+                });
+            }
+            try
+            {
+                var info = await client.GetVaultInfoAsync(ct);
+                return Results.Ok(new
+                {
+                    reachable = true,
+                    host,
+                    version = info.Version,
+                    diagnostic = "Connected.",
+                });
+            }
+            catch (Exception ex)
+            {
+                return Results.Ok(new { reachable = false, host, version = (string?)null, diagnostic = ex.Message });
+            }
+        });
+
+        // Plan v0.8 Block 6 — open-note. Tries REST first; falls back to file-I/O
+        // via the IAppSettings.VaultPath so the UX works even when the plugin
+        // is not installed.
+        endpoints.MapPost("/api/obsidian/open", async (
+            OpenNoteRequest request,
+            IObsidianRestClient client,
+            IAppSettings settings,
+            CancellationToken ct) =>
+        {
+            if (string.IsNullOrWhiteSpace(request.Path))
+            {
+                return Results.BadRequest(new { error = "path is required" });
+            }
+            if (await client.IsReachableAsync(ct))
+            {
+                try
+                {
+                    await client.OpenNoteAsync(request.Path, ct);
+                    return Results.Ok(new { opened = true, via = "rest" });
+                }
+                catch (Exception)
+                {
+                    // fall through to file-I/O
+                }
+            }
+            var vault = settings.VaultPath;
+            if (string.IsNullOrWhiteSpace(vault))
+            {
+                return Results.BadRequest(new { error = "Vault path is not configured and REST is unreachable." });
+            }
+            var absolute = System.IO.Path.Combine(vault, request.Path);
+            if (!System.IO.File.Exists(absolute))
+            {
+                return Results.NotFound(new { error = $"Note not found: {absolute}" });
+            }
+            return Results.Ok(new { opened = true, via = "file", path = absolute });
+        });
+
+        // Plan v0.8 Block 4 — vault autodetect for the Onboarding wizard.
+        endpoints.MapGet("/api/obsidian/detect", () =>
+        {
+            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            string[] candidates =
+            [
+                System.IO.Path.Combine(home, "Documents", "Obsidian Vault"),
+                System.IO.Path.Combine(home, "Obsidian"),
+                System.IO.Path.Combine(home, "Documents", "Obsidian"),
+            ];
+            var matches = candidates
+                .Where(System.IO.Directory.Exists)
+                .Where(p => System.IO.Directory.Exists(System.IO.Path.Combine(p, ".obsidian")))
+                .Select(p => new { path = p, name = System.IO.Path.GetFileName(p) })
+                .ToList();
+            return Results.Ok(new { detected = matches, searched = candidates });
         });
 
         return endpoints;

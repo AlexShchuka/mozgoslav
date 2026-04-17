@@ -22,6 +22,14 @@ export interface MozgoslavBridge {
   onGlobalHotkey: (
     listener: (payload: GlobalHotkeyPayload) => void,
   ) => () => void;
+  /**
+   * Plan v0.8 Block 3 — optional renderer-driven native recording path.
+   * The primary flow is backend-driven (`POST /api/recordings/start`); these
+   * methods expose the same bridge to the renderer for features that do not
+   * go through the backend (manual UX flows).
+   */
+  startNativeRecording?: (outputPath: string) => Promise<{ sessionId: string }>;
+  stopNativeRecording?: (sessionId: string) => Promise<{ path: string; durationMs: number }>;
 }
 
 export interface DictationOverlayState {
@@ -53,6 +61,10 @@ const bridge: MozgoslavBridge = {
       ipcRenderer.removeListener(GLOBAL_HOTKEY_CHANNEL, handler);
     };
   },
+  startNativeRecording: (outputPath) =>
+    ipcRenderer.invoke("record:start", outputPath),
+  stopNativeRecording: (sessionId) =>
+    ipcRenderer.invoke("record:stop", sessionId),
 };
 
 const overlayBridge: MozgoslavOverlayBridge = {

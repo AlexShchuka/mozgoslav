@@ -165,6 +165,28 @@ export class MozgoslavApi {
     (
       await this.client.post<{ transcript: string }>(API_ENDPOINTS.dictationStop(sessionId))
     ).data;
+
+  // --- Plan v0.8 Block 3 / 4 — audio capabilities + obsidian detection ---
+  audioCapabilities = async (): Promise<{
+    isSupported: boolean;
+    detectedPlatform: string;
+    permissionsRequired: string[];
+  }> => (await this.client.get("/api/audio/capabilities")).data;
+
+  detectObsidian = async (): Promise<{
+    detected: Array<{ path: string; name: string }>;
+    searched: string[];
+  }> => (await this.client.get("/api/obsidian/detect")).data;
+
+  obsidianRestHealth = async (): Promise<{
+    reachable: boolean;
+    host: string;
+    version: string | null;
+    diagnostic: string;
+  }> => (await this.client.get("/api/obsidian/rest-health")).data;
+
+  getMeta = async (): Promise<{ version: string; commit: string; buildDate: string }> =>
+    (await this.client.get("/api/meta")).data;
 }
 
 export const api = new MozgoslavApi();

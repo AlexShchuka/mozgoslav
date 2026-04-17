@@ -9,6 +9,12 @@ let backendProcess: ChildProcess | null = null;
 export interface BackendStartOptions {
   /** Extra CLI args forwarded to the backend (e.g., ``--Mozgoslav:SyncthingBaseUrl=...``). */
   readonly extraArgs?: readonly string[];
+  /**
+   * Extra environment variables forwarded to the backend. Mozgoslav plan v0.8
+   * Block 3 uses this to communicate the Electron internal loopback port
+   * (`MOZGOSLAV_ELECTRON_INTERNAL_PORT`) to `AVFoundationAudioRecorder`.
+   */
+  readonly extraEnv?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -40,6 +46,7 @@ export const tryStartBackend = async (
     backendProcess = spawn(binaryPath, [...(options.extraArgs ?? [])], {
       cwd: path.dirname(binaryPath),
       stdio: ["ignore", "pipe", "pipe"],
+      env: { ...process.env, ...(options.extraEnv ?? {}) },
     });
 
     backendProcess.stdout?.on("data", (chunk: Buffer) => {

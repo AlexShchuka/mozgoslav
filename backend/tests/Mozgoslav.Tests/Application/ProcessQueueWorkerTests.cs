@@ -219,7 +219,13 @@ public sealed class ProcessQueueWorkerTests
         public ProcessQueueWorker Worker => new(
             Jobs, Recordings, Transcripts, Notes, Profiles,
             AudioConverter, Transcription, Llm, Exporter,
-            new CorrectionService(), Settings, ProgressNotifier,
+            new CorrectionService(),
+            new GlossaryApplicator(),
+            new LlmCorrectionService(
+                Substitute.For<ILlmProviderFactory>(),
+                new GlossaryApplicator(),
+                NullLogger<LlmCorrectionService>.Instance),
+            Settings, ProgressNotifier,
             NullLogger<ProcessQueueWorker>.Instance);
 
         public ProcessingJob EnqueueJob()

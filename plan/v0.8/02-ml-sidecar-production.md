@@ -222,3 +222,14 @@ After agent push, shuka:
 3. Starts the app, imports a 30s RU audio sample, confirms diarize segments appear and NER extracts at least one person/org from the transcript.
 4. Goes to Settings → Models, downloads audeering-age-gender, confirms gender endpoint flips from 503 to 200 after download completes.
 5. Reports back.
+
+---
+
+## 11. Checkpoint summary (Agent B, 2026-04-17)
+
+- Real implementations shipped (from commit `61d1124` forward): `diarize_service.py`, `ner_service.py`, `gender_service.py`, `emotion_service.py`, `ml/loader.py`, `ml/model_paths.py`, `ml/patches.py`, `ml/errors.py`, routers wired via `Depends`, startup banner logs model availability.
+- Python unit tests: 53 pass end-to-end (`test_diarize.py`, `test_ner.py`, `test_gender.py`, `test_emotion.py`, `test_model_paths.py`, plus existing cleanup / health / embed / conftest).
+- Backend surface: `IPythonSidecarClient`, `PythonSidecarClient`, `SidecarModelUnavailableException`, value objects in `Mozgoslav.Domain.ValueObjects/Sidecar*.cs`, `ModelCatalog` + `ModelTier` + `CatalogEntry` + `ModelKind` Tier 1/Tier 2 entries, `IAppPaths.BundleModelsDir`.
+- WireMock-based integration tests: `PythonSidecarClientTests` (happy path, 503 envelope, network-down — 6 methods). Docker-gated tests: `SidecarContainerTests` (present in tree, **not** run locally per §4.2; CI executes them on the macos-latest runner).
+- Open: Block 2 waits on shuka Mac validation per §10 (sidecar + backend tests + first diarize/NER on real audio).
+

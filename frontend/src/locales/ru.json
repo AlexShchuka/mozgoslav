@@ -266,46 +266,44 @@
     "subtitle": "Давай быстро настроим всё, чтобы работа началась с первого созвона.",
     "welcome": {
       "title": "Привет!",
-      "hint": "Мы быстро пройдём через 9 шагов: модели, Obsidian, LLM, Syncthing и три macOS-разрешения."
+      "hint": "Быстро настроим всё нужное — встроенные модели уже внутри приложения."
     },
-    "models": {
-      "title": "Модели",
-      "hint": "Скачаем Whisper и VAD — это разово, ~1.5 ГБ."
-    },
-    "obsidian": {
-      "title": "Obsidian",
-      "hint": "Укажи путь к vault, подготовим нужные папки."
+    "tryItNow": {
+      "title": "Всё готово к работе",
+      "hint": "В сборке уже есть Whisper Small RU, Silero VAD и Natasha NER. Можно начинать. Топовые модели докачаются в Settings → Models."
     },
     "llm": {
-      "title": "LLM",
-      "hint": "Endpoint локальной LM Studio или Ollama."
+      "title": "LLM (опционально)",
+      "hint": "LLM полирует заметки. Установи LM Studio или Ollama — или пропусти и настрой позже."
     },
-    "syncthing": {
-      "title": "Syncthing",
-      "hint": "Шифрованная синхронизация между устройствами. Мы запустим Syncthing и подготовим 3 папки: записи, заметки, vault."
+    "obsidian": {
+      "title": "Obsidian (опционально)",
+      "hint": "Если есть vault — укажем и подготовим структуру папок. Иначе пропусти."
     },
     "mic": {
       "title": "Доступ к микрофону",
-      "hint": "Мозгославу нужен микрофон, чтобы слушать диктовку по 5-й кнопке мыши. Система сама покажет запрос при первом нажатии — тут можно проверить заранее."
+      "hint": "Для записи и диктовки нужен доступ к микрофону. Можно пропустить — система спросит при первом нажатии."
     },
-    "accessibility": {
-      "title": "Accessibility",
-      "hint": "Чтобы вводить текст в фокусное приложение (VSCode, Slack, почта), нужен доступ Accessibility. Открой Settings → Privacy & Security → Accessibility и добавь Мозгослав."
-    },
-    "inputMonitoring": {
-      "title": "Input Monitoring",
-      "hint": "Для глобального отслеживания нажатия 5-й кнопки мыши нужен Input Monitoring. Открой Settings → Privacy & Security → Input Monitoring и добавь Мозгослав."
+    "dictation": {
+      "title": "Разрешения для диктовки",
+      "hint": "Accessibility + Input Monitoring нужны для глобального хоткея и вставки текста. Можно пропустить и выдать потом."
     },
     "ready": {
       "title": "Готово",
-      "hint": "Всё настроено. Можно импортировать первый разговор или продиктовать текст по 5-й кнопке мыши."
+      "hint": "Нажми Apply, чтобы начать работу. Пропущенные шаги всегда доступны в Settings."
     },
     "openSystemPreferences": "Открыть системные настройки",
     "skip": "Пропустить",
-    "llmReachable": "LLM отвечает — можно двигаться дальше.",
-    "llmUnreachable": "Жду, когда LLM-endpoint ответит по /api/health/llm…",
+    "llmReachable": "LLM отвечает — готов полировать заметки.",
+    "llmUnreachable": "LLM не найден — пропусти или подключи позже.",
     "modelsReady": "Модели установлены — можно двигаться дальше.",
-    "modelsMissing": "Скачай или укажи путь к Whisper/VAD модели, чтобы продолжить."
+    "modelsMissing": "Скачай или укажи путь к Whisper/VAD модели, чтобы продолжить.",
+    "permissions": {
+      "ready": "Разрешения выданы.",
+      "pending": "Разрешения ещё не выданы."
+    },
+    "obsidian.detected": "Нашёл vault: {{path}}",
+    "obsidian.notDetected": "Vault не найден — пропусти."
   },
   "hotkeys": {
     "title": "Горячие клавиши",

@@ -100,6 +100,9 @@ try
 
     // --- Application services ---
     builder.Services.AddScoped<CorrectionService>();
+    // Plan v0.8 Block 5 — glossary + LLM-correction stages.
+    builder.Services.AddSingleton<GlossaryApplicator>();
+    builder.Services.AddScoped<LlmCorrectionService>();
     builder.Services.AddScoped<ImportRecordingUseCase>();
     builder.Services.AddScoped<ReprocessUseCase>();
     builder.Services.AddScoped<ProcessQueueWorker>();
@@ -149,7 +152,22 @@ try
     builder.Services.AddSingleton<ILlmProviderFactory, LlmProviderFactory>();
     builder.Services.AddSingleton<ILlmService, OpenAiCompatibleLlmService>();
     builder.Services.AddSingleton<IMarkdownExporter, FileMarkdownExporter>();
-    builder.Services.AddSingleton<IAudioRecorder, NoopAudioRecorder>();
+    // ADR-009 §2.1 row 1 — platform-aware recorder registration.
+    // macOS: AVFoundationAudioRecorder talks to the Swift helper via the
+    // Electron loopback bridge (MOZGOSLAV_ELECTRON_INTERNAL_PORT).
+    // Linux/Windows: PlatformUnsupportedAudioRecorder honestly gates the
+    // feature (IsSupported=false) — UI hides the Record button accordingly.
+    if (OperatingSystem.IsMacOS())
+    {
+        builder.Services.AddHttpClient<AVFoundationAudioRecorder>(client =>
+            client.Timeout = TimeSpan.FromSeconds(30));
+        builder.Services.AddSingleton<IAudioRecorder>(sp =>
+            sp.GetRequiredService<AVFoundationAudioRecorder>());
+    }
+    else
+    {
+        builder.Services.AddSingleton<IAudioRecorder, PlatformUnsupportedAudioRecorder>();
+    }
     builder.Services.AddSingleton<IPerAppCorrectionProfiles, InMemoryPerAppCorrectionProfiles>();
     builder.Services.AddSingleton<IDictationSessionManager, DictationSessionManager>();
     builder.Services.AddScoped<MeetilyImporterService>();
@@ -159,6 +177,21 @@ try
     // repositories (IProcessedNoteRepository, IProfileRepository, …).
     builder.Services.AddScoped<IObsidianExportService, ObsidianBulkExportService>();
     builder.Services.AddScoped<IObsidianLayoutService, ObsidianLayoutService>();
+    // Plan v0.8 Block 6 — Obsidian Local REST API client. The named HttpClient
+    // pins the localhost-scoped cert validation callback so the plugin's
+    // self-signed certificate does not break on the first request. Production
+    // code paths call `IsReachableAsync` first and fall back to file-I/O, so a
+    // missing plugin or wrong token never crashes the pipeline.
+    builder.Services.AddHttpClient(ObsidianRestApiClient.HttpClientName)
+        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = (request, _, _, _) =>
+            {
+                var host = request.RequestUri?.Host;
+                return host is "127.0.0.1" or "localhost";
+            },
+        });
+    builder.Services.AddScoped<IObsidianRestClient, ObsidianRestApiClient>();
     builder.Services.AddSingleton<ModelDownloadService>();
     builder.Services.AddSingleton<IModelDownloadCoordinator, ModelDownloadCoordinator>();
     builder.Services.AddSingleton<BackupService>();
@@ -280,6 +313,7 @@ try
     app.MapDictationEndpoints();
     app.MapSyncEndpoints();
     app.MapRagEndpoints();
+    app.MapMetaEndpoints();
 
     await app.RunAsync();
 }

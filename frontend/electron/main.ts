@@ -4,10 +4,12 @@ import { promises as fs } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { DictationOrchestrator } from "./dictation/DictationOrchestrator";
+import { NativeHelperClient } from "./dictation/NativeHelperClient";
 import {
   registerGlobalDictationHotkey,
   unregisterGlobalDictationHotkey,
 } from "./dictation/globalHotkey";
+import { RecordingBridge } from "./recording/RecordingBridge";
 import { stopBackend, tryStartBackend } from "./utils/backendLauncher";
 import { stopSyncthing, tryStartSyncthing } from "./utils/syncthingLauncher";
 
@@ -18,6 +20,8 @@ const BACKEND_ORIGIN = "http://localhost:5050";
 
 let mainWindow: BrowserWindow | null = null;
 let dictationOrchestrator: DictationOrchestrator | null = null;
+let recordingBridge: RecordingBridge | null = null;
+let recordingHelper: NativeHelperClient | null = null;
 
 const createWindow = (): void => {
   mainWindow = new BrowserWindow({
@@ -108,7 +112,32 @@ app.whenReady().then(async () => {
         `--Mozgoslav:SyncthingApiKey=${syncthingConfig.apiKey}`,
       ]
     : [];
-  await tryStartBackend(userDataDir, { extraArgs: backendExtraArgs });
+  // Plan v0.8 Block 3 — AVFoundation recorder bridge. Start the dedicated
+  // helper process + internal loopback HTTP endpoint before the backend so
+  // the port is available for MOZGOSLAV_ELECTRON_INTERNAL_PORT.
+  const recorderEnv: Record<string, string> = {};
+  if (process.platform === "darwin") {
+    try {
+      const helperBinaryPath = path.join(
+        process.resourcesPath ?? path.join(__dirname, ".."),
+        "mozgoslav-dictation-helper",
+      );
+      recordingHelper = new NativeHelperClient(helperBinaryPath);
+      recordingHelper.start();
+      recordingBridge = new RecordingBridge(recordingHelper);
+      const port = await recordingBridge.start();
+      recorderEnv["MOZGOSLAV_ELECTRON_INTERNAL_PORT"] = String(port);
+    } catch (err) {
+      console.error("[recording:bridge] failed to start:", err);
+      recordingBridge = null;
+      recordingHelper = null;
+    }
+  }
+
+  await tryStartBackend(userDataDir, {
+    extraArgs: backendExtraArgs,
+    extraEnv: recorderEnv,
+  });
 
   ipcMain.handle("dialog:openAudioFiles", async () => {
     if (!mainWindow) return { filePaths: [] };
@@ -151,6 +180,25 @@ app.whenReady().then(async () => {
       title: "Выбери папку с моделями",
       properties: ["openDirectory"],
     });
+  });
+
+  // Plan v0.8 Block 3 — renderer-driven recording via NativeHelper. Thin
+  // passthroughs to the in-process RecordingBridge so renderer features that
+  // do not go through the backend can still record.
+  ipcMain.handle("record:start", async (_event, outputPath: string) => {
+    if (!recordingHelper) {
+      throw new Error("Native recorder is only available on macOS with a running helper.");
+    }
+    const sessionId = `renderer-${Date.now()}`;
+    await recordingHelper.startFileCapture(outputPath, sessionId);
+    return { sessionId };
+  });
+
+  ipcMain.handle("record:stop", async (_event, sessionId: string) => {
+    if (!recordingHelper) {
+      throw new Error("Native recorder is only available on macOS with a running helper.");
+    }
+    return recordingHelper.stopFileCapture(sessionId);
   });
 
   // BC-050 — lists every `.sync-conflict-*` file under the given folder path.
@@ -255,6 +303,10 @@ app.on("window-all-closed", () => {
 app.on("before-quit", () => {
   dictationOrchestrator?.destroy();
   dictationOrchestrator = null;
+  recordingBridge?.stop();
+  recordingBridge = null;
+  recordingHelper?.stop();
+  recordingHelper = null;
   stopBackend();
   void stopSyncthing();
 });
