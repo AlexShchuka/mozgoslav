@@ -10,12 +10,12 @@ const sizeStyles = {
     font-size: ${({ theme }) => theme.font.size.sm};
   `,
   md: css`
-    height: 36px;
+    height: 34px;
     padding: 0 ${({ theme }) => theme.space(3.5)};
     font-size: ${({ theme }) => theme.font.size.md};
   `,
   lg: css`
-    height: 44px;
+    height: 42px;
     padding: 0 ${({ theme }) => theme.space(5)};
     font-size: ${({ theme }) => theme.font.size.lg};
   `,
@@ -72,11 +72,14 @@ export const StyledButton = styled.button<{ $variant: ButtonVariant; $size: Butt
   &:focus-visible {
     outline: 2px solid ${({ theme }) => theme.colors.focusRing};
     outline-offset: 2px;
+    box-shadow: inset 0 0 0 2px ${({ theme }) => theme.colors.accent};
   }
 
   &:disabled {
-    opacity: 0.55;
+    opacity: 0.45;
     cursor: not-allowed;
+    pointer-events: none;
+    transition: none;
   }
 
   .mg-icon {
