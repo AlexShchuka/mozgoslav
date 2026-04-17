@@ -113,7 +113,8 @@
       "whisper": "Whisper",
       "obsidian": "Obsidian",
       "profiles": "Profiles",
-      "advanced": "Advanced"
+      "advanced": "Advanced",
+      "sync": "Sync"
     },
     "fields": {
       "language": "UI language",
@@ -136,6 +137,34 @@
     "testConnection": "Test connection",
     "tokenHint": "Stored locally in SQLite. Never leaves your machine except to the configured endpoint.",
     "savedToast": "Settings saved"
+  },
+  "sync": {
+    "live": "Live",
+    "offline": "Offline",
+    "pairing": {
+      "title": "Pair a device",
+      "subtitle": "Scan this QR code from the Syncthing mobile app to pair your phone.",
+      "deviceId": "This machine's device ID",
+      "folders": "Folders to sync",
+      "load": "Load QR code"
+    },
+    "status": {
+      "title": "Sync status",
+      "subtitle": "Live view of folders and devices reported by Syncthing.",
+      "folders": "Folders",
+      "devices": "Devices"
+    },
+    "device": {
+      "online": "Connected",
+      "offline": "Offline"
+    },
+    "pending": {
+      "title": "Pending pairing requests",
+      "subtitle": "Syncthing sees a new device — accept to start syncing.",
+      "empty": "No pending devices.",
+      "accept": "Accept",
+      "unknown": "Unknown device"
+    }
   },
   "models": {
     "title": "Models",
