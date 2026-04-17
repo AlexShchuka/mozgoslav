@@ -3,11 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using Mozgoslav.Api.BackgroundServices;
 using Mozgoslav.Api.Endpoints;
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Application.Rag;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Application.UseCases;
 using Mozgoslav.Infrastructure.Observability;
 using Mozgoslav.Infrastructure.Persistence;
 using Mozgoslav.Infrastructure.Platform;
+using Mozgoslav.Infrastructure.Rag;
 using Mozgoslav.Infrastructure.Repositories;
 using Mozgoslav.Infrastructure.Seed;
 using Mozgoslav.Infrastructure.Services;
@@ -108,6 +110,13 @@ try
     builder.Services.AddSingleton<MozgoslavMetrics>();
     builder.Services.AddSingleton<SyncthingConfigService>();
 
+    // --- ADR-005 RAG stack ---
+    // Bag-of-words is the zero-dependency fallback; swap in a sidecar- or
+    // ONNX-backed IEmbeddingService without touching the rest of the pipeline.
+    builder.Services.AddSingleton<IEmbeddingService>(_ => new BagOfWordsEmbeddingService());
+    builder.Services.AddSingleton<IVectorIndex, InMemoryVectorIndex>();
+    builder.Services.AddSingleton<IRagService, RagService>();
+
     // ADR-003 D3: Syncthing REST client. Base address is configurable — in
     // production it is rewired by the Electron lifecycle service once the
     // bundled syncthing binary reports its random localhost port + api-key;
@@ -152,6 +161,7 @@ try
     app.MapBackupEndpoints();
     app.MapDictationEndpoints();
     app.MapSyncEndpoints();
+    app.MapRagEndpoints();
 
     await app.RunAsync();
 }

@@ -19,6 +19,8 @@ src/
 5. **Graceful degradation** — LLM unreachable → skip summary, keep raw transcript. Export fails → note still saved, user can retry from `POST /api/notes/{id}/export`.
 6. **Idempotent imports** — `sha256` unique index on `recordings`. Re-importing the same file returns the original Recording unchanged.
 7. **Background queue** — `QueueBackgroundService` (HostedService) loops with 2s idle delay; polls via `IProcessingJobRepository.DequeueNextAsync()`. Single exception in one job never stalls the queue (`ProcessQueueWorker.ProcessNextAsync` catches + marks `Failed`).
+8. **ADR-005 RAG** — `Application/Rag/` owns the pipeline (`IEmbeddingService`, `IVectorIndex`, `IRagService`, `NoteChunker`, `RagService`). MVP infrastructure: `BagOfWordsEmbeddingService` (deterministic, zero deps) and `InMemoryVectorIndex` (brute-force cosine). Answer synthesis routes through `ILlmService`; the LLM layer is graceful — if the endpoint is down we return the raw citation bundle. Drop-in replacements for production: sentence-transformers via Python sidecar / ONNX for embeddings, `sqlite-vss` for the index.
+9. **ADR-004 R4 idle-unload** — `IdleResourceCache<T>` in Infrastructure keeps `WhisperFactory` warm between transcriptions and disposes it after `DictationModelUnloadMinutes` of inactivity. Reload adds ~1-2 s to the next first call.
 
 ## Endpoints
 
@@ -44,6 +46,12 @@ POST   /api/meetily/import             { meetilyDatabasePath }
 POST   /api/obsidian/setup             { vaultPath? }
 GET    /api/logs | GET /api/logs/tail?file=&lines=
 GET    /api/backup | POST /api/backup/create
+POST   /api/rag/reindex                (re-embeds all notes)
+POST   /api/rag/query                  { question, topK? }
+GET    /api/sync/status | GET /api/sync/health
+GET    /api/sync/pairing-payload       (mozgoslav:// URI for QR code)
+POST   /api/sync/accept-device         { deviceId, name, folderIds? }
+GET    /api/sync/events                (SSE bridge over /rest/events)
 ```
 
 ## Extension points

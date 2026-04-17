@@ -31,6 +31,11 @@ public interface IAppSettings
     string DictationOverlayPosition { get; }
     bool DictationSoundFeedback { get; }
     IReadOnlyList<string> DictationVocabulary { get; }
+    int DictationModelUnloadMinutes { get; }
+    string DictationTempAudioPath { get; }
+    IReadOnlyDictionary<string, string> DictationAppProfiles { get; }
+    bool SyncthingEnabled { get; }
+    string SyncthingObsidianVaultPath { get; }
 
     AppSettingsDto Snapshot { get; }
 

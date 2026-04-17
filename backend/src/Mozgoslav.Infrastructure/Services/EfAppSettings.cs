@@ -47,6 +47,11 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     public string DictationOverlayPosition => Snapshot.DictationOverlayPosition;
     public bool DictationSoundFeedback => Snapshot.DictationSoundFeedback;
     public IReadOnlyList<string> DictationVocabulary => Snapshot.DictationVocabulary;
+    public int DictationModelUnloadMinutes => Snapshot.DictationModelUnloadMinutes;
+    public string DictationTempAudioPath => Snapshot.DictationTempAudioPath;
+    public IReadOnlyDictionary<string, string> DictationAppProfiles => Snapshot.DictationAppProfiles;
+    public bool SyncthingEnabled => Snapshot.SyncthingEnabled;
+    public string SyncthingObsidianVaultPath => Snapshot.SyncthingObsidianVaultPath;
     public AppSettingsDto Snapshot { get; private set; } = AppSettingsDto.Defaults;
 
     public async Task<AppSettingsDto> LoadAsync(CancellationToken ct)
@@ -79,7 +84,12 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             DictationOverlayEnabled: ParseBool(map, Keys.DictationOverlayEnabled, defaults.DictationOverlayEnabled),
             DictationOverlayPosition: map.GetValueOrDefault(Keys.DictationOverlayPosition, defaults.DictationOverlayPosition),
             DictationSoundFeedback: ParseBool(map, Keys.DictationSoundFeedback, defaults.DictationSoundFeedback),
-            DictationVocabulary: ParseStringList(map, Keys.DictationVocabulary, defaults.DictationVocabulary));
+            DictationVocabulary: ParseStringList(map, Keys.DictationVocabulary, defaults.DictationVocabulary),
+            DictationModelUnloadMinutes: ParseInt(map, Keys.DictationModelUnloadMinutes, defaults.DictationModelUnloadMinutes),
+            DictationTempAudioPath: map.GetValueOrDefault(Keys.DictationTempAudioPath, defaults.DictationTempAudioPath),
+            DictationAppProfiles: ParseStringMap(map, Keys.DictationAppProfiles, defaults.DictationAppProfiles),
+            SyncthingEnabled: ParseBool(map, Keys.SyncthingEnabled, defaults.SyncthingEnabled),
+            SyncthingObsidianVaultPath: map.GetValueOrDefault(Keys.SyncthingObsidianVaultPath, defaults.SyncthingObsidianVaultPath));
 
         await _lock.WaitAsync(ct);
         try { Snapshot = dto; }
@@ -118,6 +128,11 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             (Keys.DictationOverlayPosition, dto.DictationOverlayPosition),
             (Keys.DictationSoundFeedback, BoolToString(dto.DictationSoundFeedback)),
             (Keys.DictationVocabulary, SerializeStringList(dto.DictationVocabulary)),
+            (Keys.DictationModelUnloadMinutes, dto.DictationModelUnloadMinutes.ToString(CultureInfo.InvariantCulture)),
+            (Keys.DictationTempAudioPath, dto.DictationTempAudioPath),
+            (Keys.DictationAppProfiles, SerializeStringMap(dto.DictationAppProfiles)),
+            (Keys.SyncthingEnabled, BoolToString(dto.SyncthingEnabled)),
+            (Keys.SyncthingObsidianVaultPath, dto.SyncthingObsidianVaultPath),
         };
 
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
@@ -180,6 +195,29 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     private static string SerializeStringList(IReadOnlyList<string> values) =>
         JsonSerializer.Serialize(values ?? []);
 
+    private static IReadOnlyDictionary<string, string> ParseStringMap(
+        IReadOnlyDictionary<string, string> map,
+        string key,
+        IReadOnlyDictionary<string, string> fallback)
+    {
+        if (!map.TryGetValue(key, out var raw) || string.IsNullOrWhiteSpace(raw))
+        {
+            return fallback;
+        }
+        try
+        {
+            var parsed = JsonSerializer.Deserialize<Dictionary<string, string>>(raw);
+            return parsed ?? new Dictionary<string, string>(fallback);
+        }
+        catch (JsonException)
+        {
+            return fallback;
+        }
+    }
+
+    private static string SerializeStringMap(IReadOnlyDictionary<string, string> values) =>
+        JsonSerializer.Serialize(values ?? new Dictionary<string, string>());
+
     private static class Keys
     {
         public const string VaultPath = "vault_path";
@@ -206,5 +244,10 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         public const string DictationOverlayPosition = "dictation_overlay_position";
         public const string DictationSoundFeedback = "dictation_sound_feedback";
         public const string DictationVocabulary = "dictation_vocabulary";
+        public const string DictationModelUnloadMinutes = "dictation_model_unload_minutes";
+        public const string DictationTempAudioPath = "dictation_temp_audio_path";
+        public const string DictationAppProfiles = "dictation_app_profiles";
+        public const string SyncthingEnabled = "syncthing_enabled";
+        public const string SyncthingObsidianVaultPath = "syncthing_obsidian_vault_path";
     }
 }

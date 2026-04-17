@@ -202,6 +202,63 @@ public sealed class DictationSessionManagerTests
     }
 
     [TestMethod]
+    public async Task PushAudio_WithConfiguredTempPath_WritesPcmBytes()
+    {
+        using var tempDir = TempAudioDir.Create();
+        var fixture = new Fixture();
+        fixture.Settings.DictationTempAudioPath.Returns(tempDir.Path);
+        var sink = fixture.ArrangeEmptyStream();
+        var session = fixture.Manager.Start();
+
+        var samples = new[] { 0.10f, 0.20f, 0.30f };
+        await fixture.Manager.PushAudioAsync(
+            session.Id, new AudioChunk(samples, 16_000, TimeSpan.Zero), CancellationToken.None);
+
+        await WaitForAsync(() => sink.Chunks.Count >= 1, TimeSpan.FromSeconds(2));
+
+        var pcmPath = Directory.EnumerateFiles(tempDir.Path, "dictation-*.pcm").Single();
+        pcmPath.Should().Contain(session.Id.ToString());
+        var bytes = await File.ReadAllBytesAsync(pcmPath);
+        bytes.Length.Should().Be(samples.Length * sizeof(float));
+        // Spot-check the first float round-trips: 0.10f → 4 LE bytes.
+        BitConverter.ToSingle(bytes.AsSpan(0, 4)).Should().BeApproximately(0.10f, 0.0001f);
+
+        await fixture.Manager.CancelAsync(session.Id, CancellationToken.None);
+    }
+
+    [TestMethod]
+    public async Task StopAsync_DeletesAudioBufferFile()
+    {
+        using var tempDir = TempAudioDir.Create();
+        var fixture = new Fixture();
+        fixture.Settings.DictationTempAudioPath.Returns(tempDir.Path);
+        fixture.ArrangeStreamWithPartial("ok");
+        var session = fixture.Manager.Start();
+
+        await fixture.Manager.StopAsync(session.Id, CancellationToken.None);
+
+        Directory.EnumerateFiles(tempDir.Path, "dictation-*.pcm").Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task CancelAsync_DeletesAudioBufferFile()
+    {
+        using var tempDir = TempAudioDir.Create();
+        var fixture = new Fixture();
+        fixture.Settings.DictationTempAudioPath.Returns(tempDir.Path);
+        fixture.ArrangeEmptyStream();
+        var session = fixture.Manager.Start();
+        // Give Start time to create the buffer file.
+        await WaitForAsync(
+            () => Directory.EnumerateFiles(tempDir.Path, "dictation-*.pcm").Any(),
+            TimeSpan.FromSeconds(2));
+
+        await fixture.Manager.CancelAsync(session.Id, CancellationToken.None);
+
+        Directory.EnumerateFiles(tempDir.Path, "dictation-*.pcm").Should().BeEmpty();
+    }
+
+    [TestMethod]
     public async Task SubscribePartialsAsync_YieldsPartialsEmittedByStreamingService()
     {
         var fixture = new Fixture();
@@ -289,4 +346,47 @@ public sealed class DictationSessionManagerTests
     }
 
     public TestContext TestContext { get; set; }
+
+    private static async Task WaitForAsync(Func<bool> predicate, TimeSpan timeout)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        while (!predicate() && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(25);
+        }
+        if (!predicate())
+        {
+            throw new TimeoutException($"Condition not reached within {timeout}");
+        }
+    }
+
+    private sealed class TempAudioDir : IDisposable
+    {
+        public string Path { get; }
+        private TempAudioDir(string path) => Path = path;
+
+        public static TempAudioDir Create()
+        {
+            var path = System.IO.Path.Combine(
+                System.IO.Path.GetTempPath(),
+                "mozgoslav-tests-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(path);
+            return new TempAudioDir(path);
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                if (Directory.Exists(Path))
+                {
+                    Directory.Delete(Path, recursive: true);
+                }
+            }
+            catch (IOException)
+            {
+                // Best-effort — OS may still hold a handle.
+            }
+        }
+    }
 }

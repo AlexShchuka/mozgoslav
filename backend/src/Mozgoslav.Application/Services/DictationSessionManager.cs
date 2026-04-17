@@ -15,9 +15,19 @@ namespace Mozgoslav.Application.Services;
 /// lifecycle: <c>Start</c> → <c>PushAudioAsync</c> repeatedly → <c>StopAsync</c>.
 /// Partial transcripts flow through the per-session SSE channel that the
 /// overlay subscribes to. Sessions are short-lived and never persisted.
+/// <para>
+/// ADR-004 R5: every audio chunk is also mirrored to a raw PCM file
+/// (<c>dictation-{sessionId}.pcm</c>, float32 mono at the chunk's sample rate)
+/// inside <see cref="IAppSettings.DictationTempAudioPath"/>. On clean stop or
+/// cancel the file is deleted; if the app crashes the file is left behind so
+/// the user can recover audio that never reached the LLM.
+/// </para>
 /// </summary>
 public sealed class DictationSessionManager : IDictationSessionManager
 {
+    private const string PcmFilePrefix = "dictation-";
+    private const string PcmFileExtension = ".pcm";
+
     private readonly IStreamingTranscriptionService _streaming;
     private readonly ILlmService _llm;
     private readonly IAppSettings _settings;
@@ -26,6 +36,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
     private readonly ConcurrentDictionary<Guid, SessionRuntime> _sessions = new();
     private readonly Lock _activeSessionLock = new();
     private Guid? _activeSessionId;
+    private int _orphanScanDone;
 
     public DictationSessionManager(
         IStreamingTranscriptionService streaming,
@@ -41,6 +52,8 @@ public sealed class DictationSessionManager : IDictationSessionManager
 
     public DictationSession Start()
     {
+        ScanForOrphanedAudioFilesOnce();
+
         lock (_activeSessionLock)
         {
             if (_activeSessionId is not null)
@@ -51,9 +64,10 @@ public sealed class DictationSessionManager : IDictationSessionManager
             }
 
             var session = new DictationSession();
+            var audioBufferPath = TryPrepareAudioBufferPath(session.Id);
             // Ownership is transferred to the _sessions dictionary; StopAsync/CancelAsync dispose it.
 #pragma warning disable IDISP001
-            var runtime = new SessionRuntime(session);
+            var runtime = new SessionRuntime(session, audioBufferPath);
 #pragma warning restore IDISP001
             if (!_sessions.TryAdd(session.Id, runtime))
             {
@@ -142,6 +156,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
 
         ClearActive(sessionId);
         _sessions.TryRemove(sessionId, out _);
+        DeleteAudioBuffer(runtime);
         runtime.Dispose();
 
         _logger.LogInformation(
@@ -165,6 +180,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
         runtime.Session.FinishedAt = DateTime.UtcNow;
 
         ClearActive(sessionId);
+        DeleteAudioBuffer(runtime);
         runtime.Dispose();
         _logger.LogInformation("Dictation session {SessionId} cancelled", sessionId);
         return Task.CompletedTask;
@@ -198,8 +214,9 @@ public sealed class DictationSessionManager : IDictationSessionManager
         try
         {
             var audioStream = runtime.AudioReader.ReadAllAsync(runtime.Cts.Token);
+            var teedAudio = TeeAudioToBufferAsync(audioStream, runtime, runtime.Cts.Token);
             await foreach (var partial in _streaming.TranscribeStreamAsync(
-                audioStream,
+                teedAudio,
                 _settings.DictationLanguage,
                 initialPrompt: BuildInitialPrompt(_settings.DictationVocabulary),
                 runtime.Cts.Token))
@@ -215,6 +232,111 @@ public sealed class DictationSessionManager : IDictationSessionManager
         catch (Exception ex)
         {
             MarkError(runtime, ex);
+        }
+    }
+
+    /// <summary>
+    /// Pass-through iterator that writes every chunk's PCM samples to the
+    /// per-session crash-recovery buffer before yielding it to Whisper.
+    /// Buffer write errors are logged and do not abort the session.
+    /// </summary>
+    private async IAsyncEnumerable<AudioChunk> TeeAudioToBufferAsync(
+        IAsyncEnumerable<AudioChunk> source,
+        SessionRuntime runtime,
+        [EnumeratorCancellation] CancellationToken ct)
+    {
+        await foreach (var chunk in source.WithCancellation(ct))
+        {
+            if (runtime.AudioBuffer is not null)
+            {
+                try
+                {
+                    var byteCount = chunk.Samples.Length * sizeof(float);
+                    var bytes = new byte[byteCount];
+                    Buffer.BlockCopy(chunk.Samples, 0, bytes, 0, byteCount);
+                    await runtime.AudioBuffer.WriteAsync(bytes, ct);
+                    await runtime.AudioBuffer.FlushAsync(ct);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    _logger.LogWarning(ex,
+                        "Failed to write dictation audio buffer for session {SessionId}",
+                        runtime.Session.Id);
+                }
+            }
+            yield return chunk;
+        }
+    }
+
+    private string? TryPrepareAudioBufferPath(Guid sessionId)
+    {
+        try
+        {
+            var dir = ResolveAudioBufferDirectory();
+            Directory.CreateDirectory(dir);
+            return Path.Combine(dir, $"{PcmFilePrefix}{sessionId:D}{PcmFileExtension}");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex,
+                "Could not prepare dictation audio buffer directory; crash recovery disabled");
+            return null;
+        }
+    }
+
+    private string ResolveAudioBufferDirectory()
+    {
+        var configured = _settings.DictationTempAudioPath;
+        return string.IsNullOrWhiteSpace(configured)
+            ? Path.Combine(Path.GetTempPath(), "mozgoslav-dictation")
+            : configured;
+    }
+
+    private void DeleteAudioBuffer(SessionRuntime runtime)
+    {
+        runtime.CloseAudioBuffer();
+        if (runtime.AudioBufferPath is null)
+        {
+            return;
+        }
+        try
+        {
+            if (File.Exists(runtime.AudioBufferPath))
+            {
+                File.Delete(runtime.AudioBufferPath);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex,
+                "Could not delete dictation audio buffer {Path}", runtime.AudioBufferPath);
+        }
+    }
+
+    private void ScanForOrphanedAudioFilesOnce()
+    {
+        if (Interlocked.CompareExchange(ref _orphanScanDone, 1, 0) != 0)
+        {
+            return;
+        }
+        try
+        {
+            var dir = ResolveAudioBufferDirectory();
+            if (!Directory.Exists(dir))
+            {
+                return;
+            }
+            var orphans = Directory.EnumerateFiles(dir, $"{PcmFilePrefix}*{PcmFileExtension}").ToArray();
+            if (orphans.Length > 0)
+            {
+                _logger.LogWarning(
+                    "Found {Count} orphaned dictation audio files in {Dir} — leaving for recovery",
+                    orphans.Length, dir);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogDebug(ex, "Orphan scan skipped");
         }
     }
 
@@ -271,7 +393,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
 
     private sealed class SessionRuntime : IDisposable
     {
-        public SessionRuntime(DictationSession session)
+        public SessionRuntime(DictationSession session, string? audioBufferPath)
         {
             Session = session;
             var audioChannel = Channel.CreateUnbounded<AudioChunk>(new UnboundedChannelOptions
@@ -289,6 +411,18 @@ public sealed class DictationSessionManager : IDictationSessionManager
             Cts = new CancellationTokenSource();
             TranscriptionTask = Task.CompletedTask;
             LastPartialText = string.Empty;
+            AudioBufferPath = audioBufferPath;
+            if (audioBufferPath is not null)
+            {
+                // Owned by the runtime — disposed in CloseAudioBuffer / Dispose.
+#pragma warning disable IDISP001
+                AudioBuffer = new FileStream(
+                    audioBufferPath,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.Read);
+#pragma warning restore IDISP001
+            }
         }
 
         public DictationSession Session { get; }
@@ -298,7 +432,19 @@ public sealed class DictationSessionManager : IDictationSessionManager
         public CancellationTokenSource Cts { get; }
         public Task TranscriptionTask { get; set; }
         public string LastPartialText { get; set; }
+        public string? AudioBufferPath { get; }
+        public FileStream? AudioBuffer { get; private set; }
 
-        public void Dispose() => Cts.Dispose();
+        public void CloseAudioBuffer()
+        {
+            AudioBuffer?.Dispose();
+            AudioBuffer = null;
+        }
+
+        public void Dispose()
+        {
+            CloseAudioBuffer();
+            Cts.Dispose();
+        }
     }
 }
