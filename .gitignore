@@ -64,6 +64,8 @@ temp/
 tmp/
 logs/
 models/
+backend/publish/
+python-sidecar/vendor/
 
 # ---- IDE ----
 .idea/
