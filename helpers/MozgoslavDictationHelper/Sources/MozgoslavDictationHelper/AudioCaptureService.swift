@@ -200,10 +200,7 @@ public final class AudioCaptureService {
             try? session.file.write(from: outputBuffer)
         }
     }
-    #endif
-}
 
-    #if canImport(AVFoundation)
     private func process(buffer: AVAudioPCMBuffer, targetFormat: AVAudioFormat) {
         guard let converter = converter else { return }
 
