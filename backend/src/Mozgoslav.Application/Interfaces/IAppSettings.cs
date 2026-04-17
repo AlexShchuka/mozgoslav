@@ -30,6 +30,7 @@ public interface IAppSettings
     bool DictationOverlayEnabled { get; }
     string DictationOverlayPosition { get; }
     bool DictationSoundFeedback { get; }
+    IReadOnlyList<string> DictationVocabulary { get; }
 
     AppSettingsDto Snapshot { get; }
 
