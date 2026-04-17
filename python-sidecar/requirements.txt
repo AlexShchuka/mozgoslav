@@ -13,12 +13,13 @@ python-multipart>=0.0.18
 # --- ML runtime ---
 # torch pulls ~4GB of CUDA wheels on Linux by default — overkill for the
 # sidecar which runs CPU-only. Pin Linux to the CPU-only index; macOS wheels
-# are CPU-native already and resolve from PyPI.
+# are CPU-native already and resolve from PyPI. PEP 440 forbids `>=` with
+# local version labels (`+cpu`), so Linux uses exact-pin.
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch>=2.6.0 ; sys_platform == 'darwin'
-torch>=2.6.0+cpu ; sys_platform == 'linux'
+torch==2.6.0+cpu ; sys_platform == 'linux'
 torchaudio>=2.6.0 ; sys_platform == 'darwin'
-torchaudio>=2.6.0+cpu ; sys_platform == 'linux'
+torchaudio==2.6.0+cpu ; sys_platform == 'linux'
 transformers>=4.49.0
 huggingface_hub>=0.29.0
 soundfile>=0.13.0
