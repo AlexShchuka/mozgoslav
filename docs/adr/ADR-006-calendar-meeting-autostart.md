@@ -304,7 +304,24 @@ The chunk/merge strategy (`Chunk`, `Merge` inside `OpenAiCompatibleLlmService`) 
 <!-- SECTION: ImplementationPlan -->
 ## Implementation plan (this PR)
 
-<!-- TODO: ordered list of B-sections as they land -->
+Landing order mirrors the B-sections. Each block is a short series of commits (tokens → component → test → glue), not one monolithic patch. If a block misses the PR it is tagged **DEFERRED** in `agent-b-report.md`.
+
+1. **B1 — Visual/UX tokens + Motion.** Install `motion`, wire `<LazyMotion features={domAnimation} strict>` at the app root, add `src/styles/motion.ts` with the D-3 table + `useMotionPreset` hook, bump button ramp to 28/34/42.
+2. **B2 — Palette.** Swap `theme.ts` `lightTheme` / `darkTheme` to the D-6 tokens, refresh `focusRing` colour.
+3. **B3 — Brain-icon launcher.** New `components/BrainLauncher/`. Idle gradient, active gradient, motion gated on `useReducedMotion`. Shared between Dashboard + tray.
+4. **B4 — Record button enable.** Dashboard uses `BrainLauncher`; 4-state machine (idle → arming → recording → stopping). Calls existing `/api/dictation/*` endpoints.
+5. **B5 — Queue cancel + i18n audit.** Backend `DELETE /api/queue/{id}` + repository method + integration test. Frontend row wraps in `m.div` under `AnimatePresence`. Run `i18n-audit.mjs`, migrate Queue page hardcoded strings, add ru/en parity test.
+6. **B6 — LM Studio discovery.** `ILmStudioClient` + `LmStudioHttpClient` + `/api/lmstudio/models` endpoint. Settings → Local models sub-section with Installed + Suggested lists. Remove per-model download buttons.
+7. **B7 — README one-liners.** `scripts/dev.mjs` + `scripts/build.mjs`, two root npm scripts, archive stale README sections to `docs/.archive/`.
+8. **B8 — Golden ratio hero.** Dashboard hero + onboarding title use the 39 px hero token; rest of the UI stays on 1.25 ramp.
+9. **B9 / B10 — A11y polish.** `focusRing` mixin, disabled-state mixin, `prefers-reduced-motion` gate verification across all B1-B8 surfaces.
+10. **B11 — AVFoundation audio recorder (D-15.a).**
+11. **B12 — Multi-provider LLM (D-14).**
+12. **B13 — Profile CRUD UI (D-15.b).**
+13. **B14 — kbar command palette (D-15.c).**
+14. **B15 — Onboarding wizard (D-15.d).**
+
+Priority order if time runs short: B1 → B5 are mandatory, B6 → B10 are the polish line, B11 → B15 land as capacity allows.
 
 <!-- SECTION: Migration -->
 ## Migration / breaking changes
@@ -314,7 +331,28 @@ None. Every change is additive — new settings default off or preserve prior be
 <!-- SECTION: Consequences -->
 ## Consequences
 
-<!-- TODO: bundle size delta, maintenance, dependency matrix -->
+**Bundle size delta (renderer, approximate, gzipped).**
+
+| Dependency                   | Delta       | Notes                                                           |
+| ---------------------------- | ----------- | --------------------------------------------------------------- |
+| `motion` (`domAnimation`)    | +18 KB      | Replaces `framer-motion` when migrated; net ≈ 0 KB final        |
+| `liquid-glass-react`         | +7 KB       | Hero CTA only                                                   |
+| `kbar` (now actually used)   | +12 KB      | Was a dep, never imported; code-split into the palette chunk    |
+| Removed Model Download UI    | −3 KB       | Fewer components + icons                                        |
+| Motion tokens / mixins       | negligible  | String constants                                                |
+
+**Dependency matrix.**
+
+| Package                | Licence | Role                                  | Added in    |
+| ---------------------- | ------- | ------------------------------------- | ----------- |
+| `motion`               | MIT     | Animation primitives                  | B1          |
+| `liquid-glass-react`   | MIT     | Hero CTA glass shader                 | B3          |
+| `kbar`                 | MIT     | Command palette (already installed)   | B14         |
+| `lucide-react`         | ISC     | Icons (already installed)             | reused      |
+
+**Maintenance.** One central motion table (`src/styles/motion.ts`) instead of ad-hoc durations. One palette token source in `theme.ts`. One `focusRing` + `disabledState` mixin reduces style drift. LM Studio integration is stateless (discovery only) — no cache to keep in sync. The new V2 surfaces each sit in their own feature folder; deletions later on are local.
+
+**Risks.** `backdrop-filter` performance on older Linux dev boxes falls back to opaque fill (D-4), so the UI never degrades below "functional". The D-15 tracks add surface area but are all covered by tests before they merge; anything that can't pass the green bar this PR lands as DEFERRED with its root cause in `agent-b-report.md`.
 
 <!-- SECTION: References -->
 ## References
