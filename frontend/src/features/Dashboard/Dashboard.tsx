@@ -20,6 +20,8 @@ import {
   DropzoneIcon,
   DropzoneTitle,
   DropzoneHint,
+  Hero,
+  HeroSub,
   RecordingRow,
   RecordingMeta,
   RecordingName,
@@ -136,6 +138,10 @@ const Dashboard: FC = () => {
 
   return (
     <DashboardRoot>
+      <div>
+        <Hero>{t("dashboard.heroTitle")}</Hero>
+        <HeroSub>{t("dashboard.heroSub")}</HeroSub>
+      </div>
       <Card title={t("dashboard.importTitle")}>
         <DropzoneRoot {...getRootProps()} $active={isDragActive}>
           <input {...getInputProps()} />

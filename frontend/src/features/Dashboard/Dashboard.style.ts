@@ -7,6 +7,22 @@ export const DashboardRoot = styled.div`
   gap: ${({ theme }) => theme.space(5)};
 `;
 
+export const Hero = styled.h1`
+  margin: 0;
+  /* B8 golden-ratio hero: exactly one surface per page at 39px (24 × φ). */
+  font-size: ${({ theme }) => theme.font.size.hero};
+  font-weight: ${({ theme }) => theme.font.weight.semibold};
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: ${({ theme }) => theme.colors.text};
+`;
+
+export const HeroSub = styled.p`
+  margin: 0;
+  font-size: ${({ theme }) => theme.font.size.md};
+  color: ${({ theme }) => theme.colors.textMuted};
+`;
+
 export const DropzoneRoot = styled.div<{ $active: boolean }>`
   display: flex;
   align-items: center;

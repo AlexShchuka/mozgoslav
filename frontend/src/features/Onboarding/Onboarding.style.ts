@@ -11,8 +11,10 @@ export const PageRoot = styled.div`
 
 export const Title = styled.h1`
   margin: 0;
-  font-size: ${({ theme }) => theme.font.size.xxl};
+  /* B8 golden-ratio hero: 39px = 24px × φ — onboarding gets one hero surface. */
+  font-size: ${({ theme }) => theme.font.size.hero};
   font-weight: ${({ theme }) => theme.font.weight.semibold};
+  line-height: 1.1;
   color: ${({ theme }) => theme.colors.text};
 `;
 

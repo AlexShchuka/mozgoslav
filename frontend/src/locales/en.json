@@ -44,6 +44,8 @@
   },
   "dashboard": {
     "title": "Dashboard",
+    "heroTitle": "Hey.",
+    "heroSub": "Dictate or drop audio — I'll shape it into notes.",
     "importTitle": "Add recording",
     "dropzonePrompt": "Drop audio here or click to pick files",
     "dropzoneHint": "Accepts mp3 / m4a / wav / mp4 / ogg / flac",

@@ -44,6 +44,8 @@
   },
   "dashboard": {
     "title": "Дашборд",
+    "heroTitle": "Привет.",
+    "heroSub": "Диктуй или перетащи аудио — я разложу всё по полочкам.",
     "importTitle": "Добавить запись",
     "dropzonePrompt": "Перетащи аудио сюда или нажми, чтобы выбрать",
     "dropzoneHint": "Поддерживается mp3 / m4a / wav / mp4 / ogg / flac",
