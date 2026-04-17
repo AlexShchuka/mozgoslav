@@ -112,9 +112,10 @@ app.whenReady().then(async () => {
         `--Mozgoslav:SyncthingApiKey=${syncthingConfig.apiKey}`,
       ]
     : [];
-  // Plan v0.8 Block 3 — AVFoundation recorder bridge. Start the dedicated
-  // helper process + internal loopback HTTP endpoint before the backend so
-  // the port is available for MOZGOSLAV_ELECTRON_INTERNAL_PORT.
+  // AVFoundation recorder bridge. Start the dedicated helper process +
+  // internal loopback HTTP endpoint before the backend so the port is
+  // available via IConfiguration at backend spawn time
+  // (appsettings key: Mozgoslav:AudioRecorder:ElectronBridgePort).
   const recorderEnv: Record<string, string> = {};
   if (process.platform === "darwin") {
     try {
@@ -126,7 +127,7 @@ app.whenReady().then(async () => {
       recordingHelper.start();
       recordingBridge = new RecordingBridge(recordingHelper);
       const port = await recordingBridge.start();
-      recorderEnv["MOZGOSLAV_ELECTRON_INTERNAL_PORT"] = String(port);
+      recorderEnv["Mozgoslav__AudioRecorder__ElectronBridgePort"] = String(port);
     } catch (err) {
       console.error("[recording:bridge] failed to start:", err);
       recordingBridge = null;

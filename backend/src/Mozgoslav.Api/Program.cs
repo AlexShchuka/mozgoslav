@@ -7,6 +7,7 @@ using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Rag;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Application.UseCases;
+using Mozgoslav.Infrastructure.Configuration;
 using Mozgoslav.Infrastructure.Observability;
 using Mozgoslav.Infrastructure.Persistence;
 using Mozgoslav.Infrastructure.Platform;
@@ -154,9 +155,14 @@ try
     builder.Services.AddSingleton<IMarkdownExporter, FileMarkdownExporter>();
     // ADR-009 §2.1 row 1 — platform-aware recorder registration.
     // macOS: AVFoundationAudioRecorder talks to the Swift helper via the
-    // Electron loopback bridge (MOZGOSLAV_ELECTRON_INTERNAL_PORT).
+    // Electron loopback bridge. Port is resolved from
+    // Mozgoslav:AudioRecorder:ElectronBridgePort in configuration (env-var
+    // override: Mozgoslav__AudioRecorder__ElectronBridgePort, populated by
+    // frontend/electron/utils/backendLauncher.ts).
     // Linux/Windows: PlatformUnsupportedAudioRecorder honestly gates the
     // feature (IsSupported=false) — UI hides the Record button accordingly.
+    builder.Services.Configure<AudioRecorderOptions>(
+        builder.Configuration.GetSection(AudioRecorderOptions.SectionName));
     if (OperatingSystem.IsMacOS())
     {
         builder.Services.AddHttpClient<AVFoundationAudioRecorder>(client =>

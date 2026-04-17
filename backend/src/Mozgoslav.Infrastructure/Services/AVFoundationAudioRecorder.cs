@@ -2,17 +2,21 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Infrastructure.Configuration;
 
 namespace Mozgoslav.Infrastructure.Services;
 
 /// <summary>
 /// macOS native audio recorder. Delegates capture to the Swift helper
 /// (<c>helpers/MozgoslavDictationHelper</c>) via an internal loopback HTTP
-/// endpoint exposed by the Electron main process. The port is communicated
-/// through the <c>MOZGOSLAV_ELECTRON_INTERNAL_PORT</c> environment variable at
-/// backend spawn time (see <c>frontend/electron/utils/backendLauncher.ts</c>).
+/// endpoint exposed by the Electron main process. The port is resolved from
+/// configuration (<c>Mozgoslav:AudioRecorder:ElectronBridgePort</c>, typically
+/// populated from the <c>Mozgoslav__AudioRecorder__ElectronBridgePort</c>
+/// environment variable set by <c>frontend/electron/utils/backendLauncher.ts</c>
+/// at backend spawn time).
 /// <para>
 /// On invocation without a running Electron host (dev backend started via
 /// <c>dotnet run</c>), <see cref="IsSupported"/> returns <c>false</c> and
@@ -21,31 +25,36 @@ namespace Mozgoslav.Infrastructure.Services;
 /// </summary>
 public sealed class AVFoundationAudioRecorder : IAudioRecorder
 {
-    private const string EnvPortKey = "MOZGOSLAV_ELECTRON_INTERNAL_PORT";
-
     private readonly HttpClient _http;
     private readonly ILogger<AVFoundationAudioRecorder> _logger;
+    private readonly int? _electronBridgePort;
     private readonly Lock _gate = new();
     private string? _activeSessionId;
     private DateTime _startedAtUtc;
 
-    public AVFoundationAudioRecorder(HttpClient http, ILogger<AVFoundationAudioRecorder> logger)
+    public AVFoundationAudioRecorder(
+        HttpClient http,
+        ILogger<AVFoundationAudioRecorder> logger,
+        IOptions<AudioRecorderOptions> options)
+        : this(http, logger, options.Value.ElectronBridgePort)
+    {
+    }
+
+    /// <summary>
+    /// Test-friendly constructor with explicit port. Production code wires
+    /// through <see cref="IOptions{AudioRecorderOptions}"/>.
+    /// </summary>
+    public AVFoundationAudioRecorder(
+        HttpClient http,
+        ILogger<AVFoundationAudioRecorder> logger,
+        int? electronBridgePort)
     {
         _http = http;
         _logger = logger;
+        _electronBridgePort = electronBridgePort;
     }
 
-    public bool IsSupported
-    {
-        get
-        {
-            if (!OperatingSystem.IsMacOS())
-            {
-                return false;
-            }
-            return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(EnvPortKey));
-        }
-    }
+    public bool IsSupported => OperatingSystem.IsMacOS() && _electronBridgePort is > 0;
 
     public bool IsRecording
     {
@@ -138,20 +147,17 @@ public sealed class AVFoundationAudioRecorder : IAudioRecorder
             throw new PlatformNotSupportedException(
                 "AVFoundation recorder is macOS-only. Running on a non-macOS host.");
         }
-        if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(EnvPortKey)))
+        if (_electronBridgePort is null or <= 0)
         {
             throw new InvalidOperationException(
-                $"Electron bridge port missing ({EnvPortKey} env var unset). " +
+                "Electron bridge port not configured. Set 'Mozgoslav:AudioRecorder:ElectronBridgePort' " +
+                "in appsettings (env override: Mozgoslav__AudioRecorder__ElectronBridgePort). " +
                 "Launch the backend via the Electron host, not stand-alone.");
         }
     }
 
-    private static Uri ResolveBridgeUri(string path)
-    {
-        var port = Environment.GetEnvironmentVariable(EnvPortKey)
-            ?? throw new InvalidOperationException($"{EnvPortKey} env var is not set.");
-        return new Uri($"http://127.0.0.1:{port}{path}");
-    }
+    private Uri ResolveBridgeUri(string path) =>
+        new($"http://127.0.0.1:{_electronBridgePort}{path}");
 
     private sealed record StartResponse(
         [property: JsonPropertyName("sessionId")] string SessionId);

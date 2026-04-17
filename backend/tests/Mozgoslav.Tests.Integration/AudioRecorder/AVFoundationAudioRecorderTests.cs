@@ -14,29 +14,28 @@ namespace Mozgoslav.Tests.Integration.AudioRecorder;
 /// Contract tests for <see cref="AVFoundationAudioRecorder"/> against a
 /// WireMock bridge. We do not run AVFoundation in CI (the Linux sandbox has
 /// no audio hardware); instead we assert the backend-to-Electron loopback
-/// bridge shape described in <c>plan/v0.8/03-mac-native-recorder.md §2.3</c>.
+/// bridge shape. Port is injected directly via constructor — no env vars,
+/// so test parallelism is safe.
 /// </summary>
 [TestClass]
 public sealed class AVFoundationAudioRecorderTests : IDisposable
 {
-    private const string EnvPortKey = "MOZGOSLAV_ELECTRON_INTERNAL_PORT";
-
     private WireMockServer _server = null!;
     private HttpClient _http = null!;
     private AVFoundationAudioRecorder _recorder = null!;
-    private string? _previousEnv;
     private bool _disposed;
 
     [TestInitialize]
     public void Setup()
     {
         _server = WireMockServer.Start();
-        var port = new Uri(_server.Urls[0]).Port.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        _previousEnv = Environment.GetEnvironmentVariable(EnvPortKey);
-        Environment.SetEnvironmentVariable(EnvPortKey, port);
+        var port = new Uri(_server.Urls[0]).Port;
 
         _http = new HttpClient { BaseAddress = new Uri(_server.Urls[0]) };
-        _recorder = new AVFoundationAudioRecorder(_http, NullLogger<AVFoundationAudioRecorder>.Instance);
+        _recorder = new AVFoundationAudioRecorder(
+            _http,
+            NullLogger<AVFoundationAudioRecorder>.Instance,
+            port);
     }
 
     [TestCleanup]
@@ -46,7 +45,6 @@ public sealed class AVFoundationAudioRecorderTests : IDisposable
     {
         if (_disposed) return;
         _disposed = true;
-        Environment.SetEnvironmentVariable(EnvPortKey, _previousEnv);
         _http?.Dispose();
         _server?.Stop();
         _server?.Dispose();

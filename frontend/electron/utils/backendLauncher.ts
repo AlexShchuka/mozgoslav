@@ -10,9 +10,9 @@ export interface BackendStartOptions {
   /** Extra CLI args forwarded to the backend (e.g., ``--Mozgoslav:SyncthingBaseUrl=...``). */
   readonly extraArgs?: readonly string[];
   /**
-   * Extra environment variables forwarded to the backend. Mozgoslav plan v0.8
-   * Block 3 uses this to communicate the Electron internal loopback port
-   * (`MOZGOSLAV_ELECTRON_INTERNAL_PORT`) to `AVFoundationAudioRecorder`.
+   * Extra environment variables forwarded to the backend. Used to communicate
+   * the Electron internal loopback port (`Mozgoslav__AudioRecorder__ElectronBridgePort`,
+   * consumed via `IConfiguration`) to `AVFoundationAudioRecorder`.
    */
   readonly extraEnv?: Readonly<Record<string, string>>;
 }
