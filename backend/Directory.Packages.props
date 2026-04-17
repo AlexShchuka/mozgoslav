@@ -22,7 +22,16 @@
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.*" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.*" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="10.*" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.*" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.*" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.*" />
+
+    <!-- ADR-011 — ML tokenizers / CliWrap / Quartz -->
+    <PackageVersion Include="Microsoft.ML.Tokenizers" Version="1.*" />
+    <PackageVersion Include="CliWrap" Version="3.*" />
+    <PackageVersion Include="Quartz" Version="3.*" />
+    <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.*" />
+    <PackageVersion Include="Quartz.Plugins" Version="3.*" />
 
     <!-- Logging / metrics -->
     <PackageVersion Include="Serilog.AspNetCore" Version="8.*" />

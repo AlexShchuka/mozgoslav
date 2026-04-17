@@ -113,29 +113,11 @@ try
     // transcription service already accepts.
     builder.Services.AddSingleton<IAudioPcmDecoder, FfmpegPcmDecoder>();
     builder.Services.AddSingleton<IVadPreprocessor, SileroVadPreprocessor>();
-    // ADR-004 R4 / ADR-007-phase2-backend §2.4 Step 2 — the WhisperFactory cache is
-    // now an injected port; the factory delegate resolves the configured model path
-    // on first use and throws a helpful error if it is missing from disk.
-    builder.Services.AddSingleton<IIdleResourceCache<Whisper.net.WhisperFactory>>(sp =>
-    {
-        var settings = sp.GetRequiredService<IAppSettings>();
-        var logger = sp.GetRequiredService<ILogger<IdleResourceCache<Whisper.net.WhisperFactory>>>();
-        return new IdleResourceCache<Whisper.net.WhisperFactory>(
-            factory: () =>
-            {
-                var modelPath = settings.WhisperModelPath;
-                if (string.IsNullOrWhiteSpace(modelPath) || !File.Exists(modelPath))
-                {
-                    throw new InvalidOperationException(
-                        $"Whisper model is not configured or missing on disk: '{modelPath}'. " +
-                        "Download it via the Models page in Settings.");
-                }
-                logger.LogInformation("Loading Whisper model {Model}", Path.GetFileName(modelPath));
-                return Whisper.net.WhisperFactory.FromPath(modelPath);
-            },
-            idleTimeoutProvider: () =>
-                TimeSpan.FromMinutes(Math.Max(0, settings.DictationModelUnloadMinutes)));
-    });
+    // ADR-011 step 2 — IMemoryCache replaces the homebrew IdleResourceCache<T>.
+    // The Whisper factory entry is created lazily by WhisperNetTranscriptionService
+    // with SlidingExpiration = DictationModelUnloadMinutes and a
+    // PostEvictionCallback that Dispose()s the factory when the idle window elapses.
+    builder.Services.AddMemoryCache();
     builder.Services.AddSingleton<WhisperNetTranscriptionService>();
     builder.Services.AddSingleton<ITranscriptionService>(sp => sp.GetRequiredService<WhisperNetTranscriptionService>());
     builder.Services.AddSingleton<IStreamingTranscriptionService>(sp => sp.GetRequiredService<WhisperNetTranscriptionService>());

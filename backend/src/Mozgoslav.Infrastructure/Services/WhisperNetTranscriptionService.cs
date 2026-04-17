@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 using Mozgoslav.Application.Interfaces;
@@ -18,34 +19,44 @@ namespace Mozgoslav.Infrastructure.Services;
 /// emits partial transcripts roughly every <see cref="StreamWindowMs"/> milliseconds
 /// of accumulated speech.
 /// <para>
-/// ADR-004 R4: the <see cref="WhisperFactory"/> (which holds the loaded model in
-/// RAM — several hundred MB for <c>large-v3</c>) is kept alive between calls via
-/// <see cref="IdleResourceCache{T}"/>. After
-/// <see cref="IAppSettings.DictationModelUnloadMinutes"/> minutes of inactivity
-/// the factory is disposed and RAM is released; the next call re-loads it
-/// with a ~1-2 s first-call latency penalty.
+/// ADR-004 R4 / ADR-011 step 2 — the <see cref="WhisperFactory"/> (which holds the
+/// loaded model in RAM — several hundred MB for <c>large-v3</c>) is cached via
+/// <see cref="IMemoryCache"/> with a sliding expiration matching
+/// <see cref="IAppSettings.DictationModelUnloadMinutes"/>. The cache entry's
+/// <see cref="MemoryCacheEntryOptions.PostEvictionCallbacks"/> dispose the factory
+/// when the entry is evicted; the next call re-loads it with a ~1-2 s first-call
+/// latency penalty. During long streams the service touches the cache on every
+/// windowed emit so the sliding window never elapses while transcription is
+/// actively running.
 /// </para>
 /// </summary>
 public sealed class WhisperNetTranscriptionService
     : ITranscriptionService, IStreamingTranscriptionService
 {
+    internal const string CacheKey = "whisper.factory";
     private const int BeamSize = 5;
     private const string DefaultPrompt = "Мысли вслух, встречи, диалоги, рассуждения.";
     private const int StreamSampleRate = 16_000;
     private const int StreamWindowMs = 500;
     private const int StreamMaxBufferSeconds = 120;
+    // Lower bound on the sliding expiration — protects against DictationModelUnloadMinutes=0
+    // dropping the factory between transcription windows inside a single stream.
+    private static readonly TimeSpan MinSlidingExpiration = TimeSpan.FromMinutes(1);
 
     private readonly IVadPreprocessor _vad;
+    private readonly IMemoryCache _cache;
+    private readonly IAppSettings _settings;
     private readonly ILogger<WhisperNetTranscriptionService> _logger;
-    private readonly IIdleResourceCache<WhisperFactory> _factoryCache;
 
     public WhisperNetTranscriptionService(
         IVadPreprocessor vad,
-        IIdleResourceCache<WhisperFactory> factoryCache,
+        IMemoryCache cache,
+        IAppSettings settings,
         ILogger<WhisperNetTranscriptionService> logger)
     {
         _vad = vad;
-        _factoryCache = factoryCache;
+        _cache = cache;
+        _settings = settings;
         _logger = logger;
     }
 
@@ -64,31 +75,24 @@ public sealed class WhisperNetTranscriptionService
 
         _logger.LogInformation("Transcribing {AudioPath}", audioPath);
 
-        // The WhisperFactory reference is owned by the cache — we only borrow it
-        // between AcquireAsync and ReleaseAsync. The analyzer doesn't know.
+        // Borrowed reference — the cache owns the WhisperFactory lifetime;
+        // disposal is handled by the PostEvictionCallback.
 #pragma warning disable IDISP001
-        var whisperFactory = await _factoryCache.AcquireAsync(ct);
+        var whisperFactory = GetOrCreateFactory();
 #pragma warning restore IDISP001
-        try
+        await using var processor = BuildProcessor(whisperFactory, language, initialPrompt);
+
+        var segments = new List<TranscriptSegment>();
+        await using var audioStream = File.OpenRead(audioPath);
+
+        await foreach (var segment in processor.ProcessAsync(audioStream, ct).WithCancellation(ct))
         {
-            await using var processor = BuildProcessor(whisperFactory, language, initialPrompt);
-
-            var segments = new List<TranscriptSegment>();
-            await using var audioStream = File.OpenRead(audioPath);
-
-            await foreach (var segment in processor.ProcessAsync(audioStream, ct).WithCancellation(ct))
-            {
-                segments.Add(new TranscriptSegment(segment.Start, segment.End, segment.Text.Trim()));
-                progress?.Report(Math.Min(99, segments.Count));
-            }
-
-            _logger.LogInformation("Transcription complete: {Count} segments", segments.Count);
-            return segments;
+            segments.Add(new TranscriptSegment(segment.Start, segment.End, segment.Text.Trim()));
+            progress?.Report(Math.Min(99, segments.Count));
         }
-        finally
-        {
-            await _factoryCache.ReleaseAsync();
-        }
+
+        _logger.LogInformation("Transcription complete: {Count} segments", segments.Count);
+        return segments;
     }
 
     public async IAsyncEnumerable<PartialTranscript> TranscribeStreamAsync(
@@ -101,59 +105,45 @@ public sealed class WhisperNetTranscriptionService
 
         _logger.LogInformation("Starting streaming transcription");
 
-        // Borrowed reference — owned by the cache.
+        // Borrowed reference — see TranscribeAsync comment above.
 #pragma warning disable IDISP001
-        var whisperFactory = await _factoryCache.AcquireAsync(ct);
+        var whisperFactory = GetOrCreateFactory();
 #pragma warning restore IDISP001
-        try
+        var buffer = new List<float>();
+        var samplesSinceLastEmit = 0;
+        var windowSamples = StreamSampleRate * StreamWindowMs / 1000;
+        var maxBufferSamples = StreamSampleRate * StreamMaxBufferSeconds;
+
+        await foreach (var chunk in chunks.WithCancellation(ct))
         {
-            var buffer = new List<float>();
-            var samplesSinceLastEmit = 0;
-            var windowSamples = StreamSampleRate * StreamWindowMs / 1000;
-            var maxBufferSamples = StreamSampleRate * StreamMaxBufferSeconds;
-
-            await foreach (var chunk in chunks.WithCancellation(ct))
+            if (chunk.SampleRate != StreamSampleRate)
             {
-                if (chunk.SampleRate != StreamSampleRate)
-                {
-                    throw new InvalidOperationException(
-                        $"Streaming expects {StreamSampleRate} Hz mono samples, got {chunk.SampleRate} Hz");
-                }
-
-                if (!_vad.ContainsSpeech(chunk))
-                {
-                    continue;
-                }
-
-                buffer.AddRange(chunk.Samples);
-                samplesSinceLastEmit += chunk.Samples.Length;
-
-                // Cap runaway sessions — after two minutes we keep the tail only.
-                if (buffer.Count > maxBufferSamples)
-                {
-                    var overflow = buffer.Count - maxBufferSamples;
-                    buffer.RemoveRange(0, overflow);
-                }
-
-                if (samplesSinceLastEmit >= windowSamples)
-                {
-                    samplesSinceLastEmit = 0;
-                    var snapshot = buffer.ToArray();
-                    var text = await TranscribeBufferAsync(whisperFactory, snapshot, language, initialPrompt, ct);
-                    if (!string.IsNullOrWhiteSpace(text))
-                    {
-                        yield return new PartialTranscript(
-                            Text: text,
-                            Timestamp: TimeSpan.FromSeconds((double)buffer.Count / StreamSampleRate));
-                    }
-                }
+                throw new InvalidOperationException(
+                    $"Streaming expects {StreamSampleRate} Hz mono samples, got {chunk.SampleRate} Hz");
             }
 
-            // Final flush when the upstream completes cleanly.
-            if (buffer.Count > 0)
+            if (!_vad.ContainsSpeech(chunk))
             {
-                var tail = buffer.ToArray();
-                var text = await TranscribeBufferAsync(whisperFactory, tail, language, initialPrompt, ct);
+                continue;
+            }
+
+            buffer.AddRange(chunk.Samples);
+            samplesSinceLastEmit += chunk.Samples.Length;
+
+            // Cap runaway sessions — after two minutes we keep the tail only.
+            if (buffer.Count > maxBufferSamples)
+            {
+                var overflow = buffer.Count - maxBufferSamples;
+                buffer.RemoveRange(0, overflow);
+            }
+
+            if (samplesSinceLastEmit >= windowSamples)
+            {
+                samplesSinceLastEmit = 0;
+                // Touch the cache so the sliding window does not elapse mid-stream.
+                _ = _cache.TryGetValue(CacheKey, out _);
+                var snapshot = buffer.ToArray();
+                var text = await TranscribeBufferAsync(whisperFactory, snapshot, language, initialPrompt, ct);
                 if (!string.IsNullOrWhiteSpace(text))
                 {
                     yield return new PartialTranscript(
@@ -162,10 +152,60 @@ public sealed class WhisperNetTranscriptionService
                 }
             }
         }
-        finally
+
+        // Final flush when the upstream completes cleanly.
+        if (buffer.Count > 0)
         {
-            await _factoryCache.ReleaseAsync();
+            var tail = buffer.ToArray();
+            var text = await TranscribeBufferAsync(whisperFactory, tail, language, initialPrompt, ct);
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                yield return new PartialTranscript(
+                    Text: text,
+                    Timestamp: TimeSpan.FromSeconds((double)buffer.Count / StreamSampleRate));
+            }
         }
+    }
+
+    private WhisperFactory GetOrCreateFactory()
+    {
+        // IDISP001/IDISP007 — the WhisperFactory lifetime is owned by the
+        // IMemoryCache, not the caller. The PostEvictionCallback disposes it
+        // when the sliding window elapses.
+#pragma warning disable IDISP001, IDISP007
+        var factory = _cache.GetOrCreate(CacheKey, entry =>
+        {
+            var unloadMinutes = Math.Max(0, _settings.DictationModelUnloadMinutes);
+            var sliding = unloadMinutes == 0
+                ? MinSlidingExpiration
+                : TimeSpan.FromMinutes(unloadMinutes);
+            entry.SlidingExpiration = sliding;
+            entry.RegisterPostEvictionCallback(DisposeOnEviction);
+
+            var modelPath = _settings.WhisperModelPath;
+            if (string.IsNullOrWhiteSpace(modelPath) || !File.Exists(modelPath))
+            {
+                throw new InvalidOperationException(
+                    $"Whisper model is not configured or missing on disk: '{modelPath}'. " +
+                    "Download it via the Models page in Settings.");
+            }
+            _logger.LogInformation("Loading Whisper model {Model}", Path.GetFileName(modelPath));
+            return WhisperFactory.FromPath(modelPath);
+        });
+#pragma warning restore IDISP001, IDISP007
+        return factory!;
+    }
+
+    private static void DisposeOnEviction(object key, object? value, EvictionReason reason, object? state)
+    {
+        // IDISP007 — the cached resource's lifetime IS the cache's; disposing
+        // it here IS the cache's eviction mechanism, not a foreign dispose.
+#pragma warning disable IDISP007
+        if (value is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
+#pragma warning restore IDISP007
     }
 
     private async Task<string> TranscribeBufferAsync(
