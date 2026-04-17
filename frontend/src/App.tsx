@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import { Layout } from "./components/Layout";
@@ -12,30 +12,41 @@ import SettingsPage from "./features/Settings";
 import Logs from "./features/Logs";
 import Backups from "./features/Backups";
 import Obsidian from "./features/Obsidian";
-import Onboarding, { ONBOARDING_COMPLETED_STORAGE_KEY } from "./features/Onboarding";
+import Onboarding from "./features/Onboarding";
 import DictationOverlay from "./features/DictationOverlay";
 import CommandPalette from "./features/CommandPalette";
 import { useGlobalHotkeys } from "./hooks/useGlobalHotkeys";
 import { ROUTES } from "./constants/routes";
-
-const hasCompletedOnboarding = (): boolean => {
-  try {
-    return window.localStorage.getItem(ONBOARDING_COMPLETED_STORAGE_KEY) === "1";
-  } catch {
-    return true; // if storage is broken, don't get stuck on the wizard
-  }
-};
+import { api } from "./api/MozgoslavApi";
 
 const OVERLAY_ROUTE = "/dictation-overlay";
+
+/** Tri-state — `null` means "still checking settings". */
+type OnboardingState = "done" | "pending" | null;
 
 const App: FC = () => {
   useGlobalHotkeys();
   const location = useLocation();
-  const isOverlay = location.pathname === OVERLAY_ROUTE;
+  const [onboarding, setOnboarding] = useState<OnboardingState>(null);
 
-  if (isOverlay) {
-    // The overlay window runs in its own BrowserWindow; it should NOT inherit
-    // the main-app Layout (sidebar, header) or the command palette.
+  // Settings-backed onboarding gate (ADR-006 D-15.d). Checked once on mount;
+  // the wizard writes onboardingComplete=true on Skip or Apply, and Settings
+  // exposes a "Run onboarding again" button that navigates to /onboarding
+  // without touching the flag — re-entry is route-driven, not state-driven.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const settings = await api.getSettings();
+        if (!cancelled) setOnboarding(settings.onboardingComplete ? "done" : "pending");
+      } catch {
+        if (!cancelled) setOnboarding("done");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (location.pathname === OVERLAY_ROUTE) {
     return (
       <Routes>
         <Route path={OVERLAY_ROUTE} element={<DictationOverlay />} />
@@ -43,13 +54,7 @@ const App: FC = () => {
     );
   }
 
-  // First-run gate: if the user has never finished (or skipped) the wizard and
-  // they land on the dashboard, redirect to /onboarding. Completion is tracked
-  // in localStorage so subsequent launches go straight to the dashboard.
-  if (
-    location.pathname === ROUTES.dashboard &&
-    !hasCompletedOnboarding()
-  ) {
+  if (onboarding === "pending" && location.pathname === ROUTES.dashboard) {
     return <Navigate to={ROUTES.onboarding} replace />;
   }
 

@@ -1,13 +1,15 @@
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { toast } from "react-toastify";
-import { FolderOpen, Play, ExternalLink, RefreshCw } from "lucide-react";
+import { FolderOpen, Play, ExternalLink, RefreshCw, RotateCcw } from "lucide-react";
 
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import Input from "../../components/Input";
 import { api, LmStudioDiscoveryResponse } from "../../api/MozgoslavApi";
+import { ROUTES } from "../../constants/routes";
 import { AppSettings, DEFAULT_SETTINGS } from "../../types/Settings";
 import { setThemeMode } from "../../styles/ThemeProvider";
 import {
@@ -32,6 +34,7 @@ type TabKey = "general" | "storage" | "llm" | "whisper" | "obsidian";
 
 const Settings: FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<TabKey>("general");
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [saving, setSaving] = useState(false);
@@ -341,6 +344,9 @@ const Settings: FC = () => {
       )}
 
       <Toolbar>
+        <Button variant="ghost" leftIcon={<RotateCcw size={14} />} onClick={() => navigate(ROUTES.onboarding)}>
+          {t("onboarding.runAgain")}
+        </Button>
         <Button variant="primary" isLoading={saving} onClick={save}>
           {t("common.save")}
         </Button>

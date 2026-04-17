@@ -197,7 +197,10 @@
   "onboarding": {
     "title": "Welcome to Mozgoslav",
     "subtitle": "Quick setup so your first call works out of the box.",
-    "step1": { "title": "Language", "hint": "Which language feels natural?" },
+    "step1": {
+      "title": "Welcome — everything stays on your Mac",
+      "hint": "Mozgoslav is a local second-brain. Nothing ever leaves the device — no telemetry, no remote logging, no auto-updates. Pick the interface language and move on."
+    },
     "step2": { "title": "Models", "hint": "Grab Whisper + VAD — one time, ~1.5 GB." },
     "step3": { "title": "Obsidian", "hint": "Pick your vault; we'll prepare folders." },
     "step4": { "title": "LLM", "hint": "Local LM Studio or Ollama endpoint." },
@@ -217,7 +220,12 @@
       "title": "Ready",
       "hint": "All set. Import your first conversation or dictate with mouse button 5."
     },
+    "syncthing": {
+      "title": "Sync across devices (optional)",
+      "hint": "Pair with your phone via Syncthing to carry notes everywhere. Scan the QR in Settings → Syncthing once we're done — it's completely local."
+    },
     "openSystemPreferences": "Open System Preferences",
+    "runAgain": "Run onboarding again",
     "skip": "Skip"
   },
   "hotkeys": {

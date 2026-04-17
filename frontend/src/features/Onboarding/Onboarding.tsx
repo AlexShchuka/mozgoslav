@@ -6,6 +6,7 @@ import { Check, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 
 import Button from "../../components/Button";
 import Card from "../../components/Card";
+import { api } from "../../api/MozgoslavApi";
 import { ROUTES } from "../../constants/routes";
 import {
   PageRoot,
@@ -25,42 +26,27 @@ type StepDefinition = {
   readonly systemPreferencesUrl?: string;
 };
 
-// Steps 1-4 mirror the original onboarding (language → models → obsidian → LLM).
-// Steps 5-7 gate the push-to-talk dictation feature behind the three macOS
-// permissions required by ADR-002 D5. Step 8 is the closing screen.
+// Order mirrors ADR-006 D-15.d: welcome+privacy → models → Obsidian → LLM →
+// Syncthing pairing hint → mic / AX / Input-Monitoring permissions → done.
 const STEPS: readonly StepDefinition[] = [
   { key: "step1" },
   { key: "step2" },
   { key: "step3" },
   { key: "step4" },
-  {
-    key: "step5",
-    systemPreferencesUrl:
-      "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone",
-  },
-  {
-    key: "step6",
-    systemPreferencesUrl:
-      "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
-  },
-  {
-    key: "step7",
-    systemPreferencesUrl:
-      "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent",
-  },
+  { key: "syncthing" },
+  { key: "step5", systemPreferencesUrl: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone" },
+  { key: "step6", systemPreferencesUrl: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility" },
+  { key: "step7", systemPreferencesUrl: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent" },
   { key: "step8" },
 ];
 
-const TOTAL_STEPS = STEPS.length;
-
-export const ONBOARDING_COMPLETED_STORAGE_KEY = "mozgoslav.onboardingCompleted";
-
-const markOnboardingComplete = (): void => {
+const markComplete = async (): Promise<void> => {
   try {
-    window.localStorage.setItem(ONBOARDING_COMPLETED_STORAGE_KEY, "1");
+    const current = await api.getSettings();
+    await api.saveSettings({ ...current, onboardingComplete: true });
   } catch {
-    // ignore storage failures — the wizard still functions, it just reappears
-    // on next launch (acceptable degradation)
+    // Settings endpoint unreachable — stay silent. App.tsx has a fallback
+    // check so the wizard doesn't re-trigger forever.
   }
 };
 
@@ -70,30 +56,22 @@ const Onboarding: FC = () => {
   const reduced = useReducedMotion();
   const [step, setStep] = useState(0);
 
-  const done = step >= TOTAL_STEPS - 1;
+  const done = step >= STEPS.length - 1;
   const current = STEPS[step]!;
-
   const stepKey = useMemo(() => `onboarding.${current.key}` as const, [current]);
 
-  const next = () => {
-    if (done) {
-      markOnboardingComplete();
-      navigate(ROUTES.dashboard, { replace: true });
-      return;
-    }
-    setStep((s) => Math.min(TOTAL_STEPS - 1, s + 1));
-  };
-
-  const back = () => setStep((s) => Math.max(0, s - 1));
-
-  const skip = () => {
-    markOnboardingComplete();
+  const finish = async () => {
+    await markComplete();
     navigate(ROUTES.dashboard, { replace: true });
   };
 
+  const next = () => {
+    if (done) { void finish(); return; }
+    setStep((s) => s + 1);
+  };
+
   const openSystemPreferences = () => {
-    if (!current.systemPreferencesUrl) return;
-    void window.open(current.systemPreferencesUrl, "_blank");
+    if (current.systemPreferencesUrl) window.open(current.systemPreferencesUrl, "_blank");
   };
 
   return (
@@ -129,29 +107,18 @@ const Onboarding: FC = () => {
       </Card>
 
       <StepDots>
-        {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-          <Dot key={i} $active={i <= step} />
-        ))}
+        {STEPS.map((s, i) => <Dot key={s.key} $active={i <= step} />)}
       </StepDots>
 
       <Toolbar>
-        <Button variant="ghost" onClick={skip}>
+        <Button variant="ghost" onClick={() => void finish()}>
           {t("onboarding.skip")}
         </Button>
         <ToolbarGroup>
-          <Button
-            variant="ghost"
-            leftIcon={<ChevronLeft size={16} />}
-            onClick={back}
-            disabled={step === 0}
-          >
+          <Button variant="ghost" leftIcon={<ChevronLeft size={16} />} onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
             {t("common.back")}
           </Button>
-          <Button
-            variant="primary"
-            rightIcon={done ? <Check size={16} /> : <ChevronRight size={16} />}
-            onClick={next}
-          >
+          <Button variant="primary" rightIcon={done ? <Check size={16} /> : <ChevronRight size={16} />} onClick={next}>
             {done ? t("common.apply") : t("common.next")}
           </Button>
         </ToolbarGroup>

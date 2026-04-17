@@ -94,7 +94,7 @@ export const SelectOption = styled.option`
 
 export const Toolbar = styled.div`
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: ${({ theme }) => theme.space(2)};
 `;
 
