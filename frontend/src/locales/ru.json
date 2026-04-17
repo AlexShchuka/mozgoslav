@@ -49,6 +49,10 @@
     "dropzoneHint": "Поддерживается mp3 / m4a / wav / mp4 / ogg / flac",
     "recordStart": "Записать",
     "recordStop": "Остановить",
+    "recordArming": "Готовлю микрофон…",
+    "recordStopping": "Останавливаю…",
+    "recordAriaIdle": "Начать диктовку",
+    "recordAriaRecording": "Остановить диктовку",
     "recordUnsupported": "Запись доступна только на macOS",
     "recentTitle": "Последние записи",
     "empty": "Записей пока нет — импортируй или запиши первую."

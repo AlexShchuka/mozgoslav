@@ -49,6 +49,10 @@
     "dropzoneHint": "Accepts mp3 / m4a / wav / mp4 / ogg / flac",
     "recordStart": "Record",
     "recordStop": "Stop",
+    "recordArming": "Arming mic…",
+    "recordStopping": "Stopping…",
+    "recordAriaIdle": "Start dictation",
+    "recordAriaRecording": "Stop dictation",
     "recordUnsupported": "Recording is macOS-only",
     "recentTitle": "Recent recordings",
     "empty": "No recordings yet — import or record your first one."
