@@ -15,6 +15,16 @@ jest.mock("../../../api/MozgoslavApi", () => ({
   },
 }));
 
+jest.mock("react-toastify", () => ({
+  toast: {
+    error: jest.fn(),
+    success: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+  },
+  ToastContainer: () => null,
+}));
+
 // ------------------------------------------------------------------ mocks ---
 // The Queue component opens a long-lived `EventSource` for `/api/jobs/stream`.
 // We stub it here so tests can capture the instance and emit SSE `job` frames
@@ -166,6 +176,43 @@ describe("Queue — cancel UI (BC-015 / Bug 19)", () => {
     });
 
     unmount();
+  });
+});
+
+describe("Queue — ADR-015 cancelled terminal state", () => {
+  it("Queue_RendersCancelledStatusBadge_WithNeutralTone_AndNoCancelButton", async () => {
+    const job = buildJob({
+      id: "job-cancelled-001",
+      status: "Cancelled",
+      finishedAt: new Date("2026-04-18T09:00:00Z").toISOString(),
+    });
+    (api.listJobs as jest.Mock).mockResolvedValue([job]);
+
+    renderQueue();
+
+    // Badge label shows the localized Cancelled string (ru or en fallback).
+    await waitFor(() =>
+      expect(screen.getAllByText(/Отменено|Cancelled/).length).toBeGreaterThan(0),
+    );
+    // Cancel button is hidden for terminal jobs.
+    expect(screen.queryByTestId(`queue-cancel-${job.id}`)).not.toBeInTheDocument();
+  });
+
+  it("Queue_CancelOnSuccess_DoesNotShowToastError", async () => {
+    const job = buildJob({ id: "job-cancel-ok-001", status: "Queued" });
+    (api.listJobs as jest.Mock).mockResolvedValue([job]);
+    (api.cancelQueueJob as jest.Mock).mockResolvedValue(undefined);
+
+    const { toast } = jest.requireMock("react-toastify") as {
+      toast: { error: jest.Mock };
+    };
+
+    renderQueue();
+    const cancelBtn = await screen.findByTestId(`queue-cancel-${job.id}`);
+    await userEvent.click(cancelBtn);
+
+    await waitFor(() => expect(api.cancelQueueJob).toHaveBeenCalledWith(job.id));
+    expect(toast.error).not.toHaveBeenCalled();
   });
 });
 

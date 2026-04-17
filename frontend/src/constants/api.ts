@@ -22,7 +22,9 @@ export const API_ENDPOINTS = {
   jobsActive: "/api/jobs/active",
   jobsStream: "/api/jobs/stream",
   enqueueJob: "/api/jobs",
-  queueCancel: (id: string) => `/api/queue/${id}`,
+  // ADR-015 — POST /api/jobs/{id}/cancel. Happy-path returns:
+  // 204 (Queued), 202 (Active), 409 (terminal), 404 (unknown).
+  queueCancel: (id: string) => `/api/jobs/${id}/cancel`,
 
   // --- notes ---
   notes: "/api/notes",

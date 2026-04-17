@@ -11,7 +11,7 @@ export const PageTitle = styled.h1`
   margin: 0;
   font-size: ${({ theme }) => theme.font.size.xxl};
   font-weight: ${({ theme }) => theme.font.weight.semibold};
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const JobHeader = styled.div`
@@ -24,7 +24,7 @@ export const JobHeader = styled.div`
 
 export const JobMeta = styled.div`
   font-size: ${({ theme }) => theme.font.size.xs};
-  color: ${({ theme }) => theme.colors.textSubtle};
+  color: ${({ theme }) => theme.colors.text.muted};
   margin-top: ${({ theme }) => theme.space(1)};
 `;
 
@@ -39,5 +39,5 @@ export const JobRow = styled.div`
 export const ResumeCopy = styled.div`
   margin-top: ${({ theme }) => theme.space(1)};
   font-size: ${({ theme }) => theme.font.size.xs};
-  color: ${({ theme }) => theme.colors.accent};
+  color: ${({ theme }) => theme.colors.accent.primary};
 `;

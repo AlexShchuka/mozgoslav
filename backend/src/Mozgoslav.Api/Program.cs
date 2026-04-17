@@ -109,6 +109,9 @@ try
     builder.Services.AddScoped<ImportRecordingUseCase>();
     builder.Services.AddScoped<ReprocessUseCase>();
     builder.Services.AddScoped<ProcessQueueWorker>();
+    // ADR-015 — singleton so the cancel endpoint and the queue worker share
+    // the same map of active per-job cancellation token sources.
+    builder.Services.AddSingleton<IJobCancellationRegistry, JobCancellationRegistry>();
 
     // --- Infrastructure services ---
     builder.Services.AddHttpClient();

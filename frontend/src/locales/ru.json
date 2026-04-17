@@ -83,7 +83,8 @@
       "Summarizing": "LLM-суммаризация",
       "Exporting": "Экспорт",
       "Done": "Готово",
-      "Failed": "Ошибка"
+      "Failed": "Ошибка",
+      "Cancelled": "Отменено"
     }
   },
   "notes": {
@@ -233,6 +234,7 @@
     "title": "Модели",
     "subtitle": "Скачай то, что нужно для работы — всё хранится локально.",
     "installed": "Установлена",
+    "installedButton": "Установлено",
     "notInstalled": "Не скачана",
     "download": "Скачать",
     "sizeMb": "{{size}} МБ"

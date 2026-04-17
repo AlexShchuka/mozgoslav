@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 using FluentAssertions;
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -185,19 +187,83 @@ public sealed class ProcessQueueWorkerTests
     }
 
     [TestMethod]
-    public async Task ProcessNextAsync_CancellationPropagates()
+    public async Task ProcessNextAsync_WhenHostStopping_RethrowsCancellation()
     {
+        // ADR-015 — host-stopping OCE (stoppingToken is cancelled) must still
+        // propagate upward so the background service can exit its loop cleanly.
+        // The in-flight job does NOT transition to Cancelled in this path.
         var fixture = new Fixture();
-        fixture.EnqueueJob();
+        var job = fixture.EnqueueJob();
         fixture.ArrangeHappyPipeline();
+        using var hostStopping = new CancellationTokenSource();
+        await hostStopping.CancelAsync();
+
         fixture.Transcription
             .TranscribeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>(),
                 Arg.Any<IProgress<int>?>(), Arg.Any<CancellationToken>())
-            .Returns<IReadOnlyList<TranscriptSegment>>(_ => throw new OperationCanceledException());
+            .Returns<IReadOnlyList<TranscriptSegment>>(_ => throw new OperationCanceledException(hostStopping.Token));
 
-        var act = async () => await fixture.Worker.ProcessNextAsync(CancellationToken.None);
+        var act = async () => await fixture.Worker.ProcessNextAsync(hostStopping.Token);
 
         await act.Should().ThrowAsync<OperationCanceledException>();
+        job.Status.Should().NotBe(JobStatus.Cancelled);
+    }
+
+    [TestMethod]
+    public async Task ProcessNextAsync_WhenCancelRequestedBeforeTranscribe_MarksCancelled()
+    {
+        // ADR-015 — cancel requested on a Queued job. Worker picks it up, sees
+        // CancelRequested=true at the top of ProcessJobAsync and exits
+        // immediately without running any pipeline stage.
+        var fixture = new Fixture();
+        var job = fixture.EnqueueJob();
+        job.CancelRequested = true;
+        fixture.ArrangeHappyPipeline();
+
+        var result = await fixture.Worker.ProcessNextAsync(CancellationToken.None);
+
+        result.Should().BeTrue();
+        job.Status.Should().Be(JobStatus.Cancelled);
+        job.FinishedAt.Should().NotBeNull();
+        await fixture.Transcription.DidNotReceiveWithAnyArgs().TranscribeAsync(
+            default!, default!, default, default, default);
+        await fixture.ProgressNotifier.Received().PublishAsync(
+            Arg.Is<ProcessingJob>(j => j.Status == JobStatus.Cancelled), Arg.Any<CancellationToken>());
+    }
+
+    [TestMethod]
+    public async Task ProcessNextAsync_WhenTokenCancelledDuringTranscribe_MarksCancelled()
+    {
+        // ADR-015 — cooperative cancel during a pipeline stage. The per-job CT
+        // in the registry is triggered (NOT the host-stopping token). Worker
+        // catches OCE via `when (!stoppingToken.IsCancellationRequested)` and
+        // marks Cancelled instead of Failed.
+        var fixture = new Fixture();
+        var job = fixture.EnqueueJob();
+        fixture.ArrangeHappyPipeline();
+
+        // Simulate the cancel endpoint flipping the registry for this job right
+        // before the worker reaches Transcribe. Registry is singleton-scoped
+        // in the fixture so the act of registering the job inside the worker
+        // will return a CTS that is about to be cancelled here.
+        fixture.CancellationRegistry.PreCancelOnRegister(job.Id);
+
+        fixture.Transcription
+            .TranscribeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>(),
+                Arg.Any<IProgress<int>?>(), Arg.Any<CancellationToken>())
+            .Returns<IReadOnlyList<TranscriptSegment>>(ci =>
+            {
+                var token = (CancellationToken)ci[4]!;
+                token.ThrowIfCancellationRequested();
+                throw new InvalidOperationException("perJobToken should have been cancelled");
+            });
+
+        var result = await fixture.Worker.ProcessNextAsync(CancellationToken.None);
+
+        result.Should().BeTrue();
+        job.Status.Should().Be(JobStatus.Cancelled);
+        job.FinishedAt.Should().NotBeNull();
+        job.ErrorMessage.Should().BeNull();
     }
 
     private sealed class Fixture
@@ -213,6 +279,7 @@ public sealed class ProcessQueueWorkerTests
         public IMarkdownExporter Exporter { get; } = Substitute.For<IMarkdownExporter>();
         public IAppSettings Settings { get; } = Substitute.For<IAppSettings>();
         public IJobProgressNotifier ProgressNotifier { get; } = Substitute.For<IJobProgressNotifier>();
+        public TestJobCancellationRegistry CancellationRegistry { get; } = new();
 
         public string VaultPath { get; init; } = "/tmp/vault";
 
@@ -226,6 +293,7 @@ public sealed class ProcessQueueWorkerTests
                 new GlossaryApplicator(),
                 NullLogger<LlmCorrectionService>.Instance),
             Settings, ProgressNotifier,
+            CancellationRegistry,
             NullLogger<ProcessQueueWorker>.Instance);
 
         public ProcessingJob EnqueueJob()
@@ -295,6 +363,48 @@ public sealed class ProcessQueueWorkerTests
                     Arg.Any<ProcessedNote>(), Arg.Any<Profile>(),
                     Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns("/tmp/vault/test.md");
+        }
+    }
+
+    /// <summary>
+    /// In-test implementation of <see cref="IJobCancellationRegistry"/> that
+    /// supports pre-cancelling a registered CTS. Mirrors the production
+    /// <c>JobCancellationRegistry</c> shape without the full static wiring.
+    /// </summary>
+    private sealed class TestJobCancellationRegistry : IJobCancellationRegistry
+    {
+        private readonly ConcurrentDictionary<Guid, CancellationTokenSource> _map = new();
+        private readonly HashSet<Guid> _preCancel = [];
+
+        public void PreCancelOnRegister(Guid jobId) => _preCancel.Add(jobId);
+
+        public CancellationTokenSource Register(Guid jobId, CancellationToken hostToken)
+        {
+            var linked = CancellationTokenSource.CreateLinkedTokenSource(hostToken);
+            _map[jobId] = linked;
+            if (_preCancel.Remove(jobId))
+            {
+                linked.Cancel();
+            }
+            return linked;
+        }
+
+        public void Unregister(Guid jobId)
+        {
+            if (_map.TryRemove(jobId, out var cts))
+            {
+                cts.Dispose();
+            }
+        }
+
+        public bool TryCancel(Guid jobId)
+        {
+            if (!_map.TryGetValue(jobId, out var cts))
+            {
+                return false;
+            }
+            cts.Cancel();
+            return true;
         }
     }
 }

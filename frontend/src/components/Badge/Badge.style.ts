@@ -4,12 +4,12 @@ export type BadgeTone = "neutral" | "accent" | "success" | "warning" | "error" |
 
 const tones = {
   neutral: css`
-    color: ${({ theme }) => theme.colors.textMuted};
-    background: ${({ theme }) => theme.colors.border};
+    color: ${({ theme }) => theme.colors.text.secondary};
+    background: ${({ theme }) => theme.colors.border.subtle};
   `,
   accent: css`
-    color: ${({ theme }) => theme.colors.accent};
-    background: ${({ theme }) => theme.colors.accentSoft};
+    color: ${({ theme }) => theme.colors.accent.primary};
+    background: ${({ theme }) => theme.colors.accent.soft};
   `,
   success: css`
     color: ${({ theme }) => theme.colors.success};

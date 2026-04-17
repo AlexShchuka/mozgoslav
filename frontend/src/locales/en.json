@@ -83,7 +83,8 @@
       "Summarizing": "Summarizing",
       "Exporting": "Exporting",
       "Done": "Done",
-      "Failed": "Failed"
+      "Failed": "Failed",
+      "Cancelled": "Cancelled"
     }
   },
   "notes": {
@@ -233,6 +234,7 @@
     "title": "Models",
     "subtitle": "Download what you need — everything stays local.",
     "installed": "Installed",
+    "installedButton": "Installed",
     "notInstalled": "Not downloaded",
     "download": "Download",
     "sizeMb": "{{size}} MB"

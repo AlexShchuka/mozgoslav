@@ -30,6 +30,10 @@ public sealed class EfProcessingJobRepository : IProcessingJobRepository
             .OrderBy(j => j.CreatedAt)
             .FirstOrDefaultAsync(ct);
 
+    public Task<ProcessingJob?> GetByIdAsync(Guid id, CancellationToken ct) =>
+        _db.ProcessingJobs.AsNoTracking()
+            .FirstOrDefaultAsync(j => j.Id == id, ct);
+
     public async Task UpdateAsync(ProcessingJob job, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(job);
@@ -50,7 +54,9 @@ public sealed class EfProcessingJobRepository : IProcessingJobRepository
 
     public async Task<IReadOnlyList<ProcessingJob>> GetActiveAsync(CancellationToken ct) =>
         await _db.ProcessingJobs.AsNoTracking()
-            .Where(j => j.Status != JobStatus.Done && j.Status != JobStatus.Failed)
+            .Where(j => j.Status != JobStatus.Done
+                && j.Status != JobStatus.Failed
+                && j.Status != JobStatus.Cancelled)
             .OrderByDescending(j => j.CreatedAt)
             .ToListAsync(ct);
 
@@ -59,4 +65,16 @@ public sealed class EfProcessingJobRepository : IProcessingJobRepository
             .Where(j => j.Status == status)
             .OrderBy(j => j.CreatedAt)
             .ToListAsync(ct);
+
+    public async Task<bool> SetCancelRequestedAsync(Guid id, CancellationToken ct)
+    {
+        var existing = await _db.ProcessingJobs.FirstOrDefaultAsync(j => j.Id == id, ct);
+        if (existing is null)
+        {
+            return false;
+        }
+        existing.CancelRequested = true;
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
 }

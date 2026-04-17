@@ -21,7 +21,7 @@ export const QrFrame = styled.div`
   padding: ${({ theme }) => theme.space(3)};
   background: #ffffff;
   border-radius: ${({ theme }) => theme.radii.md};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   line-height: 0;
 `;
 
@@ -35,8 +35,8 @@ export const QrMeta = styled.div`
 export const DeviceId = styled.code`
   display: inline-block;
   padding: ${({ theme }) => `${theme.space(1)} ${theme.space(2)}`};
-  background: ${({ theme }) => theme.colors.surface};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   border-radius: ${({ theme }) => theme.radii.sm};
   font-size: ${({ theme }) => theme.font.size.sm};
   word-break: break-all;
@@ -63,7 +63,7 @@ export const StatusRow = styled.div`
   align-items: baseline;
   gap: ${({ theme }) => theme.space(2)};
   padding: ${({ theme }) => theme.space(1)} 0;
-  border-bottom: 1px dashed ${({ theme }) => theme.colors.border};
+  border-bottom: 1px dashed ${({ theme }) => theme.colors.border.subtle};
   font-size: ${({ theme }) => theme.font.size.sm};
 
   &:last-child {
@@ -77,7 +77,7 @@ export const PendingItem = styled.div`
   align-items: center;
   gap: ${({ theme }) => theme.space(2)};
   padding: ${({ theme }) => theme.space(2)} 0;
-  border-bottom: 1px dashed ${({ theme }) => theme.colors.border};
+  border-bottom: 1px dashed ${({ theme }) => theme.colors.border.subtle};
 
   &:last-child {
     border-bottom: 0;
@@ -86,7 +86,7 @@ export const PendingItem = styled.div`
 
 export const ErrorBanner = styled.div`
   padding: ${({ theme }) => `${theme.space(2)} ${theme.space(3)}`};
-  background: ${({ theme }) => theme.colors.surface};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
   color: ${({ theme }) => theme.colors.error};
   border: 1px solid ${({ theme }) => theme.colors.error};
   border-radius: ${({ theme }) => theme.radii.sm};
