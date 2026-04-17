@@ -232,8 +232,8 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     private static class Keys
     {
         public const string VaultPath = "vault_path";
-        // TODO-3 / Migration 0012 — active LLM provider discriminator.
-        public const string LlmProvider = Persistence.Migrations.Migration0012LlmProvider.LlmProviderKey;
+        // Active LLM provider discriminator (openai_compatible / anthropic / ollama).
+        public const string LlmProvider = "llm_provider";
         public const string LlmEndpoint = "llm_endpoint";
         public const string LlmModel = "llm_model";
         public const string LlmApiKey = "llm_api_key";
@@ -262,8 +262,8 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         public const string DictationAppProfiles = "dictation_app_profiles";
         public const string SyncthingEnabled = "syncthing_enabled";
         public const string SyncthingObsidianVaultPath = "syncthing_obsidian_vault_path";
-        // ADR-007-shared §2.8 / Migration 0010.
-        public const string SyncthingApiKey = Persistence.Migrations.Migration0010SyncthingSettings.SyncthingApiKeyKey;
-        public const string SyncthingBaseUrl = Persistence.Migrations.Migration0010SyncthingSettings.SyncthingBaseUrlKey;
+        // ADR-007-shared §2.8 — Syncthing REST resume state.
+        public const string SyncthingApiKey = "syncthing_api_key";
+        public const string SyncthingBaseUrl = "syncthing_base_url";
     }
 }
