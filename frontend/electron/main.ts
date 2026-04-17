@@ -1,6 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, session, shell } from "electron";
 import path from "node:path";
-import { promises as fs } from "node:fs";
+import { existsSync, promises as fs } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { DictationOrchestrator } from "./dictation/DictationOrchestrator";
@@ -17,6 +17,60 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 const BACKEND_ORIGIN = "http://localhost:5050";
+
+const resolveDictationHelperPath = (): string => {
+    if (process.env.MOZGOSLAV_DICTATION_HELPER_BIN) {
+        return process.env.MOZGOSLAV_DICTATION_HELPER_BIN;
+    }
+
+    if (app.isPackaged) {
+        return path.join(process.resourcesPath, "mozgoslav-dictation-helper");
+    }
+
+    const candidates = [
+        path.resolve(
+            __dirname,
+            "..",
+            "..",
+            "helpers",
+            "MozgoslavDictationHelper",
+            ".build",
+            "release",
+            "mozgoslav-dictation-helper",
+        ),
+        path.resolve(
+            __dirname,
+            "..",
+            "..",
+            "helpers",
+            "MozgoslavDictationHelper",
+            ".build",
+            "arm64-apple-macosx",
+            "release",
+            "mozgoslav-dictation-helper",
+        ),
+        path.resolve(
+            __dirname,
+            "..",
+            "..",
+            "helpers",
+            "MozgoslavDictationHelper",
+            ".build",
+            "x86_64-apple-macosx",
+            "release",
+            "mozgoslav-dictation-helper",
+        ),
+    ];
+
+    const found = candidates.find((candidate) => existsSync(candidate));
+    if (!found) {
+        throw new Error(
+            `[recording:bridge] mozgoslav-dictation-helper not found. Tried:\n${candidates.join("\n")}`,
+        );
+    }
+
+    return found;
+};
 
 let mainWindow: BrowserWindow | null = null;
 let dictationOrchestrator: DictationOrchestrator | null = null;
@@ -119,10 +173,7 @@ app.whenReady().then(async () => {
   const recorderEnv: Record<string, string> = {};
   if (process.platform === "darwin") {
     try {
-      const helperBinaryPath = path.join(
-        process.resourcesPath ?? path.join(__dirname, ".."),
-        "mozgoslav-dictation-helper",
-      );
+        const helperBinaryPath = resolveDictationHelperPath();
       recordingHelper = new NativeHelperClient(helperBinaryPath);
       recordingHelper.start();
       recordingBridge = new RecordingBridge(recordingHelper);
@@ -242,30 +293,26 @@ app.whenReady().then(async () => {
 });
 
 const initializeDictation = async (): Promise<void> => {
-  try {
-    const helperBinaryPath = path.join(
-      process.resourcesPath ?? path.join(__dirname, ".."),
-      "mozgoslav-dictation-helper"
-    );
-    dictationOrchestrator = new DictationOrchestrator({
-      helperBinaryPath,
-      mouseButton: 5,
-      keyboardFallbackKeycode: null,
-      sampleRate: 48_000,
-      injectMode: "auto",
-      overlayEnabled: true,
-    });
-    await dictationOrchestrator.initialize(() => {
-      dictationOrchestrator?.destroy();
-      dictationOrchestrator = null;
-      app.quit();
-    });
-  } catch (error) {
-    console.error("[dictation] initialization failed:", error);
-    dictationOrchestrator = null;
-  }
+    try {
+        const helperBinaryPath = resolveDictationHelperPath();
+        dictationOrchestrator = new DictationOrchestrator({
+            helperBinaryPath,
+            mouseButton: 5,
+            keyboardFallbackKeycode: null,
+            sampleRate: 48_000,
+            injectMode: "auto",
+            overlayEnabled: true,
+        });
+        await dictationOrchestrator.initialize(() => {
+            dictationOrchestrator?.destroy();
+            dictationOrchestrator = null;
+            app.quit();
+        });
+    } catch (error) {
+        console.error("[dictation] initialization failed:", error);
+        dictationOrchestrator = null;
+    }
 };
-
 // BC-050 helper — depth-first walk for `.sync-conflict-*` filenames. Stays
 // inside the electron main process to avoid exposing fs access to the
 // renderer. Cap depth to avoid runaway walks on very deep vaults.
