@@ -1,18 +1,20 @@
 import { FC, useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useTranslation } from "react-i18next";
-import { FileAudio, Mic, Upload } from "lucide-react";
+import { FileAudio, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
 import Badge from "../../components/Badge";
+import BrainLauncher from "../../components/BrainLauncher";
 import { api } from "../../api/MozgoslavApi";
 import { Recording } from "../../models/Recording";
 import { formatDuration } from "../../core/utils/format";
 import {
   DashboardRoot,
+  DictationHint,
   DropzoneRoot,
   DropzoneCopy,
   DropzoneIcon,
@@ -25,10 +27,14 @@ import {
   SectionTitle,
 } from "./Dashboard.style";
 
+type DictationState = "idle" | "arming" | "recording" | "stopping";
+
 const Dashboard: FC = () => {
   const { t } = useTranslation();
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [dictationState, setDictationState] = useState<DictationState>("idle");
+  const [dictationSessionId, setDictationSessionId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -67,6 +73,44 @@ const Dashboard: FC = () => {
     },
     noClick: false,
   });
+
+  const startDictation = useCallback(async () => {
+    if (dictationState !== "idle") return;
+    setDictationState("arming");
+    try {
+      const { sessionId } = await api.startDictation();
+      setDictationSessionId(sessionId);
+      setDictationState("recording");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+      setDictationSessionId(null);
+      setDictationState("idle");
+    }
+  }, [dictationState]);
+
+  const stopDictation = useCallback(async () => {
+    if (dictationState !== "recording" || !dictationSessionId) return;
+    setDictationState("stopping");
+    try {
+      await api.stopDictation(dictationSessionId);
+      await refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDictationSessionId(null);
+      setDictationState("idle");
+    }
+  }, [dictationState, dictationSessionId, refresh]);
+
+  const toggleDictation = useCallback(() => {
+    if (dictationState === "recording") {
+      void stopDictation();
+      return;
+    }
+    if (dictationState === "idle") {
+      void startDictation();
+    }
+  }, [dictationState, startDictation, stopDictation]);
 
   const pickViaDialog = async () => {
     if (typeof window === "undefined" || !window.mozgoslav) {
@@ -112,9 +156,23 @@ const Dashboard: FC = () => {
           >
             {t("common.add")}
           </Button>
-          <Button variant="ghost" leftIcon={<Mic size={16} />} disabled>
-            {t("dashboard.recordStart")} — {t("dashboard.recordUnsupported")}
-          </Button>
+          <BrainLauncher
+            size="dock"
+            state={dictationState === "recording" || dictationState === "stopping" ? "recording" : "idle"}
+            disabled={dictationState === "arming" || dictationState === "stopping"}
+            ariaLabel={
+              dictationState === "recording"
+                ? t("dashboard.recordAriaRecording")
+                : t("dashboard.recordAriaIdle")
+            }
+            onClick={toggleDictation}
+          />
+          <DictationHint>
+            {dictationState === "arming" && t("dashboard.recordArming")}
+            {dictationState === "recording" && t("dashboard.recordStop")}
+            {dictationState === "stopping" && t("dashboard.recordStopping")}
+            {dictationState === "idle" && t("dashboard.recordStart")}
+          </DictationHint>
         </Row>
       </Card>
 

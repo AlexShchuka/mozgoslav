@@ -55,8 +55,14 @@ export const DropzoneHint = styled.span`
 
 export const Row = styled.div`
   display: flex;
-  gap: ${({ theme }) => theme.space(2)};
+  align-items: center;
+  gap: ${({ theme }) => theme.space(3)};
   margin-top: ${({ theme }) => theme.space(4)};
+`;
+
+export const DictationHint = styled.span`
+  font-size: ${({ theme }) => theme.font.size.sm};
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 export const SectionTitle = styled.h2`
