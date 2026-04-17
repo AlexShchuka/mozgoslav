@@ -177,18 +177,29 @@ try
         builder.Services.AddHttpClient(SidecarClientName, client =>
         {
             client.BaseAddress = new Uri(sidecarBaseUrl);
-            client.Timeout = TimeSpan.FromSeconds(30);
+            client.Timeout = TimeSpan.FromSeconds(120);
         });
         builder.Services.AddSingleton<IEmbeddingService>(sp =>
             new PythonSidecarEmbeddingService(
                 sp.GetRequiredService<IHttpClientFactory>().CreateClient(SidecarClientName),
                 sp.GetRequiredService<BagOfWordsEmbeddingService>(),
                 sp.GetRequiredService<ILogger<PythonSidecarEmbeddingService>>()));
+        // The same sidecar also serves diarize/ner/gender/emotion. One
+        // typed client per endpoint would be overkill — we reuse the
+        // named HttpClient and register IPythonSidecarClient against it.
+        builder.Services.AddSingleton<IPythonSidecarClient>(sp =>
+            new PythonSidecarClient(
+                sp.GetRequiredService<IHttpClientFactory>().CreateClient(SidecarClientName),
+                sp.GetRequiredService<ILogger<PythonSidecarClient>>()));
     }
     else
     {
         builder.Services.AddSingleton<IEmbeddingService>(sp =>
             sp.GetRequiredService<BagOfWordsEmbeddingService>());
+        // No sidecar configured — IPythonSidecarClient stays unregistered.
+        // Callers that need it must opt-in via config; the queue worker
+        // and dictation polish pipelines currently do not depend on it
+        // so the missing registration is a no-op.
     }
     // Default: in-memory index. Flip ``Mozgoslav:Rag:Persist=true`` to use
     // the SQLite-backed store so the vector index survives restarts. The

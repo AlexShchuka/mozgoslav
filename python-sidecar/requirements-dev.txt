@@ -1,12 +1,40 @@
-# Lightweight dependencies for local scaffold verification.
-# Enough to import the app, run uvicorn, and exercise the test suite
-# without pulling the full ML stack.
+# Dependencies for local verification and CI.
+#
+# The split between this file and ``requirements.txt`` is:
+#
+# * ``requirements.txt`` — everything a production sidecar needs,
+#   including the big ``transformers`` install used by the audeering
+#   Tier-2 endpoints (gender/emotion).
+# * this file — the same set minus ``transformers``/``sentence-transformers``
+#   so CI stays under three minutes. Tier-2 endpoints are exercised via
+#   the ``ModelNotAvailableError`` path in unit tests; model loading is
+#   covered by the C# integration test against the running sidecar.
 
+# --- Web framework ---
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
 pydantic>=2.0
 pydantic-settings>=2.0
-pytest>=8.0
 httpx>=0.27
+python-multipart>=0.0.18
+
+# --- ML runtime (needed by Tier-1 diarize + ner) ---
+# Plain ``torch`` CPU is fine — the diarize test uses a fake embedder
+# so no actual inference runs in CI.
+torch>=2.6.0
+torchaudio>=2.6.0
+numpy>=2.2.0
+librosa>=0.10.2
+soundfile>=0.13.0
+
+# --- Tier-1 services (always-available) ---
+silero-vad>=5.1.2
+resemblyzer>=0.1.4
+webrtcvad-wheels>=2.0.14
+scikit-learn>=1.6.1
+natasha>=1.6.0
+
+# --- Dev / test tooling ---
+pytest>=8.0
 ruff>=0.5
 black>=24.0

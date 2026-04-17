@@ -1,8 +1,9 @@
 # Production dependencies for the Mozgoslav Python ML sidecar.
-# Versions mirror docs/original-idea/DEFAULT-CONFIG.md §4.
-# These are declared for packaging/production but NOT installed in the
-# local sandbox: the ML stack (torch, transformers, ...) weighs ~4 GB.
-# For local development, install requirements-dev.txt instead.
+# The full stack (torch + transformers + librosa + …) weighs ~4 GB
+# resolved; installing it happens at DMG build time on macOS and at
+# first sidecar start on Linux dev boxes. The CI Dockerfile
+# (``Dockerfile.test``) installs this file minus ``transformers``
+# (audeering gender/emotion — Tier 2, not in CI).
 
 # --- Web framework ---
 fastapi>=0.115.0
@@ -19,8 +20,14 @@ librosa>=0.10.2
 numpy>=2.2.0
 
 # --- Diarization stack ---
+# ``webrtcvad-wheels`` ships precompiled wheels for the resemblyzer's
+# mandatory ``webrtcvad`` dependency — the original ``webrtcvad``
+# package fails to build on Python 3.12 without a pre-installed C
+# toolchain. The wheels package exposes the same ``webrtcvad`` import
+# name, so no code change is needed.
 silero-vad>=5.1.2
 resemblyzer>=0.1.4
+webrtcvad-wheels>=2.0.14
 scikit-learn>=1.6.1
 
 # --- NER ---

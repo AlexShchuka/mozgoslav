@@ -11,12 +11,32 @@ Run with::
 """
 from __future__ import annotations
 
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import Settings, get_settings
+from app.ml.loader import get_model_paths
 from app.models.common import HealthResponse
 from app.routers import cleanup, diarize, embed, emotion, gender, ner
+
+
+_logger = logging.getLogger("mozgoslav.sidecar")
+
+
+@asynccontextmanager
+async def _lifespan(_app: FastAPI):
+    """FastAPI lifespan — logs model availability on startup.
+
+    Modern replacement for ``@app.on_event("startup")`` which is
+    deprecated in FastAPI 0.112+. Tests can patch
+    ``_log_model_availability`` if they need to suppress the noise.
+    """
+
+    _log_model_availability()
+    yield
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -30,9 +50,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         description=(
             "Local ML sidecar for the Mozgoslav desktop app. "
             "Endpoints cover diarization, gender, emotion, NER and "
-            "filler cleanup. All heavy ML endpoints are V3 stubs in this "
-            "scaffold; only /api/cleanup is production-ready."
+            "filler cleanup. Tier-1 services (diarize + ner) always "
+            "respond 200; Tier-2 services (gender + emotion) return "
+            "503 with a download URL until the user installs the "
+            "weights via Settings → Models."
         ),
+        lifespan=_lifespan,
     )
 
     app.add_middleware(
@@ -55,6 +78,29 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(embed.router)
 
     return app
+
+
+def _log_model_availability() -> None:
+    """Emit an info-level audit of which ML models are installed.
+
+    The user sees this the first time the sidecar boots. When a Tier-2
+    model is missing, the startup line points at the download URL
+    verbatim so there is no searching for links later.
+    """
+
+    paths = get_model_paths()
+    _logger.info("Sidecar models directory: %s", paths.root)
+    _logger.info(
+        "Tier 1 / Silero VAD override present: %s", paths.silero_vad() is not None
+    )
+    _logger.info(
+        "Tier 2 / audeering age-gender installed: %s",
+        paths.audeering_gender() is not None,
+    )
+    _logger.info(
+        "Tier 2 / audeering emotion installed: %s",
+        paths.audeering_emotion() is not None,
+    )
 
 
 app = create_app()
