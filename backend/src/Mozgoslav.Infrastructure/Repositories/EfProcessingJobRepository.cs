@@ -52,4 +52,13 @@ public sealed class EfProcessingJobRepository : IProcessingJobRepository
             .Where(j => j.Status != JobStatus.Done && j.Status != JobStatus.Failed)
             .OrderByDescending(j => j.CreatedAt)
             .ToListAsync(ct);
+
+    public async Task<bool> CancelQueuedAsync(Guid id, CancellationToken ct)
+    {
+        var job = await _db.ProcessingJobs.FirstOrDefaultAsync(j => j.Id == id, ct);
+        if (job is null || job.Status != JobStatus.Queued) return false;
+        _db.ProcessingJobs.Remove(job);
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
 }

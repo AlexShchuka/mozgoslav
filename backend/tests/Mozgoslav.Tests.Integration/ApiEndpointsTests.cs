@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 
 using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.Enums;
@@ -190,6 +191,50 @@ public sealed class ApiEndpointsTests
 
         var jobs = await response.Content.ReadFromJsonAsync<List<ProcessingJob>>(Json, TestContext.CancellationToken);
         jobs.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task Queue_Delete_QueuedJob_ReturnsNoContentAndRemoves()
+    {
+        await using var factory = new ApiFactory();
+        using var client = factory.CreateClient();
+
+        using var scope = factory.Services.CreateScope();
+        var repo = scope.ServiceProvider.GetRequiredService<Mozgoslav.Application.Interfaces.IProcessingJobRepository>();
+        var job = new ProcessingJob
+        {
+            RecordingId = Guid.NewGuid(),
+            ProfileId = Guid.NewGuid(),
+            Status = JobStatus.Queued
+        };
+        await repo.EnqueueAsync(job, TestContext.CancellationToken);
+
+        using var response = await client.DeleteAsync($"/api/queue/{job.Id}", TestContext.CancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        using var listResponse = await client.GetAsync("/api/jobs", TestContext.CancellationToken);
+        var remaining = await listResponse.Content.ReadFromJsonAsync<List<ProcessingJob>>(Json, TestContext.CancellationToken);
+        remaining.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task Queue_Delete_InFlightJob_ReturnsConflict()
+    {
+        await using var factory = new ApiFactory();
+        using var client = factory.CreateClient();
+
+        using var scope = factory.Services.CreateScope();
+        var repo = scope.ServiceProvider.GetRequiredService<Mozgoslav.Application.Interfaces.IProcessingJobRepository>();
+        var job = new ProcessingJob
+        {
+            RecordingId = Guid.NewGuid(),
+            ProfileId = Guid.NewGuid(),
+            Status = JobStatus.Transcribing
+        };
+        await repo.EnqueueAsync(job, TestContext.CancellationToken);
+
+        using var response = await client.DeleteAsync($"/api/queue/{job.Id}", TestContext.CancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
     [TestMethod]

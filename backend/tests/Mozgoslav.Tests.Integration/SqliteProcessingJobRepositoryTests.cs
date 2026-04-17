@@ -80,6 +80,61 @@ public sealed class EfProcessingJobRepositoryTests
     }
 
     [TestMethod]
+    public async Task CancelQueuedAsync_QueuedJob_RemovesAndReturnsTrue()
+    {
+        await using var db = new TestDatabase();
+        await using var ctx = db.CreateContext();
+        var repo = new EfProcessingJobRepository(ctx);
+        var job = new ProcessingJob
+        {
+            RecordingId = Guid.NewGuid(),
+            ProfileId = Guid.NewGuid(),
+            Status = JobStatus.Queued
+        };
+        await repo.EnqueueAsync(job, CancellationToken.None);
+
+        await using var freshCtx = db.CreateContext();
+        var cancelled = await new EfProcessingJobRepository(freshCtx).CancelQueuedAsync(job.Id, CancellationToken.None);
+        cancelled.Should().BeTrue();
+
+        await using var verifyCtx = db.CreateContext();
+        var remaining = await new EfProcessingJobRepository(verifyCtx).GetAllAsync(CancellationToken.None);
+        remaining.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task CancelQueuedAsync_InFlightJob_ReturnsFalseAndKeeps()
+    {
+        await using var db = new TestDatabase();
+        await using var ctx = db.CreateContext();
+        var repo = new EfProcessingJobRepository(ctx);
+        var job = new ProcessingJob
+        {
+            RecordingId = Guid.NewGuid(),
+            ProfileId = Guid.NewGuid(),
+            Status = JobStatus.Transcribing
+        };
+        await repo.EnqueueAsync(job, CancellationToken.None);
+
+        await using var freshCtx = db.CreateContext();
+        var cancelled = await new EfProcessingJobRepository(freshCtx).CancelQueuedAsync(job.Id, CancellationToken.None);
+        cancelled.Should().BeFalse();
+
+        await using var verifyCtx = db.CreateContext();
+        var remaining = await new EfProcessingJobRepository(verifyCtx).GetAllAsync(CancellationToken.None);
+        remaining.Should().HaveCount(1);
+    }
+
+    [TestMethod]
+    public async Task CancelQueuedAsync_UnknownId_ReturnsFalse()
+    {
+        await using var db = new TestDatabase();
+        await using var ctx = db.CreateContext();
+        var cancelled = await new EfProcessingJobRepository(ctx).CancelQueuedAsync(Guid.NewGuid(), CancellationToken.None);
+        cancelled.Should().BeFalse();
+    }
+
+    [TestMethod]
     public async Task UpdateAsync_PersistsProgressAndHint()
     {
         await using var db = new TestDatabase();

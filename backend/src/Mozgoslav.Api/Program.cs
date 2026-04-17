@@ -141,6 +141,7 @@ try
     app.MapHealthEndpoints();
     app.MapRecordingEndpoints();
     app.MapJobEndpoints();
+    app.MapQueueEndpoints();
     app.MapNoteEndpoints();
     app.MapProfileEndpoints();
     app.MapSettingsEndpoints();
