@@ -39,7 +39,14 @@ try
 
     builder.Host.UseSerilog();
 
-    builder.WebHost.ConfigureKestrel(options => options.ListenLocalhost(5050));
+    // In IntegrationTest the host uses TestServer; binding Kestrel would be
+    // confusing (the port is never hit) and — more importantly — makes test
+    // logs claim "Now listening on: http://localhost:5050" when nothing of
+    // the sort is happening. Skip it.
+    if (!builder.Environment.IsEnvironment("IntegrationTest"))
+    {
+        builder.WebHost.ConfigureKestrel(options => options.ListenLocalhost(5050));
+    }
 
     const string DevelopmentCorsPolicy = "MozgoslavDev";
     builder.Services.AddCors(options =>

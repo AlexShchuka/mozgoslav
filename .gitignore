@@ -53,8 +53,12 @@ Thumbs.db
 # ---- Local data ----
 *.db
 *.db-journal
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
 local-data/
 temp/
 tmp/
