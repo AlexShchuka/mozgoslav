@@ -1,0 +1,36 @@
+import { connect } from "react-redux";
+import { bindActionCreators, type Dispatch } from "redux";
+
+import type { GlobalState } from "../../store";
+import {
+  checkLlm,
+  loadSettings,
+  saveSettings,
+  selectLlmProbe,
+  selectSettings,
+  selectSettingsError,
+  selectSettingsLoading,
+  selectSettingsSaving,
+} from "../../store/slices/settings";
+import Settings from "./Settings";
+import type { SettingsDispatchProps, SettingsStateProps } from "./types";
+
+const mapStateToProps = (state: GlobalState): SettingsStateProps => ({
+  settings: selectSettings(state),
+  isLoading: selectSettingsLoading(state),
+  isSaving: selectSettingsSaving(state),
+  llmProbe: selectLlmProbe(state),
+  error: selectSettingsError(state),
+});
+
+const mapDispatchToProps = (dispatch: Dispatch): SettingsDispatchProps =>
+  bindActionCreators(
+    {
+      onLoad: loadSettings,
+      onSave: saveSettings,
+      onCheckLlm: checkLlm,
+    },
+    dispatch,
+  );
+
+export default connect(mapStateToProps, mapDispatchToProps)(Settings);

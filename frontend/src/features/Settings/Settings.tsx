@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo, useState } from "react";
+import { FC, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { toast } from "react-toastify";
@@ -7,63 +7,72 @@ import { FolderOpen, Play } from "lucide-react";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import Input from "../../components/Input";
-import { apiFactory } from "../../api";
 import { AppSettings, DEFAULT_SETTINGS } from "../../domain/Settings";
-
-const settingsApi = apiFactory.createSettingsApi();
-const healthApi = apiFactory.createHealthApi();
 import { setThemeMode } from "../../styles/ThemeProvider";
 import SyncPairing from "../SyncPairing";
+import type { SettingsProps } from "./types";
 import { PageRoot, PageTitle, Tabs, Tab, FormGrid, Toolbar, Row, SelectBox, SelectOption } from "./Settings.style";
 
 type TabKey = "general" | "storage" | "llm" | "whisper" | "obsidian" | "sync";
 
-const Settings: FC = () => {
+const Settings: FC<SettingsProps> = ({
+  settings: loadedSettings,
+  isSaving,
+  llmProbe,
+  error,
+  onLoad,
+  onSave,
+  onCheckLlm,
+}) => {
   const { t } = useTranslation();
   const [tab, setTab] = useState<TabKey>("general");
-  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
-  const [saving, setSaving] = useState(false);
-
-  const load = useCallback(async () => {
-    try {
-      const loaded = await settingsApi.getSettings();
-      setSettings(loaded);
-    } catch {
-      // keep defaults if backend unreachable
-    }
-  }, []);
+  // Local draft so edits don't dispatch on every keystroke — Save pushes the
+  // whole AppSettings snapshot in one go.
+  const [draft, setDraft] = useState<AppSettings>(loadedSettings ?? DEFAULT_SETTINGS);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    onLoad();
+  }, [onLoad]);
+
+  // Re-seed the draft whenever the store's settings change (load + save
+  // echo). setSettings happens inside an effect so typing doesn't get
+  // overwritten until a new snapshot arrives.
+  useEffect(() => {
+    if (loadedSettings) {
+      setDraft(loadedSettings);
+      if (loadedSettings.language !== i18n.language) {
+        void i18n.changeLanguage(loadedSettings.language);
+      }
+      setThemeMode(loadedSettings.themeMode);
+    }
+  }, [loadedSettings]);
+
+  useEffect(() => {
+    if (error) toast.error(error);
+  }, [error]);
+
+  useEffect(() => {
+    if (llmProbe.ok === null || llmProbe.probing) return;
+    if (llmProbe.ok) {
+      toast.success("LLM: ✓");
+    } else {
+      toast.warning("LLM: ✗");
+    }
+  }, [llmProbe]);
 
   const update = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) =>
-    setSettings((prev) => ({ ...prev, [key]: value }));
+    setDraft((prev) => ({ ...prev, [key]: value }));
 
-  const save = async () => {
-    setSaving(true);
-    try {
-      const saved = await settingsApi.saveSettings(settings);
-      setSettings(saved);
-      if (saved.language !== i18n.language) {
-        void i18n.changeLanguage(saved.language);
-      }
-      setThemeMode(saved.themeMode);
-      toast.success(t("settings.savedToast"));
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err));
-    } finally {
-      setSaving(false);
-    }
+  const save = () => {
+    onSave(draft);
+    // Success toast fires from the saga's side via the reducer → effect chain
+    // when the next settings snapshot arrives. Keep it inline until a toast
+    // slice exists.
+    toast.success(t("settings.savedToast"));
   };
 
-  const checkLlm = async () => {
-    try {
-      const ok = await healthApi.checkLlm();
-      toast[ok ? "success" : "warning"](ok ? "LLM: ✓" : "LLM: ✗");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err));
-    }
+  const checkLlm = () => {
+    onCheckLlm();
   };
 
   const pickVaultFolder = async () => {
@@ -110,7 +119,7 @@ const Settings: FC = () => {
           <FormGrid>
             <div>
               <label>{t("settings.fields.language")}</label>
-              <SelectBox value={settings.language} onChange={(e) => update("language", e.target.value)}>
+              <SelectBox value={draft.language} onChange={(e) => update("language", e.target.value)}>
                 <SelectOption value="ru">Русский</SelectOption>
                 <SelectOption value="en">English</SelectOption>
               </SelectBox>
@@ -118,7 +127,7 @@ const Settings: FC = () => {
             <div>
               <label>{t("settings.fields.theme")}</label>
               <SelectBox
-                value={settings.themeMode}
+                value={draft.themeMode}
                 onChange={(e) => update("themeMode", e.target.value as AppSettings["themeMode"])}
               >
                 <SelectOption value="system">{t("settings.theme.system")}</SelectOption>
@@ -136,7 +145,7 @@ const Settings: FC = () => {
             <Row>
               <Input
                 label={t("settings.fields.vaultPath")}
-                value={settings.vaultPath}
+                value={draft.vaultPath}
                 onChange={(e) => update("vaultPath", e.target.value)}
                 placeholder="/Users/you/Obsidian Vault"
               />
@@ -153,17 +162,17 @@ const Settings: FC = () => {
           <FormGrid>
             <Input
               label={t("settings.fields.llmEndpoint")}
-              value={settings.llmEndpoint}
+              value={draft.llmEndpoint}
               onChange={(e) => update("llmEndpoint", e.target.value)}
             />
             <Input
               label={t("settings.fields.llmModel")}
-              value={settings.llmModel}
+              value={draft.llmModel}
               onChange={(e) => update("llmModel", e.target.value)}
             />
             <Input
               label={t("settings.fields.llmApiKey")}
-              value={settings.llmApiKey}
+              value={draft.llmApiKey}
               onChange={(e) => update("llmApiKey", e.target.value)}
               sensitive
               hint={t("settings.tokenHint")}
@@ -181,7 +190,7 @@ const Settings: FC = () => {
             <Row>
               <Input
                 label={t("settings.fields.whisperModelPath")}
-                value={settings.whisperModelPath}
+                value={draft.whisperModelPath}
                 onChange={(e) => update("whisperModelPath", e.target.value)}
               />
               <Button variant="secondary" leftIcon={<FolderOpen size={16} />} onClick={pickWhisperFile}>
@@ -190,13 +199,13 @@ const Settings: FC = () => {
             </Row>
             <Input
               label={t("settings.fields.vadModelPath")}
-              value={settings.vadModelPath}
+              value={draft.vadModelPath}
               onChange={(e) => update("vadModelPath", e.target.value)}
             />
             <Input
               type="number"
               label={t("settings.fields.whisperThreads")}
-              value={settings.whisperThreads}
+              value={draft.whisperThreads}
               onChange={(e) => update("whisperThreads", Number(e.target.value) || 0)}
             />
           </FormGrid>
@@ -210,12 +219,12 @@ const Settings: FC = () => {
           <FormGrid>
             <Input
               label={t("settings.fields.obsidianApiHost")}
-              value={settings.obsidianApiHost}
+              value={draft.obsidianApiHost}
               onChange={(e) => update("obsidianApiHost", e.target.value)}
             />
             <Input
               label={t("settings.fields.obsidianApiToken")}
-              value={settings.obsidianApiToken}
+              value={draft.obsidianApiToken}
               onChange={(e) => update("obsidianApiToken", e.target.value)}
               sensitive
               hint={t("settings.tokenHint")}
@@ -226,7 +235,7 @@ const Settings: FC = () => {
 
       {tab !== "sync" && (
         <Toolbar>
-          <Button variant="primary" isLoading={saving} onClick={save}>
+          <Button variant="primary" isLoading={isSaving} onClick={save}>
             {t("common.save")}
           </Button>
         </Toolbar>

@@ -1,9 +1,12 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 
-import Obsidian from "../Obsidian";
-import { renderWithRouter } from "../../../testUtils";
+import Obsidian from "../index";
+import { watchObsidianSagas } from "../../../store/slices/obsidian";
+import { watchSettingsSagas } from "../../../store/slices/settings";
+import { renderWithStore } from "../../../testUtils";
 import type { MockApiBundle } from "../../../testUtils";
 import "../../../i18n";
 
@@ -25,18 +28,18 @@ const mockApi = (
 ).__bundle;
 
 const renderObsidian = () =>
-  renderWithRouter(
-    <>
+  renderWithStore(
+    <MemoryRouter>
       <Obsidian />
       <ToastContainer />
-    </>,
+    </MemoryRouter>,
+    { sagas: [watchObsidianSagas, watchSettingsSagas] },
   );
 
 describe("Obsidian — first-class tab (BC-025 / Bug 22)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockApi.settingsApi.getSettings.mockResolvedValue({
-      // Only fields Obsidian.tsx reads — the rest default at runtime.
       vaultPath: "/tmp/vault",
     } as never);
     mockApi.settingsApi.saveSettings.mockResolvedValue({} as never);

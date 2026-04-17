@@ -1,62 +1,35 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { ThemeProvider } from "styled-components";
 
-import Onboarding from "../src/features/Onboarding/Onboarding";
+import Onboarding from "../src/features/Onboarding";
+import { watchOnboardingSagas } from "../src/store/slices/onboarding";
+import { renderWithStore, type MockApiBundle } from "../src/testUtils";
 import { darkTheme } from "../src/styles/theme";
 import "../src/i18n";
 
 jest.mock("../src/api", () => {
   const actual = jest.requireActual("../src/api");
-  const healthStub = { checkLlm: jest.fn(), getHealth: jest.fn() };
-  const modelsStub = { list: jest.fn(), download: jest.fn() };
-  const dictationStub = {
-    audioCapabilities: jest.fn(),
-    start: jest.fn(),
-    stop: jest.fn(),
-    push: jest.fn(),
-  };
-  const obsidianStub = {
-    detect: jest.fn(),
-    setup: jest.fn(),
-    bulkExport: jest.fn(),
-    applyLayout: jest.fn(),
-    restHealth: jest.fn(),
-  };
+  const {
+    createMockApi,
+  } = jest.requireActual("../src/testUtils/mockApi") as typeof import("../src/testUtils/mockApi");
+  const bundle = createMockApi();
   return {
     ...actual,
-    apiFactory: {
-      ...actual.apiFactory,
-      createHealthApi: () => healthStub,
-      createModelsApi: () => modelsStub,
-      createDictationApi: () => dictationStub,
-      createObsidianApi: () => obsidianStub,
-    },
-    __healthStub: healthStub,
-    __modelsStub: modelsStub,
-    __dictationStub: dictationStub,
-    __obsidianStub: obsidianStub,
+    apiFactory: bundle.factory,
+    __bundle: bundle,
   };
 });
 
-const mocks = jest.requireMock("../src/api") as {
-  __healthStub: Record<string, jest.Mock>;
-  __modelsStub: Record<string, jest.Mock>;
-  __dictationStub: Record<string, jest.Mock>;
-  __obsidianStub: Record<string, jest.Mock>;
-};
-const healthLlmMock = mocks.__healthStub.checkLlm;
-const listModelsMock = mocks.__modelsStub.list;
-const audioCapabilitiesMock = mocks.__dictationStub.audioCapabilities;
-const detectObsidianMock = mocks.__obsidianStub.detect;
+const mockApi = (
+  jest.requireMock("../src/api") as { __bundle: MockApiBundle }
+).__bundle;
 
 const renderOnboarding = () =>
-  render(
+  renderWithStore(
     <MemoryRouter>
-      <ThemeProvider theme={darkTheme}>
-        <Onboarding />
-      </ThemeProvider>
+      <Onboarding />
     </MemoryRouter>,
+    { sagas: [watchOnboardingSagas], theme: darkTheme },
   );
 
 const clickNext = async (times: number): Promise<void> => {
@@ -72,26 +45,14 @@ beforeEach(() => {
   jest.clearAllMocks();
   window.localStorage.clear();
   Object.defineProperty(navigator, "platform", { value: "MacIntel", configurable: true });
-  healthLlmMock.mockResolvedValue(true);
-  listModelsMock.mockResolvedValue([
-    {
-      id: "whisper",
-      installed: true,
-      kind: "Stt",
-      name: "whisper",
-      sizeMb: 100,
-      description: "",
-      destinationPath: "",
-      isDefault: true,
-      url: "",
-    },
-  ]);
-  audioCapabilitiesMock.mockResolvedValue({
+  mockApi.healthApi.checkLlm.mockResolvedValue(true);
+  mockApi.modelsApi.list.mockResolvedValue([]);
+  mockApi.dictationApi.audioCapabilities.mockResolvedValue({
     isSupported: true,
     detectedPlatform: "macos",
     permissionsRequired: ["microphone"],
   });
-  detectObsidianMock.mockResolvedValue({ detected: [], searched: [] });
+  mockApi.obsidianApi.detect.mockResolvedValue({ detected: [], searched: [] });
 });
 
 describe("Onboarding — plan v0.8 Block 4 (slim, platform-aware)", () => {
@@ -131,7 +92,7 @@ describe("Onboarding — plan v0.8 Block 4 (slim, platform-aware)", () => {
   it("writes onboardingComplete flag when user reaches the Ready step and clicks Apply", async () => {
     renderOnboarding();
     // macOS: 7 cards → 6 Next clicks take us to Ready; the 7th click fires
-    // Apply → finish() → localStorage flag.
+    // Apply → persistCompletionSaga → localStorage flag.
     await clickNext(7);
     await waitFor(() =>
       expect(window.localStorage.getItem("mozgoslav.onboardingComplete")).toBe("true"),
