@@ -63,7 +63,14 @@ local-data/
 temp/
 tmp/
 logs/
+# ``models/`` excludes user-level ML model caches (GGML / ONNX binaries)
+# but must NOT swallow source-code directories that happen to be named
+# ``models`` — the python-sidecar pydantic schemas live there. The ``*.py``
+# unignore is narrow on purpose so runtime caches (__pycache__) and model
+# artefacts (*.bin, *.onnx) cannot sneak back in through the exception.
 models/
+!python-sidecar/app/models/
+!python-sidecar/app/models/*.py
 
 # ---- IDE ----
 .idea/
