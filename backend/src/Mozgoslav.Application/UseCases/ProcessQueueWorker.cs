@@ -37,6 +37,7 @@ public sealed class ProcessQueueWorker
     private readonly LlmCorrectionService _llmCorrection;
     private readonly IAppSettings _settings;
     private readonly IJobProgressNotifier _progressNotifier;
+    private readonly IJobCancellationRegistry _cancellationRegistry;
     private readonly ILogger<ProcessQueueWorker> _logger;
 
     public ProcessQueueWorker(
@@ -54,6 +55,7 @@ public sealed class ProcessQueueWorker
         LlmCorrectionService llmCorrection,
         IAppSettings settings,
         IJobProgressNotifier progressNotifier,
+        IJobCancellationRegistry cancellationRegistry,
         ILogger<ProcessQueueWorker> logger)
     {
         _jobs = jobs;
@@ -70,29 +72,59 @@ public sealed class ProcessQueueWorker
         _llmCorrection = llmCorrection;
         _settings = settings;
         _progressNotifier = progressNotifier;
+        _cancellationRegistry = cancellationRegistry;
         _logger = logger;
     }
 
-    public async Task<bool> ProcessNextAsync(CancellationToken ct)
+    public async Task<bool> ProcessNextAsync(CancellationToken stoppingToken)
     {
-        var job = await _jobs.DequeueNextAsync(ct);
+        var job = await _jobs.DequeueNextAsync(stoppingToken);
         if (job is null)
         {
             return false;
         }
 
+        // ADR-015 — register a per-job linked CTS so the cancel endpoint can
+        // signal cooperative cancellation on the active pipeline stage. The
+        // pipeline runs against `perJobToken`; `stoppingToken` is kept
+        // separately so the `when` filter below can distinguish a host-stopping
+        // OCE (re-thrown) from a user-cancel OCE (mark Cancelled).
+        var perJobCts = _cancellationRegistry.Register(job.Id, stoppingToken);
+        var perJobToken = perJobCts.Token;
+
         try
         {
-            await ProcessJobAsync(job, ct);
+            if (job.CancelRequested)
+            {
+                // Cancel was requested while the job was still Queued — skip
+                // the pipeline entirely and go straight to the terminal state.
+                await MarkCancelledAsync(job);
+                return true;
+            }
+
+            await ProcessJobAsync(job, perJobToken);
+        }
+        catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
+        {
+            // Cooperative cancel — host is still running, only the per-job
+            // token was cancelled. Transition to the Cancelled terminal state
+            // using CancellationToken.None so the repo/notifier writes survive.
+            _logger.LogInformation("Processing job {JobId} cancelled by user", job.Id);
+            await MarkCancelledAsync(job);
         }
         catch (OperationCanceledException)
         {
+            // Host is shutting down — propagate upward so the loop can exit.
             throw;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Processing job {JobId} failed", job.Id);
-            await MarkFailedAsync(job, ex.Message, ct);
+            await MarkFailedAsync(job, ex.Message, stoppingToken);
+        }
+        finally
+        {
+            _cancellationRegistry.Unregister(job.Id);
         }
 
         return true;
@@ -237,6 +269,19 @@ public sealed class ProcessQueueWorker
         job.FinishedAt = DateTime.UtcNow;
         await _jobs.UpdateAsync(job, ct);
         await _progressNotifier.PublishAsync(job, ct);
+    }
+
+    /// <summary>
+    /// ADR-015 — terminal transition for user-initiated cancellation. Uses
+    /// <see cref="CancellationToken.None"/> so the persistence + SSE publish
+    /// complete even though the per-job token is already in the cancelled state.
+    /// </summary>
+    private async Task MarkCancelledAsync(ProcessingJob job)
+    {
+        job.Status = JobStatus.Cancelled;
+        job.FinishedAt = DateTime.UtcNow;
+        await _jobs.UpdateAsync(job, CancellationToken.None);
+        await _progressNotifier.PublishAsync(job, CancellationToken.None);
     }
 
     private static int ScaleProgress(int inputPercent, int rangeStart, int rangeEnd)

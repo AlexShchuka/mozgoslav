@@ -171,6 +171,10 @@ public sealed class MozgoslavDbContext : DbContext
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
             e.Property(x => x.StartedAt).HasColumnName("started_at");
             e.Property(x => x.FinishedAt).HasColumnName("finished_at");
+            // ADR-015 — cooperative cancel flag. Defaults to false so existing
+            // rows materialised via EnsureCreated / Migration 0014 see a
+            // byte-identical state.
+            e.Property(x => x.CancelRequested).HasColumnName("cancel_requested").HasDefaultValue(false);
             e.HasIndex(x => x.Status);
             e.HasIndex(x => x.RecordingId);
         });

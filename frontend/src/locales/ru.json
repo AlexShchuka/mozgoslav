@@ -83,7 +83,8 @@
       "Summarizing": "LLM-суммаризация",
       "Exporting": "Экспорт",
       "Done": "Готово",
-      "Failed": "Ошибка"
+      "Failed": "Ошибка",
+      "Cancelled": "Отменено"
     }
   },
   "notes": {

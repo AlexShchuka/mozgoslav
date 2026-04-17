@@ -13,11 +13,14 @@ import { ProcessingJob } from "../../domain/ProcessingJob";
 import { BACKEND_URL, API_ENDPOINTS } from "../../constants/api";
 import { PageRoot, JobRow, JobHeader, JobMeta, PageTitle, ResumeCopy } from "./Queue.style";
 
-const TERMINAL: ProcessingJob["status"][] = ["Done", "Failed"];
+// ADR-015 — `Cancelled` joins Done/Failed as a terminal state; Cancel button
+// hidden and status badge rendered with a neutral tone.
+const TERMINAL: ProcessingJob["status"][] = ["Done", "Failed", "Cancelled"];
 
 const toneFor = (status: ProcessingJob["status"]): BadgeTone => {
   if (status === "Done") return "success";
   if (status === "Failed") return "error";
+  if (status === "Cancelled") return "neutral";
   if (status === "Queued") return "neutral";
   return "accent";
 };

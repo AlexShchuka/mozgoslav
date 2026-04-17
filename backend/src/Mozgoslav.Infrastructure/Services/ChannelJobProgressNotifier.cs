@@ -75,6 +75,9 @@ public sealed class ChannelJobProgressNotifier : IJobProgressNotifier, IDisposab
         ErrorMessage = src.ErrorMessage,
         CreatedAt = src.CreatedAt,
         StartedAt = src.StartedAt,
-        FinishedAt = src.FinishedAt
+        FinishedAt = src.FinishedAt,
+        // ADR-015 — carry the cancel request flag across SSE so the UI can
+        // distinguish "cancel pressed, waiting for worker" from a plain active job.
+        CancelRequested = src.CancelRequested
     };
 }

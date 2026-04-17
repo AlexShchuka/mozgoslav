@@ -83,7 +83,8 @@
       "Summarizing": "Summarizing",
       "Exporting": "Exporting",
       "Done": "Done",
-      "Failed": "Failed"
+      "Failed": "Failed",
+      "Cancelled": "Cancelled"
     }
   },
   "notes": {

@@ -55,10 +55,12 @@ export class MozgoslavApi {
   listActiveJobs = async (): Promise<ProcessingJob[]> =>
     (await this.client.get<ProcessingJob[]>(API_ENDPOINTS.jobsActive)).data;
 
-  // BC-015 — queued / running jobs get cancelled through this endpoint.
-  // Backend flips the row to Cancelled and the SSE stream emits the update.
+  // ADR-015 — queued / running jobs get cancelled through this endpoint.
+  // Backend flips the row to Cancelled (Queued → 204) or sets CancelRequested
+  // and signals the worker CTS (Active → 202); the SSE stream emits the final
+  // Cancelled state either way.
   cancelQueueJob = async (id: string): Promise<void> => {
-    await this.client.delete(API_ENDPOINTS.queueCancel(id));
+    await this.client.post(API_ENDPOINTS.queueCancel(id));
   };
 
   // --- notes ---
