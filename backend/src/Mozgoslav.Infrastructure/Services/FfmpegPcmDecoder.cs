@@ -1,5 +1,9 @@
-using System.ComponentModel;
-using System.Diagnostics;
+using System.Globalization;
+using System.IO.Pipelines;
+using System.Text;
+
+using CliWrap;
+using CliWrap.Exceptions;
 
 using Microsoft.Extensions.Logging;
 
@@ -13,6 +17,11 @@ namespace Mozgoslav.Infrastructure.Services;
 /// Dashboard record-button path (BC-004) which posts Opus-in-WebM chunks
 /// from the browser's <c>MediaRecorder</c> to
 /// <c>/api/dictation/{id}/push</c>.
+/// <para>
+/// ADR-011 step 8 — built on <see cref="Cli"/> (CliWrap) so stdin/stdout/stderr
+/// piping, exit code handling, and cancellation come from the library instead
+/// of hand-rolled <c>ProcessStartInfo</c> / <c>Process.Start</c>.
+/// </para>
 /// </summary>
 public sealed class FfmpegPcmDecoder : IAudioPcmDecoder
 {
@@ -36,42 +45,60 @@ public sealed class FfmpegPcmDecoder : IAudioPcmDecoder
             return [];
         }
 
-        var psi = new ProcessStartInfo
-        {
-            FileName = FfmpegExecutable,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        };
-        // Read from stdin, emit float32 LE mono 16 kHz raw PCM to stdout.
-        psi.ArgumentList.Add("-hide_banner");
-        psi.ArgumentList.Add("-loglevel");
-        psi.ArgumentList.Add("error");
-        psi.ArgumentList.Add("-i");
-        psi.ArgumentList.Add("pipe:0");
-        psi.ArgumentList.Add("-f");
-        psi.ArgumentList.Add("f32le");
-        psi.ArgumentList.Add("-ac");
-        psi.ArgumentList.Add("1");
-        psi.ArgumentList.Add("-ar");
-        psi.ArgumentList.Add(TargetSampleRate.ToString(System.Globalization.CultureInfo.InvariantCulture));
-        psi.ArgumentList.Add("pipe:1");
+        var stdoutPipe = new Pipe();
+        var stderr = new StringBuilder();
 
-        using var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
+        // Pipe.Writer.AsStream returns a wrapper whose lifetime is the Pipe's;
+        // the PipeTarget.ToStream wrapper flushes + closes on completion.
+        // IDISP004 cannot see through the indirection.
+#pragma warning disable IDISP004, IDISP001
+        var execution = Cli.Wrap(FfmpegExecutable)
+            .WithArguments(args => args
+                .Add("-hide_banner")
+                .Add("-loglevel").Add("error")
+                .Add("-i").Add("pipe:0")
+                .Add("-f").Add("f32le")
+                .Add("-ac").Add("1")
+                .Add("-ar").Add(TargetSampleRate.ToString(CultureInfo.InvariantCulture))
+                .Add("pipe:1"))
+            .WithStandardInputPipe(PipeSource.FromBytes(encodedPayload))
+            .WithStandardOutputPipe(PipeTarget.ToStream(stdoutPipe.Writer.AsStream(leaveOpen: false)))
+            .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stderr))
+            .WithValidation(CommandResultValidation.None);
+#pragma warning restore IDISP004, IDISP001
+
+        byte[] pcmBytes;
         try
         {
-            process.Start();
+            var executionTask = execution.ExecuteAsync(ct);
+            pcmBytes = await DrainAsync(stdoutPipe.Reader, ct).ConfigureAwait(false);
+            // CliWrap's CommandResult is a record — no IDisposable. The
+            // analyzer misidentifies it; suppress.
+#pragma warning disable IDISP001
+            var result = await executionTask.ConfigureAwait(false);
+#pragma warning restore IDISP001
+
+            if (result.ExitCode != 0)
+            {
+                _logger.LogWarning(
+                    "ffmpeg decode failed with exit {ExitCode}: {Stderr}", result.ExitCode, stderr);
+                throw new InvalidOperationException(
+                    $"ffmpeg decode exited with code {result.ExitCode}: {stderr}");
+            }
         }
-        catch (Win32Exception ex)
+        catch (CommandExecutionException ex) when (ex.InnerException is System.ComponentModel.Win32Exception)
+        {
+            throw new InvalidOperationException(
+                "ffmpeg binary not found on PATH. Install via 'brew install ffmpeg' on macOS " +
+                "(or 'apt-get install ffmpeg' on Linux).", ex);
+        }
+        catch (System.ComponentModel.Win32Exception ex)
         {
             throw new InvalidOperationException(
                 "ffmpeg binary not found on PATH. Install via 'brew install ffmpeg' on macOS " +
                 "(or 'apt-get install ffmpeg' on Linux).", ex);
         }
 
-        var pcmBytes = await PumpAsync(process, encodedPayload, ct).ConfigureAwait(false);
         if (pcmBytes.Length == 0)
         {
             return [];
@@ -87,50 +114,23 @@ public sealed class FfmpegPcmDecoder : IAudioPcmDecoder
         return samples;
     }
 
-    private async Task<byte[]> PumpAsync(Process process, byte[] encodedPayload, CancellationToken ct)
+    private static async Task<byte[]> DrainAsync(PipeReader reader, CancellationToken ct)
     {
-        // Drain stdout into a byte accumulator and stderr into a string in parallel
-        // with the stdin pump. Avoids MemoryStream here so the IDisposable analyzers
-        // don't flag the CopyToAsync task as a lifetime hazard.
-        var stdout = new List<byte>();
-        var stdoutTask = ReadAllBytesAsync(process.StandardOutput.BaseStream, stdout, ct);
-        var stderrTask = process.StandardError.ReadToEndAsync(ct);
-
-        try
-        {
-            await process.StandardInput.BaseStream.WriteAsync(encodedPayload, ct).ConfigureAwait(false);
-        }
-        finally
-        {
-            process.StandardInput.BaseStream.Close();
-        }
-
-        await stdoutTask.ConfigureAwait(false);
-        var stderr = await stderrTask.ConfigureAwait(false);
-        await process.WaitForExitAsync(ct).ConfigureAwait(false);
-
-        if (process.ExitCode != 0)
-        {
-            _logger.LogWarning(
-                "ffmpeg decode failed with exit {ExitCode}: {Stderr}", process.ExitCode, stderr);
-            throw new InvalidOperationException(
-                $"ffmpeg decode exited with code {process.ExitCode}: {stderr}");
-        }
-
-        return [.. stdout];
-    }
-
-    private static async Task ReadAllBytesAsync(Stream source, List<byte> sink, CancellationToken ct)
-    {
-        var buf = new byte[8192];
+        using var buffer = new MemoryStream();
         while (true)
         {
-            var read = await source.ReadAsync(buf, ct).ConfigureAwait(false);
-            if (read <= 0)
+            var result = await reader.ReadAsync(ct).ConfigureAwait(false);
+            foreach (var segment in result.Buffer)
             {
-                return;
+                buffer.Write(segment.Span);
             }
-            sink.AddRange(buf.AsSpan(0, read));
+            reader.AdvanceTo(result.Buffer.End);
+            if (result.IsCompleted)
+            {
+                break;
+            }
         }
+        await reader.CompleteAsync().ConfigureAwait(false);
+        return buffer.ToArray();
     }
 }

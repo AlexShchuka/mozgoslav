@@ -1,5 +1,7 @@
-using System.ComponentModel;
-using System.Diagnostics;
+using System.Text;
+
+using CliWrap;
+using CliWrap.Exceptions;
 
 using Microsoft.Extensions.Logging;
 
@@ -12,6 +14,11 @@ namespace Mozgoslav.Infrastructure.Services;
 /// Wraps the <c>ffmpeg</c> binary to convert arbitrary audio files into the format
 /// Whisper expects: 16 kHz, mono, PCM WAV. Output is written to the app temp dir
 /// and reused by the transcription step before being cleaned up.
+/// <para>
+/// ADR-011 step 8 — built on <see cref="Cli"/> (CliWrap) so the process lifetime,
+/// stderr capture, and exit-code handling are provided by the library instead of
+/// hand-rolled <c>ProcessStartInfo</c> plumbing.
+/// </para>
 /// </summary>
 public sealed class FfmpegAudioConverter : IAudioConverter
 {
@@ -35,45 +42,44 @@ public sealed class FfmpegAudioConverter : IAudioConverter
         Directory.CreateDirectory(AppPaths.Temp);
         var outputPath = Path.Combine(AppPaths.Temp, $"{Guid.NewGuid():N}.wav");
 
-        var psi = new ProcessStartInfo
-        {
-            FileName = FfmpegExecutable,
-            RedirectStandardError = true,
-            RedirectStandardOutput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-        psi.ArgumentList.Add("-y");
-        psi.ArgumentList.Add("-i");
-        psi.ArgumentList.Add(inputPath);
-        psi.ArgumentList.Add("-ar");
-        psi.ArgumentList.Add("16000");
-        psi.ArgumentList.Add("-ac");
-        psi.ArgumentList.Add("1");
-        psi.ArgumentList.Add("-f");
-        psi.ArgumentList.Add("wav");
-        psi.ArgumentList.Add(outputPath);
+        var stderr = new StringBuilder();
 
-        using var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
         try
         {
-            process.Start();
+            // CliWrap's Command is a builder returned by Wrap() — its lifetime
+            // ends at ExecuteAsync, the analyzer can't see that.
+#pragma warning disable IDISP001
+            var result = await Cli.Wrap(FfmpegExecutable)
+                .WithArguments(args => args
+                    .Add("-y")
+                    .Add("-i").Add(inputPath)
+                    .Add("-ar").Add("16000")
+                    .Add("-ac").Add("1")
+                    .Add("-f").Add("wav")
+                    .Add(outputPath))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stderr))
+                .WithValidation(CommandResultValidation.None)
+                .ExecuteAsync(ct)
+                .ConfigureAwait(false);
+#pragma warning restore IDISP001
+
+            if (result.ExitCode != 0)
+            {
+                _logger.LogError("ffmpeg failed: {Stderr}", stderr.ToString());
+                throw new InvalidOperationException($"ffmpeg exited with code {result.ExitCode}");
+            }
+
+            return outputPath;
         }
-        catch (Win32Exception ex)
+        catch (CommandExecutionException ex) when (ex.InnerException is System.ComponentModel.Win32Exception)
         {
             throw new InvalidOperationException(
                 "ffmpeg binary not found on PATH. Install via 'brew install ffmpeg' on macOS.", ex);
         }
-
-        await process.WaitForExitAsync(ct);
-
-        if (process.ExitCode != 0)
+        catch (System.ComponentModel.Win32Exception ex)
         {
-            var stderr = await process.StandardError.ReadToEndAsync(ct);
-            _logger.LogError("ffmpeg failed: {Stderr}", stderr);
-            throw new InvalidOperationException($"ffmpeg exited with code {process.ExitCode}");
+            throw new InvalidOperationException(
+                "ffmpeg binary not found on PATH. Install via 'brew install ffmpeg' on macOS.", ex);
         }
-
-        return outputPath;
     }
 }
