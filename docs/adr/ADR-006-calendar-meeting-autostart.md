@@ -7,7 +7,11 @@
 <!-- SECTION: Context -->
 ## Context
 
-<!-- TODO: context paragraph -->
+Mozgoslav — локальный second-brain для разговоров, macOS-first desktop-app. К моменту этой сессии main содержит результат PR #2 (ApiFactory isolation RCA + dictation R1 custom-vocabulary initial_prompt + skeleton Syncthing backend). Параллельно Agent A дорабатывает ADR-003 pairing UX и ADR-004 R2-R10, а также доводит до конца ADR-005 RAG Q&A.
+
+Задача этого ADR — зафиксировать пакет полировочных решений, который пришёл от пользователя одним пулом уже после того, как изначальный ADR-006 был написан в узком scope «calendar + meeting autostart». Scope расширяется: (1) системный UX-проход (кнопки, типографика, палитра, motion, Liquid Glass); (2) интеграция с LM Studio как первым-классным локальным провайдером; (3) V2-scaffolding — реальный AVFoundation-рекордер, мульти-провайдер LLM, CRUD профилей, kbar command palette, onboarding wizard.
+
+Оригинальный calendar/meeting-autostart раздел (D-calendar) сохраняется verbatim как будущая итерация — его блокер по-прежнему реальный `IAudioRecorder`, который теперь встаёт в план под D-15.a. Никаких breaking changes — всё решение аддитивное: новые токены слотятся в существующий `theme.ts`, новые endpoints — под новые маршруты, новые колонки settings — с дефолтами, сохраняющими текущее поведение.
 
 <!-- SECTION: Decisions -->
 ## Decisions
