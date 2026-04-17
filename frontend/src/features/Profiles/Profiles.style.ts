@@ -54,3 +54,50 @@ const RowBase = styled.div`
 
 // Tiny compound: Row.Badges
 export const Row: RowComponent = Object.assign(RowBase, { Badges: RowBadges });
+
+export const AppBindingsCard = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.space(2)};
+  padding: ${({ theme }) => theme.space(4)};
+  background: ${({ theme }) => theme.colors.surface};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radii.md};
+`;
+
+export const AppBindingsHeader = styled.h2`
+  margin: 0;
+  font-size: ${({ theme }) => theme.font.size.lg};
+  font-weight: ${({ theme }) => theme.font.weight.semibold};
+  color: ${({ theme }) => theme.colors.text};
+`;
+
+export const AppBindingsHint = styled.p`
+  margin: 0 0 ${({ theme }) => theme.space(2)};
+  font-size: ${({ theme }) => theme.font.size.sm};
+  color: ${({ theme }) => theme.colors.textMuted};
+`;
+
+export const AppBindingRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: ${({ theme }) => theme.space(2)};
+  align-items: center;
+
+  code {
+    font-family: ${({ theme }) => theme.font.familyMono};
+    font-size: ${({ theme }) => theme.font.size.sm};
+    color: ${({ theme }) => theme.colors.textMuted};
+    word-break: break-all;
+  }
+`;
+
+export const BindingSelect = styled.select`
+  height: 34px;
+  padding: 0 ${({ theme }) => theme.space(2)};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radii.md};
+  background: ${({ theme }) => theme.colors.bg};
+  color: ${({ theme }) => theme.colors.text};
+  font-size: ${({ theme }) => theme.font.size.md};
+`;

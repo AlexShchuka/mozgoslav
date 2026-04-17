@@ -29,7 +29,9 @@ public sealed record AppSettingsDto(
     bool DictationOverlayEnabled,
     string DictationOverlayPosition,
     bool DictationSoundFeedback,
-    IReadOnlyList<string> DictationVocabulary)
+    IReadOnlyList<string> DictationVocabulary,
+    IReadOnlyDictionary<string, string> DictationAppProfiles,
+    bool OnboardingComplete)
 {
     public static AppSettingsDto Defaults { get; } = new(
         VaultPath: string.Empty,
@@ -55,5 +57,14 @@ public sealed record AppSettingsDto(
         DictationOverlayEnabled: true,
         DictationOverlayPosition: "cursor",
         DictationSoundFeedback: true,
-        DictationVocabulary: []);
+        DictationVocabulary: [],
+        // ADR-004 R2 seeds — ship out-of-the-box overrides for the most common
+        // targets so the feature works before the user ever opens Settings.
+        DictationAppProfiles: new Dictionary<string, string>
+        {
+            ["com.microsoft.VSCode"] = "code-profile",
+            ["com.google.Chrome"] = "default",
+            ["com.tinyspeck.slackmacgap"] = "informal-profile",
+        },
+        OnboardingComplete: false);
 }

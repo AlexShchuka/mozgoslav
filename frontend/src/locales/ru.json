@@ -100,6 +100,15 @@
     "deleteConfirm": "Удалить профиль «{{name}}»? Это нельзя отменить.",
     "deletedToast": "Профиль удалён",
     "builtInDeleteHint": "Встроенные профили нельзя удалить",
+    "duplicate": "Копия",
+    "duplicatedToast": "Профиль скопирован",
+    "copyOf": "Копия — {{name}}",
+    "bindings": {
+      "title": "Привязки по приложениям",
+      "hint": "Какой профиль использовать, когда фокус в конкретном приложении. macOS bundle id → профиль.",
+      "bundlePlaceholder": "com.company.App",
+      "pickProfile": "Выбери профиль…"
+    },
     "fields": {
       "name": "Название",
       "systemPrompt": "System prompt для LLM",

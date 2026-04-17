@@ -100,6 +100,15 @@
     "deleteConfirm": "Delete profile \"{{name}}\"? This cannot be undone.",
     "deletedToast": "Profile deleted",
     "builtInDeleteHint": "Built-in profiles cannot be deleted",
+    "duplicate": "Duplicate",
+    "duplicatedToast": "Profile duplicated",
+    "copyOf": "Copy of {{name}}",
+    "bindings": {
+      "title": "Per-app bindings",
+      "hint": "Which profile to use when each app is focused. macOS bundle id → profile.",
+      "bundlePlaceholder": "com.company.App",
+      "pickProfile": "Pick a profile…"
+    },
     "fields": {
       "name": "Name",
       "systemPrompt": "System prompt for LLM",

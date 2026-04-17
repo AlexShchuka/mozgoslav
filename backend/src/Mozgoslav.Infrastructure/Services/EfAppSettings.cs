@@ -47,6 +47,8 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     public string DictationOverlayPosition => Snapshot.DictationOverlayPosition;
     public bool DictationSoundFeedback => Snapshot.DictationSoundFeedback;
     public IReadOnlyList<string> DictationVocabulary => Snapshot.DictationVocabulary;
+    public IReadOnlyDictionary<string, string> DictationAppProfiles => Snapshot.DictationAppProfiles;
+    public bool OnboardingComplete => Snapshot.OnboardingComplete;
     public AppSettingsDto Snapshot { get; private set; } = AppSettingsDto.Defaults;
 
     public async Task<AppSettingsDto> LoadAsync(CancellationToken ct)
@@ -79,7 +81,9 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             DictationOverlayEnabled: ParseBool(map, Keys.DictationOverlayEnabled, defaults.DictationOverlayEnabled),
             DictationOverlayPosition: map.GetValueOrDefault(Keys.DictationOverlayPosition, defaults.DictationOverlayPosition),
             DictationSoundFeedback: ParseBool(map, Keys.DictationSoundFeedback, defaults.DictationSoundFeedback),
-            DictationVocabulary: ParseStringList(map, Keys.DictationVocabulary, defaults.DictationVocabulary));
+            DictationVocabulary: ParseStringList(map, Keys.DictationVocabulary, defaults.DictationVocabulary),
+            DictationAppProfiles: ParseStringMap(map, Keys.DictationAppProfiles, defaults.DictationAppProfiles),
+            OnboardingComplete: ParseBool(map, Keys.OnboardingComplete, defaults.OnboardingComplete));
 
         await _lock.WaitAsync(ct);
         try { Snapshot = dto; }
@@ -118,6 +122,8 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             (Keys.DictationOverlayPosition, dto.DictationOverlayPosition),
             (Keys.DictationSoundFeedback, BoolToString(dto.DictationSoundFeedback)),
             (Keys.DictationVocabulary, SerializeStringList(dto.DictationVocabulary)),
+            (Keys.DictationAppProfiles, JsonSerializer.Serialize(dto.DictationAppProfiles)),
+            (Keys.OnboardingComplete, BoolToString(dto.OnboardingComplete)),
         };
 
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
@@ -180,6 +186,26 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     private static string SerializeStringList(IReadOnlyList<string> values) =>
         JsonSerializer.Serialize(values ?? []);
 
+    private static IReadOnlyDictionary<string, string> ParseStringMap(
+        IReadOnlyDictionary<string, string> map,
+        string key,
+        IReadOnlyDictionary<string, string> fallback)
+    {
+        if (!map.TryGetValue(key, out var raw) || string.IsNullOrWhiteSpace(raw))
+        {
+            return fallback;
+        }
+        try
+        {
+            var parsed = JsonSerializer.Deserialize<Dictionary<string, string>>(raw);
+            return parsed is null || parsed.Count == 0 ? fallback : parsed;
+        }
+        catch (JsonException)
+        {
+            return fallback;
+        }
+    }
+
     private static class Keys
     {
         public const string VaultPath = "vault_path";
@@ -206,5 +232,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         public const string DictationOverlayPosition = "dictation_overlay_position";
         public const string DictationSoundFeedback = "dictation_sound_feedback";
         public const string DictationVocabulary = "dictation_vocabulary";
+        public const string DictationAppProfiles = "dictation_app_profiles";
+        public const string OnboardingComplete = "onboarding_complete";
     }
 }

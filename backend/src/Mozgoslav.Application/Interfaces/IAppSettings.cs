@@ -31,6 +31,8 @@ public interface IAppSettings
     string DictationOverlayPosition { get; }
     bool DictationSoundFeedback { get; }
     IReadOnlyList<string> DictationVocabulary { get; }
+    IReadOnlyDictionary<string, string> DictationAppProfiles { get; }
+    bool OnboardingComplete { get; }
 
     AppSettingsDto Snapshot { get; }
 
