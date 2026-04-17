@@ -1,3 +1,4 @@
+import { m } from "framer-motion";
 import styled from "styled-components";
 
 export const PageRoot = styled.div`
@@ -32,4 +33,8 @@ export const JobRow = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.space(2)};
+`;
+
+export const JobMotionWrapper = styled(m.div)`
+  display: block;
 `;

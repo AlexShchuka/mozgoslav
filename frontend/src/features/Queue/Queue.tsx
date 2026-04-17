@@ -1,15 +1,18 @@
-import { FC, useEffect, useMemo, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ListChecks } from "lucide-react";
+import { AnimatePresence, useReducedMotion } from "framer-motion";
+import { ListChecks, X } from "lucide-react";
+import { toast } from "react-toastify";
 
 import Badge, { BadgeTone } from "../../components/Badge";
+import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
 import ProgressBar from "../../components/ProgressBar";
 import { api } from "../../api/MozgoslavApi";
 import { ProcessingJob } from "../../models/ProcessingJob";
 import { BACKEND_URL, API_ENDPOINTS } from "../../constants/api";
-import { PageRoot, JobRow, JobHeader, JobMeta, PageTitle } from "./Queue.style";
+import { PageRoot, JobRow, JobHeader, JobMeta, JobMotionWrapper, PageTitle } from "./Queue.style";
 
 const TERMINAL: ProcessingJob["status"][] = ["Done", "Failed"];
 
@@ -22,7 +25,30 @@ const toneFor = (status: ProcessingJob["status"]): BadgeTone => {
 
 const Queue: FC = () => {
   const { t } = useTranslation();
+  const reduced = useReducedMotion() ?? false;
   const [jobs, setJobs] = useState<ProcessingJob[]>([]);
+  const [cancelling, setCancelling] = useState<Set<string>>(new Set());
+
+  const onCancel = useCallback(async (id: string) => {
+    setCancelling((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+    try {
+      await api.cancelQueueJob(id);
+      setJobs((prev) => prev.filter((j) => j.id !== id));
+      toast.success(t("queue.cancelled"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      setCancelling((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }, [t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,27 +90,52 @@ const Queue: FC = () => {
       {sorted.length === 0 ? (
         <EmptyState title={t("queue.empty")} icon={<ListChecks size={28} />} />
       ) : (
-        sorted.map((job) => (
-          <Card key={job.id}>
-            <JobHeader>
-              <div>
-                <strong>{job.currentStep || t(`queue.status.${job.status}` as const)}</strong>
-                <JobMeta>
-                  {job.id.slice(0, 8)} · {new Date(job.createdAt).toLocaleString()}
-                </JobMeta>
-              </div>
-              <Badge tone={toneFor(job.status)}>{t(`queue.status.${job.status}` as const)}</Badge>
-            </JobHeader>
-            <JobRow>
-              <ProgressBar
-                value={job.progress}
-                status={job.status === "Failed" ? "error" : job.status === "Done" ? "success" : "active"}
-                label={job.errorMessage ?? undefined}
-                indeterminate={!TERMINAL.includes(job.status) && job.progress === 0}
-              />
-            </JobRow>
-          </Card>
-        ))
+        <AnimatePresence initial={false}>
+          {sorted.map((job) => (
+            <JobMotionWrapper
+              key={job.id}
+              layout={!reduced}
+              initial={reduced ? false : { opacity: 0, y: 6 }}
+              animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              exit={reduced ? { opacity: 0 } : { opacity: 0, x: -24, height: 0 }}
+              transition={reduced ? { duration: 0 } : { duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <Card>
+                <JobHeader>
+                  <div>
+                    <strong>{job.currentStep || t(`queue.status.${job.status}` as const)}</strong>
+                    <JobMeta>
+                      {job.id.slice(0, 8)} · {new Date(job.createdAt).toLocaleString()}
+                    </JobMeta>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <Badge tone={toneFor(job.status)}>{t(`queue.status.${job.status}` as const)}</Badge>
+                    {job.status === "Queued" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        leftIcon={<X size={14} />}
+                        onClick={() => onCancel(job.id)}
+                        isLoading={cancelling.has(job.id)}
+                        aria-label={t("queue.cancelAria")}
+                      >
+                        {t("common.cancel")}
+                      </Button>
+                    )}
+                  </div>
+                </JobHeader>
+                <JobRow>
+                  <ProgressBar
+                    value={job.progress}
+                    status={job.status === "Failed" ? "error" : job.status === "Done" ? "success" : "active"}
+                    label={job.errorMessage ?? undefined}
+                    indeterminate={!TERMINAL.includes(job.status) && job.progress === 0}
+                  />
+                </JobRow>
+              </Card>
+            </JobMotionWrapper>
+          ))}
+        </AnimatePresence>
       )}
     </PageRoot>
   );

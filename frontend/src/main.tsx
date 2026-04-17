@@ -1,5 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { LazyMotion, domAnimation } from "framer-motion";
 import { Provider } from "react-redux";
 import { HashRouter } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
@@ -21,10 +22,12 @@ createRoot(rootElement).render(
   <StrictMode>
     <Provider store={store}>
       <MozgoslavThemeProvider>
-        <HashRouter>
-          <App />
-          <ToastContainer position="top-right" theme="colored" newestOnTop autoClose={3500} />
-        </HashRouter>
+        <LazyMotion features={domAnimation} strict>
+          <HashRouter>
+            <App />
+            <ToastContainer position="top-right" theme="colored" newestOnTop autoClose={3500} />
+          </HashRouter>
+        </LazyMotion>
       </MozgoslavThemeProvider>
     </Provider>
   </StrictMode>,

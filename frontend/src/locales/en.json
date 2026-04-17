@@ -60,6 +60,8 @@
   "queue": {
     "title": "Processing queue",
     "empty": "Queue is empty. Import a recording to start processing.",
+    "cancelAria": "Cancel this job",
+    "cancelled": "Job cancelled",
     "status": {
       "Queued": "Queued",
       "Transcribing": "Transcribing",
