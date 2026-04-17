@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Http.Resilience;
 
 using Mozgoslav.Api.BackgroundServices;
 using Mozgoslav.Api.Endpoints;
@@ -106,6 +107,50 @@ try
 
     // --- Infrastructure services ---
     builder.Services.AddHttpClient();
+    // ADR-011 step 3 — Microsoft.Extensions.Http.Resilience is applied to every
+    // outbound HTTP client the backend owns. Settings follow the ADR: 30 s total
+    // timeout, retry 3 with exponential backoff, circuit-breaker trips after 5
+    // failures inside a 30 s window. The only exception is
+    // OpenAiCompatibleLlmProvider, which uses the OpenAI SDK's own pipeline and
+    // cannot share the named "llm" HttpClient — its retry/backoff is delegated
+    // to the SDK until a future MR replaces the SDK with raw HttpClient.
+    static void ConfigureStandardResilience(HttpStandardResilienceOptions options)
+    {
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
+        options.Retry.MaxRetryAttempts = 3;
+        options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+        options.Retry.Delay = TimeSpan.FromSeconds(1);
+        options.Retry.UseJitter = true;
+        options.CircuitBreaker.FailureRatio = 0.5;
+        options.CircuitBreaker.MinimumThroughput = 5;
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+        options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
+    }
+    // Named "llm" client — used by Anthropic + Ollama transports and the
+    // OpenAiCompatibleLlmService health probe. NOT by OpenAiCompatibleLlmProvider
+    // (that path routes through the OpenAI SDK's own handler pipeline).
+    builder.Services.AddHttpClient("llm")
+        .AddStandardResilienceHandler(ConfigureStandardResilience);
+    // Named "models" client — bulk downloads from HuggingFace. Keep the
+    // per-call 30 min timeout set on the resolved HttpClient so multi-GB
+    // downloads succeed; the resilience handler only covers retry + circuit
+    // breaker (the 30 s total-request timeout is explicitly overridden by the
+    // ModelDownloadService for the streaming case, see that file).
+    builder.Services.AddHttpClient("models")
+        .AddStandardResilienceHandler(options =>
+        {
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(30);
+            options.AttemptTimeout.Timeout = TimeSpan.FromMinutes(30);
+            options.Retry.MaxRetryAttempts = 3;
+            options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+            options.Retry.Delay = TimeSpan.FromSeconds(2);
+            options.Retry.UseJitter = true;
+            options.CircuitBreaker.FailureRatio = 0.5;
+            options.CircuitBreaker.MinimumThroughput = 5;
+            options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+            options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
+        });
     builder.Services.AddSingleton<IJobProgressNotifier, ChannelJobProgressNotifier>();
     builder.Services.AddSingleton<IAudioConverter, FfmpegAudioConverter>();
     // ADR-007 BC-004 — Dashboard record button posts Opus-in-WebM chunks; the
@@ -156,10 +201,25 @@ try
     if (!string.IsNullOrWhiteSpace(sidecarBaseUrl))
     {
         const string SidecarClientName = "Mozgoslav.PythonSidecar";
+        // ADR-011 step 3 — resilience handler owns timeouts + retry. The sidecar
+        // runs model inference that can be slow, so per-attempt timeout is 30 s
+        // and total timeout is 2 min (covers one cold-start + three retries).
         builder.Services.AddHttpClient(SidecarClientName, client =>
         {
             client.BaseAddress = new Uri(sidecarBaseUrl);
-            client.Timeout = TimeSpan.FromSeconds(30);
+        })
+        .AddStandardResilienceHandler(options =>
+        {
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(2);
+            options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
+            options.Retry.MaxRetryAttempts = 3;
+            options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.UseJitter = true;
+            options.CircuitBreaker.FailureRatio = 0.5;
+            options.CircuitBreaker.MinimumThroughput = 5;
+            options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+            options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
         });
         builder.Services.AddSingleton<IEmbeddingService>(sp =>
             new PythonSidecarEmbeddingService(

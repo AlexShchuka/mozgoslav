@@ -18,7 +18,6 @@ public sealed class AnthropicLlmProvider : ILlmProvider
 {
     private const int MaxTokens = 4096;
     private const string DefaultAnthropicVersion = "2023-06-01";
-    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(60);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
@@ -44,8 +43,10 @@ public sealed class AnthropicLlmProvider : ILlmProvider
     {
         try
         {
+            // ADR-011 step 3 — resilience (timeouts, retry, circuit-breaker)
+            // lives on the named "llm" HttpClient in Program.cs. No per-call
+            // Timeout override here so the resilience handler's budget wins.
             using var client = _httpClientFactory.CreateClient("llm");
-            client.Timeout = Timeout;
 
             var endpoint = new Uri(new Uri(_settings.LlmEndpoint), "/v1/messages");
             var model = string.IsNullOrWhiteSpace(_settings.LlmModel) ? "claude-3-5-sonnet-latest" : _settings.LlmModel;

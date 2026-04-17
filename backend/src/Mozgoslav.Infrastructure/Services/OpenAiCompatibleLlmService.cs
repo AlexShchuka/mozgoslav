@@ -44,10 +44,14 @@ public sealed class OpenAiCompatibleLlmService : ILlmService
     {
         try
         {
+            // ADR-011 step 3 — resilience handler already owns timeouts on the
+            // "llm" named client. For the health probe we want a snappy fail,
+            // so we link a 3 s cancellation token on top.
             using var client = _httpClientFactory.CreateClient("llm");
-            client.Timeout = TimeSpan.FromSeconds(3);
+            using var probeCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            probeCts.CancelAfter(TimeSpan.FromSeconds(3));
             using var response = await client.GetAsync(
-                new Uri(new Uri(_settings.LlmEndpoint), "/v1/models"), ct);
+                new Uri(new Uri(_settings.LlmEndpoint), "/v1/models"), probeCts.Token);
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
