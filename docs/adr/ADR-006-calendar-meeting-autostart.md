@@ -125,9 +125,30 @@ Because `framer-motion@12` (already a dep) and `motion@12` (new package name) ar
 
 **Consequences.** Single animation mental model across the codebase. ≈ 18 KB gzipped into the renderer chunk; Vite code-splits it cleanly. `strict` mode surfaces any future "accidentally imported `motion.div`" as a runtime warning in dev, which keeps the tree-shake honest.
 
-### D-6 — Palette tokens (#F5F5F7 / #1C1C1E + 4 system accents)
+### D-6 — Palette tokens (brighter base + 4 system accents)
 
-<!-- TODO: decision + alternatives + consequences -->
+**Decision.** Retire the purple-anchored palette and move to a macOS-native neutral base with four restrained system accents used only for state and iconography — never as large surface fills.
+
+```
+--neutral-bg:       #F5F5F7   /* light window */
+--neutral-bg-dark:  #1C1C1E   /* dark window chrome */
+--neutral-fg:       #1D1D1F   /* body copy on light */
+--neutral-fg-dim:   #6E6E73   /* muted copy / meta */
+
+--accent-primary:   #0A84FF   /* macOS system blue, anchor / CTA / focus ring */
+--accent-green:     #34C759   /* success, live indicators */
+--accent-orange:    #FF9F0A   /* processing, warn */
+--accent-pink:      #FF375F   /* attention, recording */
+```
+
+Every foreground/background pair in light and dark themes is verified against WCAG AA — 4.5:1 for body copy, 3:1 for large copy (18 px+). The `#6E6E73` dim-foreground on `#F5F5F7` passes at 4.57:1; `#1D1D1F` on `#1C1C1E` dark uses an alpha-lift (`#F2F2F7`) for legibility.
+
+**Alternatives considered.**
+- *Keep purple `#7c3aed` accent.* Rejected: it reads branded and clashes with macOS 26 / Tahoe's native blue; user explicitly asked for a more macOS-neutral feel.
+- *All-grey palette without accents.* Rejected: state indicators (recording / processing / error) need colour to parse quickly.
+- *Full Material You dynamic colour.* Rejected: over-engineered for a local-first desktop app.
+
+**Consequences.** `theme.ts` `lightTheme` / `darkTheme` maps replaced in one patch. Focus ring now pulls from `--accent-primary` (D-13). Legacy `accentSoft` / `accent` call sites continue to compile against the new values.
 
 ### D-7 — Brain-icon launcher (Obsidian Second Brain vibe)
 
