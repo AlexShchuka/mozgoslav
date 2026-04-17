@@ -12,9 +12,48 @@
 <!-- SECTION: Decisions -->
 ## Decisions
 
-### D-calendar — Calendar & meeting-app autostart (original ADR-006 scope)
+### D-calendar — Calendar & meeting-app autostart (original ADR-006 scope, preserved verbatim)
 
-<!-- TODO: preserved original D1-D5 + Consequences + Alternatives + Implementation plan (future) -->
+Granola / Fireflies / Fathom делают одну вещь, которую mozgoslav пока делает руками: когда пользователь начинает meeting (Zoom / Google Meet / Teams / Webex), приложение **само включает запись + транскрипцию**, без кликов. Для use-case «сценарий из операции» — ценнейшая фича: не забыть записать, не кликать между дейли-делами.
+
+#### D-calendar.1 Источники событий
+
+- **Apple Calendar (EventKit)** — запрашиваем доступ, читаем events на сегодня. Extract URLs / Zoom Meeting IDs / Google Meet codes.
+- **Meeting-app detection через running processes** — `zoom.us` / `Google Chrome (с meet.google.com)` / `Teams` / `Webex`. Native helper (уже будет после ADR-002) может мониторить.
+- **Combination:** calendar event → expected meeting time ± 5 мин window; when meeting-app process spawns AND there's matching event → trigger autostart.
+
+#### D-calendar.2 Autostart flow
+
+1. При старте mozgoslav — подписываемся на calendar events (EventKit).
+2. За 2 мин до event — pre-warm Whisper (load model).
+3. При detect'е matching meeting-app spawning → показываем toast: **«🎙 Meeting started: [title]. Recording will begin in 10s. [Cancel]»** → через 10 сек начинаем запись.
+4. Pre-fill recording metadata: title, date, attendees (из event), conversation type = `Meeting`.
+5. По окончании meeting-app process → auto-stop recording + enqueue для обычного pipeline (transcribe + LLM + export).
+
+#### D-calendar.3 Permissions
+
+- **EventKit** — TCC `NSCalendarsFullAccessUsageDescription` в Info.plist + onboarding-step.
+- **Screen Recording** — для записи system audio во время meeting (мик + «speakers» как в meetily).
+- **Automation** — если хотим читать Zoom app state напрямую (опц.).
+
+#### D-calendar.4 UX
+
+- **Opt-in** — дефолт выкл (`settings.autoRecord.enabled = false`). Пользователь включает явно.
+- **Toast cancel window** (10 сек) — даём возможность не записывать если meeting персональный.
+- **Do-not-record list** — domain/title blacklist (`settings.autoRecord.blockedPatterns`).
+- Для opt-in и blacklist — без UI, через `settings.db`.
+
+#### D-calendar.5 Reuse existing
+
+- `IAudioRecorder` (будет реализован в рамках V2 roadmap) — используется.
+- `ImportRecordingUseCase` — для enqueue обработки.
+- Native helper из ADR-002 — monitor processes + bridge.
+
+**Alternatives considered:** A1 только ручной запуск — отвергнут (Granola-style ценность). A2 hotkey-only без calendar — отвергнут (теряем «не забыть»). A3 OCR скриншотов Zoom — отвергнут (нагрузка, privacy).
+
+**Consequences (calendar):** killer-фича, нулевое friction, reuse pipeline ~95%. Блокер — реальный `IAudioRecorder` (см. D-15.a). Удлиняется onboarding (EventKit + Screen Recording permissions). Privacy: calendar access sensitive; явно заявляем в Privacy Policy, nothing leaves device.
+
+**Implementation plan (future iteration, out of this PR):** Phase 1 real `IAudioRecorder`, Phase 2 EventKit Swift helper, Phase 3 meeting-app process detection, Phase 4 orchestration + settings, Phase 5 mock-EventKit + process-spawn tests.
 
 ### D-1 — Button size ramp and macOS HIG 44pt hit target
 
