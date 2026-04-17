@@ -175,6 +175,7 @@ try
 
     builder.Services.AddHostedService<DatabaseInitializer>();
     builder.Services.AddHostedService<QueueBackgroundService>();
+    builder.Services.AddHostedService<SyncthingVersioningVerifier>();
 
     var app = builder.Build();
 

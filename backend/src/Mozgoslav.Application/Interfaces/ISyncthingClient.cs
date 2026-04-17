@@ -50,7 +50,18 @@ public interface ISyncthingClient
 
     /// <inheritdoc cref="GetConfigAsync"/>
     Task ReplaceConfigAsync(string configJson, CancellationToken ct);
+
+    /// <summary>
+    /// ADR-004 R8: current versioning policy for each managed folder, keyed by
+    /// folder id. Used at boot to detect drift between the expected policy
+    /// (staggered-30d / trashcan-30d / trashcan-14d) and what Syncthing
+    /// actually reports.
+    /// </summary>
+    Task<IReadOnlyDictionary<string, FolderVersioning>> GetFolderVersioningsAsync(CancellationToken ct);
 }
+
+/// <summary>Policy surfaced by <c>/rest/config/folders</c>.</summary>
+public sealed record FolderVersioning(string Type, IReadOnlyDictionary<string, string> Params);
 
 /// <summary>
 /// Data contract for <c>/api/sync/status</c> (ADR-004 R10).
