@@ -83,7 +83,11 @@ jobs:
           python -m venv .venv
           source .venv/bin/activate
           pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
+          # requirements-dev.txt is intentionally a lighter superset of
+          # requirements.txt (no transformers / no sentence-transformers).
+          # Tier-2 endpoints are covered via ModelNotAvailableError paths;
+          # the heavy production wheels ship only in the DMG bundle.
+          pip install -r requirements-dev.txt
       - name: Ruff
         run: cd python-sidecar && source .venv/bin/activate && ruff check .
       - name: Pytest
