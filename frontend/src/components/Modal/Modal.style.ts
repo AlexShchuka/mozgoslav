@@ -1,10 +1,11 @@
 import styled from "styled-components";
 
+import { liquidGlass, liquidGlassBackdrop } from "../../styles/liquidGlass";
+
 export const Backdrop = styled.div`
+  ${liquidGlassBackdrop}
   position: fixed;
   inset: 0;
-  background: rgba(10, 12, 18, 0.55);
-  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,7 +14,7 @@ export const Backdrop = styled.div`
 `;
 
 export const Dialog = styled.div`
-  background: ${({ theme }) => theme.colors.surfaceElevated};
+  ${liquidGlass}
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radii.lg};
   box-shadow: ${({ theme }) => theme.shadow.lg};

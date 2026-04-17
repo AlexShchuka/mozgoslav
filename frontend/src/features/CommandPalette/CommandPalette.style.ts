@@ -1,8 +1,10 @@
 import styled from "styled-components";
 
+import { liquidGlass } from "../../styles/liquidGlass";
+
 export const AnimatorShell = styled.div`
+  ${liquidGlass}
   width: min(640px, 90vw);
-  background: ${({ theme }) => theme.colors.surfaceElevated};
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radii.lg};
   box-shadow: ${({ theme }) => theme.shadow.lg};

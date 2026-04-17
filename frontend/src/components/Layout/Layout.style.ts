@@ -1,5 +1,7 @@
 import styled from "styled-components";
 
+import { liquidGlass } from "../../styles/liquidGlass";
+
 export const LayoutRoot = styled.div`
   display: grid;
   grid-template-columns: 240px 1fr;
@@ -8,10 +10,10 @@ export const LayoutRoot = styled.div`
 `;
 
 export const Sidebar = styled.aside`
+  ${liquidGlass}
   display: flex;
   flex-direction: column;
   padding: ${({ theme }) => theme.space(4)};
-  background: ${({ theme }) => theme.colors.surface};
   border-right: 1px solid ${({ theme }) => theme.colors.border};
   -webkit-app-region: drag;
 `;
