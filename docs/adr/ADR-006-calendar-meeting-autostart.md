@@ -176,9 +176,17 @@ Every foreground/background pair in light and dark themes is verified against WC
 
 **Consequences.** One new shared component `src/components/BrainLauncher/`. Reused by Dashboard (D-8), tray (V2), and command palette action (V2, B14). All decorative animations respect `prefers-reduced-motion`.
 
-### D-8 — Record button enabled, wired to DictationSessionManager
+### D-8 — Record button enabled, wired to `DictationSessionManager`
 
-<!-- TODO: decision + alternatives + consequences -->
+**Decision.** Remove the `disabled` flag from the Dashboard "Record" control and replace its visual with the `BrainLauncher` component (D-7). Wire `onClick` to a minimal 4-state machine (`idle → arming → recording → stopping → idle`) that calls the existing `POST /api/dictation/start` and `POST /api/dictation/stop/{id}` endpoints. Arming / stopping are purely visual micro-states (~120 ms) that prevent double-click races.
+
+The frontend does **not** own audio capture in this ADR — it triggers the server session; actual mic capture still flows through the dictation overlay pipeline (Electron main + Swift helper) that ADR-002 already scaffolded. Until the Swift recorder is real (D-15.a / B11), pressing the button starts a session against `NoopAudioRecorder`, so the state machine and UI flow are exercised end-to-end on Linux dev boxes as well.
+
+**Alternatives considered.**
+- *Keep button disabled until AVFoundation lands.* Rejected: the UX / UI work is the whole point of this PR; the state machine has to be reviewable now, and the backend endpoints already exist.
+- *Redux-Saga slice.* Rejected for this iteration: the interaction fits a local `useReducer` neatly and does not cross features. If a second consumer appears we migrate to the saga slice pattern already documented in `frontend/CLAUDE.md`.
+
+**Consequences.** Dashboard gains an `onRecordClick` handler; one React Testing Library test asserts state transitions on click + error. No backend changes.
 
 ### D-9 — Queue cancel endpoint + AnimatePresence row removal
 
