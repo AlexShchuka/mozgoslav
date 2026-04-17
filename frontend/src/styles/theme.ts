@@ -30,7 +30,7 @@ export interface Theme {
   font: {
     family: string;
     familyMono: string;
-    size: { xs: string; sm: string; md: string; lg: string; xl: string; xxl: string };
+    size: { xs: string; sm: string; md: string; lg: string; xl: string; xxl: string; hero: string };
     weight: { regular: number; medium: number; semibold: number; bold: number };
   };
   shadow: { sm: string; md: string; lg: string };
@@ -41,7 +41,7 @@ const sharedTypography = {
   family:
     '-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Helvetica, Arial, sans-serif',
   familyMono: 'ui-monospace, "JetBrains Mono", Menlo, monospace',
-  size: { xs: "11px", sm: "13px", md: "14px", lg: "16px", xl: "20px", xxl: "26px" },
+  size: { xs: "12px", sm: "13px", md: "15px", lg: "19px", xl: "24px", xxl: "30px", hero: "39px" },
   weight: { regular: 400, medium: 500, semibold: 600, bold: 700 },
 };
 
