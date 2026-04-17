@@ -99,7 +99,17 @@ try
     builder.Services.AddSingleton<IStreamingTranscriptionService>(sp => sp.GetRequiredService<WhisperNetTranscriptionService>());
     builder.Services.AddSingleton<ILlmService, OpenAiCompatibleLlmService>();
     builder.Services.AddSingleton<IMarkdownExporter, FileMarkdownExporter>();
-    builder.Services.AddSingleton<IAudioRecorder, NoopAudioRecorder>();
+    // B11 / ADR-006 D-15.a: real mic capture on macOS via ffmpeg's AVFoundation
+    // input (no new bundled binary — ffmpeg is already a README prerequisite).
+    // Non-macOS hosts fall back to the NoopAudioRecorder so builds stay portable.
+    if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
+    {
+        builder.Services.AddSingleton<IAudioRecorder, FfmpegAudioRecorder>();
+    }
+    else
+    {
+        builder.Services.AddSingleton<IAudioRecorder, NoopAudioRecorder>();
+    }
     builder.Services.AddSingleton<IDictationSessionManager, DictationSessionManager>();
     builder.Services.AddScoped<MeetilyImporterService>();
     builder.Services.AddScoped<ObsidianSetupService>();
