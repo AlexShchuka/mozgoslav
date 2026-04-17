@@ -91,6 +91,28 @@ For any previously-unknown failure surfaced, apply the same hypothesis-first ana
 - If `Concentus` (managed Opus decoder) is needed, is shuka OK with adding that NuGet dependency? Default: yes (pure-managed, small, well-maintained). Agent proceeds; shuka vetoes at checkpoint if not.
 - If fixing the `DownloadAsync` progress-report requires changing the service signature, is that a breaking change? Check callers under `src/` — if only the test calls it, free to change. Otherwise coordinate with blocks 2, 4, 7.
 
-## 8. Checkpoint summary (agent fills this after block)
+## 8. Checkpoint summary (Agent A, 2026-04-17)
 
-Placeholder — agent appends: files changed, tests added/modified, CI workflow run URL, any deviation from the plan.
+### Files changed
+- `backend/src/Mozgoslav.Infrastructure/Services/ModelDownloadService.cs` — always emit a final `Progress(received, total, 100)` report after the read loop finishes; guarantees a terminal event for tiny payloads that complete in a single buffer iteration.
+- `backend/tests/Mozgoslav.Tests/Infrastructure/ModelDownloadServiceTests.cs` — replace `System.Progress<T>` (which posts to the thread pool and races with the awaiter continuation) with a synchronous `IProgress<T>` implementation so the test no longer depends on scheduler timing.
+- `.github/workflows/ci.yml` — explicit `apt-get install ffmpeg` / `brew install ffmpeg` step for the backend job on both Linux and macOS runners. `FfmpegPcmDecoder` is exercised end-to-end by `DictationPushWebmOpusTests`, so a missing runner-image binary manifested as a 400 response.
+- `python-sidecar/app/models/` (new in git) — the directory has existed on disk since the embed feature, but the `.gitignore` rule `models/` was swallowing it so `common.py` and `schemas.py` were never tracked. Added the module on the branch, including a new `EmbedRequest` / `EmbedResponse` pair the existing `app/routers/embed.py` imports.
+- `.gitignore` — carve `python-sidecar/app/models/` out of the generic `models/` exclusion so the pydantic schema module can be tracked (the original rule was aimed at runtime ML-model binaries, not application source code).
+
+### Tests
+- Backend unit: `Mozgoslav.Tests` — 152/152 pass locally on Ubuntu with ffmpeg installed.
+- Backend integration: `Mozgoslav.Tests.Integration` — 128/128 pass.
+- Python sidecar: `python-sidecar` — 22/22 pytest pass, ruff clean (previously 0 tests collected because of the `EmbedRequest` import failure).
+- Frontend: `npm install` → node_modules; `npm run typecheck` clean, `npm run lint` clean, `npm test -- --watchAll=false` = 97 tests across 19 suites pass, `WATCHPACK_POLLING=true npm run build` succeeds (vite production bundle).
+- Dictation helper (Swift): not runnable in Linux sandbox — macOS-only (AppKit / AVFoundation / ApplicationServices). Verified by shuka on Mac during Block 3 pass.
+
+### Outstanding — flag for Agent B (frontend territory)
+- `npm ci` on a clean `node_modules/` currently fails with `Missing: electron-builder-squirrel-windows@25.1.8 from lock file` (plus sub-tree `archiver`, `fs-extra`, `tar-stream`, `zip-stream`, `archiver-utils`, `readdir-glob`). Those are peer deps of `app-builder-lib` that the committed `package-lock.json` declares as peers without materialising the actual `node_modules/electron-builder-squirrel-windows/` entry. `npm install` (which is what the sandbox uses) skips them silently; CI uses `npm ci` and therefore the `frontend` job is currently red on both Linux and macOS.
+
+  This is **not** a lockfile-regen fix (I tried — regenerating produces the same structure). The viable options are (a) add `electron-builder-squirrel-windows@25.1.8` as an explicit devDependency so npm materialises its own entry, (b) replace `npm ci` with `npm install` in `ci.yml` for the frontend job, or (c) upgrade `electron-builder` to a version that emits complete cross-platform deps. Each of those touches `frontend/package.json` or the frontend CI step — Agent B's territory per the block split — so I stopped short and did not commit any frontend change. Agent B to decide and push the fix.
+
+### Deviation from the plan
+- The plan hypothesised a native-opus dependency for `DictationPushWebmOpusTests`. Root cause is different: `FfmpegPcmDecoder` shells out to `ffmpeg`, and the binary is absent on a fresh sandbox and not explicitly installed in CI. Fix stays aligned with §2.2 alternative (a): install ffmpeg in CI. No NuGet dependency added; no pure-managed opus decoder introduced.
+- The plan's primary hypothesis for `ModelDownloadServiceTests` (threshold-based progress) turned out secondary; the dominant cause is `Progress<T>` thread-pool dispatch racing with the assertion on a 32 KB payload. Both the service and the test were touched because the service-only fix cannot win the race on small payloads either.
+- `ModelDownloadService.DownloadAsync(Uri, …)` overload remains as `throw new NotImplementedException()`. It is unreferenced in the codebase; flagging for ADR-009 cleanup in Block 8 rather than extending scope here.

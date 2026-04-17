@@ -58,8 +58,9 @@ public sealed class ModelDownloadServiceTests : IDisposable
         var factory = BuildFactory(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(payload) });
 
         var destination = Path.Combine(_tempDirectory, "model.bin");
-        var reports = new List<ModelDownloadService.Progress>();
-        var progress = new Progress<ModelDownloadService.Progress>(reports.Add);
+        // Synchronous IProgress — System.Progress<T> posts to the thread pool
+        // so the callback can race with the assertion below on a small payload.
+        var progress = new SynchronousProgress<ModelDownloadService.Progress>();
 
         var service = new ModelDownloadService(factory, NullLogger<ModelDownloadService>.Instance);
         var result = await service.DownloadAsync("https://example.invalid/model.bin", destination, progress, TestContext.CancellationToken);
@@ -67,8 +68,8 @@ public sealed class ModelDownloadServiceTests : IDisposable
         result.Should().Be(destination);
         File.Exists(destination).Should().BeTrue();
         new FileInfo(destination).Length.Should().Be(payload.Length);
-        reports.Should().NotBeEmpty();
-        reports[^1].BytesReceived.Should().Be(payload.Length);
+        progress.Reports.Should().NotBeEmpty();
+        progress.Reports[^1].BytesReceived.Should().Be(payload.Length);
     }
 
     [TestMethod]
@@ -139,5 +140,19 @@ public sealed class ModelDownloadServiceTests : IDisposable
             var response = _responder(request);
             return Task.FromResult(response);
         }
+    }
+
+    /// <summary>
+    /// Synchronous <see cref="IProgress{T}"/> implementation. Unlike
+    /// <see cref="Progress{T}"/> which dispatches to the captured
+    /// <see cref="SynchronizationContext"/> or the thread pool, this
+    /// appends on the caller thread so tests can assert immediately after
+    /// the <c>await</c> without racing the callback.
+    /// </summary>
+    private sealed class SynchronousProgress<T> : IProgress<T>
+    {
+        public List<T> Reports { get; } = [];
+
+        public void Report(T value) => Reports.Add(value);
     }
 }
