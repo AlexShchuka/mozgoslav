@@ -243,7 +243,17 @@ Queue page (explicitly reported as missing translations) is migrated first; ever
 
 ### D-12 — README one-liners for dev + prod
 
-<!-- TODO: decision + alternatives + consequences -->
+**Decision.** The README opens with two copy-pasteable one-liners. No multi-line "first do X, then Y" code blocks for the happy path — everything chainable with `&&`.
+
+- **Run (dev).** `npm run dev` — orchestrated by `scripts/dev.mjs`, which starts (a) backend `dotnet run --project backend/src/Mozgoslav.Api`, (b) python sidecar `uvicorn app.main:app --reload --port 5060`, (c) Electron dev `cd frontend && WATCHPACK_POLLING=true vite`. Bootstraps lazily: the script only runs `npm ci` and `dotnet restore` when the respective lock/obj-dir is missing, so repeat runs skip cold installs. `concurrently` handles child-process lifecycle / ctrl-C propagation.
+- **Build (prod).** `npm run build` — cleans `frontend/dist` + `frontend/dist-electron`, runs `dotnet publish -maxcpucount:1 -c Release` into `backend/publish/`, bundles the python sidecar (`pip install -r requirements.txt --target`), then `electron-builder --mac` to produce a signed `.dmg` + `.app`. A README note calls out that actual signing requires a macOS host; CI builds are unsigned by design.
+
+**Alternatives considered.**
+- *Leave users to orchestrate three terminals.* Rejected — high friction for contributors, and the MVP is a single desktop app.
+- *Makefile.* Acceptable, but `npm run` is already the project's entry-point language, so we stay there for discoverability.
+- *Turborepo / Nx.* Overkill for three scripts.
+
+**Consequences.** Two new files (`scripts/dev.mjs`, `scripts/build.mjs`) and two new root-level npm scripts. Stale README sections (prior multi-step instructions) migrate to `docs/.archive/` — nothing is deleted, just no longer in the main entry-point.
 
 ### D-13 — Accessibility baseline (prefers-reduced-motion, WCAG AA, focus rings)
 
