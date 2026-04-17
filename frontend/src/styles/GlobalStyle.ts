@@ -15,8 +15,8 @@ export const GlobalStyle = createGlobalStyle`
   }
 
   body {
-    background: ${({ theme }) => theme.colors.bg};
-    color: ${({ theme }) => theme.colors.text};
+    background: ${({ theme }) => theme.colors.bg.base};
+    color: ${({ theme }) => theme.colors.text.primary};
     font-family: ${({ theme }) => theme.font.family};
     font-size: ${({ theme }) => theme.font.size.md};
     line-height: 1.5;
@@ -33,13 +33,14 @@ export const GlobalStyle = createGlobalStyle`
     font-family: ${({ theme }) => theme.font.familyMono};
   }
 
+  /* ADR-013 — use accent.glow on selection so it reads as a brand moment. */
   ::selection {
-    background: ${({ theme }) => theme.colors.accentSoft};
-    color: ${({ theme }) => theme.colors.text};
+    background: ${({ theme }) => theme.colors.accent.soft};
+    color: ${({ theme }) => theme.colors.text.primary};
   }
 
   a {
-    color: ${({ theme }) => theme.colors.accent};
+    color: ${({ theme }) => theme.colors.accent.primary};
     text-decoration: none;
   }
 
@@ -56,10 +57,10 @@ export const GlobalStyle = createGlobalStyle`
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme.colors.border};
+    background: ${({ theme }) => theme.colors.border.subtle};
     border-radius: ${({ theme }) => theme.radii.full};
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: ${({ theme }) => theme.colors.textSubtle};
+    background: ${({ theme }) => theme.colors.text.muted};
   }
 `;

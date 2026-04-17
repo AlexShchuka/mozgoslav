@@ -6,7 +6,7 @@ export const ChatRoot = styled.div`
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  background: ${({ theme }) => theme.colors.bg};
+  background: ${({ theme }) => theme.colors.bg.base};
 `;
 
 export const Header = styled.header`
@@ -15,15 +15,15 @@ export const Header = styled.header`
   justify-content: space-between;
   gap: ${({ theme }) => theme.space(3)};
   padding: ${({ theme }) => `${theme.space(4)} ${theme.space(6)}`};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  background: ${({ theme }) => theme.colors.surface};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border.subtle};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
 `;
 
 export const Title = styled.h1`
   margin: 0;
   font-size: ${({ theme }) => theme.font.size.lg};
   font-weight: ${({ theme }) => theme.font.weight.semibold};
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const MessageList = styled.ol`
@@ -41,7 +41,7 @@ export const MessageList = styled.ol`
 export const EmptyState = styled.div`
   margin: auto;
   text-align: center;
-  color: ${({ theme }) => theme.colors.textMuted};
+  color: ${({ theme }) => theme.colors.text.secondary};
   font-size: ${({ theme }) => theme.font.size.md};
   max-width: 420px;
 `;
@@ -59,13 +59,13 @@ export const MessageContent = styled.div<{ $role: "user" | "assistant" }>`
   line-height: 1.55;
   font-size: ${({ theme }) => theme.font.size.md};
   color: ${({ theme, $role }) =>
-    $role === "user" ? theme.colors.text : theme.colors.text};
+    $role === "user" ? theme.colors.text.primary : theme.colors.text.primary};
   ${({ $role, theme }) =>
     $role === "user"
       ? css`
           padding: ${theme.space(2)} ${theme.space(3)};
-          background: ${theme.colors.accentSoft};
-          color: ${theme.colors.text};
+          background: ${theme.colors.accent.soft};
+          color: ${theme.colors.text.primary};
           border-radius: ${theme.radii.md};
         `
       : css`
@@ -100,17 +100,17 @@ export const CitationChip = styled.button`
   gap: ${({ theme }) => theme.space(1)};
   padding: ${({ theme }) => `${theme.space(1)} ${theme.space(2)}`};
   border-radius: ${({ theme }) => theme.radii.full};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  background: ${({ theme }) => theme.colors.surface};
-  color: ${({ theme }) => theme.colors.textMuted};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
+  color: ${({ theme }) => theme.colors.text.secondary};
   font-size: ${({ theme }) => theme.font.size.xs};
   font-weight: ${({ theme }) => theme.font.weight.medium};
   cursor: pointer;
-  transition: border-color ${({ theme }) => theme.motion.fast},
-    color ${({ theme }) => theme.motion.fast};
+  transition: border-color ${({ theme }) => theme.motion.duration.fast},
+    color ${({ theme }) => theme.motion.duration.fast};
   &:hover {
-    border-color: ${({ theme }) => theme.colors.accent};
-    color: ${({ theme }) => theme.colors.accent};
+    border-color: ${({ theme }) => theme.colors.accent.primary};
+    color: ${({ theme }) => theme.colors.accent.primary};
   }
 `;
 
@@ -127,7 +127,7 @@ export const TypingDots = styled.div`
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: ${({ theme }) => theme.colors.textMuted};
+    background: ${({ theme }) => theme.colors.text.secondary};
     animation: ${dotPulse} 1.2s infinite ease-in-out;
   }
   span:nth-child(2) {
@@ -143,8 +143,8 @@ export const InputBar = styled.form`
   align-items: flex-end;
   gap: ${({ theme }) => theme.space(2)};
   padding: ${({ theme }) => `${theme.space(3)} ${theme.space(6)} ${theme.space(5)}`};
-  border-top: 1px solid ${({ theme }) => theme.colors.border};
-  background: ${({ theme }) => theme.colors.surface};
+  border-top: 1px solid ${({ theme }) => theme.colors.border.subtle};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
 `;
 
 export const InputField = styled.textarea`
@@ -153,16 +153,16 @@ export const InputField = styled.textarea`
   max-height: 220px;
   padding: ${({ theme }) => `${theme.space(2.5)} ${theme.space(3)}`};
   resize: none;
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   border-radius: ${({ theme }) => theme.radii.md};
   font-family: ${({ theme }) => theme.font.family};
   font-size: ${({ theme }) => theme.font.size.md};
-  background: ${({ theme }) => theme.colors.bg};
-  color: ${({ theme }) => theme.colors.text};
+  background: ${({ theme }) => theme.colors.bg.base};
+  color: ${({ theme }) => theme.colors.text.primary};
   line-height: 1.4;
   &:focus {
     outline: none;
-    border-color: ${({ theme }) => theme.colors.accent};
+    border-color: ${({ theme }) => theme.colors.accent.primary};
     box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.focusRing};
   }
 `;

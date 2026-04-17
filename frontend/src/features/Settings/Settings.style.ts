@@ -11,15 +11,15 @@ export const PageTitle = styled.h1`
   margin: 0;
   font-size: ${({ theme }) => theme.font.size.xxl};
   font-weight: ${({ theme }) => theme.font.weight.semibold};
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const Tabs = styled.div`
   display: flex;
   gap: ${({ theme }) => theme.space(1)};
   padding: ${({ theme }) => theme.space(1)};
-  background: ${({ theme }) => theme.colors.surface};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   border-radius: ${({ theme }) => theme.radii.md};
   align-self: flex-start;
 `;
@@ -30,14 +30,14 @@ export const Tab = styled.button<{ $active: boolean }>`
   padding: ${({ theme }) => `${theme.space(1.5)} ${theme.space(3)}`};
   font-size: ${({ theme }) => theme.font.size.sm};
   font-weight: ${({ theme }) => theme.font.weight.medium};
-  color: ${({ theme, $active }) => ($active ? theme.colors.accent : theme.colors.textMuted)};
-  background: ${({ theme, $active }) => ($active ? theme.colors.accentSoft : "transparent")};
+  color: ${({ theme, $active }) => ($active ? theme.colors.accent.primary : theme.colors.text.secondary)};
+  background: ${({ theme, $active }) => ($active ? theme.colors.accent.soft : "transparent")};
   border-radius: ${({ theme }) => theme.radii.sm};
-  transition: background ${({ theme }) => theme.motion.fast}, color ${({ theme }) => theme.motion.fast};
+  transition: background ${({ theme }) => theme.motion.duration.fast}, color ${({ theme }) => theme.motion.duration.fast};
   font-family: inherit;
 
   &:hover {
-    color: ${({ theme }) => theme.colors.text};
+    color: ${({ theme }) => theme.colors.text.primary};
   }
 `;
 
@@ -54,7 +54,7 @@ export const FormGrid = styled.div`
     display: block;
     margin-bottom: ${({ theme }) => theme.space(1.5)};
     font-size: ${({ theme }) => theme.font.size.sm};
-    color: ${({ theme }) => theme.colors.textMuted};
+    color: ${({ theme }) => theme.colors.text.secondary};
   }
 `;
 
@@ -73,9 +73,9 @@ export const SelectBox = styled.select`
   width: 100%;
   height: 40px;
   padding: 0 ${({ theme }) => theme.space(3)};
-  background: ${({ theme }) => theme.colors.surface};
-  color: ${({ theme }) => theme.colors.text};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
+  color: ${({ theme }) => theme.colors.text.primary};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   border-radius: ${({ theme }) => theme.radii.md};
   font-family: inherit;
   font-size: ${({ theme }) => theme.font.size.md};
@@ -83,13 +83,13 @@ export const SelectBox = styled.select`
   &:focus-visible {
     outline: 2px solid ${({ theme }) => theme.colors.focusRing};
     outline-offset: 2px;
-    border-color: ${({ theme }) => theme.colors.accent};
+    border-color: ${({ theme }) => theme.colors.accent.primary};
   }
 `;
 
 export const SelectOption = styled.option`
-  background: ${({ theme }) => theme.colors.surface};
-  color: ${({ theme }) => theme.colors.text};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const Toolbar = styled.div`

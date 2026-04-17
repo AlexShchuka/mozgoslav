@@ -23,27 +23,32 @@ const sizeStyles = {
 
 const variantStyles = {
   primary: css`
-    background: ${({ theme }) => theme.colors.accent};
-    color: ${({ theme }) => theme.colors.accentContrast};
+    background: linear-gradient(
+      135deg,
+      ${({ theme }) => theme.colors.accent.primary} 0%,
+      ${({ theme }) => theme.colors.accent.secondary} 100%
+    );
+    color: ${({ theme }) => theme.colors.accent.contrast};
     &:hover:not(:disabled) {
       filter: brightness(1.05);
+      box-shadow: ${({ theme }) => theme.shadow.accent};
     }
   `,
   secondary: css`
-    background: ${({ theme }) => theme.colors.surface};
-    color: ${({ theme }) => theme.colors.text};
-    border: 1px solid ${({ theme }) => theme.colors.border};
+    background: ${({ theme }) => theme.colors.bg.elevated2};
+    color: ${({ theme }) => theme.colors.text.primary};
+    border: 1px solid ${({ theme }) => theme.colors.border.subtle};
     &:hover:not(:disabled) {
-      border-color: ${({ theme }) => theme.colors.accent};
-      color: ${({ theme }) => theme.colors.accent};
+      border-color: ${({ theme }) => theme.colors.accent.primary};
+      color: ${({ theme }) => theme.colors.accent.primary};
     }
   `,
   ghost: css`
     background: transparent;
-    color: ${({ theme }) => theme.colors.textMuted};
+    color: ${({ theme }) => theme.colors.text.secondary};
     &:hover:not(:disabled) {
-      background: ${({ theme }) => theme.colors.accentSoft};
-      color: ${({ theme }) => theme.colors.accent};
+      background: ${({ theme }) => theme.colors.accent.soft};
+      color: ${({ theme }) => theme.colors.accent.primary};
     }
   `,
   danger: css`
@@ -64,10 +69,11 @@ export const StyledButton = styled.button<{ $variant: ButtonVariant; $size: Butt
   font-weight: ${({ theme }) => theme.font.weight.medium};
   cursor: pointer;
   user-select: none;
-  transition: background ${({ theme }) => theme.motion.fast},
-    color ${({ theme }) => theme.motion.fast},
-    filter ${({ theme }) => theme.motion.fast},
-    border-color ${({ theme }) => theme.motion.fast};
+  transition: background ${({ theme }) => theme.motion.duration.fast},
+    color ${({ theme }) => theme.motion.duration.fast},
+    filter ${({ theme }) => theme.motion.duration.fast},
+    box-shadow ${({ theme }) => theme.motion.duration.fast},
+    border-color ${({ theme }) => theme.motion.duration.fast};
 
   &:focus-visible {
     outline: 2px solid ${({ theme }) => theme.colors.focusRing};

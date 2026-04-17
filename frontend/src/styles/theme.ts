@@ -1,24 +1,49 @@
 import "styled-components";
 
 /**
- * Mozgoslav theme tokens. Two sibling themes (light, dark) share the shape so
- * styled-components `ThemeProvider` can be swapped without per-component logic.
- * Palette is muted + rounded with a single purple accent — Meetily-inspired
- * but neutral on branding.
+ * Mozgoslav design tokens (ADR-013).
+ *
+ * Palette drawn from the Logi Options+ 2026 language: deep near-black-blue
+ * base, a single cyan/mint accent, motion used as action hinting rather than
+ * decoration.
+ *
+ * Consumers MUST address tokens through the nested paths
+ * (`colors.accent.primary`, `colors.bg.elevated2`, `motion.duration.fast`, …)
+ * — there are no flat-string aliases. Motion variants live in
+ * `styles/motion.ts` and wrap framer-motion props around these tokens.
  */
+export interface MotionSpringTokens {
+  type: "spring";
+  stiffness: number;
+  damping: number;
+}
+
 export interface Theme {
   mode: "light" | "dark";
   colors: {
-    bg: string;
-    surface: string;
-    surfaceElevated: string;
-    border: string;
-    text: string;
-    textMuted: string;
-    textSubtle: string;
-    accent: string;
-    accentSoft: string;
-    accentContrast: string;
+    // Primary ADR-013 nested tokens.
+    bg: {
+      base: string;
+      elevated1: string;
+      elevated2: string;
+      elevated3: string;
+    };
+    border: {
+      subtle: string;
+      strong: string;
+    };
+    text: {
+      primary: string;
+      secondary: string;
+      muted: string;
+    };
+    accent: {
+      primary: string;
+      secondary: string;
+      soft: string;
+      contrast: string;
+      glow: string;
+    };
     success: string;
     warning: string;
     error: string;
@@ -33,8 +58,26 @@ export interface Theme {
     size: { xs: string; sm: string; md: string; lg: string; xl: string; xxl: string };
     weight: { regular: number; medium: number; semibold: number; bold: number };
   };
-  shadow: { sm: string; md: string; lg: string };
-  motion: { fast: string; base: string; slow: string };
+  shadow: {
+    xs: string;
+    sm: string;
+    md: string;
+    lg: string;
+    accent: string;
+  };
+  motion: {
+    duration: {
+      instant: string;
+      fast: string;
+      base: string;
+      slow: string;
+    };
+    easing: {
+      standard: string;
+      emphasized: string;
+      spring: { soft: MotionSpringTokens; firm: MotionSpringTokens };
+    };
+  };
 }
 
 // Typography snapped to the BC-041 baseline: `sm` ≥ 14 px body size and
@@ -51,60 +94,138 @@ const sharedTypography = {
 
 const sharedRadii = { sm: "6px", md: "10px", lg: "16px", full: "999px" };
 
-export const lightTheme: Theme = {
-  mode: "light",
+const sharedMotion = {
+  duration: {
+    instant: "80ms",
+    fast: "150ms",
+    base: "220ms",
+    slow: "360ms",
+  },
+  easing: {
+    standard: "cubic-bezier(0.2, 0, 0, 1)",
+    emphasized: "cubic-bezier(0.3, 0, 0.1, 1)",
+    spring: {
+      soft: { type: "spring", stiffness: 260, damping: 28 } satisfies MotionSpringTokens,
+      firm: { type: "spring", stiffness: 420, damping: 32 } satisfies MotionSpringTokens,
+    },
+  },
+} as const;
+
+// ------------------------------- dark (primary ADR-013 palette) -----------
+
+const darkBg = {
+  base: "#0c0c14",
+  elevated1: "#121219",
+  elevated2: "#1a1a24",
+  elevated3: "#22222e",
+} as const;
+
+const darkBorder = {
+  subtle: "#22222e",
+  strong: "#3a3a4a",
+} as const;
+
+const darkText = {
+  primary: "#ecedef",
+  secondary: "#a5adc2",
+  muted: "#6b7280",
+} as const;
+
+const darkAccent = {
+  primary: "#29fcc3",
+  secondary: "#0bd4cd",
+  soft: "rgba(41, 252, 195, 0.12)",
+  contrast: "#0c0c14",
+  glow: "rgba(41, 252, 195, 0.35)",
+} as const;
+
+export const darkTheme: Theme = {
+  mode: "dark",
   colors: {
-    bg: "#f7f8fa",
-    surface: "#ffffff",
-    surfaceElevated: "#ffffff",
-    border: "#e6e8ec",
-    text: "#11131a",
-    textMuted: "#5a6072",
-    textSubtle: "#8b93a7",
-    accent: "#7c3aed",
-    accentSoft: "#ede9fe",
-    accentContrast: "#ffffff",
-    success: "#10b981",
-    warning: "#f59e0b",
-    error: "#ef4444",
-    info: "#3b82f6",
-    focusRing: "rgba(124, 58, 237, 0.4)",
+    bg: darkBg,
+    border: darkBorder,
+    text: darkText,
+    accent: darkAccent,
+    success: "#29fcc3",
+    warning: "#fbbf24",
+    error: "#f87171",
+    info: "#60a5fa",
+    focusRing: "rgba(41, 252, 195, 0.5)",
   },
   radii: sharedRadii,
   space: (n) => `${n * 4}px`,
   font: sharedTypography,
   shadow: {
-    sm: "0 1px 2px rgba(15, 23, 42, 0.06)",
-    md: "0 4px 12px rgba(15, 23, 42, 0.08)",
-    lg: "0 16px 40px rgba(15, 23, 42, 0.12)",
+    xs: "0 1px 2px rgba(0, 0, 0, 0.4)",
+    sm: "0 4px 12px rgba(0, 0, 0, 0.4)",
+    md: "0 10px 28px rgba(0, 0, 0, 0.5)",
+    lg: "0 24px 56px rgba(0, 0, 0, 0.6)",
+    accent:
+      "0 0 0 1px rgba(41, 252, 195, 0.35), 0 8px 24px rgba(41, 252, 195, 0.18)",
   },
-  motion: { fast: "120ms", base: "200ms", slow: "320ms" },
+  motion: {
+    duration: sharedMotion.duration,
+    easing: sharedMotion.easing,
+  },
 };
 
-export const darkTheme: Theme = {
-  ...lightTheme,
-  mode: "dark",
+// ------------------------------- light --------------------------------------
+
+const lightBg = {
+  base: "#f7f8fa",
+  elevated1: "#ffffff",
+  elevated2: "#ffffff",
+  elevated3: "#ffffff",
+} as const;
+
+const lightBorder = {
+  subtle: "#e6e8ec",
+  strong: "#c9cdd6",
+} as const;
+
+const lightText = {
+  primary: "#0c0c14",
+  secondary: "#5a6072",
+  muted: "#8b93a7",
+} as const;
+
+// Brand accent stays cyan-leaning across themes; deeper cyan for the primary
+// on light so it remains readable on white.
+const lightAccent = {
+  primary: "#0bd4cd",
+  secondary: "#29fcc3",
+  soft: "rgba(11, 212, 205, 0.12)",
+  contrast: "#ffffff",
+  glow: "rgba(11, 212, 205, 0.35)",
+} as const;
+
+export const lightTheme: Theme = {
+  mode: "light",
   colors: {
-    bg: "#0b0d12",
-    surface: "#11141b",
-    surfaceElevated: "#161a23",
-    border: "#22263048",
-    text: "#ecedef",
-    textMuted: "#a5adc2",
-    textSubtle: "#6b7280",
-    accent: "#a78bfa",
-    accentSoft: "#2d2154",
-    accentContrast: "#0b0d12",
-    success: "#34d399",
-    warning: "#fbbf24",
-    error: "#f87171",
-    info: "#60a5fa",
-    focusRing: "rgba(167, 139, 250, 0.4)",
+    bg: lightBg,
+    border: lightBorder,
+    text: lightText,
+    accent: lightAccent,
+    success: "#0bd4cd",
+    warning: "#f59e0b",
+    error: "#ef4444",
+    info: "#3b82f6",
+    focusRing: "rgba(11, 212, 205, 0.5)",
   },
+  radii: sharedRadii,
+  space: (n) => `${n * 4}px`,
+  font: sharedTypography,
   shadow: {
-    sm: "0 1px 2px rgba(0, 0, 0, 0.4)",
-    md: "0 6px 16px rgba(0, 0, 0, 0.4)",
-    lg: "0 20px 48px rgba(0, 0, 0, 0.5)",
+    xs: "0 1px 2px rgba(15, 23, 42, 0.06)",
+    sm: "0 4px 12px rgba(15, 23, 42, 0.08)",
+    md: "0 10px 28px rgba(15, 23, 42, 0.12)",
+    lg: "0 24px 56px rgba(15, 23, 42, 0.18)",
+    accent:
+      "0 0 0 1px rgba(11, 212, 205, 0.35), 0 8px 24px rgba(11, 212, 205, 0.18)",
+  },
+  motion: {
+    duration: sharedMotion.duration,
+    easing: sharedMotion.easing,
   },
 };
 

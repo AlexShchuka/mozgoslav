@@ -4,15 +4,15 @@ export const LayoutRoot = styled.div`
   display: grid;
   grid-template-columns: 240px 1fr;
   height: 100vh;
-  background: ${({ theme }) => theme.colors.bg};
+  background: ${({ theme }) => theme.colors.bg.base};
 `;
 
 export const Sidebar = styled.aside`
   display: flex;
   flex-direction: column;
   padding: ${({ theme }) => theme.space(4)};
-  background: ${({ theme }) => theme.colors.surface};
-  border-right: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
+  border-right: 1px solid ${({ theme }) => theme.colors.border.subtle};
   -webkit-app-region: drag;
 `;
 
@@ -21,14 +21,14 @@ export const Brand = styled.div`
   align-items: center;
   gap: ${({ theme }) => theme.space(2)};
   padding: ${({ theme }) => theme.space(2)} ${({ theme }) => theme.space(2.5)};
-  color: ${({ theme }) => theme.colors.accent};
+  color: ${({ theme }) => theme.colors.accent.primary};
 `;
 
 export const AppName = styled.h1`
   margin: 0;
   font-size: ${({ theme }) => theme.font.size.lg};
   font-weight: ${({ theme }) => theme.font.weight.semibold};
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.text.primary};
   letter-spacing: -0.01em;
 `;
 
@@ -36,7 +36,7 @@ export const SidebarTitle = styled.h1`
   margin: 0 0 ${({ theme }) => theme.space(3)} 0;
   font-size: ${({ theme }) => theme.font.size.lg};
   font-weight: ${({ theme }) => theme.font.weight.semibold};
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const SidebarSection = styled.nav`
@@ -61,18 +61,18 @@ export const SidebarItem = styled.a`
   padding: ${({ theme }) => `${theme.space(2)} ${theme.space(2.5)}`};
   border-radius: ${({ theme }) => theme.radii.md};
   font-size: ${({ theme }) => theme.font.size.sm};
-  color: ${({ theme }) => theme.colors.textMuted};
+  color: ${({ theme }) => theme.colors.text.secondary};
   text-decoration: none;
-  transition: background ${({ theme }) => theme.motion.fast}, color ${({ theme }) => theme.motion.fast};
+  transition: background ${({ theme }) => theme.motion.duration.fast}, color ${({ theme }) => theme.motion.duration.fast};
 
   &:hover {
-    background: ${({ theme }) => theme.colors.bg};
-    color: ${({ theme }) => theme.colors.text};
+    background: ${({ theme }) => theme.colors.bg.base};
+    color: ${({ theme }) => theme.colors.text.primary};
   }
 
   &.active {
-    background: ${({ theme }) => theme.colors.accentSoft};
-    color: ${({ theme }) => theme.colors.accent};
+    background: ${({ theme }) => theme.colors.accent.soft};
+    color: ${({ theme }) => theme.colors.accent.primary};
   }
 `;
 
@@ -81,9 +81,9 @@ export const SidebarFooter = styled.div`
   align-items: center;
   gap: ${({ theme }) => theme.space(2)};
   padding-top: ${({ theme }) => theme.space(3)};
-  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  border-top: 1px solid ${({ theme }) => theme.colors.border.subtle};
   font-size: ${({ theme }) => theme.font.size.xs};
-  color: ${({ theme }) => theme.colors.textMuted};
+  color: ${({ theme }) => theme.colors.text.secondary};
   -webkit-app-region: no-drag;
 `;
 

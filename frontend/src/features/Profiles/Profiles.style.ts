@@ -11,7 +11,7 @@ export const PageTitle = styled.h1`
   margin: 0;
   font-size: ${({ theme }) => theme.font.size.xxl};
   font-weight: ${({ theme }) => theme.font.weight.semibold};
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const RowActions = styled.div`
@@ -24,12 +24,12 @@ export const RowActions = styled.div`
 export const RowName = styled.div`
   font-weight: ${({ theme }) => theme.font.weight.semibold};
   font-size: ${({ theme }) => theme.font.size.md};
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const RowDescription = styled.div`
   font-size: ${({ theme }) => theme.font.size.xs};
-  color: ${({ theme }) => theme.colors.textMuted};
+  color: ${({ theme }) => theme.colors.text.secondary};
 `;
 
 const RowBadges = styled.div`
@@ -46,7 +46,7 @@ const RowBase = styled.div`
   justify-content: space-between;
   gap: ${({ theme }) => theme.space(3)};
   padding: ${({ theme }) => theme.space(3)} 0;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border.subtle};
   &:last-child {
     border-bottom: 0;
   }

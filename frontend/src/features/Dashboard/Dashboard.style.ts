@@ -12,16 +12,16 @@ export const DropzoneRoot = styled.div<{ $active: boolean }>`
   align-items: center;
   gap: ${({ theme }) => theme.space(4)};
   padding: ${({ theme }) => theme.space(6)};
-  border: 2px dashed ${({ theme, $active }) => ($active ? theme.colors.accent : theme.colors.border)};
+  border: 2px dashed ${({ theme, $active }) => ($active ? theme.colors.accent.primary : theme.colors.border.subtle)};
   border-radius: ${({ theme }) => theme.radii.lg};
-  background: ${({ theme, $active }) => ($active ? theme.colors.accentSoft : theme.colors.bg)};
+  background: ${({ theme, $active }) => ($active ? theme.colors.accent.soft : theme.colors.bg.base)};
   cursor: pointer;
-  transition: border-color ${({ theme }) => theme.motion.fast},
-    background ${({ theme }) => theme.motion.fast};
+  transition: border-color ${({ theme }) => theme.motion.duration.fast},
+    background ${({ theme }) => theme.motion.duration.fast};
 
   &:hover {
-    border-color: ${({ theme }) => theme.colors.accent};
-    background: ${({ theme }) => theme.colors.accentSoft};
+    border-color: ${({ theme }) => theme.colors.accent.primary};
+    background: ${({ theme }) => theme.colors.accent.soft};
   }
 `;
 
@@ -32,8 +32,8 @@ export const DropzoneIcon = styled.div`
   width: 52px;
   height: 52px;
   border-radius: ${({ theme }) => theme.radii.full};
-  background: ${({ theme }) => theme.colors.surface};
-  color: ${({ theme }) => theme.colors.accent};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
+  color: ${({ theme }) => theme.colors.accent.primary};
 `;
 
 export const DropzoneCopy = styled.div`
@@ -45,12 +45,12 @@ export const DropzoneCopy = styled.div`
 export const DropzoneTitle = styled.span`
   font-size: ${({ theme }) => theme.font.size.md};
   font-weight: ${({ theme }) => theme.font.weight.semibold};
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const DropzoneHint = styled.span`
   font-size: ${({ theme }) => theme.font.size.sm};
-  color: ${({ theme }) => theme.colors.textMuted};
+  color: ${({ theme }) => theme.colors.text.secondary};
 `;
 
 export const Row = styled.div`
@@ -75,7 +75,7 @@ export const SectionTitle = styled.h2`
   margin: 0;
   font-size: ${({ theme }) => theme.font.size.xl};
   font-weight: ${({ theme }) => theme.font.weight.semibold};
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const RecordingRow = styled.div`
@@ -83,8 +83,8 @@ export const RecordingRow = styled.div`
   align-items: center;
   gap: ${({ theme }) => theme.space(3)};
   padding: ${({ theme }) => theme.space(3)} 0;
-  color: ${({ theme }) => theme.colors.text};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  color: ${({ theme }) => theme.colors.text.primary};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border.subtle};
   &:last-child {
     border-bottom: 0;
   }
@@ -95,7 +95,7 @@ export const RecordingMeta = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.space(0.5)};
-  color: ${({ theme }) => theme.colors.textMuted};
+  color: ${({ theme }) => theme.colors.text.secondary};
 
   small {
     font-size: ${({ theme }) => theme.font.size.xs};
@@ -104,5 +104,5 @@ export const RecordingMeta = styled.div`
 
 export const RecordingName = styled.span`
   font-size: ${({ theme }) => theme.font.size.md};
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;

@@ -11,7 +11,7 @@ export const PageTitle = styled.h1`
   margin: 0;
   font-size: ${({ theme }) => theme.font.size.xxl};
   font-weight: ${({ theme }) => theme.font.weight.semibold};
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const NoteRow = styled.div`
@@ -19,7 +19,7 @@ export const NoteRow = styled.div`
   align-items: center;
   gap: ${({ theme }) => theme.space(3)};
   padding: ${({ theme }) => theme.space(3)} 0;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border.subtle};
   &:last-child {
     border-bottom: 0;
   }
@@ -28,17 +28,17 @@ export const NoteRow = styled.div`
 export const NoteTopic = styled.a`
   flex: 1;
   font-weight: ${({ theme }) => theme.font.weight.medium};
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.text.primary};
   text-decoration: none;
 
   &:hover {
-    color: ${({ theme }) => theme.colors.accent};
+    color: ${({ theme }) => theme.colors.accent.primary};
   }
 `;
 
 export const NoteMeta = styled.span`
   font-size: ${({ theme }) => theme.font.size.xs};
-  color: ${({ theme }) => theme.colors.textMuted};
+  color: ${({ theme }) => theme.colors.text.secondary};
   font-variant-numeric: tabular-nums;
 `;
 
@@ -55,7 +55,7 @@ export const FieldLabel = styled.label`
   display: block;
   margin: ${({ theme }) => theme.space(3)} 0 ${({ theme }) => theme.space(1)};
   font-size: ${({ theme }) => theme.font.size.sm};
-  color: ${({ theme }) => theme.colors.textMuted};
+  color: ${({ theme }) => theme.colors.text.secondary};
 
   &:first-child {
     margin-top: 0;
@@ -65,10 +65,10 @@ export const FieldLabel = styled.label`
 export const TitleField = styled.input`
   width: 100%;
   padding: ${({ theme }) => theme.space(2)} ${({ theme }) => theme.space(3)};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   border-radius: ${({ theme }) => theme.radii.md};
-  background: ${({ theme }) => theme.colors.surface};
-  color: ${({ theme }) => theme.colors.text};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
+  color: ${({ theme }) => theme.colors.text.primary};
   font: inherit;
   font-size: ${({ theme }) => theme.font.size.md};
   &:focus-visible {
@@ -79,10 +79,10 @@ export const TitleField = styled.input`
 export const BodyField = styled.textarea`
   width: 100%;
   padding: ${({ theme }) => theme.space(2)} ${({ theme }) => theme.space(3)};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   border-radius: ${({ theme }) => theme.radii.md};
-  background: ${({ theme }) => theme.colors.surface};
-  color: ${({ theme }) => theme.colors.text};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
+  color: ${({ theme }) => theme.colors.text.primary};
   font-family: ${({ theme }) => theme.font.familyMono};
   font-size: ${({ theme }) => theme.font.size.sm};
   resize: vertical;

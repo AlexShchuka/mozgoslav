@@ -14,8 +14,8 @@ export const Backdrop = styled.div`
 
 export const Palette = styled.div`
   width: min(640px, 90vw);
-  background: ${({ theme }) => theme.colors.surfaceElevated};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.bg.elevated3};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   border-radius: ${({ theme }) => theme.radii.lg};
   box-shadow: ${({ theme }) => theme.shadow.lg};
   overflow: hidden;
@@ -29,11 +29,11 @@ export const Input = styled.input`
   padding: ${({ theme }) => `${theme.space(4)} ${theme.space(5)}`};
   font-family: inherit;
   font-size: ${({ theme }) => theme.font.size.lg};
-  color: ${({ theme }) => theme.colors.text};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  color: ${({ theme }) => theme.colors.text.primary};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border.subtle};
 
   &::placeholder {
-    color: ${({ theme }) => theme.colors.textSubtle};
+    color: ${({ theme }) => theme.colors.text.muted};
   }
 `;
 
@@ -54,14 +54,14 @@ export const Item = styled.button<{ $active: boolean }>`
   gap: ${({ theme }) => theme.space(2.5)};
   padding: ${({ theme }) => `${theme.space(2.5)} ${theme.space(3)}`};
   border: 0;
-  background: ${({ theme, $active }) => ($active ? theme.colors.accentSoft : "transparent")};
-  color: ${({ theme, $active }) => ($active ? theme.colors.accent : theme.colors.text)};
+  background: ${({ theme, $active }) => ($active ? theme.colors.accent.soft : "transparent")};
+  color: ${({ theme, $active }) => ($active ? theme.colors.accent.primary : theme.colors.text.primary)};
   border-radius: ${({ theme }) => theme.radii.md};
   font-family: inherit;
   font-size: ${({ theme }) => theme.font.size.md};
   cursor: pointer;
   text-align: left;
-  transition: background ${({ theme }) => theme.motion.fast};
+  transition: background ${({ theme }) => theme.motion.duration.fast};
 
   span {
     flex: 1;
@@ -72,8 +72,8 @@ export const ItemHint = styled.span`
   flex: 0 !important;
   font-family: ${({ theme }) => theme.font.familyMono};
   font-size: ${({ theme }) => theme.font.size.xs};
-  color: ${({ theme }) => theme.colors.textSubtle};
-  background: ${({ theme }) => theme.colors.bg};
+  color: ${({ theme }) => theme.colors.text.muted};
+  background: ${({ theme }) => theme.colors.bg.base};
   padding: 2px 6px;
   border-radius: ${({ theme }) => theme.radii.sm};
 `;
