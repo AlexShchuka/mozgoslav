@@ -26,13 +26,13 @@ public sealed class LmStudioHttpClient : ILmStudioClient
         _logger = logger;
     }
 
-    public async Task<IReadOnlyList<LmStudioModel>> ListModelsAsync(CancellationToken ct)
+    public async Task<LmStudioDiscoveryResult> ListModelsAsync(CancellationToken ct)
     {
         var snapshot = await _settings.LoadAsync(ct);
         var endpoint = snapshot.LlmEndpoint?.TrimEnd('/');
         if (string.IsNullOrWhiteSpace(endpoint))
         {
-            return [];
+            return new LmStudioDiscoveryResult([], Reachable: false);
         }
 
         var url = endpoint.EndsWith("/v1", StringComparison.Ordinal)
@@ -42,12 +42,14 @@ public sealed class LmStudioHttpClient : ILmStudioClient
         try
         {
             var response = await _http.GetFromJsonAsync<ModelsEnvelope>(url, ct);
-            return response?.Data?.Select(m => new LmStudioModel(m.Id, m.Object)).ToArray() ?? [];
+            var installed = response?.Data?.Select(m => new LmStudioModel(m.Id, m.Object)).ToArray()
+                ?? Array.Empty<LmStudioModel>();
+            return new LmStudioDiscoveryResult(installed, Reachable: true);
         }
         catch (HttpRequestException ex)
         {
             _logger.LogDebug(ex, "LM Studio discovery failed for {Url}", url);
-            return [];
+            return new LmStudioDiscoveryResult([], Reachable: false);
         }
         catch (TaskCanceledException)
         {
@@ -56,7 +58,7 @@ public sealed class LmStudioHttpClient : ILmStudioClient
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogWarning(ex, "Unexpected LM Studio discovery failure for {Url}", url);
-            return [];
+            return new LmStudioDiscoveryResult([], Reachable: false);
         }
     }
 

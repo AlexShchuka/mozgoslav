@@ -148,20 +148,24 @@
     "tokenHint": "Stored locally in SQLite. Never leaves your machine except to the configured endpoint.",
     "savedToast": "Settings saved",
     "lmStudio": {
-      "title": "LM Studio models",
-      "hint": "We read the list of loaded models via the OpenAI-compatible /v1/models endpoint. Model downloads happen in LM Studio — Mozgoslav doesn't bundle them.",
-      "empty": "LM Studio is not responding. Start it, load a model, then click Retry.",
+      "installedTitle": "Installed via LM Studio",
+      "suggestedTitle": "Suggested",
+      "hintReachable": "Models loaded in LM Studio right now. Pick one to route all LLM calls through it.",
+      "hintOffline": "LM Studio is not responding at the endpoint above. Start it and click Retry.",
+      "suggestedHint": "Curated starting points — clicking opens the model page inside LM Studio.",
+      "empty": "Install LM Studio to manage local models —",
+      "noLoaded": "LM Studio is up but no models are loaded yet.",
       "use": "Use",
-      "selected": "Selected"
+      "selected": "Selected",
+      "openInLmStudio": "Open in LM Studio"
     }
   },
   "models": {
-    "title": "Models",
-    "subtitle": "Download what you need — everything stays local.",
+    "title": "Local models",
+    "subtitle": "Read-only list of Whisper/VAD files under AppPaths.Models. Use LM Studio for LLM downloads.",
     "installed": "Installed",
-    "notInstalled": "Not downloaded",
-    "download": "Download",
-    "sizeMb": "{{size}} MB"
+    "notInstalled": "Missing",
+    "openInLmStudioHint": "Need more models? Open LM Studio."
   },
   "obsidian": {
     "title": "Obsidian vault",

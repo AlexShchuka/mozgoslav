@@ -21,7 +21,6 @@ export const API_ENDPOINTS = {
   profile: (id: string) => `/api/profiles/${id}`,
   settings: "/api/settings",
   models: "/api/models",
-  modelDownload: "/api/models/download",
   meetilyImport: "/api/meetily/import",
   obsidianSetup: "/api/obsidian/setup",
   logs: "/api/logs",

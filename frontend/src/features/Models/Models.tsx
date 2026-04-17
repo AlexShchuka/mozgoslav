@@ -1,7 +1,7 @@
 import { FC, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import { Download, HardDrive } from "lucide-react";
+import { ExternalLink, HardDrive } from "lucide-react";
 
 import Badge from "../../components/Badge";
 import Button from "../../components/Button";
@@ -11,10 +11,14 @@ import { api } from "../../api/MozgoslavApi";
 import { ModelEntry } from "../../models/Model";
 import { PageRoot, PageTitle, Subtitle, ModelCard, ModelMeta, ModelHeader } from "./Models.style";
 
+/**
+ * ADR-006 D-11: the Models page is **read-only**. LM Studio owns the download
+ * UX; we surface what already lives under AppPaths.Models and redirect users
+ * there for everything else.
+ */
 const Models: FC = () => {
   const { t } = useTranslation();
   const [models, setModels] = useState<ModelEntry[]>([]);
-  const [downloading, setDownloading] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -28,16 +32,12 @@ const Models: FC = () => {
     void refresh();
   }, [refresh]);
 
-  const handleDownload = async (id: string) => {
-    setDownloading(id);
-    try {
-      await api.downloadModel(id);
-      toast.success(`${id} → ${t("common.download")}`);
-      await refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err));
-    } finally {
-      setDownloading(null);
+  const openLmStudio = () => {
+    const url = "lmstudio://";
+    if (window.mozgoslav?.openPath) {
+      void window.mozgoslav.openPath(url);
+    } else {
+      window.open(url, "_blank");
     }
   };
 
@@ -57,33 +57,23 @@ const Models: FC = () => {
                 <ModelHeader>
                   <span>{model.name}</span>
                   {model.isDefault && <Badge tone="accent">{t("profiles.defaultBadge")}</Badge>}
-                  {model.installed ? (
-                    <Badge tone="success">{t("models.installed")}</Badge>
-                  ) : (
-                    <Badge tone="neutral">{t("models.notInstalled")}</Badge>
-                  )}
+                  <Badge tone={model.installed ? "success" : "neutral"}>
+                    {t(model.installed ? "models.installed" : "models.notInstalled")}
+                  </Badge>
                 </ModelHeader>
               }
               subtitle={model.description}
-              headerAction={
-                <Button
-                  variant={model.installed ? "secondary" : "primary"}
-                  leftIcon={<Download size={16} />}
-                  isLoading={downloading === model.id}
-                  onClick={() => void handleDownload(model.id)}
-                >
-                  {t("models.download")}
-                </Button>
-              }
             >
               <ModelMeta>
-                <span>{t("models.sizeMb", { size: model.sizeMb })}</span>
                 <code>{model.destinationPath}</code>
               </ModelMeta>
             </Card>
           </ModelCard>
         ))
       )}
+      <Button variant="ghost" rightIcon={<ExternalLink size={14} />} onClick={openLmStudio}>
+        {t("models.openInLmStudioHint")}
+      </Button>
     </PageRoot>
   );
 };

@@ -85,12 +85,9 @@ export class MozgoslavApi {
   saveSettings = async (settings: AppSettings): Promise<AppSettings> =>
     (await this.client.put<AppSettings>(API_ENDPOINTS.settings, settings)).data;
 
-  // --- models ---
+  // --- models (read-only per ADR-006 D-11) ---
   listModels = async (): Promise<ModelEntry[]> =>
     (await this.client.get<ModelEntry[]>(API_ENDPOINTS.models)).data;
-
-  downloadModel = async (id: string): Promise<{ id: string; destinationPath: string }> =>
-    (await this.client.post(API_ENDPOINTS.modelDownload, { id })).data;
 
   // --- meetily ---
   importFromMeetily = async (meetilyDatabasePath: string) =>
@@ -130,8 +127,27 @@ export class MozgoslavApi {
   };
 
   // --- lm studio ---
-  listLmStudioModels = async (): Promise<{ id: string; object: string }[]> =>
-    (await this.client.get<{ data: { id: string; object: string }[] }>(API_ENDPOINTS.lmStudioModels)).data.data;
+  listLmStudioModels = async (): Promise<LmStudioDiscoveryResponse> =>
+    (await this.client.get<LmStudioDiscoveryResponse>(API_ENDPOINTS.lmStudioModels)).data;
+}
+
+export interface LmStudioModelSummary {
+  id: string;
+  object: string;
+}
+
+export interface LmStudioSuggestedModel {
+  id: string;
+  name: string;
+  description: string;
+  deepLink: string;
+  kind: "llm" | "stt" | "vad";
+}
+
+export interface LmStudioDiscoveryResponse {
+  installed: LmStudioModelSummary[];
+  reachable: boolean;
+  suggested: LmStudioSuggestedModel[];
 }
 
 export const api = new MozgoslavApi();

@@ -7,7 +7,7 @@ import { FolderOpen, Play, ExternalLink, RefreshCw } from "lucide-react";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import Input from "../../components/Input";
-import { api } from "../../api/MozgoslavApi";
+import { api, LmStudioDiscoveryResponse } from "../../api/MozgoslavApi";
 import { AppSettings, DEFAULT_SETTINGS } from "../../models/Settings";
 import { setThemeMode } from "../../styles/ThemeProvider";
 import {
@@ -35,17 +35,29 @@ const Settings: FC = () => {
   const [tab, setTab] = useState<TabKey>("general");
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [saving, setSaving] = useState(false);
-  const [lmModels, setLmModels] = useState<{ id: string; object: string }[]>([]);
+  const [lmDiscovery, setLmDiscovery] = useState<LmStudioDiscoveryResponse>({
+    installed: [],
+    reachable: false,
+    suggested: [],
+  });
   const [lmLoading, setLmLoading] = useState(false);
 
   const refreshLmModels = useCallback(async () => {
     setLmLoading(true);
     try {
-      setLmModels(await api.listLmStudioModels());
+      setLmDiscovery(await api.listLmStudioModels());
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));
     } finally {
       setLmLoading(false);
+    }
+  }, []);
+
+  const openDeepLink = useCallback((url: string) => {
+    if (window.mozgoslav?.openPath) {
+      void window.mozgoslav.openPath(url);
+    } else {
+      window.open(url, "_blank");
     }
   }, []);
 
@@ -202,7 +214,7 @@ const Settings: FC = () => {
           </FormGrid>
           <LmStudioSection>
             <LmStudioHeader>
-              <strong>{t("settings.lmStudio.title")}</strong>
+              <strong>{t("settings.lmStudio.installedTitle")}</strong>
               <Button
                 variant="ghost"
                 size="sm"
@@ -213,25 +225,31 @@ const Settings: FC = () => {
                 {t("common.retry")}
               </Button>
             </LmStudioHeader>
-            <LmStudioHint>{t("settings.lmStudio.hint")}</LmStudioHint>
-            {lmModels.length === 0 ? (
+            <LmStudioHint>
+              {lmDiscovery.reachable
+                ? t("settings.lmStudio.hintReachable")
+                : t("settings.lmStudio.hintOffline")}
+            </LmStudioHint>
+            {!lmDiscovery.reachable ? (
               <LmStudioEmpty>
                 <span>{t("settings.lmStudio.empty")}</span>
                 <a
                   href="https://lmstudio.ai"
                   onClick={(e) => {
-                    if (window.mozgoslav) {
-                      e.preventDefault();
-                      void window.mozgoslav.openPath?.("https://lmstudio.ai");
-                    }
+                    e.preventDefault();
+                    openDeepLink("https://lmstudio.ai");
                   }}
                 >
                   lmstudio.ai <ExternalLink size={12} />
                 </a>
               </LmStudioEmpty>
+            ) : lmDiscovery.installed.length === 0 ? (
+              <LmStudioEmpty>
+                <span>{t("settings.lmStudio.noLoaded")}</span>
+              </LmStudioEmpty>
             ) : (
               <LmStudioList>
-                {lmModels.map((model) => (
+                {lmDiscovery.installed.map((model) => (
                   <LmStudioItem key={model.id}>
                     <span>{model.id}</span>
                     <Button
@@ -248,6 +266,29 @@ const Settings: FC = () => {
                 ))}
               </LmStudioList>
             )}
+
+            <LmStudioHeader>
+              <strong>{t("settings.lmStudio.suggestedTitle")}</strong>
+            </LmStudioHeader>
+            <LmStudioHint>{t("settings.lmStudio.suggestedHint")}</LmStudioHint>
+            <LmStudioList>
+              {lmDiscovery.suggested.map((model) => (
+                <LmStudioItem key={model.id}>
+                  <div>
+                    <strong>{model.name}</strong>
+                    <LmStudioHint>{model.description}</LmStudioHint>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    rightIcon={<ExternalLink size={14} />}
+                    onClick={() => openDeepLink(model.deepLink)}
+                  >
+                    {t("settings.lmStudio.openInLmStudio")}
+                  </Button>
+                </LmStudioItem>
+              ))}
+            </LmStudioList>
           </LmStudioSection>
         </Card>
       )}

@@ -113,7 +113,6 @@ try
     builder.Services.AddSingleton<IDictationSessionManager, DictationSessionManager>();
     builder.Services.AddScoped<MeetilyImporterService>();
     builder.Services.AddScoped<ObsidianSetupService>();
-    builder.Services.AddSingleton<ModelDownloadService>();
     builder.Services.AddSingleton<BackupService>();
     builder.Services.AddSingleton<MozgoslavMetrics>();
     builder.Services.AddSingleton<SyncthingConfigService>();

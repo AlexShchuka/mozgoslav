@@ -8,10 +8,16 @@ namespace Mozgoslav.Application.Interfaces;
 public interface ILmStudioClient
 {
     /// <summary>
-    /// Returns ids of models currently loaded in LM Studio, or an empty list
-    /// when the endpoint is unreachable / not responding with JSON.
+    /// Returns the list of models currently loaded in LM Studio together with
+    /// a <c>reachable</c> flag. Per ADR-006 D-11 the UI uses <c>reachable</c>
+    /// to swap between "install LM Studio" empty-state copy and the
+    /// real "no models loaded yet" state.
     /// </summary>
-    Task<IReadOnlyList<LmStudioModel>> ListModelsAsync(CancellationToken ct);
+    Task<LmStudioDiscoveryResult> ListModelsAsync(CancellationToken ct);
 }
 
 public sealed record LmStudioModel(string Id, string Object);
+
+public sealed record LmStudioDiscoveryResult(
+    IReadOnlyList<LmStudioModel> Installed,
+    bool Reachable);

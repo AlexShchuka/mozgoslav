@@ -148,20 +148,24 @@
     "tokenHint": "Хранится локально в SQLite. Никогда не отправляется никуда, кроме указанного endpoint.",
     "savedToast": "Настройки сохранены",
     "lmStudio": {
-      "title": "Модели LM Studio",
-      "hint": "Мы читаем список загруженных моделей через OpenAI-совместимый /v1/models. Скачивание моделей происходит в LM Studio — Мозгослав их не бандлит.",
-      "empty": "LM Studio не отвечает. Запусти его и открой нужную модель, затем нажми «Повторить».",
+      "installedTitle": "Загружены через LM Studio",
+      "suggestedTitle": "Рекомендуемые",
+      "hintReachable": "Модели, активные в LM Studio прямо сейчас. Выбери одну — все LLM-вызовы пойдут через неё.",
+      "hintOffline": "LM Studio не отвечает по указанному endpoint'у. Запусти его и нажми «Повторить».",
+      "suggestedHint": "Проверенные стартовые модели — клик откроет карточку модели прямо в LM Studio.",
+      "empty": "Установи LM Studio, чтобы управлять моделями локально —",
+      "noLoaded": "LM Studio работает, но ни одна модель ещё не загружена.",
       "use": "Выбрать",
-      "selected": "Выбрано"
+      "selected": "Выбрано",
+      "openInLmStudio": "Открыть в LM Studio"
     }
   },
   "models": {
-    "title": "Модели",
-    "subtitle": "Скачай то, что нужно для работы — всё хранится локально.",
+    "title": "Локальные модели",
+    "subtitle": "Read-only список Whisper/VAD файлов под AppPaths.Models. Для LLM используй LM Studio.",
     "installed": "Установлена",
-    "notInstalled": "Не скачана",
-    "download": "Скачать",
-    "sizeMb": "{{size}} МБ"
+    "notInstalled": "Отсутствует",
+    "openInLmStudioHint": "Нужны ещё модели? Открой LM Studio."
   },
   "obsidian": {
     "title": "Obsidian vault",
