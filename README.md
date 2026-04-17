@@ -4,6 +4,16 @@
 
 Desktop-приложение для macOS Apple Silicon. Всё локально, privacy-first. Ничего не уходит наружу, кроме запросов к LLM-endpoint, который ты сам указал в настройках.
 
+## TL;DR
+
+```bash
+npm install         # одноразово, root-level оркестратор + frontend зависимости
+npm run dev         # стартует backend (Kestrel :5050) + frontend (Vite + Electron) параллельно
+npm run build       # production build: dotnet build -c Release && vite build
+```
+
+Оба скрипта (`scripts/dev.mjs`, `scripts/build.mjs`) пишут prefixed вывод `[backend] / [frontend]`. Ctrl-C корректно гасит оба процесса. Если нужна ручная сборка `.dmg` на macOS — `npm --prefix frontend run dist:mac`.
+
 ## Состав
 
 ```
