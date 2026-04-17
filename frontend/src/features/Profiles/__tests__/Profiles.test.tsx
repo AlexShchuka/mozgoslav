@@ -1,9 +1,11 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 
-import Profiles from "../Profiles";
+import Profiles from "../index";
 import { Profile } from "../../../domain/Profile";
-import { renderWithRouter } from "../../../testUtils";
+import { watchProfilesSagas } from "../../../store/slices/profiles";
+import { renderWithStore } from "../../../testUtils";
 import type { MockApiBundle } from "../../../testUtils";
 import "../../../i18n";
 
@@ -45,6 +47,14 @@ const buildProfile = (patch: Partial<Profile>): Profile => ({
   isBuiltIn: patch.isBuiltIn ?? false,
 });
 
+const renderProfiles = () =>
+  renderWithStore(
+    <MemoryRouter>
+      <Profiles />
+    </MemoryRouter>,
+    { sagas: [watchProfilesSagas] },
+  );
+
 describe("Profiles — CRUD UI", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -57,7 +67,7 @@ describe("Profiles — CRUD UI", () => {
       buildProfile({ id: "u1", name: "Mine", isBuiltIn: false }),
     ]);
 
-    renderWithRouter(<Profiles />);
+    renderProfiles();
 
     expect(await screen.findByText("Built-in")).toBeInTheDocument();
     expect(screen.getByText("Mine")).toBeInTheDocument();
@@ -66,12 +76,11 @@ describe("Profiles — CRUD UI", () => {
   });
 
   it("Profiles_Create_OpensEditor_PostsAndInserts", async () => {
-    mockApi.profilesApi.list.mockResolvedValue([]);
+    mockApi.profilesApi.list.mockResolvedValueOnce([]);
     const created = buildProfile({ id: "new", name: "Fresh" });
     mockApi.profilesApi.create.mockResolvedValueOnce(created);
-    mockApi.profilesApi.list.mockResolvedValueOnce([]).mockResolvedValue([created]);
 
-    renderWithRouter(<Profiles />);
+    renderProfiles();
 
     await userEvent.click(await screen.findByTestId("profiles-create"));
     await userEvent.type(screen.getByTestId("profile-field-name"), "Fresh");
@@ -93,7 +102,7 @@ describe("Profiles — CRUD UI", () => {
       name: "Mine-renamed",
     });
 
-    renderWithRouter(<Profiles />);
+    renderProfiles();
 
     await userEvent.click(await screen.findByTestId("profile-row-edit-u1"));
     const nameField = screen.getByTestId("profile-field-name") as HTMLInputElement;
@@ -112,12 +121,10 @@ describe("Profiles — CRUD UI", () => {
   it("Profiles_Duplicate_PostsAndInserts", async () => {
     const existing = buildProfile({ id: "u1", name: "Mine" });
     const copy = buildProfile({ id: "u2", name: "Mine (copy)" });
-    mockApi.profilesApi.list
-      .mockResolvedValueOnce([existing])
-      .mockResolvedValue([existing, copy]);
+    mockApi.profilesApi.list.mockResolvedValue([existing]);
     mockApi.profilesApi.duplicate.mockResolvedValueOnce(copy);
 
-    renderWithRouter(<Profiles />);
+    renderProfiles();
 
     await userEvent.click(await screen.findByTestId("profile-row-duplicate-u1"));
 
@@ -129,15 +136,13 @@ describe("Profiles — CRUD UI", () => {
 
   it("Profiles_Delete_UserCreated_RemovesRow", async () => {
     const existing = buildProfile({ id: "u1", name: "Mine", isBuiltIn: false });
-    mockApi.profilesApi.list
-      .mockResolvedValueOnce([existing])
-      .mockResolvedValue([]);
+    mockApi.profilesApi.list.mockResolvedValue([existing]);
     mockApi.profilesApi.remove.mockResolvedValueOnce(undefined);
 
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true);
 
     try {
-      renderWithRouter(<Profiles />);
+      renderProfiles();
 
       await userEvent.click(await screen.findByTestId("profile-row-delete-u1"));
 
@@ -156,34 +161,19 @@ describe("Profiles — CRUD UI", () => {
     const builtIn = buildProfile({ id: "b1", name: "Built-in", isBuiltIn: true });
     mockApi.profilesApi.list.mockResolvedValue([builtIn]);
 
-    mockApi.profilesApi.remove.mockRejectedValueOnce(
-      new Error("Conflict: built-in profiles cannot be deleted"),
-    );
-    const { toast } = jest.requireMock("react-toastify") as {
-      toast: { error: jest.Mock };
-    };
-
-    renderWithRouter(<Profiles />);
+    renderProfiles();
 
     const deleteBtn = await screen.findByTestId("profile-row-delete-b1");
 
-    if (!(deleteBtn as HTMLButtonElement).disabled) {
-      const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true);
-      try {
-        await userEvent.click(deleteBtn);
-        await waitFor(() => expect(toast.error).toHaveBeenCalled());
-      } finally {
-        confirmSpy.mockRestore();
-      }
-    }
-
+    // Built-in row: button must be disabled by the presentational component.
+    expect(deleteBtn).toBeDisabled();
     expect(screen.getByText("Built-in")).toBeInTheDocument();
   });
 
   it("ProfileEditor_SubmitEmptyName_ShowsValidation", async () => {
     mockApi.profilesApi.list.mockResolvedValue([]);
 
-    renderWithRouter(<Profiles />);
+    renderProfiles();
 
     await userEvent.click(await screen.findByTestId("profiles-create"));
     await userEvent.click(screen.getByTestId("profile-editor-save"));

@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { Copy, Pencil, Plus, Trash2 } from "lucide-react";
@@ -7,30 +7,48 @@ import Badge from "../../components/Badge";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
-import { apiFactory } from "../../api";
 import { Profile } from "../../domain/Profile";
-
-const profilesApi = apiFactory.createProfilesApi();
 import ProfileEditor, { ProfileDraft } from "./ProfileEditor";
+import type { ProfileMutation, ProfilesProps } from "./types";
 import { PageRoot, PageTitle, Row, RowActions, RowDescription, RowName } from "./Profiles.style";
 
-const Profiles: FC = () => {
+const toMutation = (draft: ProfileDraft): ProfileMutation => ({
+  name: draft.name,
+  systemPrompt: draft.systemPrompt,
+  transcriptionPromptOverride: draft.transcriptionPromptOverride,
+  outputTemplate: "",
+  cleanupLevel: draft.cleanupLevel,
+  exportFolder: draft.exportFolder,
+  autoTags: draft.autoTags,
+  isDefault: draft.isDefault,
+});
+
+const Profiles: FC<ProfilesProps> = ({
+  profiles,
+  error,
+  onLoad,
+  onCreate,
+  onUpdate,
+  onDelete,
+  onDuplicate,
+}) => {
   const { t } = useTranslation();
-  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [editing, setEditing] = useState<Profile | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
 
-  const refresh = useCallback(async () => {
-    try {
-      setProfiles(await profilesApi.list());
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err));
-    }
-  }, []);
-
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    onLoad();
+  }, [onLoad]);
+
+  // Error toasts surface saga failures without letting them collide with the
+  // success toasts (saga-driven success feedback is dispatched via actions
+  // the container can observe, not the reducer directly — keep success
+  // messaging out of the reducer path).
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
 
   const openCreate = () => {
     setEditing(null);
@@ -43,53 +61,23 @@ const Profiles: FC = () => {
   };
 
   const handleSave = async (draft: ProfileDraft) => {
-    try {
-      if (draft.id) {
-        await profilesApi.update(draft.id, {
-          name: draft.name,
-          systemPrompt: draft.systemPrompt,
-          transcriptionPromptOverride: draft.transcriptionPromptOverride,
-          outputTemplate: "",
-          cleanupLevel: draft.cleanupLevel,
-          exportFolder: draft.exportFolder,
-          autoTags: draft.autoTags,
-          isDefault: draft.isDefault,
-        });
-      } else {
-        await profilesApi.create({
-          name: draft.name,
-          systemPrompt: draft.systemPrompt,
-          transcriptionPromptOverride: draft.transcriptionPromptOverride,
-          outputTemplate: "",
-          cleanupLevel: draft.cleanupLevel,
-          exportFolder: draft.exportFolder,
-          autoTags: draft.autoTags,
-          isDefault: draft.isDefault,
-        });
-      }
-      toast.success(t("settings.savedToast"));
-      await refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err));
-      throw err;
+    const mutation = toMutation(draft);
+    if (draft.id) {
+      onUpdate(draft.id, mutation);
+    } else {
+      onCreate(mutation);
     }
+  };
+
+  const handleDuplicate = (profile: Profile) => {
+    onDuplicate(profile.id);
   };
 
   // Row action handlers. Built-in profiles are protected server-side;
-  // the UI disables the delete button but still keeps a defensive catch for
+  // the UI disables the delete button but still keeps a defensive branch for
   // the 409 path (e.g. if a profile flips from user-created to built-in in a
   // race condition).
-  const handleDuplicate = async (profile: Profile) => {
-    try {
-      await profilesApi.duplicate(profile.id);
-      toast.success(t("profiles.duplicated"));
-      await refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err));
-    }
-  };
-
-  const handleDelete = async (profile: Profile) => {
+  const handleDelete = (profile: Profile) => {
     if (profile.isBuiltIn) {
       toast.error(t("profiles.builtInDeleteBlocked"));
       return;
@@ -98,13 +86,7 @@ const Profiles: FC = () => {
       t("profiles.deleteConfirm", { name: profile.name }),
     );
     if (!confirmed) return;
-    try {
-      await profilesApi.remove(profile.id);
-      toast.success(t("profiles.deleted"));
-      await refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err));
-    }
+    onDelete(profile.id);
   };
 
   return (
