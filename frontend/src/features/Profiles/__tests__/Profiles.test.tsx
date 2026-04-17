@@ -4,7 +4,6 @@ import { MemoryRouter } from "react-router-dom";
 import { ThemeProvider } from "styled-components";
 
 import Profiles from "../Profiles";
-import { api } from "../../../api/MozgoslavApi";
 import { lightTheme } from "../../../styles/theme";
 import { Profile } from "../../../domain/Profile";
 import "../../../i18n";
@@ -17,15 +16,39 @@ jest.mock("react-toastify", () => ({
   },
 }));
 
-jest.mock("../../../api/MozgoslavApi", () => ({
-  api: {
-    listProfiles: jest.fn(),
-    createProfile: jest.fn(),
-    updateProfile: jest.fn(),
-    deleteProfile: jest.fn(),
-    duplicateProfile: jest.fn(),
-  },
-}));
+jest.mock("../../../api", () => {
+  const actual = jest.requireActual("../../../api");
+  // One shared stub for the whole test file so the `api.xxx` aliases used
+  // inside arrange blocks observe the same jest.fn instances the feature
+  // calls through.
+  const profilesStub = {
+    list: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+    duplicate: jest.fn(),
+  };
+  return {
+    ...actual,
+    apiFactory: {
+      ...actual.apiFactory,
+      createProfilesApi: () => profilesStub,
+    },
+    __profilesStub: profilesStub,
+  };
+});
+
+const profilesApiStub = (
+  jest.requireMock("../../../api") as { __profilesStub: Record<string, jest.Mock> }
+).__profilesStub;
+
+const api = {
+  listProfiles: profilesApiStub.list,
+  createProfile: profilesApiStub.create,
+  updateProfile: profilesApiStub.update,
+  deleteProfile: profilesApiStub.remove,
+  duplicateProfile: profilesApiStub.duplicate,
+};
 
 const buildProfile = (patch: Partial<Profile>): Profile => ({
   id: patch.id ?? "p1",
@@ -52,11 +75,11 @@ const renderProfiles = () =>
 describe("Profiles — CRUD UI", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (api.listProfiles as jest.Mock).mockResolvedValue([]);
+    api.listProfiles.mockResolvedValue([]);
   });
 
   it("Profiles_List_RendersWithBadges", async () => {
-    (api.listProfiles as jest.Mock).mockResolvedValue([
+    api.listProfiles.mockResolvedValue([
       buildProfile({ id: "b1", name: "Built-in", isBuiltIn: true, isDefault: true }),
       buildProfile({ id: "u1", name: "Mine", isBuiltIn: false }),
     ]);
@@ -71,10 +94,10 @@ describe("Profiles — CRUD UI", () => {
   });
 
   it("Profiles_Create_OpensEditor_PostsAndInserts", async () => {
-    (api.listProfiles as jest.Mock).mockResolvedValue([]);
+    api.listProfiles.mockResolvedValue([]);
     const created = buildProfile({ id: "new", name: "Fresh" });
-    (api.createProfile as jest.Mock).mockResolvedValueOnce(created);
-    (api.listProfiles as jest.Mock).mockResolvedValueOnce([]).mockResolvedValue([created]);
+    api.createProfile.mockResolvedValueOnce(created);
+    api.listProfiles.mockResolvedValueOnce([]).mockResolvedValue([created]);
 
     renderProfiles();
 
@@ -92,8 +115,8 @@ describe("Profiles — CRUD UI", () => {
 
   it("Profiles_Edit_OpensEditor_PutsAndRefreshes", async () => {
     const existing = buildProfile({ id: "u1", name: "Mine" });
-    (api.listProfiles as jest.Mock).mockResolvedValue([existing]);
-    (api.updateProfile as jest.Mock).mockResolvedValueOnce({
+    api.listProfiles.mockResolvedValue([existing]);
+    api.updateProfile.mockResolvedValueOnce({
       ...existing,
       name: "Mine-renamed",
     });
@@ -117,10 +140,10 @@ describe("Profiles — CRUD UI", () => {
   it("Profiles_Duplicate_PostsAndInserts", async () => {
     const existing = buildProfile({ id: "u1", name: "Mine" });
     const copy = buildProfile({ id: "u2", name: "Mine (copy)" });
-    (api.listProfiles as jest.Mock)
+    api.listProfiles
       .mockResolvedValueOnce([existing])
       .mockResolvedValue([existing, copy]);
-    (api.duplicateProfile as jest.Mock).mockResolvedValueOnce(copy);
+    api.duplicateProfile.mockResolvedValueOnce(copy);
 
     renderProfiles();
 
@@ -134,10 +157,10 @@ describe("Profiles — CRUD UI", () => {
 
   it("Profiles_Delete_UserCreated_RemovesRow", async () => {
     const existing = buildProfile({ id: "u1", name: "Mine", isBuiltIn: false });
-    (api.listProfiles as jest.Mock)
+    api.listProfiles
       .mockResolvedValueOnce([existing])
       .mockResolvedValue([]);
-    (api.deleteProfile as jest.Mock).mockResolvedValueOnce(undefined);
+    api.deleteProfile.mockResolvedValueOnce(undefined);
 
     // Auto-confirm the window.confirm dialog
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true);
@@ -160,11 +183,11 @@ describe("Profiles — CRUD UI", () => {
 
   it("Profiles_Delete_BuiltIn_ShowsErrorToast_RowStays", async () => {
     const builtIn = buildProfile({ id: "b1", name: "Built-in", isBuiltIn: true });
-    (api.listProfiles as jest.Mock).mockResolvedValue([builtIn]);
+    api.listProfiles.mockResolvedValue([builtIn]);
 
     // Either the delete button is disabled or the server answers 409 —
     // either way the row must stay put. We simulate the 409 path.
-    (api.deleteProfile as jest.Mock).mockRejectedValueOnce(
+    api.deleteProfile.mockRejectedValueOnce(
       new Error("Conflict: built-in profiles cannot be deleted"),
     );
     const { toast } = jest.requireMock("react-toastify") as {
@@ -190,7 +213,7 @@ describe("Profiles — CRUD UI", () => {
   });
 
   it("ProfileEditor_SubmitEmptyName_ShowsValidation", async () => {
-    (api.listProfiles as jest.Mock).mockResolvedValue([]);
+    api.listProfiles.mockResolvedValue([]);
 
     renderProfiles();
 

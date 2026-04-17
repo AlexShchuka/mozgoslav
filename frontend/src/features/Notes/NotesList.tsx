@@ -9,8 +9,10 @@ import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
 import Modal from "../../components/Modal";
-import { api } from "../../api/MozgoslavApi";
+import { apiFactory } from "../../api";
 import { ProcessedNote } from "../../domain/ProcessedNote";
+
+const notesApi = apiFactory.createNotesApi();
 import { noteRoute } from "../../constants/routes";
 import {
   AddToolbar,
@@ -33,8 +35,8 @@ const NotesList: FC = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    void api
-      .listNotes()
+    void notesApi
+      .list()
       .then(setNotes)
       .catch(() => setNotes([]));
   }, []);
@@ -51,7 +53,7 @@ const NotesList: FC = () => {
     if (!trimmedTitle) return;
     setSubmitting(true);
     try {
-      const created = await api.createNote({ title: trimmedTitle, body });
+      const created = await notesApi.create({ title: trimmedTitle, body });
       setNotes((prev) => [created, ...prev]);
       toast.success(t("notes.created"));
       closeAdd();

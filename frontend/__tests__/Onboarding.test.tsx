@@ -3,34 +3,52 @@ import { MemoryRouter } from "react-router-dom";
 import { ThemeProvider } from "styled-components";
 
 import Onboarding from "../src/features/Onboarding/Onboarding";
-import { api } from "../src/api/MozgoslavApi";
 import { darkTheme } from "../src/styles/theme";
 import "../src/i18n";
 
-jest.mock("../src/api/MozgoslavApi", () => ({
-  api: {
-    llmHealth: jest.fn().mockResolvedValue(true),
-    listModels: jest.fn().mockResolvedValue([
-      {
-        id: "whisper",
-        installed: true,
-        kind: "Stt",
-        name: "whisper",
-        sizeMb: 100,
-        description: "",
-        destinationPath: "",
-        isDefault: true,
-        url: "",
-      },
-    ]),
-    audioCapabilities: jest.fn().mockResolvedValue({
-      isSupported: true,
-      detectedPlatform: "macos",
-      permissionsRequired: ["microphone"],
-    }),
-    detectObsidian: jest.fn().mockResolvedValue({ detected: [], searched: [] }),
-  },
-}));
+jest.mock("../src/api", () => {
+  const actual = jest.requireActual("../src/api");
+  const healthStub = { checkLlm: jest.fn(), getHealth: jest.fn() };
+  const modelsStub = { list: jest.fn(), download: jest.fn() };
+  const dictationStub = {
+    audioCapabilities: jest.fn(),
+    start: jest.fn(),
+    stop: jest.fn(),
+    push: jest.fn(),
+  };
+  const obsidianStub = {
+    detect: jest.fn(),
+    setup: jest.fn(),
+    bulkExport: jest.fn(),
+    applyLayout: jest.fn(),
+    restHealth: jest.fn(),
+  };
+  return {
+    ...actual,
+    apiFactory: {
+      ...actual.apiFactory,
+      createHealthApi: () => healthStub,
+      createModelsApi: () => modelsStub,
+      createDictationApi: () => dictationStub,
+      createObsidianApi: () => obsidianStub,
+    },
+    __healthStub: healthStub,
+    __modelsStub: modelsStub,
+    __dictationStub: dictationStub,
+    __obsidianStub: obsidianStub,
+  };
+});
+
+const mocks = jest.requireMock("../src/api") as {
+  __healthStub: Record<string, jest.Mock>;
+  __modelsStub: Record<string, jest.Mock>;
+  __dictationStub: Record<string, jest.Mock>;
+  __obsidianStub: Record<string, jest.Mock>;
+};
+const healthLlmMock = mocks.__healthStub.checkLlm;
+const listModelsMock = mocks.__modelsStub.list;
+const audioCapabilitiesMock = mocks.__dictationStub.audioCapabilities;
+const detectObsidianMock = mocks.__obsidianStub.detect;
 
 const renderOnboarding = () =>
   render(
@@ -54,8 +72,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   window.localStorage.clear();
   Object.defineProperty(navigator, "platform", { value: "MacIntel", configurable: true });
-  (api.llmHealth as jest.Mock).mockResolvedValue(true);
-  (api.listModels as jest.Mock).mockResolvedValue([
+  healthLlmMock.mockResolvedValue(true);
+  listModelsMock.mockResolvedValue([
     {
       id: "whisper",
       installed: true,
@@ -68,12 +86,12 @@ beforeEach(() => {
       url: "",
     },
   ]);
-  (api.audioCapabilities as jest.Mock).mockResolvedValue({
+  audioCapabilitiesMock.mockResolvedValue({
     isSupported: true,
     detectedPlatform: "macos",
     permissionsRequired: ["microphone"],
   });
-  (api.detectObsidian as jest.Mock).mockResolvedValue({ detected: [], searched: [] });
+  detectObsidianMock.mockResolvedValue({ detected: [], searched: [] });
 });
 
 describe("Onboarding — plan v0.8 Block 4 (slim, platform-aware)", () => {

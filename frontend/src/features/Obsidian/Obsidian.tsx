@@ -5,8 +5,11 @@ import { CheckCircle2, Circle, FolderTree, LayoutTemplate, UploadCloud } from "l
 
 import Button from "../../components/Button";
 import Card from "../../components/Card";
-import { api } from "../../api/MozgoslavApi";
+import { apiFactory } from "../../api";
 import { AppSettings, DEFAULT_SETTINGS } from "../../domain/Settings";
+
+const obsidianApi = apiFactory.createObsidianApi();
+const settingsApi = apiFactory.createSettingsApi();
 import { FolderGrid, FolderItem, FolderHint, PageRoot, PageTitle, Subtitle, VaultRow, BulkButtonRow } from "./Obsidian.style";
 
 const PRESET_FOLDERS = [
@@ -31,7 +34,7 @@ const Obsidian: FC = () => {
   const syncAll = async () => {
     setBulkBusy(true);
     try {
-      const result = await api.bulkExportObsidian();
+      const result = await obsidianApi.bulkExport();
       toast.success(t("obsidian.syncAllSuccess", { count: result.exportedCount }));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));
@@ -43,7 +46,7 @@ const Obsidian: FC = () => {
   const applyLayout = async () => {
     setLayoutBusy(true);
     try {
-      const result = await api.applyObsidianLayout();
+      const result = await obsidianApi.applyLayout();
       toast.success(
         t("obsidian.applyLayoutSuccess", {
           folders: result.createdFolders,
@@ -58,7 +61,7 @@ const Obsidian: FC = () => {
   };
 
   useEffect(() => {
-    void api.getSettings().then(setSettings).catch(() => {});
+    void settingsApi.getSettings().then(setSettings).catch(() => {});
   }, []);
 
   const toggle = (key: string, required: boolean) => {
@@ -77,7 +80,7 @@ const Obsidian: FC = () => {
     if (!res.canceled && res.filePaths[0]) {
       const updated = { ...settings, vaultPath: res.filePaths[0] };
       setSettings(updated);
-      await api.saveSettings(updated);
+      await settingsApi.saveSettings(updated);
     }
   };
 
@@ -88,7 +91,7 @@ const Obsidian: FC = () => {
     }
     setBusy(true);
     try {
-      const report = (await api.setupObsidian(settings.vaultPath)) as { createdPaths: string[] };
+      const report = await obsidianApi.setup(settings.vaultPath);
       toast.success(t("obsidian.setupSuccess", { created: report.createdPaths.length }));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));

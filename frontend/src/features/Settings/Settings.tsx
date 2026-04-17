@@ -7,8 +7,11 @@ import { FolderOpen, Play } from "lucide-react";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import Input from "../../components/Input";
-import { api } from "../../api/MozgoslavApi";
+import { apiFactory } from "../../api";
 import { AppSettings, DEFAULT_SETTINGS } from "../../domain/Settings";
+
+const settingsApi = apiFactory.createSettingsApi();
+const healthApi = apiFactory.createHealthApi();
 import { setThemeMode } from "../../styles/ThemeProvider";
 import SyncPairing from "../SyncPairing";
 import { PageRoot, PageTitle, Tabs, Tab, FormGrid, Toolbar, Row, SelectBox, SelectOption } from "./Settings.style";
@@ -23,7 +26,7 @@ const Settings: FC = () => {
 
   const load = useCallback(async () => {
     try {
-      const loaded = await api.getSettings();
+      const loaded = await settingsApi.getSettings();
       setSettings(loaded);
     } catch {
       // keep defaults if backend unreachable
@@ -40,7 +43,7 @@ const Settings: FC = () => {
   const save = async () => {
     setSaving(true);
     try {
-      const saved = await api.saveSettings(settings);
+      const saved = await settingsApi.saveSettings(settings);
       setSettings(saved);
       if (saved.language !== i18n.language) {
         void i18n.changeLanguage(saved.language);
@@ -56,7 +59,7 @@ const Settings: FC = () => {
 
   const checkLlm = async () => {
     try {
-      const ok = await api.llmHealth();
+      const ok = await healthApi.checkLlm();
       toast[ok ? "success" : "warning"](ok ? "LLM: ✓" : "LLM: ✗");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));

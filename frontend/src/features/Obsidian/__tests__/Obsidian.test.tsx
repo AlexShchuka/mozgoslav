@@ -4,22 +4,46 @@ import { ThemeProvider } from "styled-components";
 import { ToastContainer } from "react-toastify";
 
 import Obsidian from "../Obsidian";
-import { api } from "../../../api/MozgoslavApi";
 import { lightTheme } from "../../../styles/theme";
 import "../../../i18n";
 
-jest.mock("../../../api/MozgoslavApi", () => ({
-  api: {
+jest.mock("../../../api", () => {
+  const actual = jest.requireActual("../../../api");
+  const obsidianStub = {
+    setup: jest.fn().mockResolvedValue({ createdPaths: [] }),
+    bulkExport: jest.fn(),
+    applyLayout: jest.fn(),
+    detect: jest.fn(),
+    restHealth: jest.fn(),
+  };
+  const settingsStub = {
     getSettings: jest.fn().mockResolvedValue({
       vaultPath: "/tmp/vault",
       obsidianAutoTags: [],
     }),
     saveSettings: jest.fn().mockResolvedValue({}),
-    setupObsidian: jest.fn().mockResolvedValue({ createdPaths: [] }),
-    bulkExportObsidian: jest.fn(),
-    applyObsidianLayout: jest.fn(),
-  },
-}));
+    checkLlm: jest.fn(),
+  };
+  return {
+    ...actual,
+    apiFactory: {
+      ...actual.apiFactory,
+      createObsidianApi: () => obsidianStub,
+      createSettingsApi: () => settingsStub,
+    },
+    __obsidianStub: obsidianStub,
+    __settingsStub: settingsStub,
+  };
+});
+
+const obsidianStub = (
+  jest.requireMock("../../../api") as { __obsidianStub: Record<string, jest.Mock> }
+).__obsidianStub;
+
+const api = {
+  bulkExportObsidian: obsidianStub.bulkExport,
+  applyObsidianLayout: obsidianStub.applyLayout,
+};
 
 const renderObsidian = () =>
   render(
@@ -33,7 +57,7 @@ describe("Obsidian — first-class tab (BC-025 / Bug 22)", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("Obsidian_SyncAll_CallsBulkExport", async () => {
-    (api.bulkExportObsidian as jest.Mock).mockResolvedValue({ exportedCount: 3 });
+    api.bulkExportObsidian.mockResolvedValue({ exportedCount: 3 });
 
     renderObsidian();
 
@@ -44,7 +68,7 @@ describe("Obsidian — first-class tab (BC-025 / Bug 22)", () => {
   });
 
   it("Obsidian_ApplyLayout_ShowsCounts_ToastSuccess", async () => {
-    (api.applyObsidianLayout as jest.Mock).mockResolvedValue({
+    api.applyObsidianLayout.mockResolvedValue({
       createdFolders: 2,
       movedNotes: 7,
     });

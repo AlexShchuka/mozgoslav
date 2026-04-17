@@ -7,8 +7,10 @@ import Badge from "../../components/Badge";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
-import { api } from "../../api/MozgoslavApi";
+import { apiFactory } from "../../api";
 import { Profile } from "../../domain/Profile";
+
+const profilesApi = apiFactory.createProfilesApi();
 import ProfileEditor, { ProfileDraft } from "./ProfileEditor";
 import { PageRoot, PageTitle, Row, RowActions, RowDescription, RowName } from "./Profiles.style";
 
@@ -20,7 +22,7 @@ const Profiles: FC = () => {
 
   const refresh = useCallback(async () => {
     try {
-      setProfiles(await api.listProfiles());
+      setProfiles(await profilesApi.list());
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));
     }
@@ -43,7 +45,7 @@ const Profiles: FC = () => {
   const handleSave = async (draft: ProfileDraft) => {
     try {
       if (draft.id) {
-        await api.updateProfile(draft.id, {
+        await profilesApi.update(draft.id, {
           name: draft.name,
           systemPrompt: draft.systemPrompt,
           transcriptionPromptOverride: draft.transcriptionPromptOverride,
@@ -54,7 +56,7 @@ const Profiles: FC = () => {
           isDefault: draft.isDefault,
         });
       } else {
-        await api.createProfile({
+        await profilesApi.create({
           name: draft.name,
           systemPrompt: draft.systemPrompt,
           transcriptionPromptOverride: draft.transcriptionPromptOverride,
@@ -79,7 +81,7 @@ const Profiles: FC = () => {
   // race condition).
   const handleDuplicate = async (profile: Profile) => {
     try {
-      await api.duplicateProfile(profile.id);
+      await profilesApi.duplicate(profile.id);
       toast.success(t("profiles.duplicated"));
       await refresh();
     } catch (err) {
@@ -97,7 +99,7 @@ const Profiles: FC = () => {
     );
     if (!confirmed) return;
     try {
-      await api.deleteProfile(profile.id);
+      await profilesApi.remove(profile.id);
       toast.success(t("profiles.deleted"));
       await refresh();
     } catch (err) {

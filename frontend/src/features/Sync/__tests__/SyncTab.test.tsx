@@ -10,7 +10,6 @@ import { ToastContainer } from "react-toastify";
 import { MemoryRouter } from "react-router-dom";
 
 import Sync from "../Sync";
-import { api } from "../../../api/MozgoslavApi";
 import {
   syncReducer,
   watchSyncSagas,
@@ -18,17 +17,33 @@ import {
 import { lightTheme } from "../../../styles/theme";
 import "../../../i18n";
 
-jest.mock("../../../api/MozgoslavApi", () => ({
-  api: {
+jest.mock("../../../api", () => {
+  const actual = jest.requireActual("../../../api");
+  const settingsStub = {
     getSettings: jest.fn().mockResolvedValue({
       vaultPath: "",
       syncthingEnabled: false,
     }),
     saveSettings: jest.fn().mockResolvedValue({ syncthingEnabled: true }),
-    listModels: jest.fn(),
-    llmHealth: jest.fn(),
-  },
-}));
+    checkLlm: jest.fn(),
+  };
+  return {
+    ...actual,
+    apiFactory: {
+      ...actual.apiFactory,
+      createSettingsApi: () => settingsStub,
+    },
+    __settingsStub: settingsStub,
+  };
+});
+
+const settingsStub = (
+  jest.requireMock("../../../api") as { __settingsStub: Record<string, jest.Mock> }
+).__settingsStub;
+
+const api = {
+  saveSettings: settingsStub.saveSettings,
+};
 
 // Stub the SyncApi module so the saga doesn't reach out to an HTTP endpoint.
 jest.mock("../../../api/SyncApi", () => ({

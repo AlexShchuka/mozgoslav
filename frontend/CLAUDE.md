@@ -10,8 +10,7 @@ frontend/
 │   └── utils/backendLauncher.ts
 ├── src/
 │   ├── api/
-│   │   ├── BaseApi.ts + ApiFactory.ts + RecordingApi.ts + SettingsApi.ts   (team per-entity style)
-│   │   └── MozgoslavApi.ts                                                  (thin typed wrapper, used directly from pages)
+│   │   └── BaseApi.ts + ApiFactory.ts + per-domain *Api.ts                  (Notes, Profiles, Models, Obsidian, Dictation, Sync, Backup, Logs, Jobs, Rag, Health, Meta, Recording, Settings)
 │   ├── constants/       routes.ts, api.ts (endpoint registry)
 │   ├── core/utils/      formatDuration
 │   ├── i18n/            initReactI18next + locales (ru + en)

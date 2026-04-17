@@ -2,18 +2,35 @@ import { expectSaga } from "redux-saga-test-plan";
 import * as matchers from "redux-saga-test-plan/matchers";
 import { throwError } from "redux-saga-test-plan/providers";
 
-import { api } from "../../../../api/MozgoslavApi";
 import type { RagAnswer } from "../../../../domain/Rag";
 import { askFailure, askPending, askQuestion, askSuccess } from "../actions";
 import { ragReducer } from "../reducer";
 import { askQuestionSaga } from "../saga";
 import type { RagMessage } from "../types";
 
-jest.mock("../../../../api/MozgoslavApi", () => ({
-  api: {
-    ragQuery: jest.fn(),
-  },
-}));
+jest.mock("../../../../api", () => {
+  const actual = jest.requireActual("../../../../api");
+  const ragStub = {
+    query: jest.fn(),
+    reindex: jest.fn(),
+  };
+  return {
+    ...actual,
+    apiFactory: {
+      ...actual.apiFactory,
+      createRagApi: () => ragStub,
+    },
+    __ragStub: ragStub,
+  };
+});
+
+const ragStub = (
+  jest.requireMock("../../../../api") as { __ragStub: Record<string, jest.Mock> }
+).__ragStub;
+
+const api = {
+  ragQuery: ragStub.query,
+};
 
 // Redux 5's `Reducer` requires actions with an index signature; our strongly
 // typed action unions don't have one. Cast through `unknown` at the test
@@ -40,7 +57,7 @@ describe("rag saga — askQuestion", () => {
         { noteId: "n1", chunkId: "c1", text: "quoted text", score: 0.91 },
       ],
     };
-    (api.ragQuery as jest.Mock).mockResolvedValueOnce(answer);
+    api.ragQuery.mockResolvedValueOnce(answer);
 
     const result = await expectSaga(askQuestionSaga, askQuestion("What?"))
       .withReducer(ragReducer)

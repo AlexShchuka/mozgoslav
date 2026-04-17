@@ -4,17 +4,36 @@ import { MemoryRouter } from "react-router-dom";
 import { ThemeProvider } from "styled-components";
 
 import NotesList from "../NotesList";
-import { api } from "../../../api/MozgoslavApi";
 import { lightTheme } from "../../../styles/theme";
 import { ProcessedNote } from "../../../domain/ProcessedNote";
 import "../../../i18n";
 
-jest.mock("../../../api/MozgoslavApi", () => ({
-  api: {
-    listNotes: jest.fn(),
-    createNote: jest.fn(),
-  },
-}));
+jest.mock("../../../api", () => {
+  const actual = jest.requireActual("../../../api");
+  const notesStub = {
+    list: jest.fn(),
+    getById: jest.fn(),
+    create: jest.fn(),
+    exportNote: jest.fn(),
+  };
+  return {
+    ...actual,
+    apiFactory: {
+      ...actual.apiFactory,
+      createNotesApi: () => notesStub,
+    },
+    __notesStub: notesStub,
+  };
+});
+
+const notesStub = (
+  jest.requireMock("../../../api") as { __notesStub: Record<string, jest.Mock> }
+).__notesStub;
+
+const api = {
+  listNotes: notesStub.list,
+  createNote: notesStub.create,
+};
 
 const buildNote = (patch: Partial<ProcessedNote>): ProcessedNote => ({
   id: patch.id ?? "n1",
@@ -51,7 +70,7 @@ describe("NotesList — add note (BC-022 / Bug 4)", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("NotesList_AddNote_OpensEditor", async () => {
-    (api.listNotes as jest.Mock).mockResolvedValue([]);
+    api.listNotes.mockResolvedValue([]);
 
     renderNotes();
 
@@ -63,13 +82,13 @@ describe("NotesList — add note (BC-022 / Bug 4)", () => {
   });
 
   it("NotesList_AddNote_SubmitsAndInserts", async () => {
-    (api.listNotes as jest.Mock).mockResolvedValue([]);
+    api.listNotes.mockResolvedValue([]);
     const created = buildNote({
       id: "new-1",
       topic: "handwritten",
       markdownContent: "Hello",
     });
-    (api.createNote as jest.Mock).mockResolvedValue(created);
+    api.createNote.mockResolvedValue(created);
 
     renderNotes();
 
@@ -89,7 +108,7 @@ describe("NotesList — add note (BC-022 / Bug 4)", () => {
   });
 
   it("NotesList_EmptyState", async () => {
-    (api.listNotes as jest.Mock).mockResolvedValue([]);
+    api.listNotes.mockResolvedValue([]);
     renderNotes();
     await waitFor(() =>
       expect(
