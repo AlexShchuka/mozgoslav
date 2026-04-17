@@ -23,22 +23,39 @@ export class NativeHelperClient extends EventEmitter {
     super();
   }
 
-  start(): void {
-    if (this.process) return;
-    this.process = spawn(this.binaryPath, [], {
-      stdio: ["pipe", "pipe", "pipe"],
-    });
+    start(): void {
+        if (this.process) return;
 
-    this.process.stdout?.on("data", (chunk: Buffer) => this.handleStdout(chunk));
-    this.process.stderr?.on("data", (chunk: Buffer) => {
-      console.error(`[dictation:helper:err] ${chunk.toString().trimEnd()}`);
-    });
-    this.process.on("exit", (code, signal) => {
-      console.info(`[dictation:helper] exited code=${code} signal=${signal}`);
-      this.process = null;
-      this.rejectAllPending(new Error(`helper exited (code=${code}, signal=${signal})`));
-    });
-  }
+        const child = spawn(this.binaryPath, [], {
+            stdio: ["pipe", "pipe", "pipe"],
+        });
+
+        this.process = child;
+
+        console.info(`[dictation:helper] spawned: ${this.binaryPath} pid=${child.pid ?? "n/a"}`);
+
+        child.stdout?.on("data", (chunk: Buffer) => this.handleStdout(chunk));
+
+        child.stderr?.on("data", (chunk: Buffer) => {
+            console.error(`[dictation:helper:err] ${chunk.toString().trimEnd()}`);
+        });
+
+        child.stdin?.on("error", (error) => {
+            console.error("[dictation:helper:stdin] error:", error);
+        });
+
+        child.on("error", (error) => {
+            console.error("[dictation:helper] process error:", error);
+            this.process = null;
+            this.rejectAllPending(error instanceof Error ? error : new Error(String(error)));
+        });
+
+        child.on("exit", (code, signal) => {
+            console.info(`[dictation:helper] exited code=${code} signal=${signal}`);
+            this.process = null;
+            this.rejectAllPending(new Error(`helper exited (code=${code}, signal=${signal})`));
+        });
+    }
 
   stop(): void {
     if (!this.process) return;
@@ -122,20 +139,35 @@ export class NativeHelperClient extends EventEmitter {
     };
   }
 
-  private send<T>(method: string, params: unknown): Promise<T | undefined> {
-    if (!this.process) {
-      return Promise.reject(new Error("helper process not running"));
+    private send<T>(method: string, params: unknown): Promise<T | undefined> {
+        const child = this.process;
+
+        if (!child) {
+            return Promise.reject(new Error("helper process not running"));
+        }
+
+        const stdin = child.stdin;
+        if (!stdin || stdin.destroyed || !stdin.writable) {
+            return Promise.reject(new Error("helper stdin is not writable"));
+        }
+
+        const id = randomUUID();
+        const payload = JSON.stringify({ id, method, params });
+
+        return new Promise<T | undefined>((resolve, reject) => {
+            this.pending.set(id, {
+                resolve: (value) => resolve(value as T | undefined),
+                reject,
+            });
+
+            stdin.write(`${payload}\n`, (error) => {
+                if (error) {
+                    this.pending.delete(id);
+                    reject(error instanceof Error ? error : new Error(String(error)));
+                }
+            });
+        });
     }
-    const id = randomUUID();
-    const payload = JSON.stringify({ id, method, params });
-    return new Promise<T | undefined>((resolve, reject) => {
-      this.pending.set(id, {
-        resolve: (value) => resolve(value as T | undefined),
-        reject,
-      });
-      this.process!.stdin?.write(`${payload}\n`);
-    });
-  }
 
   private handleStdout(chunk: Buffer): void {
     this.buffer += chunk.toString("utf8");
