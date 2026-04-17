@@ -8,10 +8,16 @@ using Mozgoslav.Domain.Enums;
 namespace Mozgoslav.Application.UseCases;
 
 /// <summary>
-/// Consumes one <see cref="ProcessingJob"/> from the queue and runs it through the
-/// transcription → correction → summarization → export pipeline. Catches all
-/// exceptions and marks the job as <see cref="JobStatus.Failed"/> on error so that
-/// a single bad file never stalls the queue.
+/// Runs a single <see cref="ProcessingJob"/> through the transcription →
+/// correction → summarization → export pipeline. Catches all exceptions and
+/// marks the job as <see cref="JobStatus.Failed"/> on error so that a single
+/// bad file never stalls downstream Quartz triggers.
+/// <para>
+/// ADR-011 step 6 — this type used to drive the queue loop itself
+/// (<c>ProcessNextAsync</c>) by polling <c>IProcessingJobRepository.DequeueNextAsync</c>.
+/// The loop has moved into Quartz.NET; this worker now accepts a job id from
+/// whichever Quartz <c>IJob</c> trigger fired and processes that one job.
+/// </para>
 /// </summary>
 public sealed class ProcessQueueWorker
 {
@@ -64,17 +70,30 @@ public sealed class ProcessQueueWorker
         _logger = logger;
     }
 
-    public async Task<bool> ProcessNextAsync(CancellationToken ct)
+    /// <summary>
+    /// Loads <paramref name="jobId"/> from the repository and runs the full
+    /// pipeline against it. Never throws for pipeline-internal failures — the
+    /// job row transitions to <see cref="JobStatus.Failed"/> with the error
+    /// message. Host-shutdown <see cref="OperationCanceledException"/> DOES
+    /// propagate so Quartz can ack the trigger cleanly.
+    /// </summary>
+    public async Task ProcessJobAsync(Guid jobId, CancellationToken ct)
     {
-        var job = await _jobs.DequeueNextAsync(ct);
+        var job = await _jobs.GetByIdAsync(jobId, ct);
         if (job is null)
         {
-            return false;
+            _logger.LogWarning("Quartz trigger fired for unknown job {JobId} — skipping", jobId);
+            return;
+        }
+        if (job.Status is JobStatus.Done or JobStatus.Failed)
+        {
+            _logger.LogInformation("Quartz trigger fired for already-terminal job {JobId} — skipping", jobId);
+            return;
         }
 
         try
         {
-            await ProcessJobAsync(job, ct);
+            await RunPipelineAsync(job, ct);
         }
         catch (OperationCanceledException)
         {
@@ -85,11 +104,9 @@ public sealed class ProcessQueueWorker
             _logger.LogError(ex, "Processing job {JobId} failed", job.Id);
             await MarkFailedAsync(job, ex.Message, ct);
         }
-
-        return true;
     }
 
-    private async Task ProcessJobAsync(ProcessingJob job, CancellationToken ct)
+    private async Task RunPipelineAsync(ProcessingJob job, CancellationToken ct)
     {
         var recording = await _recordings.GetByIdAsync(job.RecordingId, ct)
             ?? throw new InvalidOperationException($"Recording {job.RecordingId} not found");

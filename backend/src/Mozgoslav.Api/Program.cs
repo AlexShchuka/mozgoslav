@@ -2,12 +2,12 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Http.Resilience;
 
-using Mozgoslav.Api.BackgroundServices;
 using Mozgoslav.Api.Endpoints;
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Rag;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Application.UseCases;
+using Mozgoslav.Infrastructure.Jobs;
 using Mozgoslav.Infrastructure.Observability;
 using Mozgoslav.Infrastructure.Persistence;
 using Mozgoslav.Infrastructure.Platform;
@@ -17,6 +17,8 @@ using Mozgoslav.Infrastructure.Seed;
 using Mozgoslav.Infrastructure.Services;
 
 using OpenTelemetry.Metrics;
+
+using Quartz;
 
 using Serilog;
 using Serilog.Events;
@@ -103,7 +105,10 @@ try
     builder.Services.AddScoped<CorrectionService>();
     builder.Services.AddScoped<ImportRecordingUseCase>();
     builder.Services.AddScoped<ReprocessUseCase>();
+    // ADR-011 step 6 — ProcessQueueWorker no longer drives its own loop; it is
+    // invoked once per Quartz trigger by ProcessRecordingQuartzJob.
     builder.Services.AddScoped<ProcessQueueWorker>();
+    builder.Services.AddSingleton<IProcessingJobScheduler, QuartzProcessingJobScheduler>();
 
     // --- Infrastructure services ---
     builder.Services.AddHttpClient();
@@ -277,7 +282,31 @@ try
         .AddRuntimeInstrumentation());
 
     builder.Services.AddHostedService<DatabaseInitializer>();
-    builder.Services.AddHostedService<QueueBackgroundService>();
+    // ADR-011 step 6 — Quartz.NET replaces the custom QueueBackgroundService
+    // polling loop. Job recovery uses Quartz's RequestsRecovery flag plus a
+    // ProcessingJobRehydrator hosted service that re-schedules any
+    // non-terminal ProcessingJob rows on startup (replaces the legacy
+    // ReconcileAsync mechanism). RAMJobStore is used because the durable
+    // business-state lives in the `processing_jobs` table and the rehydrator
+    // handles crash recovery — a separate Quartz JobStore would duplicate
+    // that state without adding a guarantee.
+    builder.Services.AddQuartz(q =>
+    {
+        q.AddJob<ProcessRecordingQuartzJob>(jobConfig => jobConfig
+            .StoreDurably()
+            .RequestRecovery()
+            .WithIdentity("process-recording-template", ProcessRecordingQuartzJob.JobGroup));
+    });
+    builder.Services.AddQuartzHostedService(options =>
+    {
+        options.WaitForJobsToComplete = true;
+        options.AwaitApplicationStarted = true;
+    });
+    // Rehydrator runs AFTER DatabaseInitializer (migrations complete) and
+    // AFTER the Quartz hosted service (scheduler started). The hosted service
+    // registration order here is deliberate: DatabaseInitializer first,
+    // Quartz next (above), rehydrator last.
+    builder.Services.AddHostedService<ProcessingJobRehydrator>();
     builder.Services.AddHostedService<SyncthingVersioningVerifier>();
     // ADR-007-phase2-backend §2.3 — real lifecycle service replaces the
     // Phase-1 NotYetWired stub. When the bundled Syncthing binary is absent
