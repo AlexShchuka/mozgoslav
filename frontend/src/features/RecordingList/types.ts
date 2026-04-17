@@ -1,4 +1,4 @@
-import type { Recording } from "../../models";
+import type { Recording } from "../../domain";
 
 export interface RecordingListProps {
   recordings: Recording[];

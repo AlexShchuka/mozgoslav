@@ -8,7 +8,7 @@ import Button from "../../components/Button";
 import Card from "../../components/Card";
 import Input from "../../components/Input";
 import { api } from "../../api/MozgoslavApi";
-import { AppSettings, DEFAULT_SETTINGS } from "../../models/Settings";
+import { AppSettings, DEFAULT_SETTINGS } from "../../domain/Settings";
 import { setThemeMode } from "../../styles/ThemeProvider";
 import SyncPairing from "../SyncPairing";
 import { PageRoot, PageTitle, Tabs, Tab, FormGrid, Toolbar, Row, SelectBox, SelectOption } from "./Settings.style";

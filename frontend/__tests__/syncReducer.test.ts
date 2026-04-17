@@ -1,3 +1,5 @@
+import type { UnknownAction } from "redux";
+
 import { syncReducer } from "../src/store/slices/sync/reducer";
 import {
   acceptDeviceFailure,
@@ -13,6 +15,8 @@ import {
   type SyncEvent,
   type SyncStatusSnapshot,
 } from "../src/store/slices/sync/types";
+
+const action = (a: unknown): UnknownAction => a as UnknownAction;
 
 const baseSnapshot: SyncStatusSnapshot = {
   folders: [
@@ -39,30 +43,30 @@ describe("syncReducer", () => {
   });
 
   it("marks stream connected / disconnected", () => {
-    const connected = syncReducer(initialSyncState, syncEventStreamConnected());
+    const connected = syncReducer(initialSyncState, action(syncEventStreamConnected()));
     expect(connected.streamConnected).toBe(true);
-    const disconnected = syncReducer(connected, syncEventStreamDisconnected());
+    const disconnected = syncReducer(connected, action(syncEventStreamDisconnected()));
     expect(disconnected.streamConnected).toBe(false);
   });
 
   it("updates folder completion in place from a FolderCompletion event", () => {
-    const loaded = syncReducer(initialSyncState, loadSyncStatusSuccess(baseSnapshot));
+    const loaded = syncReducer(initialSyncState, action(loadSyncStatusSuccess(baseSnapshot)));
     const event = makeEvent({
       folderCompletion: { folderId: "mozgoslav-notes", completionPct: 100 },
     });
-    const next = syncReducer(loaded, syncEventReceived(event));
+    const next = syncReducer(loaded, action(syncEventReceived(event)));
     expect(next.status?.folders[0].completionPct).toBe(100);
     expect(next.status?.folders[1].completionPct).toBe(80);
     expect(next.lastEvent).toEqual(event);
   });
 
   it("updates device connection from a DeviceConnection event", () => {
-    const loaded = syncReducer(initialSyncState, loadSyncStatusSuccess(baseSnapshot));
+    const loaded = syncReducer(initialSyncState, action(loadSyncStatusSuccess(baseSnapshot)));
     const event = makeEvent({
       type: "DeviceConnected",
       deviceConnection: { deviceId: "AAAA", connected: true },
     });
-    const next = syncReducer(loaded, syncEventReceived(event));
+    const next = syncReducer(loaded, action(syncEventReceived(event)));
     expect(next.status?.devices[0].connected).toBe(true);
   });
 
@@ -70,20 +74,22 @@ describe("syncReducer", () => {
     const pending = [{ deviceId: "X", name: "iPad", address: null }];
     const first = syncReducer(
       initialSyncState,
-      syncEventReceived(makeEvent({ pendingDevices: pending })),
+      action(syncEventReceived(makeEvent({ pendingDevices: pending }))),
     );
     expect(first.pendingDevices).toHaveLength(1);
 
     const second = syncReducer(
       first,
-      syncEventReceived(
-        makeEvent({
-          id: 2,
-          pendingDevices: [
-            { deviceId: "X", name: "iPad (renamed)", address: "10.0.0.1" },
-            { deviceId: "Y", name: "phone", address: null },
-          ],
-        }),
+      action(
+        syncEventReceived(
+          makeEvent({
+            id: 2,
+            pendingDevices: [
+              { deviceId: "X", name: "iPad (renamed)", address: "10.0.0.1" },
+              { deviceId: "Y", name: "phone", address: null },
+            ],
+          }),
+        ),
       ),
     );
     expect(second.pendingDevices).toHaveLength(2);
@@ -93,17 +99,19 @@ describe("syncReducer", () => {
   it("removes a pending device after accept success", () => {
     const first = syncReducer(
       initialSyncState,
-      syncEventReceived(
-        makeEvent({ pendingDevices: [{ deviceId: "X", name: "iPad", address: null }] }),
+      action(
+        syncEventReceived(
+          makeEvent({ pendingDevices: [{ deviceId: "X", name: "iPad", address: null }] }),
+        ),
       ),
     );
-    const accepted = syncReducer(first, acceptDeviceSuccess("X"));
+    const accepted = syncReducer(first, action(acceptDeviceSuccess("X")));
     expect(accepted.pendingDevices).toHaveLength(0);
     expect(accepted.acceptingDeviceId).toBeNull();
   });
 
   it("captures accept error in state", () => {
-    const failed = syncReducer(initialSyncState, acceptDeviceFailure("X", "boom"));
+    const failed = syncReducer(initialSyncState, action(acceptDeviceFailure("X", "boom")));
     expect(failed.acceptError).toBe("boom");
     expect(failed.acceptingDeviceId).toBeNull();
   });
@@ -114,7 +122,7 @@ describe("syncReducer", () => {
       folderIds: ["mozgoslav-notes"],
       uri: "mozgoslav://sync-pair?deviceId=A",
     };
-    const next = syncReducer(initialSyncState, loadPairingSuccess(pairing));
+    const next = syncReducer(initialSyncState, action(loadPairingSuccess(pairing)));
     expect(next.pairing).toEqual(pairing);
     expect(next.isLoadingPairing).toBe(false);
   });

@@ -1,12 +1,13 @@
 import axios, { AxiosInstance } from "axios";
 
 import { API_ENDPOINTS, BACKEND_URL } from "../constants/api";
-import { AppSettings } from "../models/Settings";
-import { ModelEntry } from "../models/Model";
-import { ProcessedNote } from "../models/ProcessedNote";
-import { ProcessingJob } from "../models/ProcessingJob";
-import { Profile } from "../models/Profile";
-import { Recording } from "../models/Recording";
+import { AppSettings } from "../domain/Settings";
+import { ModelEntry } from "../domain/Model";
+import { ProcessedNote } from "../domain/ProcessedNote";
+import { ProcessingJob } from "../domain/ProcessingJob";
+import { Profile } from "../domain/Profile";
+import { RagAnswer } from "../domain/Rag";
+import { Recording } from "../domain/Recording";
 
 /**
  * Typed thin wrapper over the backend REST API. The frontend consumes this via
@@ -104,6 +105,13 @@ export class MozgoslavApi {
   listLogs = async () => (await this.client.get(API_ENDPOINTS.logs)).data;
   tailLog = async (file?: string, lines = 200) =>
     (await this.client.get(API_ENDPOINTS.logsTail, { params: { file, lines } })).data;
+
+  // --- rag ---
+  ragQuery = async (question: string, topK?: number): Promise<RagAnswer> =>
+    (await this.client.post<RagAnswer>(API_ENDPOINTS.ragQuery, { question, topK })).data;
+
+  ragReindex = async (): Promise<{ indexed: number }> =>
+    (await this.client.post<{ indexed: number }>(API_ENDPOINTS.ragReindex)).data;
 }
 
 export const api = new MozgoslavApi();

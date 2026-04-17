@@ -2,7 +2,7 @@ import { call, put, takeLatest } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 import axios from "axios";
 import { apiFactory } from "../../../api";
-import type { Recording } from "../../../models";
+import type { Recording } from "../../../domain";
 import {
   LOAD_RECORDINGS,
   loadRecordingsFailure,

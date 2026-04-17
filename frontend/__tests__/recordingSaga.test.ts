@@ -8,7 +8,7 @@ import {
   loadRecordingsUnavailable,
 } from "../src/store/slices/recording/actions";
 import apiFactory from "../src/api/ApiFactory";
-import type { Recording } from "../src/models";
+import type { Recording } from "../src/domain";
 
 const sampleRecording: Recording = {
   id: "r1",
@@ -16,7 +16,7 @@ const sampleRecording: Recording = {
   filePath: "/tmp/a.m4a",
   sha256: "hash",
   duration: "60",
-  format: "M4a",
+  format: "M4A",
   sourceType: "Imported",
   status: "Transcribed",
   createdAt: "2026-04-16T12:00:00Z",

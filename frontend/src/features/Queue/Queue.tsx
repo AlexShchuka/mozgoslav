@@ -7,7 +7,7 @@ import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
 import ProgressBar from "../../components/ProgressBar";
 import { api } from "../../api/MozgoslavApi";
-import { ProcessingJob } from "../../models/ProcessingJob";
+import { ProcessingJob } from "../../domain/ProcessingJob";
 import { BACKEND_URL, API_ENDPOINTS } from "../../constants/api";
 import { PageRoot, JobRow, JobHeader, JobMeta, PageTitle } from "./Queue.style";
 

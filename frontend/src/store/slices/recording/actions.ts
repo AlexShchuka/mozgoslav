@@ -1,4 +1,4 @@
-import type { Recording } from "../../../models";
+import type { Recording } from "../../../domain";
 
 export const LOAD_RECORDINGS = "recording/LOAD";
 export const LOAD_RECORDINGS_SUCCESS = "recording/LOAD_SUCCESS";
