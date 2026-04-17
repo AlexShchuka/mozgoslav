@@ -113,6 +113,14 @@ try
     // bundled syncthing binary reports its random localhost port + api-key;
     // meanwhile the default points at the documented :8384 so stand-alone
     // debugging against a user-installed syncthing also works.
+    // B6 / ADR-006 D-11: LM Studio discovery only. The HttpClient here is a bare
+    // transport; base address is resolved per-request from AppSettings.LlmEndpoint
+    // (which the user owns and can repoint at Ollama / vLLM etc.).
+    builder.Services.AddHttpClient<ILmStudioClient, LmStudioHttpClient>(client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(3);
+    });
+
     builder.Services.AddHttpClient<ISyncthingClient, SyncthingHttpClient>(client =>
     {
         var baseAddress = builder.Configuration["Mozgoslav:SyncthingBaseUrl"]
@@ -142,6 +150,7 @@ try
     app.MapRecordingEndpoints();
     app.MapJobEndpoints();
     app.MapQueueEndpoints();
+    app.MapLmStudioEndpoints();
     app.MapNoteEndpoints();
     app.MapProfileEndpoints();
     app.MapSettingsEndpoints();
