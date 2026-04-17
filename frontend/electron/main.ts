@@ -136,7 +136,7 @@ app.whenReady().then(async () => {
         "Content-Security-Policy": [
           [
             "default-src 'self'",
-            "script-src 'self'",
+              "script-src 'self' 'unsafe-inline'",
             "style-src 'self' 'unsafe-inline'",
             `connect-src 'self' ${BACKEND_ORIGIN} ws://localhost:5173 http://localhost:5173`,
             "img-src 'self' data: blob:",
