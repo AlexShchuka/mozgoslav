@@ -61,7 +61,13 @@ Granola / Fireflies / Fathom делают одну вещь, которую mozg
 
 ### D-1 — Button size ramp and macOS HIG 44pt hit target
 
-<!-- TODO: decision + alternatives + consequences -->
+**Decision.** Single size ramp across the app: `sm = 28 px`, `md = 34 px`, `lg = 42 px` (heights). Default variant bumped from `md = 36` to `md = 34` so density rises without losing tap targets; `lg` lands at 42 px, which pairs with Apple's 44pt-hit-target HIG when we add the 2 px outer focus ring (D-13) for a 44 px interactive footprint. Every primary surface (Dashboard record, Settings save, Queue cancel) uses `lg`. Body copy and form labels use a matching 15–16 px baseline — see D-2.
+
+**Alternatives considered.**
+- *Keep the old 28/36/44 ramp.* Rejected: `md` surfaces (most of the UI) felt cramped at current density per user feedback; moving to 34 reads as "bigger" without blowing out secondary toolbars.
+- *Bump every size uniformly by +4 px.* Rejected: `sm` is mainly used inside tag strips and tray menus, where 32 px would force layout reflow in already-tight contexts.
+
+**Consequences.** One-file change to `Button.style.ts`. The `lg` row in the Dashboard and Onboarding gets a little airier. Accessibility improves: every primary tap target now crosses the 42 px ceiling that WCAG 2.5.5 "Target Size (Enhanced)" recommends.
 
 ### D-2 — Modular scale 1.25 for body/UI, golden 1.618 for hero
 
