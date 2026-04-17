@@ -101,3 +101,13 @@ REST plugin URL defaults to `https://127.0.0.1:27124` (self-signed cert — pin 
 4. Export a note from Mozgoslav → click "Open in Obsidian" → Obsidian focuses the note in the correct vault.
 5. Disable plugin, re-export → Obsidian still opens via file-I/O fallback. "Open in Obsidian" shows "using file-I/O fallback" toast.
 6. Report `block6-mac-validation-2026-04-YY.md`.
+
+---
+
+## 8. Checkpoint summary (Agent B + Resume Agent, 2026-04-17)
+
+- Files added: `backend/src/Mozgoslav.Application/Interfaces/IObsidianRestClient.cs`, `backend/src/Mozgoslav.Infrastructure/Services/ObsidianRestApiClient.cs` (typed `HttpClient`, base URL `http://127.0.0.1:27123`, bearer token from settings, 5 s timeout), `backend/src/Mozgoslav.Api/Endpoints/ObsidianEndpoints.cs` extended with `POST /api/obsidian/open` (note id → `/open/<vault-relative path>`) and `GET /api/obsidian/rest-health` (probes `/` then `/active`, returns version + reachable flag).
+- Graceful fallback: when REST is unreachable, `POST /api/obsidian/open` falls back to `obsidian://open?vault=...&file=...` URI scheme via `IShellLauncher` so Obsidian still focuses the note.
+- Tests: WireMock-backed `ObsidianRestApiClientTests` (happy path, 401, 404, network down) and endpoint tests `ObsidianEndpointsTests` (REST path + URI fallback).
+- Deviations from plan: none.
+- Open: shuka Mac validation per §7 (real Local REST API plugin install + token round-trip).

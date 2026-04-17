@@ -135,7 +135,7 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
     );
   });
 
-  // TODO-1 frontend half — global hotkey fires the same recording pipeline as
+  // Global hotkey fires the same recording pipeline as
   // the mouse-5 entry. `window.mozgoslav.onGlobalHotkey` is the preload bridge
   // the renderer subscribes to; firing it must kick the dictation lifecycle
   // off with `source: "global-hotkey"`.

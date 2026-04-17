@@ -164,3 +164,16 @@ Document here so the Phase 2 PR is turn-key:
 - `electron-builder.yml`: `hardenedRuntime: true`, `gatekeeperAssess: true`, `entitlements: build/entitlements.mac.plist`, `entitlementsInherit: same`.
 - Add `afterSign` hook: `scripts/notarize.js` invoking `electron-notarize` with env creds.
 - `.github/workflows/release.yml`: pass secrets to the `dist:mac` step; change artefact name to `-arm64-signed.dmg`.
+
+---
+
+## 9. Checkpoint summary (Agent B + Resume Agent, 2026-04-17)
+
+- Files added: `.github/workflows/release.yml` (macos-latest runner, on tag `v*.*.*` + workflow_dispatch, single-flight concurrency, attaches DMG to GitHub Release on tag), `scripts/fetch-bundle-models.sh` (idempotent; skips silently when `release_tag` empty so dev builds work), `scripts/build-icon.sh` (iconutil-based PNG → icns), `frontend/build/icon-source.TODO` (placeholder marker — shuka drops 1024×1024 PNG locally on Mac), `frontend/build/bundle-models.manifest.json` (Tier 1 file list with empty sha256 / release_tag fields ready to fill).
+- `frontend/electron-builder.yml`: extraResources for `build/bundle-models/` + helper binary path; icon path set to `build/icon.icns`; `hardenedRuntime: false` (signing deferred); `afterSign` hook stub.
+- `frontend/package.json`: duplicate `build` section removed; `dist:mac` chains `scripts/fetch-bundle-models.sh && npm run build && npm run build:helper:mac && electron-builder --mac`.
+- `backend/src/Mozgoslav.Api/Endpoints/MetaEndpoints.cs` + `MapMetaEndpoints` registration: `GET /api/meta` returns `{ version, commit, buildDate }` from `AssemblyInformationalVersionAttribute` + entry-assembly metadata.
+- `README.md`: added unsigned-DMG right-click → Open footnote next to the `dist:mac` snippet.
+- Tests: meta endpoint covered in `MetaEndpointsTests` (200 + json shape).
+- Deferred to shuka on Mac (per §6/§7): create GitHub Release `models-bundle-v1`, fill `release_tag` + checksums in manifest, drop `icon-source.png`, run `dist:mac` end-to-end.
+- Deviations: none material — `icon.icns` cannot be generated in Linux sandbox, hence `icon-source.TODO` placeholder + `build-icon.sh` for shuka's one-off run.

@@ -21,7 +21,7 @@ public static class DictationEndpoints
         double OffsetSeconds);
 
     /// <summary>
-    /// TODO-1 — optional body forwarded to <see cref="IDictationSessionManager.Start"/>.
+    /// Optional body forwarded to <see cref="IDictationSessionManager.Start"/>.
     /// <c>source</c> tags the origin ("mouse5" | "dashboard" | "global-hotkey"),
     /// <c>profileId</c> is reserved for the follow-up profile-threading slice.
     /// Both fields are optional — legacy callers that send no body continue to

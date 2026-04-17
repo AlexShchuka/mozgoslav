@@ -16,7 +16,7 @@ import { ROUTES } from "../../constants/routes";
  *   - Navigation: one per sidebar route.
  *   - Quick actions: shortcuts for frequent workflows (new note, reindex, …).
  *
- * Per TODO-5 kbar handles the `Cmd+K` / `Ctrl+K` toggle cross-platform; no
+ * kbar handles the `Cmd+K` / `Ctrl+K` toggle cross-platform; no
  * manual `useHotkeys` plumbing needed.
  */
 export const useCommandPaletteActions = (): void => {

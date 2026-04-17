@@ -49,7 +49,7 @@ const renderProfiles = () =>
     </MemoryRouter>,
   );
 
-describe("Profiles — CRUD UI (TODO-4)", () => {
+describe("Profiles — CRUD UI", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (api.listProfiles as jest.Mock).mockResolvedValue([]);

@@ -138,3 +138,13 @@ After agent push, shuka:
 4. Record a 10-second clip (from Block 3) — confirm pipeline end-to-end from here.
 5. Configure Obsidian in Settings afterwards — confirm Ready step's "○ Obsidian vault" status can be satisfied post-Onboarding without breaking anything.
 6. Report `block4-mac-validation-2026-04-YY.md`.
+
+---
+
+## 11. Checkpoint summary (Agent B + Resume Agent, 2026-04-17)
+
+- Files added/modified: `frontend/src/features/Onboarding/OnboardingPlatform.ts`, `frontend/src/features/Onboarding/hooks.ts`, `frontend/src/features/Onboarding/Onboarding.tsx` (refactor — collapsed verbose meetily-style steps into Welcome → Try-now → LLM (auto-detect) → Obsidian (auto-detect) → Mic permission → Dictation → Ready), ru/en i18n keys, `frontend/src/features/Onboarding/__tests__/Onboarding.test.tsx`.
+- Auto-detection wires to `/api/health/llm` (LLM endpoint) and `/api/audio/capabilities` (mic) — surfaces only failed prerequisites, skips green ones silently.
+- Tests: jest suite `Onboarding.test.tsx` covers happy path + skip-on-detection + persisted `onboardingComplete` flag.
+- Deviations from plan: none material; copy of "try it now" step matches §3 wording.
+- Open: shuka Mac validation per §10 (real first-run flow + click count report).

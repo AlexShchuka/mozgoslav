@@ -1,17 +1,14 @@
 # Architecture Decision Records
 
-Current iteration:
+Active decisions (v0.8+):
 
 | # | Document | Status |
 |---|----------|--------|
-| 007 | [Iteration 7 — Scope, Business Cases & Test Plan](ADR-007-iteration-7.md) | Accepted |
-| 007 | [Iteration 7 — Execution Plan (agent prompts + wave order)](ADR-007-execution-plan.md) | Accepted (sibling to ADR-007) |
+| 008 | [ADR-008 — Web-aware RAG](ADR-008-web-rag.md) | Groomed, not accepted |
+| 009 | [ADR-009 — Production readiness, no stubs](ADR-009-production-readiness-no-stubs.md) | Accepted |
+| 010 | [ADR-010 — Bundled Russian models](ADR-010-bundled-russian-models.md) | Accepted |
 
-Historical ADRs (archived for reference; not source of truth for current scope):
+Archived (historical reference only — superseded by current code):
 
-- `.archive/adrs/ADR-001-meetily-fork-architecture.md`
-- `.archive/adrs/ADR-002-global-dictation-shortcut.md`
-- `.archive/adrs/ADR-003-syncthing-integration.md`
-- `.archive/adrs/ADR-004-dictation-sync-refinements.md`
-- `.archive/adrs/ADR-005-local-rag-qa.md`
-- `.archive/adrs/ADR-006-calendar-meeting-autostart.md`
+- `.archive-v1/` — pre-iteration-7 ADRs (ADR-001..006).
+- `.archive-v2/ADR-007-*.md` — iteration 7 (onboarding, models, RAG, syncthing). All shipped in v0.7 / v0.8.

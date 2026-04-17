@@ -91,3 +91,14 @@ Each stage is idempotent on its input. Adding LLM correction adds a single Chann
 ## 6. Open questions (agent flags if hit)
 
 - LLM correction for long transcripts: the current `Chunk/Merge` logic is tuned for summarisation (semantic boundaries). For correction the chunking must preserve token continuity at boundaries (otherwise punctuation slips). Proposed: use overlapping windows (e.g. 2000 tokens each with 200 token overlap, dedupe at merge). Agent reviews `OpenAiCompatibleLlmService.Chunk` and either reuses or introduces `LlmCorrectionChunker`. Default: introduce `LlmCorrectionChunker` with overlap — small, focused class.
+
+---
+
+## 7. Checkpoint summary (Agent B + Resume Agent, 2026-04-17)
+
+- Files added: `backend/src/Mozgoslav.Application/Services/GlossaryApplicator.cs` (deterministic ordered apply with longest-first matching; protects already-replaced spans), `backend/src/Mozgoslav.Infrastructure/Services/LlmCorrectionService.cs` (one-pass overlapping-window chunker + LLM round-trip, graceful skip when `Profile.LlmCorrectionEnabled = false` or LLM unreachable), `backend/src/Mozgoslav.Infrastructure/Persistence/Migrations/0013_glossary_and_llm_correction.cs`.
+- `Profile.LlmCorrectionEnabled` (bool, default true) added to `Domain/Entities/Profile.cs` + `Application/Interfaces/AppSettingsDto.cs` + `EfAppSettings`.
+- `ProcessQueueWorker` pipeline order: STT → glossary apply → LLM correction → summarisation → markdown export — glossary always runs, correction is gated.
+- Tests: `GlossaryApplicatorTests` (longest-first, no-double-replace, empty/whitespace input), `LlmCorrectionServiceTests` (chunked round-trip via NSubstitute on `ILlmService`, skip path on disabled profile, skip path on `LlmUnreachableException`).
+- Deviations: introduced `LlmCorrectionChunker` per §6 default; reused `OpenAiCompatibleLlmService` for transport (not duplicated).
+- Open: none.

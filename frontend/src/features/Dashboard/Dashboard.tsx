@@ -168,7 +168,7 @@ const Dashboard: FC = () => {
     }
   };
 
-  // TODO-1 — subscribe to the global dictation hotkey
+  // Subscribe to the global dictation hotkey
   // (Cmd/Ctrl+Shift+Space). Electron's main process forwards it via the
   // preload bridge. We kick off the same lifecycle used by the on-page
   // Record button. Unlike the mouse-5 entry the `source` travels via

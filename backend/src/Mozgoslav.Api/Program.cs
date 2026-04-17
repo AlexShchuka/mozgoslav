@@ -142,8 +142,8 @@ try
     builder.Services.AddSingleton<WhisperNetTranscriptionService>();
     builder.Services.AddSingleton<ITranscriptionService>(sp => sp.GetRequiredService<WhisperNetTranscriptionService>());
     builder.Services.AddSingleton<IStreamingTranscriptionService>(sp => sp.GetRequiredService<WhisperNetTranscriptionService>());
-    // TODO-3 / BC-036 — multi-provider LLM. Register each provider once against
-    // the ILlmProvider port; the factory picks the active one based on
+    // BC-036 multi-provider LLM. Register each provider once against the
+    // ILlmProvider port; the factory picks the active one based on
     // IAppSettings.LlmProvider. OpenAiCompatibleLlmService stays the upstream
     // adapter (chunking + JSON repair) and routes transport through the factory.
     builder.Services.AddSingleton<ILlmProvider, OpenAiCompatibleLlmProvider>();

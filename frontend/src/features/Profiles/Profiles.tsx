@@ -73,7 +73,7 @@ const Profiles: FC = () => {
     }
   };
 
-  // TODO-4 — row action handlers. Built-in profiles are protected server-side;
+  // Row action handlers. Built-in profiles are protected server-side;
   // the UI disables the delete button but still keeps a defensive catch for
   // the 409 path (e.g. if a profile flips from user-created to built-in in a
   // race condition).

@@ -15,7 +15,7 @@ export interface MozgoslavBridge {
     folderPath: string,
   ) => Promise<Array<{ folderId: string; path: string; conflictPath: string }>>;
   /**
-   * TODO-1 — subscribe to the global dictation hotkey (Cmd/Ctrl+Shift+Space).
+   * Subscribe to the global dictation hotkey (Cmd/Ctrl+Shift+Space).
    * Returns an unsubscribe function. The callback fires on every accelerator
    * press; the renderer treats it the same as the mouse-5 entry point.
    */

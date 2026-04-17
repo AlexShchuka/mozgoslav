@@ -176,3 +176,19 @@ Update sections:
 - CI green on the v0.8 branch.
 - shuka's Mac validation reports (blocks 3, 4, 6, 7) all `[✓]` or have agreed exceptions.
 - Diff against `main` is one cohesive MR; commits are per-block and readable.
+
+---
+
+## 8. Checkpoint summary (Resume Agent, 2026-04-17)
+
+- Root cleanup: 16 reports moved via `git mv` from repo root to `.archive/reports/` — `agent-a-report.md`, `developer-{4fb2c1,a7f3b9,b4k8p2,d8a2e1}.md`, `DICTATION-REPORT.md`, `FEATURE-DEV-REPORT.md`, `POLISH-REPORT.md`, `phase1-agent-a-report.md`, `phase2-{backend,backend-cleanup,frontend,python,swift}-report.md`, `todo-{backend,frontend}-report.md`. Repo root now holds: `README.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `TODO.md`, `SELF-REVIEW.md`, `LICENSE`, `lefthook.yml`, `.editorconfig`, `.gitignore` plus directories.
+- ADR archive: 7 ADR-007 family files moved via `git mv` to `docs/adr/.archive-v2/`. `ADR-007.md` renamed to `ADR-007-iteration-7-scope.md` per plan §2.2. `docs/adr/` now: `ADR-008-web-rag.md`, `ADR-009-production-readiness-no-stubs.md`, `ADR-010-bundled-russian-models.md`, `README.md`, `.archive-v1/`, `.archive-v2/`.
+- `docs/adr/README.md` rewritten — active 008/009/010 + archive references.
+- `TODO.md` rewritten — Shipped in v0.8 + Phase 2 deferred sections; version bump explicitly deferred per shuka.
+- `SELF-REVIEW.md` recreated against ADR-009/010 compliance with per-§ row matrix.
+- `CONTRIBUTING.md` created — Rider/CLI/dev setup moved out of `README.md`.
+- `README.md` refreshed — install / Onboarding / bundled models (Tier 1) / downloadable (Tier 2) / link to CONTRIBUTING.
+- `CLAUDE.md` (root) refreshed — references ADR-008/009/010, removed «Out of scope (today)» entries that shipped (Noop recorder, ML stubs).
+- Inline TODO/FIXME/HACK sweep: 18 doc-comment markers in `backend/src` + 7 in `frontend/src` + 3 in `frontend/electron` rewritten without `TODO-N — ` prefix while preserving `BC-NNN` traceability per §5/§6 resolution. Final `git grep -n "TODO\|FIXME\|HACK"` on `backend/src frontend/src frontend/electron python-sidecar/app helpers` returns empty set.
+- Version bump in `package.json` / `*.csproj` NOT performed — explicitly deferred per §1/§5 directive.
+- Deviations: none material; per §5 in-code TODO-X markers tied to shipped ADR sections were rewritten as plain notes (per §6) rather than left or replaced by `// See #issue` (no GitHub issues created — items are doc, not actionable).

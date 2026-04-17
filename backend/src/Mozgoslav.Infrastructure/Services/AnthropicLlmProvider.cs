@@ -9,10 +9,10 @@ using Mozgoslav.Application.Interfaces;
 namespace Mozgoslav.Infrastructure.Services;
 
 /// <summary>
-/// TODO-3 — <see cref="ILlmProvider"/> for Anthropic's Claude Messages API.
-/// Deliberately written against raw <see cref="HttpClient"/> (no SDK) so the
-/// dependency surface stays narrow — see the TODO-3 hard constraint forbidding
-/// silent NuGet installs. Network failures log WARN and return an empty string.
+/// <see cref="ILlmProvider"/> for Anthropic's Claude Messages API.
+/// Deliberately written against raw <see cref="HttpClient"/> (no SDK) to keep
+/// the dependency surface narrow — no silent NuGet installs.
+/// Network failures log WARN and return an empty string.
 /// </summary>
 public sealed class AnthropicLlmProvider : ILlmProvider
 {

@@ -10,7 +10,7 @@ using Mozgoslav.Domain.ValueObjects;
 namespace Mozgoslav.Infrastructure.Services;
 
 /// <summary>
-/// TODO-3 — thin adapter implementing <see cref="ILlmService"/> by delegating
+/// Thin adapter implementing <see cref="ILlmService"/> by delegating
 /// the transport to whatever <see cref="ILlmProvider"/> the
 /// <see cref="ILlmProviderFactory"/> selects at runtime. Keeps the legacy
 /// JSON-schema parsing + chunking pipeline; the provider only has to hand back

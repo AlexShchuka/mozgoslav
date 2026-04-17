@@ -232,7 +232,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     private static class Keys
     {
         public const string VaultPath = "vault_path";
-        // TODO-3 / Migration 0012 — active LLM provider discriminator.
+        // Migration 0012 — active LLM provider discriminator.
         public const string LlmProvider = Persistence.Migrations.Migration0012LlmProvider.LlmProviderKey;
         public const string LlmEndpoint = "llm_endpoint";
         public const string LlmModel = "llm_model";

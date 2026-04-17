@@ -219,7 +219,7 @@ app.whenReady().then(async () => {
 
   createWindow();
 
-  // TODO-1 — register the global dictation accelerator on every platform.
+  // Register the global dictation accelerator on every platform.
   // Press-to-dictate on macOS is the primary use case but the accelerator is
   // harmless on Linux/Windows (user can still invoke it).
   const hotkeyRegistered = registerGlobalDictationHotkey();
