@@ -14,8 +14,17 @@ namespace Mozgoslav.Infrastructure.Services;
 /// dictation pipeline: samples arrive in short 16 kHz PCM chunks and the service
 /// emits partial transcripts roughly every <see cref="StreamWindowMs"/> milliseconds
 /// of accumulated speech.
+/// <para>
+/// ADR-004 R4: the <see cref="WhisperFactory"/> (which holds the loaded model in
+/// RAM — several hundred MB for <c>large-v3</c>) is kept alive between calls via
+/// <see cref="IdleResourceCache{T}"/>. After
+/// <see cref="IAppSettings.DictationModelUnloadMinutes"/> minutes of inactivity
+/// the factory is disposed and RAM is released; the next call re-loads it
+/// with a ~1-2 s first-call latency penalty.
+/// </para>
 /// </summary>
-public sealed class WhisperNetTranscriptionService : ITranscriptionService, IStreamingTranscriptionService
+public sealed class WhisperNetTranscriptionService
+    : ITranscriptionService, IStreamingTranscriptionService, IAsyncDisposable
 {
     private const int BeamSize = 5;
     private const string DefaultPrompt = "Мысли вслух, встречи, диалоги, рассуждения.";
@@ -26,6 +35,7 @@ public sealed class WhisperNetTranscriptionService : ITranscriptionService, IStr
     private readonly IAppSettings _settings;
     private readonly IVadPreprocessor _vad;
     private readonly ILogger<WhisperNetTranscriptionService> _logger;
+    private readonly IdleResourceCache<WhisperFactory> _factoryCache;
 
     public WhisperNetTranscriptionService(
         IAppSettings settings,
@@ -35,6 +45,10 @@ public sealed class WhisperNetTranscriptionService : ITranscriptionService, IStr
         _settings = settings;
         _vad = vad;
         _logger = logger;
+        _factoryCache = new IdleResourceCache<WhisperFactory>(
+            factory: CreateFactory,
+            idleTimeoutProvider: () =>
+                TimeSpan.FromMinutes(Math.Max(0, _settings.DictationModelUnloadMinutes)));
     }
 
     public async Task<IReadOnlyList<TranscriptSegment>> TranscribeAsync(
@@ -50,23 +64,29 @@ public sealed class WhisperNetTranscriptionService : ITranscriptionService, IStr
             throw new FileNotFoundException("Audio file not found", audioPath);
         }
 
-        var modelPath = EnsureModelPath();
-        _logger.LogInformation("Transcribing {AudioPath} with model {Model}", audioPath, Path.GetFileName(modelPath));
+        _logger.LogInformation("Transcribing {AudioPath}", audioPath);
 
-        using var whisperFactory = WhisperFactory.FromPath(modelPath);
-        await using var processor = BuildProcessor(whisperFactory, language, initialPrompt);
-
-        var segments = new List<TranscriptSegment>();
-        await using var audioStream = File.OpenRead(audioPath);
-
-        await foreach (var segment in processor.ProcessAsync(audioStream, ct).WithCancellation(ct))
+        var whisperFactory = await _factoryCache.AcquireAsync(ct);
+        try
         {
-            segments.Add(new TranscriptSegment(segment.Start, segment.End, segment.Text.Trim()));
-            progress?.Report(Math.Min(99, segments.Count));
-        }
+            await using var processor = BuildProcessor(whisperFactory, language, initialPrompt);
 
-        _logger.LogInformation("Transcription complete: {Count} segments", segments.Count);
-        return segments;
+            var segments = new List<TranscriptSegment>();
+            await using var audioStream = File.OpenRead(audioPath);
+
+            await foreach (var segment in processor.ProcessAsync(audioStream, ct).WithCancellation(ct))
+            {
+                segments.Add(new TranscriptSegment(segment.Start, segment.End, segment.Text.Trim()));
+                progress?.Report(Math.Min(99, segments.Count));
+            }
+
+            _logger.LogInformation("Transcription complete: {Count} segments", segments.Count);
+            return segments;
+        }
+        finally
+        {
+            await _factoryCache.ReleaseAsync();
+        }
     }
 
     public async IAsyncEnumerable<PartialTranscript> TranscribeStreamAsync(
@@ -77,44 +97,58 @@ public sealed class WhisperNetTranscriptionService : ITranscriptionService, IStr
     {
         ArgumentNullException.ThrowIfNull(chunks);
 
-        var modelPath = EnsureModelPath();
-        _logger.LogInformation("Starting streaming transcription with model {Model}", Path.GetFileName(modelPath));
+        _logger.LogInformation("Starting streaming transcription");
 
-        using var whisperFactory = WhisperFactory.FromPath(modelPath);
-
-        var buffer = new List<float>();
-        var samplesSinceLastEmit = 0;
-        var windowSamples = StreamSampleRate * StreamWindowMs / 1000;
-        var maxBufferSamples = StreamSampleRate * StreamMaxBufferSeconds;
-
-        await foreach (var chunk in chunks.WithCancellation(ct))
+        var whisperFactory = await _factoryCache.AcquireAsync(ct);
+        try
         {
-            if (chunk.SampleRate != StreamSampleRate)
+            var buffer = new List<float>();
+            var samplesSinceLastEmit = 0;
+            var windowSamples = StreamSampleRate * StreamWindowMs / 1000;
+            var maxBufferSamples = StreamSampleRate * StreamMaxBufferSeconds;
+
+            await foreach (var chunk in chunks.WithCancellation(ct))
             {
-                throw new InvalidOperationException(
-                    $"Streaming expects {StreamSampleRate} Hz mono samples, got {chunk.SampleRate} Hz");
+                if (chunk.SampleRate != StreamSampleRate)
+                {
+                    throw new InvalidOperationException(
+                        $"Streaming expects {StreamSampleRate} Hz mono samples, got {chunk.SampleRate} Hz");
+                }
+
+                if (!_vad.ContainsSpeech(chunk))
+                {
+                    continue;
+                }
+
+                buffer.AddRange(chunk.Samples);
+                samplesSinceLastEmit += chunk.Samples.Length;
+
+                // Cap runaway sessions — after two minutes we keep the tail only.
+                if (buffer.Count > maxBufferSamples)
+                {
+                    var overflow = buffer.Count - maxBufferSamples;
+                    buffer.RemoveRange(0, overflow);
+                }
+
+                if (samplesSinceLastEmit >= windowSamples)
+                {
+                    samplesSinceLastEmit = 0;
+                    var snapshot = buffer.ToArray();
+                    var text = await TranscribeBufferAsync(whisperFactory, snapshot, language, initialPrompt, ct);
+                    if (!string.IsNullOrWhiteSpace(text))
+                    {
+                        yield return new PartialTranscript(
+                            Text: text,
+                            Timestamp: TimeSpan.FromSeconds((double)buffer.Count / StreamSampleRate));
+                    }
+                }
             }
 
-            if (!_vad.ContainsSpeech(chunk))
+            // Final flush when the upstream completes cleanly.
+            if (buffer.Count > 0)
             {
-                continue;
-            }
-
-            buffer.AddRange(chunk.Samples);
-            samplesSinceLastEmit += chunk.Samples.Length;
-
-            // Cap runaway sessions — after two minutes we keep the tail only.
-            if (buffer.Count > maxBufferSamples)
-            {
-                var overflow = buffer.Count - maxBufferSamples;
-                buffer.RemoveRange(0, overflow);
-            }
-
-            if (samplesSinceLastEmit >= windowSamples)
-            {
-                samplesSinceLastEmit = 0;
-                var snapshot = buffer.ToArray();
-                var text = await TranscribeBufferAsync(whisperFactory, snapshot, language, initialPrompt, ct);
+                var tail = buffer.ToArray();
+                var text = await TranscribeBufferAsync(whisperFactory, tail, language, initialPrompt, ct);
                 if (!string.IsNullOrWhiteSpace(text))
                 {
                     yield return new PartialTranscript(
@@ -123,19 +157,19 @@ public sealed class WhisperNetTranscriptionService : ITranscriptionService, IStr
                 }
             }
         }
-
-        // Final flush when the upstream completes cleanly.
-        if (buffer.Count > 0)
+        finally
         {
-            var tail = buffer.ToArray();
-            var text = await TranscribeBufferAsync(whisperFactory, tail, language, initialPrompt, ct);
-            if (!string.IsNullOrWhiteSpace(text))
-            {
-                yield return new PartialTranscript(
-                    Text: text,
-                    Timestamp: TimeSpan.FromSeconds((double)buffer.Count / StreamSampleRate));
-            }
+            await _factoryCache.ReleaseAsync();
         }
+    }
+
+    public ValueTask DisposeAsync() => _factoryCache.DisposeAsync();
+
+    private WhisperFactory CreateFactory()
+    {
+        var modelPath = EnsureModelPath();
+        _logger.LogInformation("Loading Whisper model {Model}", Path.GetFileName(modelPath));
+        return WhisperFactory.FromPath(modelPath);
     }
 
     private async Task<string> TranscribeBufferAsync(
