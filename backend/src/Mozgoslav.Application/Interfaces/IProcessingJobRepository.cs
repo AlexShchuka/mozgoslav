@@ -17,4 +17,21 @@ public interface IProcessingJobRepository
     /// Returns <c>true</c> if a queued job was removed, <c>false</c> if the job is unknown or past the queued state.
     /// </summary>
     Task<bool> CancelQueuedAsync(Guid id, CancellationToken ct);
+
+    /// <summary>
+    /// Cancels a job at any life-cycle stage per ADR-006 D-9: queued jobs are
+    /// removed outright, in-flight jobs are marked <see cref="Mozgoslav.Domain.Enums.JobStatus.Failed"/>
+    /// with a user-supplied error message and <c>FinishedAt</c> stamped so the
+    /// running worker surfaces the termination. Terminal jobs (Done / Failed)
+    /// are left untouched.
+    /// </summary>
+    Task<CancelJobResult> CancelAsync(Guid id, CancellationToken ct);
+}
+
+public enum CancelJobResult
+{
+    NotFound,
+    RemovedFromQueue,
+    MarkedFailed,
+    AlreadyTerminal
 }

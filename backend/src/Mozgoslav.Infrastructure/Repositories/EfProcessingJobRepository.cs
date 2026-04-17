@@ -61,4 +61,25 @@ public sealed class EfProcessingJobRepository : IProcessingJobRepository
         await _db.SaveChangesAsync(ct);
         return true;
     }
+
+    public async Task<CancelJobResult> CancelAsync(Guid id, CancellationToken ct)
+    {
+        var job = await _db.ProcessingJobs.FirstOrDefaultAsync(j => j.Id == id, ct);
+        if (job is null) return CancelJobResult.NotFound;
+        if (job.Status == JobStatus.Done || job.Status == JobStatus.Failed)
+        {
+            return CancelJobResult.AlreadyTerminal;
+        }
+        if (job.Status == JobStatus.Queued)
+        {
+            _db.ProcessingJobs.Remove(job);
+            await _db.SaveChangesAsync(ct);
+            return CancelJobResult.RemovedFromQueue;
+        }
+        job.Status = JobStatus.Failed;
+        job.ErrorMessage = "Cancelled by user";
+        job.FinishedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+        return CancelJobResult.MarkedFailed;
+    }
 }

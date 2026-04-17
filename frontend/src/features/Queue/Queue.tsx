@@ -36,8 +36,20 @@ const Queue: FC = () => {
       return next;
     });
     try {
-      await api.cancelQueueJob(id);
-      setJobs((prev) => prev.filter((j) => j.id !== id));
+      const result = await api.cancelQueueJob(id);
+      setJobs((prev) => {
+        // Queued → remove outright; in-flight → reflect the Failed stamp that
+        // the backend wrote (ADR-006 D-9). SSE may redundantly ship the same
+        // update a moment later; reducer idempotency already handles that.
+        if (result.markedFailed) {
+          return prev.map((j) =>
+            j.id === id
+              ? { ...j, status: "Failed", errorMessage: "Cancelled by user", finishedAt: new Date().toISOString() }
+              : j,
+          );
+        }
+        return prev.filter((j) => j.id !== id);
+      });
       toast.success(t("queue.cancelled"));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));
@@ -110,7 +122,7 @@ const Queue: FC = () => {
                   </div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <Badge tone={toneFor(job.status)}>{t(`queue.status.${job.status}` as const)}</Badge>
-                    {job.status === "Queued" && (
+                    {!TERMINAL.includes(job.status) && (
                       <Button
                         variant="ghost"
                         size="sm"

@@ -269,7 +269,7 @@ public sealed class ApiEndpointsTests
     }
 
     [TestMethod]
-    public async Task Queue_Delete_InFlightJob_ReturnsConflict()
+    public async Task Queue_Delete_InFlightJob_ReturnsOkAndMarksFailed()
     {
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
@@ -285,7 +285,45 @@ public sealed class ApiEndpointsTests
         await repo.EnqueueAsync(job, TestContext.CancellationToken);
 
         using var response = await client.DeleteAsync($"/api/queue/{job.Id}", TestContext.CancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using var listResponse = await client.GetAsync("/api/jobs", TestContext.CancellationToken);
+        var jobs = await listResponse.Content.ReadFromJsonAsync<List<ProcessingJob>>(Json, TestContext.CancellationToken);
+        var stored = jobs!.Single(j => j.Id == job.Id);
+        stored.Status.Should().Be(JobStatus.Failed);
+        stored.ErrorMessage.Should().Be("Cancelled by user");
+        stored.FinishedAt.Should().NotBeNull();
+    }
+
+    [TestMethod]
+    public async Task Queue_Delete_TerminalJob_ReturnsConflict()
+    {
+        await using var factory = new ApiFactory();
+        using var client = factory.CreateClient();
+
+        using var scope = factory.Services.CreateScope();
+        var repo = scope.ServiceProvider.GetRequiredService<Mozgoslav.Application.Interfaces.IProcessingJobRepository>();
+        var job = new ProcessingJob
+        {
+            RecordingId = Guid.NewGuid(),
+            ProfileId = Guid.NewGuid(),
+            Status = JobStatus.Done,
+            FinishedAt = DateTime.UtcNow
+        };
+        await repo.EnqueueAsync(job, TestContext.CancellationToken);
+
+        using var response = await client.DeleteAsync($"/api/queue/{job.Id}", TestContext.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [TestMethod]
+    public async Task Queue_Delete_UnknownId_ReturnsNotFound()
+    {
+        await using var factory = new ApiFactory();
+        using var client = factory.CreateClient();
+
+        using var response = await client.DeleteAsync($"/api/queue/{Guid.NewGuid()}", TestContext.CancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [TestMethod]

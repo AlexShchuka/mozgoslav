@@ -121,8 +121,12 @@ export class MozgoslavApi {
   };
 
   // --- queue ---
-  cancelQueueJob = async (id: string): Promise<void> => {
-    await this.client.delete(API_ENDPOINTS.queueCancel(id));
+  cancelQueueJob = async (id: string): Promise<{ markedFailed: boolean }> => {
+    const res = await this.client.delete<{ status?: string; markedFailed?: boolean } | "">(
+      API_ENDPOINTS.queueCancel(id),
+      { validateStatus: (s) => s === 200 || s === 204 },
+    );
+    return { markedFailed: Boolean((res.data as { markedFailed?: boolean } | "")?.markedFailed) };
   };
 
   // --- lm studio ---

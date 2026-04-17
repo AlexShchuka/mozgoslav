@@ -11,10 +11,18 @@ public static class QueueEndpoints
             IProcessingJobRepository repository,
             CancellationToken ct) =>
         {
-            var cancelled = await repository.CancelQueuedAsync(id, ct);
-            return cancelled
-                ? Results.NoContent()
-                : Results.Conflict(new { error = "job is not in Queued state or does not exist" });
+            // ADR-006 D-9: queued jobs are removed; in-flight jobs are marked
+            // Failed with "Cancelled by user" so the record stays around for
+            // history and the worker surfaces termination naturally.
+            var outcome = await repository.CancelAsync(id, ct);
+            return outcome switch
+            {
+                CancelJobResult.NotFound => Results.NotFound(),
+                CancelJobResult.RemovedFromQueue => Results.NoContent(),
+                CancelJobResult.MarkedFailed => Results.Ok(new { status = "cancelled", markedFailed = true }),
+                CancelJobResult.AlreadyTerminal => Results.Conflict(new { error = "Job already finished." }),
+                _ => Results.StatusCode(500)
+            };
         });
 
         return endpoints;
