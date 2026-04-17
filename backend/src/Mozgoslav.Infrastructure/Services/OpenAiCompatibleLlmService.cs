@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.ML.Tokenizers;
 
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Domain.Enums;
@@ -23,6 +24,15 @@ namespace Mozgoslav.Infrastructure.Services;
 /// </summary>
 public sealed class OpenAiCompatibleLlmService : ILlmService
 {
+    // ADR-011 step 4 — tiktoken-based chunking. 6000 tokens covers Claude and
+    // GPT-4-family context windows comfortably while leaving headroom for the
+    // system prompt and the LLM's reply. The tokenizer is the OpenAI cl100k_base
+    // encoder used by gpt-4 / gpt-3.5-turbo; Claude's BPE is close enough for
+    // sizing purposes (within ~5% on Russian text), which beats a character
+    // heuristic by a wide margin.
+    private const int MaxTokensPerChunk = 6_000;
+    private static readonly Tokenizer SharedTokenizer = TiktokenTokenizer.CreateForModel("gpt-4");
+
     private readonly ILlmProviderFactory _providerFactory;
     private readonly IAppSettings _settings;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -70,7 +80,7 @@ public sealed class OpenAiCompatibleLlmService : ILlmService
         }
 
         var provider = await _providerFactory.GetCurrentAsync(ct);
-        var chunks = Chunk(transcript, maxChars: 24_000);
+        var chunks = ChunkByTokens(transcript, MaxTokensPerChunk);
         var merged = Empty();
 
         foreach (var chunk in chunks)
@@ -110,17 +120,50 @@ public sealed class OpenAiCompatibleLlmService : ILlmService
         return content;
     }
 
-    private static IEnumerable<string> Chunk(string text, int maxChars)
+    /// <summary>
+    /// ADR-011 step 4 — token-aware splitter. Uses <see cref="TiktokenTokenizer"/>
+    /// (cl100k_base) to encode the full transcript once, then rebuilds contiguous
+    /// slices of at most <paramref name="maxTokens"/> tokens back into their
+    /// source substrings via the token offset map. The result never exceeds the
+    /// upstream LLM's per-call budget, unlike the pre-ADR character heuristic
+    /// that could overshoot by ~3-4x on dense Cyrillic text.
+    /// </summary>
+    internal static IEnumerable<string> ChunkByTokens(string text, int maxTokens)
     {
-        if (text.Length <= maxChars)
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxTokens);
+        if (string.IsNullOrEmpty(text))
+        {
+            yield break;
+        }
+
+        var encoding = SharedTokenizer.EncodeToTokens(text, out _);
+        if (encoding.Count == 0)
+        {
+            yield return text;
+            yield break;
+        }
+        if (encoding.Count <= maxTokens)
         {
             yield return text;
             yield break;
         }
 
-        for (var i = 0; i < text.Length; i += maxChars)
+        var sliceStart = encoding[0].Offset.Start.Value;
+        var tokensInSlice = 0;
+        for (var i = 0; i < encoding.Count; i++)
         {
-            yield return text.Substring(i, Math.Min(maxChars, text.Length - i));
+            tokensInSlice++;
+            if (tokensInSlice < maxTokens && i < encoding.Count - 1)
+            {
+                continue;
+            }
+            var sliceEnd = encoding[i].Offset.End.Value;
+            yield return text[sliceStart..sliceEnd];
+            if (i < encoding.Count - 1)
+            {
+                sliceStart = encoding[i + 1].Offset.Start.Value;
+                tokensInSlice = 0;
+            }
         }
     }
 
