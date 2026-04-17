@@ -1,7 +1,7 @@
 import { FC, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import { Download, HardDrive } from "lucide-react";
+import { Check, Download, HardDrive } from "lucide-react";
 
 import Badge from "../../components/Badge";
 import Button from "../../components/Button";
@@ -66,14 +66,24 @@ const Models: FC = () => {
               }
               subtitle={model.description}
               headerAction={
-                <Button
-                  variant={model.installed ? "secondary" : "primary"}
-                  leftIcon={<Download size={16} />}
-                  isLoading={downloading === model.id}
-                  onClick={() => void handleDownload(model.id)}
-                >
-                  {t("models.download")}
-                </Button>
+                model.installed ? (
+                  <Button
+                    variant="success"
+                    disabled
+                    leftIcon={<Check size={16} />}
+                  >
+                    {t("models.installedButton")}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="primary"
+                    leftIcon={<Download size={16} />}
+                    isLoading={downloading === model.id}
+                    onClick={() => void handleDownload(model.id)}
+                  >
+                    {t("models.download")}
+                  </Button>
+                )
               }
             >
               <ModelMeta>

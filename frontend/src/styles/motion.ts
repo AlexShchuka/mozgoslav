@@ -182,3 +182,39 @@ export const pageTransitionVariants: Variants = {
     transition: { duration: 0.12, ease: standardEase },
   },
 };
+
+/**
+ * ADR-013 reduced-motion fallbacks.
+ *
+ * `MotionConfig reducedMotion="user"` at the app root strips
+ * transform/opacity animations automatically. These sibling variants cover
+ * the cases framer does NOT strip — infinite `boxShadow` pulses on
+ * ProgressBar and DictationOverlay — which would otherwise keep cycling for
+ * users who asked for less motion.
+ *
+ * Consumer pattern:
+ *   const prefersReducedMotion = useReducedMotion();
+ *   const variants = prefersReducedMotion
+ *     ? reducedProgressBarVariants
+ *     : progressBarVariants;
+ */
+
+export const reducedProgressBarVariants: Variants = {
+  idle: { backgroundPositionX: "0%" },
+  active: { backgroundPositionX: "0%" },
+  complete: { boxShadow: "0 0 0 0 rgba(41, 252, 195, 0)" },
+};
+
+export const reducedDictationOverlayVariants: Variants = {
+  initial: { opacity: 0 },
+  enter: { opacity: 1, transition: { duration: durations.fast } },
+  recording: { boxShadow: "0 0 0 2px rgba(41, 252, 195, 0.35)" },
+  exit: { opacity: 0, transition: { duration: durations.fast } },
+};
+
+export const reducedButtonVariants: Variants = {
+  idle: { scale: 1, boxShadow: "0 0 0 0 rgba(41, 252, 195, 0)" },
+  hover: { scale: 1 },
+  tap: { scale: 1 },
+  loading: { boxShadow: "0 0 0 2px rgba(41, 252, 195, 0.35)" },
+};

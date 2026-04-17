@@ -1,6 +1,6 @@
 import styled, { css } from "styled-components";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "success";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const sizeStyles = {
@@ -56,6 +56,17 @@ const variantStyles = {
     color: #fff;
     &:hover:not(:disabled) {
       filter: brightness(1.05);
+    }
+  `,
+  /* Confirmatory resting state — used for "already installed / already done"
+     affordances that should stay visible but not invite another click. Pair
+     with `disabled` on the element so pointer-events are off. */
+  success: css`
+    background: ${({ theme }) => theme.colors.success};
+    color: ${({ theme }) => theme.colors.accent.contrast};
+    &:disabled {
+      opacity: 1;
+      cursor: default;
     }
   `,
 } satisfies Record<ButtonVariant, ReturnType<typeof css>>;

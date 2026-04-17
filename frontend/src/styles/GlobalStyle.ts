@@ -48,6 +48,18 @@ export const GlobalStyle = createGlobalStyle`
     text-decoration: underline;
   }
 
+  /* ADR-013 — reduced-motion fallback. Kills looping keyframe animations
+     (shimmer, pulse, spin) for users with prefers-reduced-motion: reduce,
+     while leaving short transitions intact so hover/focus affordances still
+     work. Per-variant boxShadow pulses that framer-motion keeps running are
+     handled by the reduced*Variants exports in styles/motion.ts. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
+
   /* scrollbar */
   ::-webkit-scrollbar {
     width: 10px;

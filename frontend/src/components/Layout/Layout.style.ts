@@ -60,7 +60,9 @@ export const SidebarItem = styled.a`
   gap: ${({ theme }) => theme.space(2.5)};
   padding: ${({ theme }) => `${theme.space(2)} ${theme.space(2.5)}`};
   border-radius: ${({ theme }) => theme.radii.md};
-  font-size: ${({ theme }) => theme.font.size.sm};
+  /* Sidebar body copy is one step larger than generic body text for
+     navigation readability; 16px isn't in the token scale, inline on purpose. */
+  font-size: 16px;
   color: ${({ theme }) => theme.colors.text.secondary};
   text-decoration: none;
   transition: background ${({ theme }) => theme.motion.duration.fast}, color ${({ theme }) => theme.motion.duration.fast};
@@ -74,6 +76,14 @@ export const SidebarItem = styled.a`
     background: ${({ theme }) => theme.colors.accent.soft};
     color: ${({ theme }) => theme.colors.accent.primary};
   }
+`;
+
+export const SidebarIconSlot = styled.span`
+  display: inline-flex;
+  width: 24px;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
 `;
 
 export const SidebarFooter = styled.div`
