@@ -59,3 +59,37 @@ export const Toolbar = styled.div`
   align-items: center;
   gap: ${({ theme }) => theme.space(2)};
 `;
+
+// BC-040 / Bug 25 — Skip reads as grey with ≤ 60 % opacity, no border. Keeps
+// the primary "Next" the dominant call-to-action.
+export const SkipButton = styled.button`
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: ${({ theme }) => theme.space(1.5)} ${({ theme }) => theme.space(2)};
+  color: ${({ theme }) => theme.colors.textSubtle};
+  font: inherit;
+  font-size: ${({ theme }) => theme.font.size.sm};
+  opacity: 0.6; /* contract with BC-040 */
+
+  &:hover {
+    opacity: 0.75;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.focusRing};
+    border-radius: ${({ theme }) => theme.radii.sm};
+  }
+`;
+
+// BC-040 Welcome — brand wordmark enters with a subtle 450 ms ease-out.
+export const BrandMark = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: ${({ theme }) => theme.space(2)};
+  font-size: ${({ theme }) => theme.font.size.xxl};
+  font-weight: ${({ theme }) => theme.font.weight.semibold};
+  color: ${({ theme }) => theme.colors.accent};
+`;

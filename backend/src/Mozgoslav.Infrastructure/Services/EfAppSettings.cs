@@ -26,6 +26,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     public void Dispose() => _lock.Dispose();
 
     public string VaultPath => Snapshot.VaultPath;
+    public string LlmProvider => Snapshot.LlmProvider;
     public string LlmEndpoint => Snapshot.LlmEndpoint;
     public string LlmModel => Snapshot.LlmModel;
     public string LlmApiKey => Snapshot.LlmApiKey;
@@ -54,6 +55,8 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     public IReadOnlyDictionary<string, string> DictationAppProfiles => Snapshot.DictationAppProfiles;
     public bool SyncthingEnabled => Snapshot.SyncthingEnabled;
     public string SyncthingObsidianVaultPath => Snapshot.SyncthingObsidianVaultPath;
+    public string SyncthingApiKey => Snapshot.SyncthingApiKey;
+    public string SyncthingBaseUrl => Snapshot.SyncthingBaseUrl;
     public AppSettingsDto Snapshot { get; private set; } = AppSettingsDto.Defaults;
 
     public async Task<AppSettingsDto> LoadAsync(CancellationToken ct)
@@ -64,6 +67,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         var defaults = AppSettingsDto.Defaults;
         var dto = new AppSettingsDto(
             VaultPath: map.GetValueOrDefault(Keys.VaultPath, defaults.VaultPath),
+            LlmProvider: map.GetValueOrDefault(Keys.LlmProvider, defaults.LlmProvider),
             LlmEndpoint: map.GetValueOrDefault(Keys.LlmEndpoint, defaults.LlmEndpoint),
             LlmModel: map.GetValueOrDefault(Keys.LlmModel, defaults.LlmModel),
             LlmApiKey: map.GetValueOrDefault(Keys.LlmApiKey, defaults.LlmApiKey),
@@ -91,7 +95,9 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             DictationTempAudioPath: map.GetValueOrDefault(Keys.DictationTempAudioPath, defaults.DictationTempAudioPath),
             DictationAppProfiles: ParseStringMap(map, Keys.DictationAppProfiles, defaults.DictationAppProfiles),
             SyncthingEnabled: ParseBool(map, Keys.SyncthingEnabled, defaults.SyncthingEnabled),
-            SyncthingObsidianVaultPath: map.GetValueOrDefault(Keys.SyncthingObsidianVaultPath, defaults.SyncthingObsidianVaultPath));
+            SyncthingObsidianVaultPath: map.GetValueOrDefault(Keys.SyncthingObsidianVaultPath, defaults.SyncthingObsidianVaultPath),
+            SyncthingApiKey: map.GetValueOrDefault(Keys.SyncthingApiKey, defaults.SyncthingApiKey),
+            SyncthingBaseUrl: map.GetValueOrDefault(Keys.SyncthingBaseUrl, defaults.SyncthingBaseUrl));
 
         await _lock.WaitAsync(ct);
         try { Snapshot = dto; }
@@ -107,6 +113,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         var entries = new (string Key, string Value)[]
         {
             (Keys.VaultPath, dto.VaultPath),
+            (Keys.LlmProvider, dto.LlmProvider),
             (Keys.LlmEndpoint, dto.LlmEndpoint),
             (Keys.LlmModel, dto.LlmModel),
             (Keys.LlmApiKey, dto.LlmApiKey),
@@ -135,6 +142,8 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             (Keys.DictationAppProfiles, SerializeStringMap(dto.DictationAppProfiles)),
             (Keys.SyncthingEnabled, BoolToString(dto.SyncthingEnabled)),
             (Keys.SyncthingObsidianVaultPath, dto.SyncthingObsidianVaultPath),
+            (Keys.SyncthingApiKey, dto.SyncthingApiKey),
+            (Keys.SyncthingBaseUrl, dto.SyncthingBaseUrl),
         };
 
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
@@ -223,6 +232,8 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     private static class Keys
     {
         public const string VaultPath = "vault_path";
+        // TODO-3 / Migration 0012 — active LLM provider discriminator.
+        public const string LlmProvider = Persistence.Migrations.Migration0012LlmProvider.LlmProviderKey;
         public const string LlmEndpoint = "llm_endpoint";
         public const string LlmModel = "llm_model";
         public const string LlmApiKey = "llm_api_key";
@@ -251,5 +262,8 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         public const string DictationAppProfiles = "dictation_app_profiles";
         public const string SyncthingEnabled = "syncthing_enabled";
         public const string SyncthingObsidianVaultPath = "syncthing_obsidian_vault_path";
+        // ADR-007-shared §2.8 / Migration 0010.
+        public const string SyncthingApiKey = Persistence.Migrations.Migration0010SyncthingSettings.SyncthingApiKeyKey;
+        public const string SyncthingBaseUrl = Persistence.Migrations.Migration0010SyncthingSettings.SyncthingBaseUrlKey;
     }
 }

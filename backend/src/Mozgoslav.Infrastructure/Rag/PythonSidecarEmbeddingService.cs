@@ -8,21 +8,31 @@ using Mozgoslav.Application.Rag;
 namespace Mozgoslav.Infrastructure.Rag;
 
 /// <summary>
-/// ADR-005 D3 production path — swaps <see cref="BagOfWordsEmbeddingService"/>
-/// for sentence-transformer vectors served by the Python sidecar on
-/// <c>POST /api/embed</c>. When the sidecar is unreachable (process not
-/// launched yet, user disabled it, port changed, …) we transparently
-/// degrade to an inner fallback <see cref="IEmbeddingService"/> so the
-/// RAG endpoint keeps working; the fallback is the same bag-of-words
-/// service the MVP ships with, so previously-indexed notes still match.
+/// ADR-005 D3 / ADR-007-shared §2.4 production path — swaps
+/// <see cref="BagOfWordsEmbeddingService"/> for sentence-transformer vectors
+/// served by the Python sidecar on <c>POST /api/embed</c>. When the sidecar
+/// is unreachable (process not launched yet, user disabled it, port changed,
+/// …) we transparently degrade to an inner fallback
+/// <see cref="IEmbeddingService"/> so the RAG endpoint keeps working; the
+/// fallback is the same bag-of-words service the MVP ships with, so
+/// previously-indexed notes still match.
 /// </summary>
 /// <remarks>
+/// <para>
+/// The contract is the ADR-007-shared §2.4 single-text shape:
+/// <c>POST /api/embed { text }</c> → <c>{ embedding: number[], dim: int }</c>.
+/// The sidecar always returns an L2-normalised 384-float vector from
+/// <c>paraphrase-multilingual-MiniLM-L12-v2</c> (or the deterministic SHA-256
+/// BoW fallback when PyTorch is unavailable on the sidecar host).
+/// </para>
+/// <para>
 /// The service caches the first successful probe of the sidecar's
-/// <c>dimensions</c> so we never return mismatched-dimension vectors
+/// <c>dim</c> so we never return mismatched-dimension vectors
 /// mid-session; if the sidecar's advertised dimension drifts (model
 /// swap), we log a warning and keep the first dimension until the process
 /// restarts. Dimension drift during a run would corrupt the vector
 /// index, so a restart is the safe boundary.
+/// </para>
 /// </remarks>
 public sealed class PythonSidecarEmbeddingService : IEmbeddingService
 {
@@ -49,19 +59,19 @@ public sealed class PythonSidecarEmbeddingService : IEmbeddingService
     {
         try
         {
-            var request = new EmbedRequest([text ?? string.Empty]);
+            var request = new EmbedRequest(text ?? string.Empty);
             using var response = await _httpClient.PostAsJsonAsync("/api/embed", request, ct);
             response.EnsureSuccessStatusCode();
 
             var body = await response.Content.ReadFromJsonAsync<EmbedResponse>(ct)
                 ?? throw new InvalidOperationException("Sidecar returned null body");
 
-            if (body.Vectors.Count == 0 || body.Vectors[0].Length == 0)
+            if (body.Embedding is null || body.Embedding.Length == 0)
             {
                 throw new InvalidOperationException("Sidecar returned empty vector");
             }
 
-            if (Dimensions != body.Dimensions)
+            if (Dimensions != body.Dim)
             {
                 if (Dimensions != _fallback.Dimensions)
                 {
@@ -69,15 +79,15 @@ public sealed class PythonSidecarEmbeddingService : IEmbeddingService
                         "Python sidecar dimension drift detected: was {Old}, now {New}. "
                         + "Keeping the original dimension until restart to avoid index corruption.",
                         Dimensions,
-                        body.Dimensions);
+                        body.Dim);
                 }
                 else
                 {
-                    Dimensions = body.Dimensions;
+                    Dimensions = body.Dim;
                 }
             }
 
-            return body.Vectors[0];
+            return body.Embedding;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidOperationException)
         {
@@ -87,11 +97,13 @@ public sealed class PythonSidecarEmbeddingService : IEmbeddingService
         }
     }
 
+    // ADR-007-shared §2.4 — single-text request body.
     private sealed record EmbedRequest(
-        [property: JsonPropertyName("texts")] IReadOnlyList<string> Texts);
+        [property: JsonPropertyName("text")] string Text);
 
+    // ADR-007-shared §2.4 — single-text response body. `dim` is declared by
+    // the sidecar so we can detect vocabulary-model swaps between calls.
     private sealed record EmbedResponse(
-        [property: JsonPropertyName("model")] string Model,
-        [property: JsonPropertyName("dimensions")] int Dimensions,
-        [property: JsonPropertyName("vectors")] IReadOnlyList<float[]> Vectors);
+        [property: JsonPropertyName("embedding")] float[] Embedding,
+        [property: JsonPropertyName("dim")] int Dim);
 }

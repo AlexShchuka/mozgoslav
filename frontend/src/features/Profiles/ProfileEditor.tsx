@@ -6,7 +6,16 @@ import Input from "../../components/Input";
 import Modal from "../../components/Modal";
 import { Profile } from "../../domain/Profile";
 import { CleanupLevel } from "../../domain/enums";
-import { Column, SelectBox, SelectOption, TagEditor, TagPill, TextArea, ToggleRow } from "./ProfileEditor.style";
+import {
+  Column,
+  FieldError,
+  SelectBox,
+  SelectOption,
+  TagEditor,
+  TagPill,
+  TextArea,
+  ToggleRow,
+} from "./ProfileEditor.style";
 
 export interface ProfileEditorProps {
   profile: Profile | null; // null for create
@@ -41,6 +50,7 @@ const ProfileEditor: FC<ProfileEditorProps> = ({ profile, isOpen, onClose, onSav
   const [draft, setDraft] = useState<ProfileDraft>(emptyDraft);
   const [tagDraft, setTagDraft] = useState("");
   const [saving, setSaving] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile) {
@@ -58,6 +68,7 @@ const ProfileEditor: FC<ProfileEditorProps> = ({ profile, isOpen, onClose, onSav
       setDraft(emptyDraft());
     }
     setTagDraft("");
+    setNameError(null);
   }, [profile, isOpen]);
 
   const update = <K extends keyof ProfileDraft>(key: K, value: ProfileDraft[K]) =>
@@ -74,6 +85,14 @@ const ProfileEditor: FC<ProfileEditorProps> = ({ profile, isOpen, onClose, onSav
     setDraft((prev) => ({ ...prev, autoTags: prev.autoTags.filter((t) => t !== tag) }));
 
   const submit = async () => {
+    // Client-side validation — name is the only hard-required field per
+    // ADR-006 D-15.b. Backend also rejects empty names with 400 but surfacing
+    // this inline avoids a round-trip.
+    if (!draft.name.trim()) {
+      setNameError(t("profiles.fields.nameRequired"));
+      return;
+    }
+    setNameError(null);
     setSaving(true);
     try {
       await onSave(draft);
@@ -93,7 +112,12 @@ const ProfileEditor: FC<ProfileEditorProps> = ({ profile, isOpen, onClose, onSav
           <Button variant="ghost" onClick={onClose}>
             {t("common.cancel")}
           </Button>
-          <Button variant="primary" onClick={submit} isLoading={saving}>
+          <Button
+            data-testid="profile-editor-save"
+            variant="primary"
+            onClick={submit}
+            isLoading={saving}
+          >
             {t("common.save")}
           </Button>
         </>
@@ -101,11 +125,18 @@ const ProfileEditor: FC<ProfileEditorProps> = ({ profile, isOpen, onClose, onSav
     >
       <Column>
         <Input
+          data-testid="profile-field-name"
           label={t("profiles.fields.name")}
           value={draft.name}
-          onChange={(e) => update("name", e.target.value)}
+          onChange={(e) => {
+            update("name", e.target.value);
+            if (nameError) setNameError(null);
+          }}
           autoFocus
         />
+        {nameError && (
+          <FieldError data-testid="profile-field-name-error">{nameError}</FieldError>
+        )}
 
         <div>
           <label>{t("profiles.fields.cleanupLevel")}</label>

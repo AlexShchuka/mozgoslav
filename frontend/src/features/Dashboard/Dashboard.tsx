@@ -1,7 +1,7 @@
-import { FC, useCallback, useEffect, useState } from "react";
+import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useTranslation } from "react-i18next";
-import { FileAudio, Mic, Upload } from "lucide-react";
+import { FileAudio, Mic, Square, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 
 import Button from "../../components/Button";
@@ -25,10 +25,21 @@ import {
   SectionTitle,
 } from "./Dashboard.style";
 
+type RecordState = "idle" | "starting" | "recording" | "stopping";
+
+interface ActiveSession {
+  readonly sessionId: string;
+  readonly recorder: MediaRecorder;
+  readonly stream: MediaStream;
+}
+
 const Dashboard: FC = () => {
   const { t } = useTranslation();
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [recordState, setRecordState] = useState<RecordState>("idle");
+  const [transcript, setTranscript] = useState<string | null>(null);
+  const sessionRef = useRef<ActiveSession | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -84,6 +95,136 @@ const Dashboard: FC = () => {
     }
   };
 
+  // BC-004 — Dashboard record button. Flow: start session → capture mic via
+  // MediaRecorder (Opus-in-WebM @ 48 kHz, 250 ms chunks) → push each chunk as
+  // octet-stream to /api/dictation/{sessionId}/push → stop on second click,
+  // fetch the final transcript and render it.
+  const startRecording = async () => {
+    setRecordState("starting");
+    setTranscript(null);
+    let sessionId: string | null = null;
+    try {
+      const started = await api.startDictation({ source: "dashboard" });
+      sessionId = started.sessionId;
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { channelCount: 1, sampleRate: 48000 },
+      });
+      const MediaRecorderCtor = (globalThis as unknown as { MediaRecorder?: typeof MediaRecorder }).MediaRecorder;
+      if (!MediaRecorderCtor) {
+        throw new Error("MediaRecorder API is not available in this environment");
+      }
+      const recorder = new MediaRecorderCtor(stream, {
+        mimeType: "audio/webm;codecs=opus",
+        audioBitsPerSecond: 24_000,
+      });
+      recorder.ondataavailable = (event) => {
+        if (!sessionId) return;
+        const data = event.data;
+        if (!data || (data as Blob).size === 0) return;
+        const blob = data as Blob;
+        void blob
+          .arrayBuffer()
+          .then((buf) => api.dictationPush(sessionId!, buf))
+          .catch(() => {
+            // One-chunk push failures are non-fatal; later chunks still flow.
+          });
+      };
+      sessionRef.current = { sessionId, recorder, stream };
+      recorder.start(250); // 250 ms chunks matches ADR-002 D9
+      setRecordState("recording");
+    } catch (err) {
+      setRecordState("idle");
+      toast.error(err instanceof Error ? err.message : String(err));
+      sessionRef.current = null;
+    }
+  };
+
+  const stopRecording = async () => {
+    const active = sessionRef.current;
+    if (!active) {
+      setRecordState("idle");
+      return;
+    }
+    setRecordState("stopping");
+    try {
+      active.recorder.stop();
+      active.stream.getTracks().forEach((track) => track.stop());
+      const result = await api.stopDictation(active.sessionId);
+      setTranscript(result.transcript);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      sessionRef.current = null;
+      setRecordState("idle");
+    }
+  };
+
+  const toggleRecord = () => {
+    if (recordState === "idle") {
+      void startRecording();
+    } else if (recordState === "recording") {
+      void stopRecording();
+    }
+  };
+
+  // TODO-1 — subscribe to the global dictation hotkey
+  // (Cmd/Ctrl+Shift+Space). Electron's main process forwards it via the
+  // preload bridge. We kick off the same lifecycle used by the on-page
+  // Record button. Unlike the mouse-5 entry the `source` travels via
+  // `api.startDictation`; backend decides per-source routing (e.g. which
+  // profile to apply).
+  useEffect(() => {
+    const bridge = typeof window !== "undefined" ? window.mozgoslav : undefined;
+    if (!bridge?.onGlobalHotkey) return;
+    const unsubscribe = bridge.onGlobalHotkey((payload) => {
+      if (sessionRef.current) {
+        void stopRecording();
+      } else {
+        void (async () => {
+          setRecordState("starting");
+          setTranscript(null);
+          try {
+            const started = await api.startDictation({ source: payload.source });
+            // Re-use the standard start flow for the mic pipe + chunk push;
+            // a second `api.startDictation` call inside `startRecording` is
+            // avoided by seeding the session ref after this one returns.
+            const stream = await navigator.mediaDevices.getUserMedia({
+              audio: { channelCount: 1, sampleRate: 48000 },
+            });
+            const MediaRecorderCtor = (globalThis as unknown as {
+              MediaRecorder?: typeof MediaRecorder;
+            }).MediaRecorder;
+            if (!MediaRecorderCtor) {
+              throw new Error("MediaRecorder API is not available in this environment");
+            }
+            const recorder = new MediaRecorderCtor(stream, {
+              mimeType: "audio/webm;codecs=opus",
+              audioBitsPerSecond: 24_000,
+            });
+            recorder.ondataavailable = (event) => {
+              const data = event.data;
+              if (!data || (data as Blob).size === 0) return;
+              const blob = data as Blob;
+              void blob
+                .arrayBuffer()
+                .then((buf) => api.dictationPush(started.sessionId, buf))
+                .catch(() => {});
+            };
+            sessionRef.current = { sessionId: started.sessionId, recorder, stream };
+            recorder.start(250);
+            setRecordState("recording");
+          } catch (err) {
+            setRecordState("idle");
+            toast.error(err instanceof Error ? err.message : String(err));
+            sessionRef.current = null;
+          }
+        })();
+      }
+    });
+    return unsubscribe;
+  }, []);
+
   const getFormatLabel = (format: unknown) => {
     if (typeof format === "string") return format.toUpperCase();
     if (typeof format === "number") return String(format);
@@ -112,10 +253,26 @@ const Dashboard: FC = () => {
           >
             {t("common.add")}
           </Button>
-          <Button variant="ghost" leftIcon={<Mic size={16} />} disabled>
-            {t("dashboard.recordStart")} — {t("dashboard.recordUnsupported")}
+          <Button
+            variant={recordState === "recording" ? "primary" : "ghost"}
+            leftIcon={recordState === "recording" ? <Square size={16} /> : <Mic size={16} />}
+            data-testid="dashboard-record"
+            isLoading={recordState === "starting" || recordState === "stopping"}
+            onClick={toggleRecord}
+          >
+            {recordState === "recording"
+              ? t("dashboard.recordStop")
+              : t("dashboard.recordStart")}
           </Button>
         </Row>
+        {transcript && (
+          <div
+            data-testid="dashboard-transcript"
+            style={{ marginTop: 12, fontSize: 14, color: "#555" }}
+          >
+            {transcript}
+          </div>
+        )}
       </Card>
 
       <SectionTitle>{t("dashboard.recentTitle")}</SectionTitle>

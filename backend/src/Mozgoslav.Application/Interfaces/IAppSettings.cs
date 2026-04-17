@@ -8,6 +8,8 @@ namespace Mozgoslav.Application.Interfaces;
 public interface IAppSettings
 {
     string VaultPath { get; }
+    // TODO-3 / BC-036 — active LLM provider discriminator; see AppSettingsDto.LlmProvider.
+    string LlmProvider { get; }
     string LlmEndpoint { get; }
     string LlmModel { get; }
     string LlmApiKey { get; }
@@ -36,6 +38,8 @@ public interface IAppSettings
     IReadOnlyDictionary<string, string> DictationAppProfiles { get; }
     bool SyncthingEnabled { get; }
     string SyncthingObsidianVaultPath { get; }
+    string SyncthingApiKey { get; }
+    string SyncthingBaseUrl { get; }
 
     AppSettingsDto Snapshot { get; }
 

@@ -1,7 +1,7 @@
 import { FC, ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Archive, Brain, Database, FolderCog, LayoutDashboard, ListChecks, ListTree, MessageSquare, Settings, Sparkles, Wrench } from "lucide-react";
+import { Archive, Brain, Database, FolderCog, FolderTree, LayoutDashboard, ListChecks, ListTree, MessageSquare, RefreshCw, Settings, Sparkles, Wrench } from "lucide-react";
 
 import { useBackendHealth } from "../../hooks/useBackendHealth";
 import { ROUTES } from "../../constants/routes";
@@ -59,6 +59,12 @@ const Layout: FC<LayoutProps> = ({ children }) => {
             </NavItem>
             <NavItem to={ROUTES.models} icon={<Database size={16} />}>
               {t("nav.models")}
+            </NavItem>
+            <NavItem to={ROUTES.obsidian} icon={<FolderTree size={16} />}>
+              {t("nav.obsidian")}
+            </NavItem>
+            <NavItem to={ROUTES.sync} icon={<RefreshCw size={16} />}>
+              {t("nav.sync")}
             </NavItem>
           </SidebarGroup>
 

@@ -1,4 +1,3 @@
-using System.ClientModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -8,31 +7,34 @@ using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Domain.Enums;
 using Mozgoslav.Domain.ValueObjects;
 
-using OpenAI;
-using OpenAI.Chat;
-
 namespace Mozgoslav.Infrastructure.Services;
 
 /// <summary>
-/// Talks to any OpenAI-compatible endpoint (LM Studio, Ollama with --openai-like
-/// adapters, etc.) configured in <see cref="IAppSettings.LlmEndpoint"/>. Returns a
-/// strongly-typed <see cref="LlmProcessingResult"/>, falling back gracefully when
-/// the model returns non-JSON output or the endpoint is unreachable.
+/// TODO-3 — thin adapter implementing <see cref="ILlmService"/> by delegating
+/// the transport to whatever <see cref="ILlmProvider"/> the
+/// <see cref="ILlmProviderFactory"/> selects at runtime. Keeps the legacy
+/// JSON-schema parsing + chunking pipeline; the provider only has to hand back
+/// a single string.
+/// <para>
+/// Kept under the original class name so the rest of the codebase does not
+/// need to change DI bindings; <c>ILlmService</c> is still the upstream-facing
+/// port.
+/// </para>
 /// </summary>
 public sealed class OpenAiCompatibleLlmService : ILlmService
 {
-    private const float Temperature = 0.1f;
-    private const int MaxTokens = 4096;
-
+    private readonly ILlmProviderFactory _providerFactory;
     private readonly IAppSettings _settings;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<OpenAiCompatibleLlmService> _logger;
 
     public OpenAiCompatibleLlmService(
+        ILlmProviderFactory providerFactory,
         IAppSettings settings,
         IHttpClientFactory httpClientFactory,
         ILogger<OpenAiCompatibleLlmService> logger)
     {
+        _providerFactory = providerFactory;
         _settings = settings;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
@@ -63,65 +65,18 @@ public sealed class OpenAiCompatibleLlmService : ILlmService
             return Empty();
         }
 
+        var provider = await _providerFactory.GetCurrentAsync(ct);
         var chunks = Chunk(transcript, maxChars: 24_000);
         var merged = Empty();
 
         foreach (var chunk in chunks)
         {
-            var result = await CallAsync(chunk, systemPrompt, ct);
+            var rawContent = await provider.ChatAsync(systemPrompt, chunk, ct);
+            var result = string.IsNullOrWhiteSpace(rawContent) ? Empty() : ParseOrRepair(rawContent);
             merged = Merge(merged, result);
         }
 
         return merged;
-    }
-
-    private async Task<LlmProcessingResult> CallAsync(string text, string systemPrompt, CancellationToken ct)
-    {
-        var client = CreateClient();
-        var completionOptions = new ChatCompletionOptions
-        {
-            Temperature = Temperature,
-            MaxOutputTokenCount = MaxTokens,
-            ResponseFormat = ChatResponseFormat.CreateJsonObjectFormat()
-        };
-
-        var messages = new ChatMessage[]
-        {
-            ChatMessage.CreateSystemMessage(systemPrompt),
-            ChatMessage.CreateUserMessage(text)
-        };
-
-        ChatCompletion response;
-        try
-        {
-            response = await client.CompleteChatAsync(messages, completionOptions, ct);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "LLM call failed");
-            return Empty();
-        }
-
-        var rawContent = response.Content.Count > 0 ? response.Content[0].Text : string.Empty;
-        if (string.IsNullOrWhiteSpace(rawContent))
-        {
-            return Empty();
-        }
-
-        return ParseOrRepair(rawContent);
-    }
-
-    private ChatClient CreateClient()
-    {
-        var apiKey = string.IsNullOrWhiteSpace(_settings.LlmApiKey) ? "lm-studio" : _settings.LlmApiKey;
-        var credential = new ApiKeyCredential(apiKey);
-        var options = new OpenAIClientOptions
-        {
-            Endpoint = new Uri(new Uri(_settings.LlmEndpoint), "/v1")
-        };
-        var openAiClient = new OpenAIClient(credential, options);
-        var model = string.IsNullOrWhiteSpace(_settings.LlmModel) ? "default" : _settings.LlmModel;
-        return openAiClient.GetChatClient(model);
     }
 
     private LlmProcessingResult ParseOrRepair(string rawContent)

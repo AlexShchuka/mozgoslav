@@ -100,3 +100,9 @@ export const ToggleRow = styled.div`
     color: ${({ theme }) => theme.colors.text};
   }
 `;
+
+export const FieldError = styled.div`
+  margin-top: ${({ theme }) => `-${theme.space(3)}`};
+  color: ${({ theme }) => theme.colors.error};
+  font-size: ${({ theme }) => theme.font.size.xs};
+`;

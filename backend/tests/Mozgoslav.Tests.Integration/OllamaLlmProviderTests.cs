@@ -1,0 +1,120 @@
+using System.Net;
+
+using FluentAssertions;
+
+using Microsoft.Extensions.Logging.Abstractions;
+
+using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Infrastructure.Services;
+
+using NSubstitute;
+
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
+using WireMock.Server;
+
+namespace Mozgoslav.Tests.Integration;
+
+/// <summary>
+/// Contract-level coverage for <c>OllamaLlmProvider</c> against a WireMock-hosted
+/// <c>/api/chat</c> endpoint. Covers happy path (extracts <c>message.content</c>)
+/// and graceful error fallback.
+/// </summary>
+[TestClass]
+public sealed class OllamaLlmProviderTests
+{
+    private WireMockServer _server = null!;
+    private IAppSettings _settings = null!;
+    private IHttpClientFactory _httpFactory = null!;
+    private OllamaLlmProvider _provider = null!;
+
+    [TestInitialize]
+    public void Init()
+    {
+        _server = WireMockServer.Start();
+        _settings = Substitute.For<IAppSettings>();
+        _settings.LlmEndpoint.Returns(_server.Urls[0]);
+        _settings.LlmApiKey.Returns(string.Empty);
+        _settings.LlmModel.Returns("qwen2.5:14b");
+
+        _httpFactory = Substitute.For<IHttpClientFactory>();
+#pragma warning disable CA2000, IDISP004
+        _httpFactory.CreateClient(Arg.Any<string>()).Returns(_ => new HttpClient());
+#pragma warning restore CA2000, IDISP004
+
+        _provider = new OllamaLlmProvider(_settings, _httpFactory, NullLogger<OllamaLlmProvider>.Instance);
+    }
+
+    [TestCleanup]
+    public void Cleanup()
+    {
+        _server.Stop();
+        _server.Dispose();
+    }
+
+    [TestMethod]
+    public void Kind_IsOllama()
+    {
+        _provider.Kind.Should().Be("ollama");
+    }
+
+    [TestMethod]
+    public async Task Chat_HappyPath_ReturnsText()
+    {
+        _server.Given(Request.Create().WithPath("/api/chat").UsingPost())
+            .RespondWith(Response.Create()
+                .WithStatusCode((int)HttpStatusCode.OK)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody(/*lang=json,strict*/
+                    """
+                    {
+                      "model": "qwen2.5:14b",
+                      "created_at": "2026-04-17T12:00:00Z",
+                      "message": {"role":"assistant","content":"hello from ollama"},
+                      "done": true
+                    }
+                    """));
+
+        var result = await _provider.ChatAsync("system", "hi?", CancellationToken.None);
+
+        result.Should().Be("hello from ollama");
+    }
+
+    [TestMethod]
+    public async Task Chat_HttpError_ReturnsEmpty()
+    {
+        _server.Given(Request.Create().WithPath("/api/chat").UsingPost())
+            .RespondWith(Response.Create().WithStatusCode((int)HttpStatusCode.InternalServerError));
+
+        var result = await _provider.ChatAsync("sys", "user", CancellationToken.None);
+
+        result.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task Chat_NoServer_ReturnsEmpty()
+    {
+        _server.Stop();
+
+        var result = await _provider.ChatAsync("sys", "user", CancellationToken.None);
+
+        result.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task Chat_SendsStreamFalse()
+    {
+        _server.Given(Request.Create().WithPath("/api/chat").UsingPost())
+            .RespondWith(Response.Create()
+                .WithStatusCode((int)HttpStatusCode.OK)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody(/*lang=json,strict*/
+                    """{"message":{"role":"assistant","content":"ok"},"done":true}"""));
+
+        await _provider.ChatAsync("sys", "user", CancellationToken.None);
+
+        var body = _server.LogEntries.Single().RequestMessage.Body;
+        body.Should().Contain("\"stream\":false");
+        body.Should().Contain("qwen2.5:14b");
+    }
+}

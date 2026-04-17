@@ -36,6 +36,7 @@ public sealed class OpenAiCompatibleLlmServiceTests
     {
         _server = WireMockServer.Start();
         _settings = Substitute.For<IAppSettings>();
+        _settings.LlmProvider.Returns("openai_compatible");
         _settings.LlmEndpoint.Returns(_server.Urls[0]);
         _settings.LlmApiKey.Returns("test-key");
         _settings.LlmModel.Returns("test-model");
@@ -46,7 +47,17 @@ public sealed class OpenAiCompatibleLlmServiceTests
 #pragma warning disable CA2000, IDISP004
         _httpFactory.CreateClient(Arg.Any<string>()).Returns(_ => new HttpClient());
 #pragma warning restore CA2000, IDISP004
-        _service = new OpenAiCompatibleLlmService(_settings, _httpFactory, NullLogger<OpenAiCompatibleLlmService>.Instance);
+
+        // TODO-3 — OpenAiCompatibleLlmService now routes transport through the
+        // factory. Wire up a single-provider factory mock that always returns the
+        // real OpenAiCompatibleLlmProvider so WireMock keeps driving the contract.
+        var openAiProvider = new OpenAiCompatibleLlmProvider(
+            _settings, NullLogger<OpenAiCompatibleLlmProvider>.Instance);
+        var providerFactory = Substitute.For<ILlmProviderFactory>();
+        providerFactory.GetCurrentAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult<ILlmProvider>(openAiProvider));
+
+        _service = new OpenAiCompatibleLlmService(
+            providerFactory, _settings, _httpFactory, NullLogger<OpenAiCompatibleLlmService>.Instance);
     }
 
     [TestCleanup]

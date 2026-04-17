@@ -135,6 +135,78 @@ public sealed class IdleResourceCacheTests
     }
 
     [TestMethod]
+    public async Task Get_FirstCall_BuildsFactory()
+    {
+        var created = 0;
+        await using var cache = new IdleResourceCache<TrackedResource>(
+            () => { created++; return new TrackedResource(); },
+            () => TimeSpan.Zero);
+
+        var first = await cache.GetAsync(CancellationToken.None);
+
+        created.Should().Be(1);
+        first.Should().NotBeNull();
+        cache.IsLoaded.Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task Get_SubsequentCall_ReturnsCachedFactory()
+    {
+        var created = 0;
+        await using var cache = new IdleResourceCache<TrackedResource>(
+            () => { created++; return new TrackedResource(); },
+            () => TimeSpan.FromMinutes(10));
+
+        var first = await cache.GetAsync(CancellationToken.None);
+        var second = await cache.GetAsync(CancellationToken.None);
+
+        created.Should().Be(1, "second GetAsync must reuse the cached instance");
+        second.Should().BeSameAs(first);
+    }
+
+    [TestMethod]
+    public async Task Get_AfterIdleTimeout_DisposesAndRebuilds()
+    {
+        var created = 0;
+        await using var cache = new IdleResourceCache<TrackedResource>(
+            () => { created++; return new TrackedResource(); },
+            () => TimeSpan.FromMinutes(10));
+
+        var first = await cache.GetAsync(CancellationToken.None);
+        // Simulate the idle timer firing (same code path).
+        var unloaded = await cache.UnloadIfIdleAsync();
+        var second = await cache.GetAsync(CancellationToken.None);
+
+        unloaded.Should().BeTrue();
+        created.Should().Be(2);
+        second.Should().NotBeSameAs(first);
+        first.Disposed.Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task Concurrent_GetUnderLoad_KeepsFactoryWarm()
+    {
+        var created = 0;
+        await using var cache = new IdleResourceCache<TrackedResource>(
+            () =>
+            {
+                Interlocked.Increment(ref created);
+                return new TrackedResource();
+            },
+            () => TimeSpan.FromMinutes(10));
+
+        const int ConcurrentCallers = 16;
+        var results = await Task.WhenAll(Enumerable.Range(0, ConcurrentCallers)
+            .Select(_ => cache.GetAsync(CancellationToken.None))
+            .ToArray());
+
+        created.Should().Be(1, "concurrent GetAsync callers share the single cached instance");
+        results.Distinct().Should().ContainSingle(
+            "every concurrent caller sees the same instance reference");
+        cache.IsLoaded.Should().BeTrue();
+    }
+
+    [TestMethod]
     // Post-dispose usage is the scenario under test — suppress the analyzer.
 #pragma warning disable IDISP016
     public async Task AcquireAsync_AfterDispose_Throws()

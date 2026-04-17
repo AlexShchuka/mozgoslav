@@ -37,6 +37,15 @@ export class OverlayWindow {
     const window = this.window;
     if (!window || window.isDestroyed()) return;
     window.webContents.send("dictation:overlay-state", { phase, partialText });
+    // BC-002 — force-hide on error phase so a stuck overlay never survives
+    // a pipeline crash.
+    if (phase === "error") {
+      if (this.hideTimer) {
+        clearTimeout(this.hideTimer);
+        this.hideTimer = null;
+      }
+      if (window.isVisible()) window.hide();
+    }
   }
 
   scheduleHide(): void {

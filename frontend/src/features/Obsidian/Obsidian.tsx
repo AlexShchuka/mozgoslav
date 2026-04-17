@@ -1,13 +1,13 @@
 import { FC, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import { CheckCircle2, Circle, FolderTree } from "lucide-react";
+import { CheckCircle2, Circle, FolderTree, LayoutTemplate, UploadCloud } from "lucide-react";
 
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import { api } from "../../api/MozgoslavApi";
 import { AppSettings, DEFAULT_SETTINGS } from "../../domain/Settings";
-import { FolderGrid, FolderItem, FolderHint, PageRoot, PageTitle, Subtitle, VaultRow } from "./Obsidian.style";
+import { FolderGrid, FolderItem, FolderHint, PageRoot, PageTitle, Subtitle, VaultRow, BulkButtonRow } from "./Obsidian.style";
 
 const PRESET_FOLDERS = [
   { key: "_inbox", required: true },
@@ -25,6 +25,37 @@ const Obsidian: FC = () => {
     () => new Set(PRESET_FOLDERS.filter((f) => f.required).map((f) => f.key)),
   );
   const [busy, setBusy] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [layoutBusy, setLayoutBusy] = useState(false);
+
+  const syncAll = async () => {
+    setBulkBusy(true);
+    try {
+      const result = await api.bulkExportObsidian();
+      toast.success(t("obsidian.syncAllSuccess", { count: result.exportedCount }));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const applyLayout = async () => {
+    setLayoutBusy(true);
+    try {
+      const result = await api.applyObsidianLayout();
+      toast.success(
+        t("obsidian.applyLayoutSuccess", {
+          folders: result.createdFolders,
+          notes: result.movedNotes,
+        }),
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLayoutBusy(false);
+    }
+  };
 
   useEffect(() => {
     void api.getSettings().then(setSettings).catch(() => {});
@@ -82,6 +113,31 @@ const Obsidian: FC = () => {
             {t("common.add")}
           </Button>
         </VaultRow>
+      </Card>
+
+      <Card title={t("obsidian.bulkExportTitle")} subtitle={t("obsidian.bulkExportHint")}>
+        <BulkButtonRow>
+          <Button
+            variant="primary"
+            leftIcon={<UploadCloud size={16} />}
+            data-testid="obsidian-sync-all"
+            isLoading={bulkBusy}
+            disabled={bulkBusy}
+            onClick={syncAll}
+          >
+            {t("obsidian.syncAll")}
+          </Button>
+          <Button
+            variant="secondary"
+            leftIcon={<LayoutTemplate size={16} />}
+            data-testid="obsidian-apply-layout"
+            isLoading={layoutBusy}
+            disabled={layoutBusy}
+            onClick={applyLayout}
+          >
+            {t("obsidian.applyLayout")}
+          </Button>
+        </BulkButtonRow>
       </Card>
 
       <Card title={t("obsidian.setupTitle")} subtitle={t("obsidian.setupHint")}>

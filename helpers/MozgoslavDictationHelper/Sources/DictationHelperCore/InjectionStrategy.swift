@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(AppKit)
+import AppKit
+#endif
 
 /// Which native API to use when injecting text into the focused app.
 public enum InjectionStrategy: String, Codable, Sendable {
@@ -61,6 +64,125 @@ public enum InjectionStrategySelector {
         default:
             guard let id = bundleId, !id.isEmpty else { return .cgEvent }
             return electronBundleIds.contains(id) ? .accessibility : .cgEvent
+        }
+    }
+}
+
+// MARK: - BC-007 injection fallback strategy (ADR-007 Phase 2 §3.1)
+//
+// Below: the ADR-007-phase2-swift.md §3.1 contract for the testable
+// AX→clipboard fallback injector. The ADR spec asks for a struct named
+// `InjectionStrategy`, which collides with the enum above that is already
+// used by `TextInjectionService` and `DictationHelper`. To avoid breaking
+// those (outside this agent's write scope) the struct is renamed to
+// `InjectionStrategyRunner` here; behaviour matches the ADR verbatim.
+// Surface: `phase2-swift-report.md` — user decides whether to fold the
+// existing enum/selector into this runner during a future cleanup pass.
+
+/// How the runner decides which backend to use for a single injection call.
+public enum InjectionMode: String, Sendable {
+    /// Force the Accessibility API path.
+    case ax
+    /// Force the pasteboard paste path.
+    case clipboard
+    /// Try AX first, fall back to the clipboard path on timeout / denial.
+    case auto
+}
+
+/// Errors surfaced by `InjectionStrategyRunner.inject(text:mode:)`.
+public enum InjectionError: Error, Sendable {
+    /// AX call did not return within the configured `axTimeout` budget.
+    case axTimeout
+    /// AX call returned but the target refused the write (e.g. locked app).
+    case axDenied
+    /// Clipboard paste backend failed; the prior pasteboard contents were
+    /// still restored before this error was surfaced.
+    case clipboardFailed(reason: String)
+    /// Both AX and clipboard failed; each `reason` is a human-readable string.
+    case bothFailed(axReason: String, clipboardReason: String)
+}
+
+/// Abstraction over the system pasteboard so tests can inject a spy.
+public protocol Pasteboard {
+    /// Read the current string contents, or `nil` if the pasteboard is empty /
+    /// contains a non-string type.
+    func readString() -> String?
+    /// Replace the pasteboard contents with `value`.
+    func setString(_ value: String)
+}
+
+/// Abstraction over the Accessibility-API text injector.
+public protocol AxInjector {
+    /// Attempts AX-based text injection. Must throw `InjectionError.axTimeout`
+    /// on timeout, or `InjectionError.axDenied` when the target rejects the
+    /// write.
+    func inject(_ text: String, timeout: TimeInterval) throws
+}
+
+/// Abstraction over the CGEvent paste backend.
+public protocol CgEventInjector {
+    /// Performs a `Cmd+V` key-down / key-up sequence via CGEventPost.
+    func paste() throws
+}
+
+/// Runs a single text injection per BC-007: tries AX first (with a wall-clock
+/// timeout), falls back to a clipboard paste on timeout / denial, and
+/// restores the prior pasteboard contents afterwards regardless of outcome.
+///
+/// Collaborators are injected as protocols so the runner is fully unit-testable
+/// without any macOS system API access. In production the Swift executable
+/// wires `SystemAxInjector` / `SystemCgEventInjector` / `NSPasteboard.general`
+/// adapters; those implementations live outside this core library.
+public struct InjectionStrategyRunner {
+    private let ax: AxInjector
+    private let cg: CgEventInjector
+    private let pasteboard: Pasteboard
+    private let axTimeout: TimeInterval
+
+    /// - Parameters:
+    ///   - axTimeout: wall-clock budget for a single AX call. `0.6` matches
+    ///     ADR-004 R3 guidance; keep below ~500 ms user-perceivable freeze.
+    public init(
+        ax: AxInjector,
+        cg: CgEventInjector,
+        pasteboard: Pasteboard,
+        axTimeout: TimeInterval = 0.6
+    ) {
+        self.ax = ax
+        self.cg = cg
+        self.pasteboard = pasteboard
+        self.axTimeout = axTimeout
+    }
+
+    public func inject(text: String, mode: InjectionMode) throws {
+        switch mode {
+        case .ax:
+            try ax.inject(text, timeout: axTimeout)
+        case .clipboard:
+            try pasteViaClipboard(text)
+        case .auto:
+            do {
+                try ax.inject(text, timeout: axTimeout)
+            } catch InjectionError.axTimeout {
+                try pasteViaClipboard(text)
+            } catch InjectionError.axDenied {
+                try pasteViaClipboard(text)
+            }
+        }
+    }
+
+    private func pasteViaClipboard(_ text: String) throws {
+        let prior = pasteboard.readString()
+        pasteboard.setString(text)
+        defer {
+            if let prior = prior {
+                pasteboard.setString(prior)
+            }
+        }
+        do {
+            try cg.paste()
+        } catch {
+            throw InjectionError.clipboardFailed(reason: "\(error)")
         }
     }
 }

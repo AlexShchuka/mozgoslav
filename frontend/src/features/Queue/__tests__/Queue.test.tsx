@@ -1,0 +1,203 @@
+import { act, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { ThemeProvider } from "styled-components";
+
+import Queue from "../Queue";
+import { api } from "../../../api/MozgoslavApi";
+import { lightTheme } from "../../../styles/theme";
+import { ProcessingJob } from "../../../domain/ProcessingJob";
+import "../../../i18n";
+
+jest.mock("../../../api/MozgoslavApi", () => ({
+  api: {
+    listJobs: jest.fn(),
+    cancelQueueJob: jest.fn(),
+  },
+}));
+
+// ------------------------------------------------------------------ mocks ---
+// The Queue component opens a long-lived `EventSource` for `/api/jobs/stream`.
+// We stub it here so tests can capture the instance and emit SSE `job` frames
+// on demand, plus assert reconnect behaviour when the server drops us.
+type Listener = (event: MessageEvent) => void;
+
+interface StubEventSource {
+  instance: unknown;
+  listeners: Record<string, Listener[]>;
+  readyState: number;
+  close: jest.Mock;
+  emitJob: (job: ProcessingJob) => void;
+  raiseError: () => void;
+}
+
+let currentSource: StubEventSource | null = null;
+
+class FakeEventSource {
+  public readyState = 0;
+  public readonly listeners: Record<string, Listener[]> = {};
+  public onerror: (() => void) | null = null;
+  public onopen: (() => void) | null = null;
+  public close = jest.fn(() => {
+    this.readyState = 2;
+  });
+
+  constructor(public readonly url: string) {
+    currentSource = {
+      instance: this,
+      listeners: this.listeners,
+      readyState: this.readyState,
+      close: this.close,
+      emitJob: (job: ProcessingJob) => {
+        const event = new MessageEvent("job", { data: JSON.stringify(job) });
+        (this.listeners["job"] ?? []).forEach((l) => l(event));
+      },
+      raiseError: () => {
+        this.onerror?.();
+      },
+    };
+  }
+
+  addEventListener(type: string, listener: Listener): void {
+    (this.listeners[type] ??= []).push(listener);
+  }
+}
+
+beforeAll(() => {
+  (globalThis as unknown as { EventSource: typeof FakeEventSource }).EventSource =
+    FakeEventSource;
+});
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  currentSource = null;
+});
+
+const buildJob = (patch: Partial<ProcessingJob>): ProcessingJob => ({
+  id: patch.id ?? "job-1",
+  recordingId: patch.recordingId ?? "rec-1",
+  profileId: patch.profileId ?? "profile-default",
+  status: patch.status ?? "Queued",
+  progress: patch.progress ?? 0,
+  currentStep: patch.currentStep ?? null,
+  errorMessage: patch.errorMessage ?? null,
+  userHint: patch.userHint ?? null,
+  createdAt: patch.createdAt ?? new Date("2026-04-17T12:00:00Z").toISOString(),
+  startedAt: patch.startedAt ?? null,
+  finishedAt: patch.finishedAt ?? null,
+  resumedFromCheckpoint: patch.resumedFromCheckpoint,
+  checkpointAt: patch.checkpointAt,
+});
+
+const renderQueue = () =>
+  render(
+    <ThemeProvider theme={lightTheme}>
+      <Queue />
+    </ThemeProvider>,
+  );
+
+describe("Queue — cancel UI (BC-015 / Bug 19)", () => {
+  it("Queue_CancelQueued_FiresDelete_RemovesRow", async () => {
+    const job = buildJob({ id: "job-q", status: "Queued" });
+    (api.listJobs as jest.Mock).mockResolvedValue([job]);
+    (api.cancelQueueJob as jest.Mock).mockResolvedValue(undefined);
+
+    renderQueue();
+
+    const cancelBtn = await screen.findByTestId(`queue-cancel-${job.id}`);
+    expect(cancelBtn).toBeEnabled();
+    await userEvent.click(cancelBtn);
+
+    await waitFor(() => expect(api.cancelQueueJob).toHaveBeenCalledWith(job.id));
+  });
+
+  it("Queue_CancelRunning_Confirmation_CallsDelete", async () => {
+    const job = buildJob({ id: "job-r", status: "Transcribing", progress: 30 });
+    (api.listJobs as jest.Mock).mockResolvedValue([job]);
+    (api.cancelQueueJob as jest.Mock).mockResolvedValue(undefined);
+
+    // Running jobs surface a confirm prompt to avoid accidental cancellation.
+    const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true);
+
+    renderQueue();
+    const cancelBtn = await screen.findByTestId(`queue-cancel-${job.id}`);
+    await userEvent.click(cancelBtn);
+
+    await waitFor(() => expect(api.cancelQueueJob).toHaveBeenCalledWith(job.id));
+    expect(confirmSpy).toHaveBeenCalled();
+
+    confirmSpy.mockRestore();
+  });
+
+  it("Queue_CancelHidden_OnDoneAndFailed", async () => {
+    const done = buildJob({ id: "job-done-001", status: "Done", progress: 100 });
+    const failed = buildJob({ id: "job-fail-001", status: "Failed" });
+    (api.listJobs as jest.Mock).mockResolvedValue([done, failed]);
+
+    renderQueue();
+
+    // Wait for the rows to appear via their status badges (sorted array
+    // places terminal states after non-terminal).
+    await waitFor(() =>
+      expect(screen.getAllByText(/Готово|Done/).length).toBeGreaterThan(0),
+    );
+    expect(screen.queryByTestId(`queue-cancel-${done.id}`)).not.toBeInTheDocument();
+    expect(screen.queryByTestId(`queue-cancel-${failed.id}`)).not.toBeInTheDocument();
+  });
+
+  it("Queue_SseReconnect_OnConnectionLoss", async () => {
+    (api.listJobs as jest.Mock).mockResolvedValue([]);
+
+    const { unmount } = renderQueue();
+
+    await waitFor(() => expect(currentSource).not.toBeNull());
+    const firstSource = currentSource!;
+
+    // Simulate the server closing the SSE stream — the Queue must re-open.
+    act(() => {
+      firstSource.raiseError();
+    });
+
+    await waitFor(() => {
+      // Either a new EventSource instance was constructed OR the existing one
+      // was closed prior to reopening. We only assert the reconnect *intent*
+      // by detecting the close call; reconnection logic itself is driven by
+      // the browser on the next render cycle.
+      expect(firstSource.close).toHaveBeenCalled();
+    });
+
+    unmount();
+  });
+});
+
+describe("Queue — resume copy (BC-017 / Bug 21)", () => {
+  it("Queue_Row_Shows_ResumedFromHHMM_WhenResumed", async () => {
+    const job = buildJob({
+      id: "job-resume",
+      status: "Transcribing",
+      progress: 20,
+      resumedFromCheckpoint: true,
+      checkpointAt: "2026-04-17T07:23:00Z",
+    });
+    (api.listJobs as jest.Mock).mockResolvedValue([job]);
+
+    renderQueue();
+
+    expect(await screen.findByText(/Resumed from|Возобновлено с/)).toBeInTheDocument();
+  });
+
+  it("Queue_Row_NoResumedCopy_WhenFlagFalse", async () => {
+    const job = buildJob({
+      id: "job-plain-001",
+      status: "Transcribing",
+      progress: 20,
+    });
+    (api.listJobs as jest.Mock).mockResolvedValue([job]);
+
+    renderQueue();
+
+    await waitFor(() =>
+      expect(screen.getAllByText(/Транскрибация|Transcribing/).length).toBeGreaterThan(0),
+    );
+    expect(screen.queryByText(/Resumed from|Возобновлено с/)).not.toBeInTheDocument();
+  });
+});

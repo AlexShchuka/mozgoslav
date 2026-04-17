@@ -12,16 +12,22 @@
     "models": "Models",
     "settings": "Settings",
     "logs": "Logs",
-    "backup": "Backups"
+    "backup": "Backups",
+    "obsidian": "Obsidian",
+    "sync": "Sync"
   },
   "rag": {
     "title": "Q&A over notes",
     "welcome": "Ask something about your notes.",
     "askPlaceholder": "Type a question…",
+    "placeholder": "Hi, type your question here…",
+    "emptyState": "Ask anything about your notes. Press Enter to send, Shift+Enter for a new line.",
     "ask": "Ask",
     "reindex": "Reindex",
     "reindexedToast": "Indexed notes: {{count}}",
-    "llmUnavailable": "LLM unavailable — only citations below.",
+    "llmUnavailable": "LLM unavailable — showing raw citations below.",
+    "error": "Request failed",
+    "citationLink": "open in note",
     "openNote": "Open note"
   },
   "common": {
@@ -67,6 +73,9 @@
   "queue": {
     "title": "Processing queue",
     "empty": "Queue is empty. Import a recording to start processing.",
+    "cancel": "Cancel",
+    "cancelConfirmRunning": "This job is already running. Cancel anyway?",
+    "resumedFrom": "Resumed from {{time}}",
     "status": {
       "Queued": "Queued",
       "Transcribing": "Transcribing",
@@ -76,6 +85,14 @@
       "Done": "Done",
       "Failed": "Failed"
     }
+  },
+  "notes": {
+    "add": "New note",
+    "addTitle": "Write a note",
+    "titleLabel": "Title",
+    "bodyLabel": "Body (Markdown supported)",
+    "submit": "Save",
+    "created": "Note created"
   },
   "note": {
     "title": "Note",
@@ -95,11 +112,31 @@
       "fullTranscript": "Full transcript"
     }
   },
+  "commandPalette": {
+    "sections": {
+      "navigation": "Navigation",
+      "quick": "Quick actions"
+    },
+    "actions": {
+      "newNote": "New note",
+      "reindexRag": "Reindex RAG",
+      "createBackup": "Create backup",
+      "openObsidianVault": "Open Obsidian vault",
+      "backupStarted": "Backup started",
+      "vaultMissing": "Obsidian vault path is not configured yet.",
+      "bridgeMissing": "Native shell is unavailable in browser mode."
+    }
+  },
   "profiles": {
     "title": "Processing profiles",
     "addNew": "New profile",
     "defaultBadge": "Default",
     "builtInBadge": "Built-in",
+    "duplicate": "Duplicate",
+    "deleteConfirm": "Delete profile \"{{name}}\"? This cannot be undone.",
+    "builtInDeleteBlocked": "Built-in profiles cannot be deleted.",
+    "duplicated": "Profile duplicated",
+    "deleted": "Profile deleted",
     "fields": {
       "name": "Name",
       "systemPrompt": "System prompt for LLM",
@@ -107,7 +144,8 @@
       "cleanupLevel": "Cleanup level",
       "exportFolder": "Export folder",
       "autoTags": "Auto tags",
-      "makeDefault": "Make default profile"
+      "makeDefault": "Make default profile",
+      "nameRequired": "Name is required"
     },
     "cleanup": {
       "None": "Keep everything",
@@ -175,6 +213,20 @@
       "empty": "No pending devices.",
       "accept": "Accept",
       "unknown": "Unknown device"
+    },
+    "tabs": {
+      "devices": "Devices",
+      "folders": "Folders",
+      "conflicts": "Conflicts",
+      "settings": "Settings"
+    },
+    "conflicts": {
+      "title": "Conflict files",
+      "empty": "No conflicts.",
+      "reveal": "Reveal"
+    },
+    "settings": {
+      "enableSyncthing": "Enable Syncthing"
     }
   },
   "models": {
@@ -201,33 +253,59 @@
     "applyButton": "Create structure",
     "setupSuccess": "Done — {{created}} new folders",
     "tagsTitle": "Auto tags",
-    "tagsHint": "Tags appended to every new note's frontmatter."
+    "tagsHint": "Tags appended to every new note's frontmatter.",
+    "bulkExportTitle": "Sync and layout",
+    "bulkExportHint": "Push any un-exported notes into your vault and lay them out using PARA.",
+    "syncAll": "Sync all un-exported notes",
+    "syncAllSuccess": "Exported notes: {{count}}",
+    "applyLayout": "Apply PARA layout",
+    "applyLayoutSuccess": "Folders created: {{folders}}, notes moved: {{notes}}"
   },
   "onboarding": {
     "title": "Welcome to Mozgoslav",
     "subtitle": "Quick setup so your first call works out of the box.",
-    "step1": { "title": "Language", "hint": "Which language feels natural?" },
-    "step2": { "title": "Models", "hint": "Grab Whisper + VAD — one time, ~1.5 GB." },
-    "step3": { "title": "Obsidian", "hint": "Pick your vault; we'll prepare folders." },
-    "step4": { "title": "LLM", "hint": "Local LM Studio or Ollama endpoint." },
-    "step5": {
+    "welcome": {
+      "title": "Hello!",
+      "hint": "Nine quick steps ahead: models, Obsidian, LLM, Syncthing, and three macOS permissions."
+    },
+    "models": {
+      "title": "Models",
+      "hint": "Grab Whisper + VAD — one time, ~1.5 GB."
+    },
+    "obsidian": {
+      "title": "Obsidian",
+      "hint": "Pick your vault; we'll prepare folders."
+    },
+    "llm": {
+      "title": "LLM",
+      "hint": "Local LM Studio or Ollama endpoint."
+    },
+    "syncthing": {
+      "title": "Syncthing",
+      "hint": "Encrypted cross-device sync. We'll start Syncthing and prepare 3 folders: recordings, notes, vault."
+    },
+    "mic": {
       "title": "Microphone access",
       "hint": "Mozgoslav needs the microphone to transcribe when you press mouse button 5. macOS shows the prompt on first use; you can enable it proactively here."
     },
-    "step6": {
+    "accessibility": {
       "title": "Accessibility",
       "hint": "Inserting text into the focused app (VSCode, Slack, Mail) requires Accessibility. Open Settings → Privacy & Security → Accessibility and add Mozgoslav."
     },
-    "step7": {
+    "inputMonitoring": {
       "title": "Input Monitoring",
       "hint": "Watching mouse button 5 globally needs Input Monitoring. Open Settings → Privacy & Security → Input Monitoring and add Mozgoslav."
     },
-    "step8": {
+    "ready": {
       "title": "Ready",
       "hint": "All set. Import your first conversation or dictate with mouse button 5."
     },
     "openSystemPreferences": "Open System Preferences",
-    "skip": "Skip"
+    "skip": "Skip",
+    "llmReachable": "LLM is reachable — you can continue.",
+    "llmUnreachable": "Waiting for the LLM endpoint to answer /api/health/llm…",
+    "modelsReady": "Models are installed — you can continue.",
+    "modelsMissing": "Download or point to a Whisper/VAD model to continue."
   },
   "hotkeys": {
     "title": "Keyboard shortcuts",

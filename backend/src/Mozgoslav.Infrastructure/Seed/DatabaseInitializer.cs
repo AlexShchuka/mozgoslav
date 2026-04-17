@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -11,24 +12,22 @@ namespace Mozgoslav.Infrastructure.Seed;
 /// <summary>
 /// Runs once at startup: ensures the SQLite schema exists (EF Core
 /// <c>EnsureCreated</c>), seeds built-in profiles, and populates sensible default
-/// settings for macOS so the app works out of the box.
+/// settings for macOS so the app works out of the box. The implementation is
+/// singleton-safe — it resolves the scoped <see cref="IProfileRepository"/> via
+/// <see cref="IServiceScopeFactory"/> so there is no captive-dependency bug
+/// and the "Seeded 3 built-in profiles" line is logged exactly once
+/// (ADR-007 BC-052, bug 8).
 /// </summary>
 public sealed class DatabaseInitializer : IHostedService
 {
-    private readonly IDbContextFactory<MozgoslavDbContext> _contextFactory;
-    private readonly IProfileRepository _profiles;
-    private readonly IAppSettings _settings;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<DatabaseInitializer> _logger;
 
     public DatabaseInitializer(
-        IDbContextFactory<MozgoslavDbContext> contextFactory,
-        IProfileRepository profiles,
-        IAppSettings settings,
+        IServiceScopeFactory scopeFactory,
         ILogger<DatabaseInitializer> logger)
     {
-        _contextFactory = contextFactory;
-        _profiles = profiles;
-        _settings = settings;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -36,7 +35,12 @@ public sealed class DatabaseInitializer : IHostedService
     {
         AppPaths.EnsureExist();
 
-        await using (var db = await _contextFactory.CreateDbContextAsync(cancellationToken))
+        await using var scope = _scopeFactory.CreateAsyncScope();
+        var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MozgoslavDbContext>>();
+        var profiles = scope.ServiceProvider.GetRequiredService<IProfileRepository>();
+        var settings = scope.ServiceProvider.GetRequiredService<IAppSettings>();
+
+        await using (var db = await contextFactory.CreateDbContextAsync(cancellationToken))
         {
             await db.Database.EnsureCreatedAsync(cancellationToken);
         }
@@ -44,20 +48,20 @@ public sealed class DatabaseInitializer : IHostedService
 
         foreach (var profile in BuiltInProfiles.All)
         {
-            await _profiles.AddAsync(profile, cancellationToken);
+            await profiles.AddAsync(profile, cancellationToken);
         }
         _logger.LogInformation("Seeded {Count} built-in profiles", BuiltInProfiles.All.Count);
 
-        var loaded = await _settings.LoadAsync(cancellationToken);
+        var loaded = await settings.LoadAsync(cancellationToken);
         var withDefaults = ApplyRuntimeDefaults(loaded);
         if (!loaded.Equals(withDefaults))
         {
-            await _settings.SaveAsync(withDefaults, cancellationToken);
+            await settings.SaveAsync(withDefaults, cancellationToken);
             _logger.LogInformation("Populated default settings on first run");
         }
 
         _logger.LogInformation("Settings ready: language={Language}, vault={Vault}",
-            _settings.Language, string.IsNullOrEmpty(_settings.VaultPath) ? "<not set>" : _settings.VaultPath);
+            settings.Language, string.IsNullOrEmpty(settings.VaultPath) ? "<not set>" : settings.VaultPath);
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

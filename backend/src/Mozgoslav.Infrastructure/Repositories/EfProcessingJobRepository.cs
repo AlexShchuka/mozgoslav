@@ -53,4 +53,10 @@ public sealed class EfProcessingJobRepository : IProcessingJobRepository
             .Where(j => j.Status != JobStatus.Done && j.Status != JobStatus.Failed)
             .OrderByDescending(j => j.CreatedAt)
             .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<ProcessingJob>> GetByStatusAsync(JobStatus status, CancellationToken ct) =>
+        await _db.ProcessingJobs.AsNoTracking()
+            .Where(j => j.Status == status)
+            .OrderBy(j => j.CreatedAt)
+            .ToListAsync(ct);
 }

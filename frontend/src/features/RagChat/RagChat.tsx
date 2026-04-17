@@ -1,64 +1,60 @@
-import { FC, FormEvent, useState } from "react";
+import { FC, FormEvent, KeyboardEvent, ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
-import { toast } from "react-toastify";
+import { AnimatePresence, motion } from "framer-motion";
 
-import { api } from "../../api/MozgoslavApi";
 import Button from "../../components/Button";
-import { noteRoute } from "../../constants/routes";
-import type { RagAnswer } from "../../domain/Rag";
+import type { RagCitation, RagMessage } from "../../store/slices/rag/types";
+import type { RagChatProps } from "./types";
 import {
-  Bubble,
   ChatRoot,
-  CitationHeader,
-  CitationItem,
-  CitationList,
+  CitationChip,
+  CitationRow,
+  EmptyState,
+  ErrorRow,
   Header,
-  History,
-  InputRow,
-  QuestionArea,
+  InputBar,
+  InputField,
+  MessageContent,
+  MessageList,
+  MessageRow,
   Title,
+  TypingDots,
   Warning,
 } from "./RagChat.style";
 
-interface ChatTurn {
-  readonly question: string;
-  readonly answer: RagAnswer;
-}
-
-const RagChat: FC = () => {
+// Single-surface, full-page RAG chat. Place ADR-007-phase2-frontend.md §3.1:
+// - Route /rag. Single text input at the bottom; Enter submits, Shift+Enter newlines.
+// - Message list stacks top-down. Citations render as chips → navigate to note.
+// - No "Ask" button; no bubbles around assistant.
+// - Subtle enter animation on new messages; typing dots while pending.
+const RagChat: FC<RagChatProps> = ({ messages, isAsking, onAsk, onCitationNavigate }) => {
   const { t } = useTranslation();
-  const [question, setQuestion] = useState("");
-  const [turns, setTurns] = useState<ChatTurn[]>([]);
-  const [busy, setBusy] = useState(false);
-  const [reindexing, setReindexing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const listRef = useRef<HTMLOListElement | null>(null);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const q = question.trim();
-    if (!q || busy) return;
-    setBusy(true);
-    setQuestion("");
-    try {
-      const answer = await api.ragQuery(q);
-      setTurns((prev) => [...prev, { question: q, answer }]);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error));
-      setQuestion(q);
-    } finally {
-      setBusy(false);
-    }
+  useEffect(() => {
+    // Scroll the conversation view to the latest message whenever the list
+    // grows (user question or assistant streamed reply).
+    const el = listRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages.length]);
+
+  const submit = (): void => {
+    const question = draft.trim();
+    if (!question || isAsking) return;
+    setDraft("");
+    onAsk(question);
   };
 
-  const handleReindex = async () => {
-    setReindexing(true);
-    try {
-      const { indexed } = await api.ragReindex();
-      toast.success(t("rag.reindexedToast", { count: indexed }));
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error));
-    } finally {
-      setReindexing(false);
+  const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+    submit();
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      submit();
     }
   };
 
@@ -66,49 +62,95 @@ const RagChat: FC = () => {
     <ChatRoot>
       <Header>
         <Title>{t("rag.title")}</Title>
-        <Button variant="secondary" onClick={handleReindex} isLoading={reindexing}>
-          {t("rag.reindex")}
-        </Button>
       </Header>
 
-      <History>
-        {turns.length === 0 && <Bubble $role="assistant">{t("rag.welcome")}</Bubble>}
-        {turns.map((turn, index) => (
-          <div key={index}>
-            <Bubble $role="user">{turn.question}</Bubble>
-            <Bubble $role="assistant">
-              {!turn.answer.llmAvailable && <Warning>{t("rag.llmUnavailable")}</Warning>}
-              {turn.answer.answer}
-              {turn.answer.citations.length > 0 && (
-                <CitationList>
-                  {turn.answer.citations.map((c) => (
-                    <CitationItem key={c.chunkId}>
-                      <CitationHeader>
-                        <Link to={noteRoute(c.noteId)}>{t("rag.openNote")}</Link>
-                        <span>{c.score.toFixed(2)}</span>
-                      </CitationHeader>
-                      {c.text}
-                    </CitationItem>
-                  ))}
-                </CitationList>
-              )}
-            </Bubble>
-          </div>
-        ))}
-      </History>
+      <MessageList ref={listRef} data-testid="rag-message-list">
+        {messages.length === 0 && <EmptyState>{t("rag.emptyState")}</EmptyState>}
+        <AnimatePresence initial={false}>
+          {messages.map((message) => (
+            <motion.li
+              key={message.id}
+              layout
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+              style={{ listStyle: "none" }}
+            >
+              <MessageRow $role={message.role}>
+                <MessageContent $role={message.role}>
+                  {renderMessageBody(message, t, onCitationNavigate)}
+                </MessageContent>
+              </MessageRow>
+            </motion.li>
+          ))}
+        </AnimatePresence>
+      </MessageList>
 
-      <InputRow onSubmit={handleSubmit}>
-        <QuestionArea
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder={t("rag.askPlaceholder")}
-          disabled={busy}
+      <InputBar onSubmit={handleSubmit} aria-label="rag-input">
+        <InputField
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={t("rag.placeholder")}
+          rows={1}
+          disabled={isAsking}
+          data-testid="rag-input"
         />
-        <Button type="submit" isLoading={busy} disabled={!question.trim()}>
-          {t("rag.ask")}
+        <Button
+          type="submit"
+          variant="primary"
+          isLoading={isAsking}
+          disabled={!draft.trim() || isAsking}
+        >
+          {t("common.next")}
         </Button>
-      </InputRow>
+      </InputBar>
     </ChatRoot>
+  );
+};
+
+const renderMessageBody = (
+  message: RagMessage,
+  t: (key: string) => string,
+  onCitationNavigate: (citation: RagCitation) => void,
+): ReactNode => {
+  if (message.state === "pending") {
+    return (
+      <TypingDots aria-label="rag-pending">
+        <span />
+        <span />
+        <span />
+      </TypingDots>
+    );
+  }
+
+  if (message.state === "error") {
+    return <ErrorRow>{t("rag.error")}: {message.content}</ErrorRow>;
+  }
+
+  return (
+    <>
+      {message.role === "assistant" && !message.llmAvailable && (
+        <Warning>{t("rag.llmUnavailable")}</Warning>
+      )}
+      <div>{message.content}</div>
+      {message.citations.length > 0 && (
+        <CitationRow>
+          {message.citations.map((citation, index) => (
+            <CitationChip
+              key={citation.chunkId}
+              type="button"
+              onClick={() => onCitationNavigate(citation)}
+              data-testid="rag-citation"
+              title={citation.text}
+            >
+              [§{index + 1}] {t("rag.citationLink")}
+            </CitationChip>
+          ))}
+        </CitationRow>
+      )}
+    </>
   );
 };
 

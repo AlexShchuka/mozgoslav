@@ -1,3 +1,5 @@
+using Mozgoslav.Application.Interfaces;
+
 namespace Mozgoslav.Infrastructure.Services;
 
 /// <summary>
@@ -15,7 +17,7 @@ namespace Mozgoslav.Infrastructure.Services;
 /// the instance stays loaded until <see cref="DisposeAsync"/>.
 /// </para>
 /// </summary>
-public sealed class IdleResourceCache<T> : IAsyncDisposable
+public sealed class IdleResourceCache<T> : IIdleResourceCache<T>
     where T : class, IDisposable
 {
     private readonly Func<T> _factory;
@@ -38,6 +40,18 @@ public sealed class IdleResourceCache<T> : IAsyncDisposable
 
     /// <summary>True when a live instance is currently cached in memory.</summary>
     public bool IsLoaded => Volatile.Read(ref _current) is not null;
+
+    /// <summary>
+    /// Snapshot accessor — lazily builds the resource on first call, touches
+    /// the last-access clock, and returns the instance without pinning it
+    /// against idle eviction. See <see cref="IIdleResourceCache{T}.GetAsync"/>.
+    /// </summary>
+    public async Task<T> GetAsync(CancellationToken ct)
+    {
+        var acquired = await AcquireAsync(ct).ConfigureAwait(false);
+        await ReleaseAsync().ConfigureAwait(false);
+        return acquired;
+    }
 
     /// <summary>
     /// Returns the cached instance, creating it on demand. Increments an

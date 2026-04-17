@@ -60,6 +60,22 @@ public static class ModelCatalog
             IsDefault: true)
     ];
 
-    public static CatalogEntry? TryGet(string id) =>
-        All.FirstOrDefault(e => e.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+    // ADR-007 BC-034 / Phase 1 §DoD — the hand-off acceptance curls the
+    // download endpoint with ``catalogueId:"antony66-ggml"``. Keep the
+    // existing granular Ids (so the Models page UI stays backward-compatible)
+    // and resolve the short, stable alias here.
+    private static readonly IReadOnlyDictionary<string, string> Aliases =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["antony66-ggml"] = "whisper-large-v3-russian-antony66",
+        };
+
+    public static CatalogEntry? TryGet(string id)
+    {
+        if (Aliases.TryGetValue(id, out var canonicalId))
+        {
+            id = canonicalId;
+        }
+        return All.FirstOrDefault(e => e.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+    }
 }

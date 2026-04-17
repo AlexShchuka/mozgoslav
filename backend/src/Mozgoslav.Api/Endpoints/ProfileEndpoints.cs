@@ -65,6 +65,36 @@ public static class ProfileEndpoints
             return Results.Created($"/api/profiles/{profile.Id}", profile);
         });
 
+        // ADR-007-shared §2.6 BC-029 — clone any profile (including built-ins)
+        // into a fresh user-owned record. The copy carries a "(copy)" suffix
+        // on its name, a new Id, IsBuiltIn=false and IsDefault=false so the
+        // new row does not accidentally displace the existing default.
+        endpoints.MapPost("/api/profiles/{id:guid}/duplicate", async (
+            Guid id,
+            IProfileRepository repository,
+            CancellationToken ct) =>
+        {
+            var source = await repository.GetByIdAsync(id, ct);
+            if (source is null)
+            {
+                return Results.NotFound();
+            }
+            var copy = new Profile
+            {
+                Name = $"{source.Name} (copy)",
+                SystemPrompt = source.SystemPrompt,
+                TranscriptionPromptOverride = source.TranscriptionPromptOverride,
+                OutputTemplate = source.OutputTemplate,
+                CleanupLevel = source.CleanupLevel,
+                ExportFolder = source.ExportFolder,
+                AutoTags = source.AutoTags.ToList(),
+                IsDefault = false,
+                IsBuiltIn = false,
+            };
+            await repository.AddAsync(copy, ct);
+            return Results.Created($"/api/profiles/{copy.Id}", copy);
+        });
+
         endpoints.MapPut("/api/profiles/{id:guid}", async (
             Guid id,
             CreateProfileRequest request,

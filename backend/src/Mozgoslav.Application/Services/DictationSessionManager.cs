@@ -9,6 +9,8 @@ using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.Enums;
 using Mozgoslav.Domain.ValueObjects;
 
+using DomainProfile = Mozgoslav.Domain.Entities.Profile;
+
 namespace Mozgoslav.Application.Services;
 
 /// <summary>
@@ -55,7 +57,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
         _logger = logger;
     }
 
-    public DictationSession Start()
+    public DictationSession Start(string? source = null)
     {
         ScanForOrphanedAudioFilesOnce();
 
@@ -68,7 +70,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
                     "Stop or cancel it before starting a new one.");
             }
 
-            var session = new DictationSession();
+            var session = new DictationSession { Source = source };
             var audioBufferPath = TryPrepareAudioBufferPath(session.Id);
             // Ownership is transferred to the _sessions dictionary; StopAsync/CancelAsync dispose it.
 #pragma warning disable IDISP001
@@ -87,7 +89,9 @@ public sealed class DictationSessionManager : IDictationSessionManager
             runtime.TranscriptionTask = RunTranscriptionLoopAsync(runtime);
 #pragma warning restore CA2025
 
-            _logger.LogInformation("Dictation session {SessionId} started", session.Id);
+            _logger.LogInformation(
+                "Dictation session {SessionId} started (source={Source})",
+                session.Id, session.Source ?? "legacy");
             return session;
         }
     }
@@ -226,7 +230,10 @@ public sealed class DictationSessionManager : IDictationSessionManager
             await foreach (var partial in _streaming.TranscribeStreamAsync(
                 teedAudio,
                 _settings.DictationLanguage,
-                initialPrompt: BuildInitialPrompt(_settings.DictationVocabulary),
+                // ADR-007 BC-030 / N3 — profile override wins over settings vocabulary.
+                // When the pipeline has no profile context (current single-profile runtime),
+                // the override is null and vocabulary is used as before.
+                initialPrompt: BuildInitialPrompt(runtime.Profile, _settings.DictationVocabulary),
                 runtime.Cts.Token))
             {
                 runtime.LastPartialText = partial.Text;
@@ -350,11 +357,21 @@ public sealed class DictationSessionManager : IDictationSessionManager
 
     /// <summary>
     /// Assembles the <c>initial_prompt</c> (ADR-004 R1) that biases Whisper toward
-    /// domain-specific vocabulary. Returning <c>null</c> preserves the transcription
+    /// domain-specific vocabulary. ADR-007 BC-030 / N3: when the active domain
+    /// <see cref="DomainProfile.TranscriptionPromptOverride"/> is non-empty it
+    /// wins over <see cref="IAppSettings.DictationVocabulary"/> — the profile
+    /// encodes the caller's deliberate hand-tuned biasing, the vocabulary list
+    /// is a global fallback. Returning <c>null</c> preserves the transcription
     /// service's built-in default so an empty vocabulary is not a regression.
     /// </summary>
-    private static string? BuildInitialPrompt(IReadOnlyList<string> vocabulary)
+    public static string? BuildInitialPrompt(DomainProfile? profile, IReadOnlyList<string>? vocabulary)
     {
+        var overrideText = profile?.TranscriptionPromptOverride;
+        if (!string.IsNullOrWhiteSpace(overrideText))
+        {
+            return overrideText.Trim();
+        }
+
         if (vocabulary is null || vocabulary.Count == 0)
         {
             return null;
@@ -462,6 +479,14 @@ public sealed class DictationSessionManager : IDictationSessionManager
         public string LastPartialText { get; set; }
         public string? AudioBufferPath { get; }
         public FileStream? AudioBuffer { get; private set; }
+        /// <summary>
+        /// Domain profile whose <see cref="DomainProfile.TranscriptionPromptOverride"/>
+        /// (when non-empty) biases Whisper. Today the runtime always starts without a
+        /// profile (null), so the override is inert and <see cref="IAppSettings.DictationVocabulary"/>
+        /// still drives the prompt. Threading a real profile through <c>Start()</c> is
+        /// tracked for a follow-up slice.
+        /// </summary>
+        public DomainProfile? Profile { get; set; }
 
         public void CloseAudioBuffer()
         {

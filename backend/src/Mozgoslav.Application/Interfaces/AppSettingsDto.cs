@@ -7,6 +7,11 @@ namespace Mozgoslav.Application.Interfaces;
 /// </summary>
 public sealed record AppSettingsDto(
     string VaultPath,
+    // TODO-3 / BC-036 — discriminator for <see cref="ILlmProviderFactory"/>.
+    // "openai_compatible" (LM Studio / Ollama OpenAI adapter), "anthropic"
+    // (Claude Messages API) or "ollama" (native /api/chat). Unknown values
+    // fall back to "openai_compatible" with a WARN log.
+    string LlmProvider,
     string LlmEndpoint,
     string LlmModel,
     string LlmApiKey,
@@ -40,10 +45,19 @@ public sealed record AppSettingsDto(
     // ADR-003 — top-level enable flag for the bundled Syncthing process.
     bool SyncthingEnabled,
     // ADR-003 D4 — absolute path to the user's Obsidian vault; empty = vault not synced.
-    string SyncthingObsidianVaultPath)
+    string SyncthingObsidianVaultPath,
+    // ADR-007-shared §2.8 / Migration 0010 — Syncthing REST api key, persisted so the
+    // Electron host can resume against the same instance after a backend restart.
+    // Empty = api key not yet generated (first run or clean wipe).
+    string SyncthingApiKey,
+    // ADR-007-shared §2.8 / Migration 0010 — Syncthing REST base URL, persisted so the
+    // SyncthingHttpClient wires against the freshly-spawned instance without restart.
+    // Empty = base URL not yet determined (binary-absent branch).
+    string SyncthingBaseUrl)
 {
     public static AppSettingsDto Defaults { get; } = new(
         VaultPath: string.Empty,
+        LlmProvider: "openai_compatible",
         LlmEndpoint: "http://localhost:1234",
         LlmModel: "default",
         LlmApiKey: string.Empty,
@@ -77,5 +91,7 @@ public sealed record AppSettingsDto(
             ["slack.com"] = "informal-profile",
         },
         SyncthingEnabled: true,
-        SyncthingObsidianVaultPath: string.Empty);
+        SyncthingObsidianVaultPath: string.Empty,
+        SyncthingApiKey: string.Empty,
+        SyncthingBaseUrl: string.Empty);
 }

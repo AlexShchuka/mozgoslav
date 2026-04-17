@@ -74,3 +74,10 @@ export const FolderHint = styled.span`
   font-size: ${({ theme }) => theme.font.size.xs};
   color: ${({ theme }) => theme.colors.textMuted};
 `;
+
+// BC-025 — "Sync all" + "Apply PARA" sit side-by-side on the Obsidian tab.
+export const BulkButtonRow = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.space(2)};
+  flex-wrap: wrap;
+`;

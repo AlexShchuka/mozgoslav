@@ -33,3 +33,11 @@ export const JobRow = styled.div`
   flex-direction: column;
   gap: ${({ theme }) => theme.space(2)};
 `;
+
+// BC-017 — small caption shown under the step title when a job was resumed
+// from a checkpoint by the crash-recovery path.
+export const ResumeCopy = styled.div`
+  margin-top: ${({ theme }) => theme.space(1)};
+  font-size: ${({ theme }) => theme.font.size.xs};
+  color: ${({ theme }) => theme.colors.accent};
+`;

@@ -37,12 +37,16 @@ export interface Theme {
   motion: { fast: string; base: string; slow: string };
 }
 
+// Typography snapped to the BC-041 baseline: `sm` ≥ 14 px body size and
+// `weight.regular` ≥ 500 so primary buttons and body copy no longer read as
+// "whisper-faint" on Retina displays. Snapshot lock lives in
+// `frontend/__tests__/styles/Theme.test.ts`.
 const sharedTypography = {
   family:
     '-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Helvetica, Arial, sans-serif',
   familyMono: 'ui-monospace, "JetBrains Mono", Menlo, monospace',
-  size: { xs: "11px", sm: "13px", md: "14px", lg: "16px", xl: "20px", xxl: "26px" },
-  weight: { regular: 400, medium: 500, semibold: 600, bold: 700 },
+  size: { xs: "12px", sm: "14px", md: "15px", lg: "17px", xl: "20px", xxl: "26px" },
+  weight: { regular: 500, medium: 600, semibold: 600, bold: 700 },
 };
 
 const sharedRadii = { sm: "6px", md: "10px", lg: "16px", full: "999px" };

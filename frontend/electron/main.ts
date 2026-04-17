@@ -1,8 +1,13 @@
 import { app, BrowserWindow, dialog, ipcMain, session, shell } from "electron";
 import path from "node:path";
+import { promises as fs } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { DictationOrchestrator } from "./dictation/DictationOrchestrator";
+import {
+  registerGlobalDictationHotkey,
+  unregisterGlobalDictationHotkey,
+} from "./dictation/globalHotkey";
 import { stopBackend, tryStartBackend } from "./utils/backendLauncher";
 import { stopSyncthing, tryStartSyncthing } from "./utils/syncthingLauncher";
 
@@ -129,7 +134,52 @@ app.whenReady().then(async () => {
     return error || undefined;
   });
 
+  // BC-033 — model-file picker filters to Whisper/VAD extensions.
+  ipcMain.handle("dialog:openModelFile", async () => {
+    if (!mainWindow) return { canceled: true, filePaths: [] };
+    return dialog.showOpenDialog(mainWindow, {
+      title: "Выбери модель Whisper / VAD",
+      properties: ["openFile"],
+      filters: [{ name: "Whisper / VAD models", extensions: ["bin", "gguf"] }],
+    });
+  });
+
+  // BC-033 — folder picker for batch model scan (`/api/models/scan?dir=`).
+  ipcMain.handle("dialog:openModelFolder", async () => {
+    if (!mainWindow) return { canceled: true, filePaths: [] };
+    return dialog.showOpenDialog(mainWindow, {
+      title: "Выбери папку с моделями",
+      properties: ["openDirectory"],
+    });
+  });
+
+  // BC-050 — lists every `.sync-conflict-*` file under the given folder path.
+  // Called by the Sync > Conflicts sub-view; resolution itself is manual via
+  // Finder (see `docs/sync-conflicts.md`).
+  ipcMain.handle("sync:listConflicts", async (_event, folderPath: string) => {
+    try {
+      const walked = await walkForConflicts(folderPath);
+      return walked.map((p) => ({
+        folderId: folderPath,
+        path: p.replace(folderPath, ""),
+        conflictPath: p,
+      }));
+    } catch {
+      return [];
+    }
+  });
+
   createWindow();
+
+  // TODO-1 — register the global dictation accelerator on every platform.
+  // Press-to-dictate on macOS is the primary use case but the accelerator is
+  // harmless on Linux/Windows (user can still invoke it).
+  const hotkeyRegistered = registerGlobalDictationHotkey();
+  if (!hotkeyRegistered) {
+    console.warn(
+      "[globalShortcut] Failed to register CommandOrControl+Shift+Space — likely a conflicting OS binding.",
+    );
+  }
 
   if (process.platform === "darwin") {
     void initializeDictation();
@@ -167,6 +217,35 @@ const initializeDictation = async (): Promise<void> => {
   }
 };
 
+// BC-050 helper — depth-first walk for `.sync-conflict-*` filenames. Stays
+// inside the electron main process to avoid exposing fs access to the
+// renderer. Cap depth to avoid runaway walks on very deep vaults.
+const walkForConflicts = async (
+  rootPath: string,
+  maxDepth = 8,
+): Promise<string[]> => {
+  const results: string[] = [];
+  const walk = async (dir: string, depth: number): Promise<void> => {
+    if (depth > maxDepth) return;
+    let entries: Array<{ name: string; isDirectory: () => boolean; isFile: () => boolean }> = [];
+    try {
+      entries = (await fs.readdir(dir, { withFileTypes: true })) as unknown as typeof entries;
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const abs = path.join(dir, String(entry.name));
+      if (entry.isDirectory()) {
+        await walk(abs, depth + 1);
+      } else if (entry.isFile() && String(entry.name).includes(".sync-conflict-")) {
+        results.push(abs);
+      }
+    }
+  };
+  await walk(rootPath, 0);
+  return results;
+};
+
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
@@ -178,4 +257,11 @@ app.on("before-quit", () => {
   dictationOrchestrator = null;
   stopBackend();
   void stopSyncthing();
+});
+
+// Electron docs explicitly recommend unregistering global shortcuts in
+// `will-quit`. Double registration is safe, but double unregistration is a
+// no-op anyway.
+app.on("will-quit", () => {
+  unregisterGlobalDictationHotkey();
 });

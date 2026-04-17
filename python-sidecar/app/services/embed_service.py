@@ -1,113 +1,124 @@
-"""Sentence-transformer embedding service.
+"""``POST /api/embed`` implementation.
 
-Lazy-loads ``sentence-transformers/all-MiniLM-L6-v2`` on the first call;
-subsequent calls reuse the loaded model. This keeps process start-up cheap
-when the sidecar is running but the desktop app hasn't hit ``/api/embed``
-yet (e.g. a user who only uses the cleanup endpoint).
+Two interchangeable backends implement the same ``EmbedBackend`` protocol:
 
-When ``sentence-transformers`` is not installed (lightweight dev env), we
-fall back to a deterministic local implementation that mirrors the shape
-of a real embedding — callers see the same contract, tests stay hermetic.
+* :class:`SentenceTransformersBackend` — loads
+  ``sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`` on demand
+  (process-wide double-checked singleton). Only runs on a macOS host where
+  the ML dependency stack (PyTorch + sentence-transformers) is installed.
+* :class:`DeterministicBoWBackend` — SHA-256-bucketed bag-of-words. Zero
+  external dependencies, deterministic across processes and machines,
+  used by dev boxes without PyTorch and by the hermetic pytest suite.
 
-Why the fallback ships in production code instead of a separate "fake":
-the sidecar runs optionally; if the user's dev box can't install torch we
-still want the endpoint to exist and return something meaningful for the
-C# RAG layer. The real model is enabled by installing the ML deps; the
-fallback never gets used on macOS release builds.
+Both backends return 384-dim L2-normalised vectors so the C# RAG consumer
+(``PythonSidecarEmbeddingService``) sees a fixed contract regardless of
+install topology.
 """
 from __future__ import annotations
 
 import hashlib
 import math
 import threading
-from typing import TYPE_CHECKING
-
-from app.models.schemas import EmbedRequest, EmbedResponse
-
-if TYPE_CHECKING:  # pragma: no cover - import only for type checkers
-    from sentence_transformers import SentenceTransformer
-
-_DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-_FALLBACK_DIMS = 384  # matches all-MiniLM-L6-v2 to keep the contract stable
+from functools import lru_cache
+from typing import Protocol
 
 
-class EmbedService:
-    """Computes dense embeddings for a batch of strings."""
-
-    def __init__(self, model_name: str = _DEFAULT_MODEL) -> None:
-        self._model_name = model_name
-        self._model: SentenceTransformer | None = None
-        self._lock = threading.Lock()
-
-    # -- public API ----------------------------------------------------------
-
-    def embed(self, request: EmbedRequest) -> EmbedResponse:
-        model = self._load_model()
-        if model is None:
-            vectors = [_fallback_embed(text) for text in request.texts]
-            return EmbedResponse(
-                model=f"{self._model_name} (fallback:hash-bag-of-words)",
-                dimensions=_FALLBACK_DIMS,
-                vectors=vectors,
-            )
-
-        encoded = model.encode(
-            request.texts,
-            convert_to_numpy=True,
-            normalize_embeddings=True,
-        )
-        vectors = [row.tolist() for row in encoded]
-        return EmbedResponse(
-            model=self._model_name,
-            dimensions=len(vectors[0]) if vectors else 0,
-            vectors=vectors,
-        )
-
-    # -- internals -----------------------------------------------------------
-
-    def _load_model(self) -> SentenceTransformer | None:
-        if self._model is not None:
-            return self._model
-
-        with self._lock:
-            if self._model is not None:
-                return self._model
-            try:
-                from sentence_transformers import SentenceTransformer  # noqa: PLC0415
-            except ImportError:
-                return None
-
-            self._model = SentenceTransformer(self._model_name)
-            return self._model
+DIM = 384
 
 
-# ---- fallback --------------------------------------------------------------
+class EmbedBackend(Protocol):
+    """Minimal contract every backend must honour."""
+
+    def embed(self, text: str) -> list[float]: ...
 
 
-def _fallback_embed(text: str) -> list[float]:
-    """Deterministic, L2-normalised bag-of-words embedding.
+class DeterministicBoWBackend:
+    """Deterministic SHA-256-bucketed bag-of-words — zero external deps.
 
-    SHA-256 is used as a stable cross-platform hash (Python's built-in
-    ``hash`` is randomised per-process). The tokenisation is intentionally
-    naive — callers that need real semantics should install the ML deps.
+    Each whitespace-split token contributes a signed weight into a bucket
+    chosen by the first 4 bytes of its SHA-256 digest. Byte 4's LSB
+    determines the sign; byte 5 scaled into ``(0, 1]`` is the magnitude.
+    The final vector is L2-normalised. Deterministic across Python
+    processes because ``hashlib.sha256`` is not randomised.
     """
 
-    vector = [0.0] * _FALLBACK_DIMS
-    for token in _tokenise(text):
-        digest = hashlib.sha256(token.encode("utf-8")).digest()
-        bucket = int.from_bytes(digest[:4], "big") % _FALLBACK_DIMS
-        vector[bucket] += 1.0
+    def embed(self, text: str) -> list[float]:
+        buckets = [0.0] * DIM
+        for word in text.lower().split():
+            digest = hashlib.sha256(word.encode("utf-8")).digest()
+            bucket = int.from_bytes(digest[:4], "big") % DIM
+            sign = 1.0 if digest[4] & 1 else -1.0
+            weight = (digest[5] + 1) / 256.0
+            buckets[bucket] += sign * weight
+        return _l2_normalise(buckets)
 
-    norm = math.sqrt(sum(v * v for v in vector))
+
+class SentenceTransformersBackend:
+    """Real multilingual embeddings. Load-on-demand + process-wide singleton.
+
+    The actual model import stays behind the ``_load`` guard so this class
+    is safe to import on a box without PyTorch; the dev-sandbox code path
+    never calls ``embed`` on an instance of this class because
+    :func:`default_backend` falls back to the deterministic backend when
+    ``sentence_transformers`` is not importable.
+    """
+
+    _lock = threading.Lock()
+    _model = None
+
+    def embed(self, text: str) -> list[float]:
+        model = self._load()
+        # ``normalize_embeddings=True`` gives L2-norm vectors natively.
+        vec = model.encode(text, normalize_embeddings=True).tolist()
+        # paraphrase-multilingual-MiniLM-L12-v2 emits 384-dim vectors by
+        # default, but guard against a model swap.
+        if len(vec) != DIM:
+            vec = _resize_to_dim(vec, DIM)
+        return vec
+
+    def _load(self):
+        if self._model is None:
+            with self._lock:
+                if self._model is None:
+                    from sentence_transformers import SentenceTransformer  # noqa: PLC0415
+
+                    self._model = SentenceTransformer(
+                        "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+                    )
+        return self._model
+
+
+def _l2_normalise(vec: list[float]) -> list[float]:
+    norm = math.sqrt(sum(v * v for v in vec))
     if norm == 0.0:
-        return vector
-    return [v / norm for v in vector]
+        # Stable deterministic fallback — a uniform unit vector avoids a
+        # division-by-zero while keeping the contract (dim=384, ||v||=1).
+        return [1.0 / math.sqrt(DIM)] * DIM
+    return [v / norm for v in vec]
 
 
-def _tokenise(text: str) -> list[str]:
-    return [token for token in _SPLIT_RE.split(text.lower()) if len(token) > 1]
+def _resize_to_dim(vec: list[float], target: int) -> list[float]:
+    """Pad with zeros or truncate, then re-normalise — deterministic reshape."""
+
+    if len(vec) >= target:
+        out = vec[:target]
+    else:
+        out = vec + [0.0] * (target - len(vec))
+    return _l2_normalise(out)
 
 
-import re  # noqa: E402 — local import so the helper stays self-contained
+@lru_cache(maxsize=1)
+def default_backend() -> EmbedBackend:
+    """Pick the real backend if PyTorch is importable; otherwise BoW.
 
-_SPLIT_RE = re.compile(r"[\s,.;:!?()\[\]{}\"'«»/\\]+")
+    Cached so both the router and any direct caller share the same
+    backend instance (important for :class:`SentenceTransformersBackend`
+    where ``_model`` is populated lazily on the first call).
+    """
+
+    try:
+        import torch  # noqa: F401, PLC0415
+        import sentence_transformers  # noqa: F401, PLC0415
+    except ImportError:
+        return DeterministicBoWBackend()
+    return SentenceTransformersBackend()

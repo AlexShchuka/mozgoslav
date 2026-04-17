@@ -12,6 +12,15 @@ namespace Mozgoslav.Infrastructure.Services;
 /// (<see cref="AppPaths.Root"/>) — database, settings, models-metadata. Logs are
 /// excluded to keep the archive small; vault content is the user's responsibility
 /// and lives outside our directory.
+/// <para>
+/// TODO-9 — .NET 10's <c>ZipFile</c> API still does not expose
+/// <c>OpenAsync</c>, so the actual compression loop runs on a background
+/// thread via <see cref="Task.Run(System.Action,System.Threading.CancellationToken)"/>.
+/// This keeps the calling request thread free while hundreds of megabytes are
+/// compressed, and avoids the <c>CA1849</c> pragma the previous revision
+/// needed. The cancellation token is observed before the background task
+/// starts and is re-checked inside <see cref="AddDirectory"/> for each file.
+/// </para>
 /// </summary>
 public sealed class BackupService
 {
@@ -22,8 +31,10 @@ public sealed class BackupService
         _logger = logger;
     }
 
-    public Task<string> CreateAsync(CancellationToken ct)
+    public async Task<string> CreateAsync(CancellationToken ct)
     {
+        ct.ThrowIfCancellationRequested();
+
         AppPaths.EnsureExist();
         var backupsDir = Path.Combine(AppPaths.Root, "backups");
         Directory.CreateDirectory(backupsDir);
@@ -36,20 +47,19 @@ public sealed class BackupService
             File.Delete(destination);
         }
 
-        // Backups are an explicit user action and run off-request (hosted service /
-        // manual trigger), so the synchronous ZipFile API is acceptable here. Moving to
-        // the async variant is tracked separately; see TODO.md.
-#pragma warning disable CA1849
-        using (var archive = ZipFile.Open(destination, ZipArchiveMode.Create))
+        // Off-threadpool IO — the ZipFile API is synchronous and .NET 10 has no
+        // ZipFile.OpenAsync. Task.Run keeps the request thread free; the token
+        // is observed on every file so a cancel short-circuits the archive.
+        await Task.Run(() =>
         {
+            using var archive = ZipFile.Open(destination, ZipArchiveMode.Create);
             AddIfExists(archive, AppPaths.Database, "mozgoslav.db");
             AddDirectory(archive, AppPaths.Models, "models", ct);
             AddDirectory(archive, Path.Combine(AppPaths.Root, "config"), "config", ct);
-        }
-#pragma warning restore CA1849
+        }, ct);
 
         _logger.LogInformation("Created backup at {Path}", destination);
-        return Task.FromResult(destination);
+        return destination;
     }
 
     public IReadOnlyList<FileInfo> List()

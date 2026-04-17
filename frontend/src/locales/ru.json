@@ -12,16 +12,22 @@
     "models": "Модели",
     "settings": "Настройки",
     "logs": "Логи",
-    "backup": "Бэкапы"
+    "backup": "Бэкапы",
+    "obsidian": "Obsidian",
+    "sync": "Синхронизация"
   },
   "rag": {
     "title": "Q&A по заметкам",
     "welcome": "Спроси что-нибудь о своих заметках.",
     "askPlaceholder": "Введи вопрос…",
+    "placeholder": "Привет, введи сюда…",
+    "emptyState": "Спроси что-нибудь о своих заметках. Enter — отправить, Shift+Enter — перенос строки.",
     "ask": "Спросить",
     "reindex": "Переиндексировать",
     "reindexedToast": "Проиндексировано заметок: {{count}}",
     "llmUnavailable": "LLM недоступен — показаны только найденные фрагменты.",
+    "error": "Ошибка запроса",
+    "citationLink": "открыть заметку",
     "openNote": "Открыть заметку"
   },
   "common": {
@@ -67,6 +73,9 @@
   "queue": {
     "title": "Очередь обработки",
     "empty": "Очередь пуста. Импортируй новую запись, чтобы запустить обработку.",
+    "cancel": "Отменить",
+    "cancelConfirmRunning": "Задание уже выполняется. Точно отменить?",
+    "resumedFrom": "Возобновлено с {{time}}",
     "status": {
       "Queued": "В очереди",
       "Transcribing": "Транскрибация",
@@ -76,6 +85,14 @@
       "Done": "Готово",
       "Failed": "Ошибка"
     }
+  },
+  "notes": {
+    "add": "Новая заметка",
+    "addTitle": "Написать заметку",
+    "titleLabel": "Заголовок",
+    "bodyLabel": "Текст (Markdown поддерживается)",
+    "submit": "Сохранить",
+    "created": "Заметка создана"
   },
   "note": {
     "title": "Заметка",
@@ -95,11 +112,31 @@
       "fullTranscript": "Полный текст"
     }
   },
+  "commandPalette": {
+    "sections": {
+      "navigation": "Навигация",
+      "quick": "Быстрые действия"
+    },
+    "actions": {
+      "newNote": "Новая заметка",
+      "reindexRag": "Переиндексировать RAG",
+      "createBackup": "Создать бэкап",
+      "openObsidianVault": "Открыть Obsidian vault",
+      "backupStarted": "Бэкап запущен",
+      "vaultMissing": "Путь к Obsidian vault ещё не настроен.",
+      "bridgeMissing": "Нативный shell недоступен в browser-режиме."
+    }
+  },
   "profiles": {
     "title": "Профили обработки",
     "addNew": "Создать профиль",
     "defaultBadge": "По умолчанию",
     "builtInBadge": "Встроенный",
+    "duplicate": "Дублировать",
+    "deleteConfirm": "Удалить профиль «{{name}}»? Отменить нельзя.",
+    "builtInDeleteBlocked": "Встроенные профили нельзя удалить.",
+    "duplicated": "Профиль продублирован",
+    "deleted": "Профиль удалён",
     "fields": {
       "name": "Название",
       "systemPrompt": "System prompt для LLM",
@@ -107,7 +144,8 @@
       "cleanupLevel": "Уровень очистки",
       "exportFolder": "Папка экспорта",
       "autoTags": "Авто-теги",
-      "makeDefault": "Сделать профилем по умолчанию"
+      "makeDefault": "Сделать профилем по умолчанию",
+      "nameRequired": "Укажи название"
     },
     "cleanup": {
       "None": "Ничего не чистим",
@@ -175,6 +213,20 @@
       "empty": "Пока нет ожидающих устройств.",
       "accept": "Принять",
       "unknown": "Неизвестное устройство"
+    },
+    "tabs": {
+      "devices": "Устройства",
+      "folders": "Папки",
+      "conflicts": "Конфликты",
+      "settings": "Настройки"
+    },
+    "conflicts": {
+      "title": "Файлы с конфликтами",
+      "empty": "Конфликтов нет.",
+      "reveal": "Открыть"
+    },
+    "settings": {
+      "enableSyncthing": "Включить Syncthing"
     }
   },
   "models": {
@@ -201,45 +253,59 @@
     "applyButton": "Создать структуру",
     "setupSuccess": "Готово — {{created}} новых папок",
     "tagsTitle": "Авто-теги",
-    "tagsHint": "Теги, которые будут добавляться во frontmatter новых заметок."
+    "tagsHint": "Теги, которые будут добавляться во frontmatter новых заметок.",
+    "bulkExportTitle": "Синхронизация и раскладка",
+    "bulkExportHint": "Прогнать все не-экспортированные заметки и разложить их по PARA.",
+    "syncAll": "Выгрузить все новые заметки",
+    "syncAllSuccess": "Экспортировано заметок: {{count}}",
+    "applyLayout": "Разложить по PARA",
+    "applyLayoutSuccess": "Создано папок: {{folders}}, перемещено заметок: {{notes}}"
   },
   "onboarding": {
     "title": "Добро пожаловать в Мозгослав",
     "subtitle": "Давай быстро настроим всё, чтобы работа началась с первого созвона.",
-    "step1": {
-      "title": "Язык",
-      "hint": "На каком языке тебе удобнее?"
+    "welcome": {
+      "title": "Привет!",
+      "hint": "Мы быстро пройдём через 9 шагов: модели, Obsidian, LLM, Syncthing и три macOS-разрешения."
     },
-    "step2": {
+    "models": {
       "title": "Модели",
       "hint": "Скачаем Whisper и VAD — это разово, ~1.5 ГБ."
     },
-    "step3": {
+    "obsidian": {
       "title": "Obsidian",
       "hint": "Укажи путь к vault, подготовим нужные папки."
     },
-    "step4": {
+    "llm": {
       "title": "LLM",
       "hint": "Endpoint локальной LM Studio или Ollama."
     },
-    "step5": {
+    "syncthing": {
+      "title": "Syncthing",
+      "hint": "Шифрованная синхронизация между устройствами. Мы запустим Syncthing и подготовим 3 папки: записи, заметки, vault."
+    },
+    "mic": {
       "title": "Доступ к микрофону",
       "hint": "Мозгославу нужен микрофон, чтобы слушать диктовку по 5-й кнопке мыши. Система сама покажет запрос при первом нажатии — тут можно проверить заранее."
     },
-    "step6": {
+    "accessibility": {
       "title": "Accessibility",
       "hint": "Чтобы вводить текст в фокусное приложение (VSCode, Slack, почта), нужен доступ Accessibility. Открой Settings → Privacy & Security → Accessibility и добавь Мозгослав."
     },
-    "step7": {
+    "inputMonitoring": {
       "title": "Input Monitoring",
       "hint": "Для глобального отслеживания нажатия 5-й кнопки мыши нужен Input Monitoring. Открой Settings → Privacy & Security → Input Monitoring и добавь Мозгослав."
     },
-    "step8": {
+    "ready": {
       "title": "Готово",
       "hint": "Всё настроено. Можно импортировать первый разговор или продиктовать текст по 5-й кнопке мыши."
     },
     "openSystemPreferences": "Открыть системные настройки",
-    "skip": "Пропустить"
+    "skip": "Пропустить",
+    "llmReachable": "LLM отвечает — можно двигаться дальше.",
+    "llmUnreachable": "Жду, когда LLM-endpoint ответит по /api/health/llm…",
+    "modelsReady": "Модели установлены — можно двигаться дальше.",
+    "modelsMissing": "Скачай или укажи путь к Whisper/VAD модели, чтобы продолжить."
   },
   "hotkeys": {
     "title": "Горячие клавиши",

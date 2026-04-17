@@ -40,13 +40,26 @@ export class TrayManager {
   }
 
   private buildIcon(phase: DictationPhase): Electron.NativeImage {
-    // Prefer a phase-specific PNG if present in the packaged resources; fall
-    // back to a 16x16 monochrome swatch so the tray is always populated.
-    const resourceBase = path.join(__dirname, "..", "..", "build");
-    const candidate = path.join(resourceBase, `tray-${phase}.png`);
-    const image = nativeImage.createFromPath(candidate);
-    if (!image.isEmpty()) return image;
+    // Bug 12 — try the packaged resources path first (electron-builder puts
+    // the `build/tray-*.png` assets under `process.resourcesPath` via the
+    // `extraResources` list), fall back to the dev-time `build/` folder.
+    // If both miss, render a solid swatch so the tray never goes empty.
+    for (const candidate of this.iconCandidates(phase)) {
+      const image = nativeImage.createFromPath(candidate);
+      if (!image.isEmpty()) return image;
+    }
     return this.buildFallbackIcon(phase);
+  }
+
+  private iconCandidates(phase: DictationPhase): readonly string[] {
+    const filename = `tray-${phase}.png`;
+    const paths: string[] = [];
+    if (typeof process.resourcesPath === "string" && process.resourcesPath.length > 0) {
+      paths.push(path.join(process.resourcesPath, filename));
+      paths.push(path.join(process.resourcesPath, "build", filename));
+    }
+    paths.push(path.join(__dirname, "..", "..", "build", filename));
+    return paths;
   }
 
   private buildFallbackIcon(phase: DictationPhase): Electron.NativeImage {

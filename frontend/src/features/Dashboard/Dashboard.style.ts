@@ -55,8 +55,20 @@ export const DropzoneHint = styled.span`
 
 export const Row = styled.div`
   display: flex;
-  gap: ${({ theme }) => theme.space(2)};
+  align-items: center;
+  gap: ${({ theme }) => theme.space(4)}; /* Bug 18 — bump from 2 to 4 so
+     the Add / Record buttons breathe and do not abut the dropzone edge. */
   margin-top: ${({ theme }) => theme.space(4)};
+`;
+
+// Bug 18 — Dashboard "brand" row (logo + actions) needs horizontal padding and
+// aligned centering to fix the sidebar/top-bar overlap on Retina.
+export const DashboardTopBar = styled.header`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: ${({ theme }) => theme.space(4)};
+  padding: 0 ${({ theme }) => theme.space(1)};
 `;
 
 export const SectionTitle = styled.h2`

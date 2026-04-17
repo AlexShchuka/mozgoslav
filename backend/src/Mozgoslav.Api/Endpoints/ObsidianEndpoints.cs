@@ -36,6 +36,42 @@ public static class ObsidianEndpoints
             }
         });
 
+        // ADR-007-shared §2.6 BC-025 — bulk export every not-yet-exported
+        // ProcessedNote. Responds 400 when no vault is configured so the UI
+        // can surface the config gap instead of silently reporting "0/0".
+        endpoints.MapPost("/api/obsidian/export-all", async (
+            IObsidianExportService service,
+            CancellationToken ct) =>
+        {
+            try
+            {
+                var result = await service.ExportAllUnexportedAsync(ct);
+                return Results.Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        });
+
+        // ADR-007-shared §2.6 BC-025 — create the PARA scaffolding under the
+        // vault and (future work) move already-exported notes into the
+        // correct bucket. Idempotent: second call reports createdFolders = 0.
+        endpoints.MapPost("/api/obsidian/apply-layout", async (
+            IObsidianLayoutService service,
+            CancellationToken ct) =>
+        {
+            try
+            {
+                var result = await service.ApplyParaLayoutAsync(ct);
+                return Results.Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        });
+
         return endpoints;
     }
 }

@@ -64,7 +64,7 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody(BuildResponse("all-MiniLM-L6-v2", 4, [sidecarVector])));
+                .WithBody(BuildResponse(sidecarVector, 4)));
 
         var sut = new PythonSidecarEmbeddingService(_http, _fallback, NullLogger<PythonSidecarEmbeddingService>.Instance);
         var vector = await sut.EmbedAsync("hello", CancellationToken.None);
@@ -107,7 +107,7 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody(BuildResponse("whatever", 0, Array.Empty<float[]>())));
+                .WithBody(BuildResponse(Array.Empty<float>(), 0)));
 
         var sut = new PythonSidecarEmbeddingService(_http, _fallback, NullLogger<PythonSidecarEmbeddingService>.Instance);
         var vector = await sut.EmbedAsync("hello", CancellationToken.None);
@@ -128,7 +128,7 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody(BuildResponse("m1", 4, [first])));
+                .WithBody(BuildResponse(first, 4)));
 
         _server.Given(Request.Create().WithPath("/api/embed").UsingPost())
             .InScenario("drift")
@@ -136,7 +136,7 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody(BuildResponse("m2", 5, [drifted])));
+                .WithBody(BuildResponse(drifted, 5)));
 
         var sut = new PythonSidecarEmbeddingService(_http, _fallback, NullLogger<PythonSidecarEmbeddingService>.Instance);
 
@@ -151,11 +151,11 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
         v1.Should().BeEquivalentTo(first);
     }
 
-    private static string BuildResponse(string model, int dimensions, IReadOnlyList<float[]> vectors)
+    // ADR-007-shared §2.4 — sidecar single-text response shape is
+    // { embedding: number[], dim: int }.
+    private static string BuildResponse(IReadOnlyList<float> embedding, int dim)
     {
-        var vectorsJson = string.Join(
-            ",",
-            vectors.Select(v => "[" + string.Join(",", v.Select(f => f.ToString(CultureInfo.InvariantCulture))) + "]"));
-        return $"{{\"model\":\"{model}\",\"dimensions\":{dimensions},\"vectors\":[{vectorsJson}]}}";
+        var embeddingJson = string.Join(",", embedding.Select(f => f.ToString(CultureInfo.InvariantCulture)));
+        return $"{{\"embedding\":[{embeddingJson}],\"dim\":{dim}}}";
     }
 }

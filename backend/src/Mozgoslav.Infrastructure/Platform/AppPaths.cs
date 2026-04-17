@@ -25,8 +25,13 @@ public static class AppPaths
     public static string Notes => Path.Combine(Data, "notes");
     public static string SyncthingHome => Path.Combine(Root, "syncthing");
 
+    // ADR-007 BC-034 / bug 2 — filename MUST match the default ModelCatalog
+    // entry (Whisper Russian antony66 ggml). Previously the seed pointed at
+    // ``ggml-large-v3-q8_0.bin`` while the catalogue served
+    // ``ggml-model-q8_0.bin`` — downloaded file and configured path never
+    // agreed, breaking transcription on first run.
     public static string DefaultWhisperModelPath =>
-        Path.Combine(Models, "ggml-large-v3-q8_0.bin");
+        Path.Combine(Models, "ggml-model-q8_0.bin");
 
     public static string DefaultVadModelPath =>
         Path.Combine(Models, "ggml-silero-v6.2.0.bin");

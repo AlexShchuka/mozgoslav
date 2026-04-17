@@ -6,12 +6,23 @@ using Mozgoslav.Application.Rag;
 namespace Mozgoslav.Api.Endpoints;
 
 /// <summary>
-/// ADR-005 — thin HTTP surface over <see cref="IRagService"/>.
-/// <c>POST /api/rag/reindex</c> rebuilds the index from scratch;
-/// <c>POST /api/rag/query</c> asks a question grounded in that index.
+/// ADR-005 + ADR-007-shared §2.4 — thin HTTP surface over <see cref="IRagService"/>.
+/// Contract:
+/// <list type="bullet">
+///   <item><c>POST /api/rag/reindex</c> → <c>{ embeddedNotes, chunks }</c></item>
+///   <item><c>POST /api/rag/query</c>   → <c>{ answer, citations:[{noteId, segmentId, text, snippet}] }</c></item>
+/// </list>
+/// Frontend MR C consumes this shape verbatim; Phase 2 Backend MR C owns it.
 /// </summary>
 public static class RagEndpoints
 {
+    /// <summary>
+    /// Short preview used in <c>citations[].snippet</c>. Long enough to be
+    /// meaningful on its own, short enough that a list of 5 snippets fits on
+    /// screen without scrolling.
+    /// </summary>
+    private const int SnippetMaxChars = 200;
+
     public sealed record QueryRequest(string Question, int? TopK);
 
     public static IEndpointRouteBuilder MapRagEndpoints(this IEndpointRouteBuilder endpoints)
@@ -19,6 +30,7 @@ public static class RagEndpoints
         endpoints.MapPost("/api/rag/reindex", async (
             IProcessedNoteRepository notes,
             IRagService rag,
+            IVectorIndex index,
             CancellationToken ct) =>
         {
             var allNotes = await notes.GetAllAsync(ct);
@@ -26,7 +38,14 @@ public static class RagEndpoints
             {
                 await rag.IndexAsync(note, ct);
             }
-            return Results.Ok(new { indexed = allNotes.Count });
+            // ADR-007-shared §2.4 — reindex response is {embeddedNotes, chunks}.
+            // embeddedNotes = how many notes we processed this round;
+            // chunks = total chunks now resident in the vector index.
+            return Results.Ok(new
+            {
+                embeddedNotes = allNotes.Count,
+                chunks = index.Count,
+            });
         });
 
         endpoints.MapPost("/api/rag/query", async (
@@ -43,17 +62,33 @@ public static class RagEndpoints
             return Results.Ok(new
             {
                 answer = answer.Answer,
-                llmAvailable = answer.LlmAvailable,
+                // ADR-007-shared §2.4 — citations[] shape is the binding
+                // contract. Frontend reads noteId / segmentId / text / snippet.
                 citations = answer.Citations.Select(h => new
                 {
                     noteId = h.Chunk.NoteId,
-                    chunkId = h.Chunk.Id,
+                    segmentId = h.Chunk.Id,
                     text = h.Chunk.Text,
-                    score = h.Score,
+                    snippet = BuildSnippet(h.Chunk.Text),
                 }),
+                // Kept out of the §2.4 contract but preserved for backend
+                // diagnostics — frontend does not depend on it.
+                llmAvailable = answer.LlmAvailable,
             });
         });
 
         return endpoints;
+    }
+
+    private static string BuildSnippet(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return string.Empty;
+        }
+        var collapsed = text.ReplaceLineEndings(" ").Trim();
+        return collapsed.Length <= SnippetMaxChars
+            ? collapsed
+            : string.Concat(collapsed.AsSpan(0, SnippetMaxChars).TrimEnd(), "…");
     }
 }

@@ -1,11 +1,20 @@
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.UseCases;
+using Mozgoslav.Domain.Entities;
+using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Api.Endpoints;
 
 public static class NoteEndpoints
 {
     public sealed record ReprocessRequest(Guid ProfileId);
+
+    /// <summary>
+    /// ADR-007-shared §2.6 BC-022 — payload accepted by the manual-note
+    /// endpoint. All fields are optional; absence means "empty stub that the
+    /// user will fill in via the editor".
+    /// </summary>
+    public sealed record ManualNoteRequest(string? Title, string? Body, string? TemplateId);
 
     public static IEndpointRouteBuilder MapNoteEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -15,6 +24,28 @@ public static class NoteEndpoints
         {
             var notes = await repository.GetAllAsync(ct);
             return Results.Ok(notes);
+        });
+
+        // ADR-007-shared §2.6 — manual note creation. Unlike the transcription
+        // pipeline this endpoint never touches the queue: there is no audio
+        // to process, so we create the note synchronously, tag it as Manual,
+        // and return 201 with the fresh ProcessedNote body.
+        endpoints.MapPost("/api/notes", async (
+            ManualNoteRequest? request,
+            IProcessedNoteRepository repository,
+            CancellationToken ct) =>
+        {
+            var note = new ProcessedNote
+            {
+                Source = NoteSource.Manual,
+                Title = request?.Title ?? string.Empty,
+                MarkdownContent = request?.Body ?? string.Empty,
+                // Summary / key-points / etc. stay at their defaults — the
+                // user will edit them in the note view. The LLM enrichment
+                // pipeline does NOT fire for manual notes.
+            };
+            await repository.AddAsync(note, ct);
+            return Results.Created($"/api/notes/{note.Id}", note);
         });
 
         endpoints.MapGet("/api/notes/{id:guid}", async (

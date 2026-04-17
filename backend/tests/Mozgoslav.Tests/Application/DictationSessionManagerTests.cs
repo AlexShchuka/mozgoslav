@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Services;
+using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.Enums;
 using Mozgoslav.Domain.ValueObjects;
 
@@ -36,7 +37,7 @@ public sealed class DictationSessionManagerTests
         fixture.ArrangeEmptyStream();
         fixture.Manager.Start();
 
-        var act = fixture.Manager.Start;
+        var act = () => fixture.Manager.Start();
 
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*already active*");
@@ -233,6 +234,63 @@ public sealed class DictationSessionManagerTests
         fixture.Streaming.InitialPrompt.Should().NotBeNull();
         fixture.Streaming.InitialPrompt.Should().Contain("Mozgoslav");
         fixture.Streaming.InitialPrompt.Should().Contain("кафка");
+    }
+
+    [TestMethod]
+    public void BuildInitialPrompt_PrefersProfileOverride_OverVocabulary()
+    {
+        var profile = new Profile
+        {
+            TranscriptionPromptOverride = "Код-ревью, рефакторинг, архитектура сервисов.",
+        };
+        var vocabulary = new[] { "Mozgoslav", "кафка" };
+
+        var prompt = DictationSessionManager.BuildInitialPrompt(profile, vocabulary);
+
+        prompt.Should().Be("Код-ревью, рефакторинг, архитектура сервисов.",
+            "BC-030 / N3 — profile override wins over settings vocabulary");
+        prompt.Should().NotContain("Mozgoslav");
+        prompt.Should().NotContain("кафка");
+    }
+
+    [TestMethod]
+    public void BuildInitialPrompt_WhenProfileOverrideEmpty_FallsBackToVocabulary()
+    {
+        var profile = new Profile
+        {
+            TranscriptionPromptOverride = string.Empty,
+        };
+        var vocabulary = new[] { "Mozgoslav", "LRT" };
+
+        var prompt = DictationSessionManager.BuildInitialPrompt(profile, vocabulary);
+
+        prompt.Should().NotBeNull();
+        prompt.Should().Contain("Mozgoslav");
+        prompt.Should().Contain("LRT");
+    }
+
+    [TestMethod]
+    public void BuildInitialPrompt_WhenProfileOverrideWhitespace_FallsBackToVocabulary()
+    {
+        var profile = new Profile
+        {
+            TranscriptionPromptOverride = "   \t  ",
+        };
+        var vocabulary = new[] { "термин" };
+
+        var prompt = DictationSessionManager.BuildInitialPrompt(profile, vocabulary);
+
+        prompt.Should().Be("термин");
+    }
+
+    [TestMethod]
+    public void BuildInitialPrompt_WhenProfileNull_UsesVocabulary()
+    {
+        var vocabulary = new[] { "fallback" };
+
+        var prompt = DictationSessionManager.BuildInitialPrompt(profile: null, vocabulary);
+
+        prompt.Should().Be("fallback");
     }
 
     [TestMethod]

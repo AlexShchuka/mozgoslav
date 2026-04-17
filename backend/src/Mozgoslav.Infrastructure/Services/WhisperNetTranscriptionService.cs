@@ -27,7 +27,7 @@ namespace Mozgoslav.Infrastructure.Services;
 /// </para>
 /// </summary>
 public sealed class WhisperNetTranscriptionService
-    : ITranscriptionService, IStreamingTranscriptionService, IAsyncDisposable
+    : ITranscriptionService, IStreamingTranscriptionService
 {
     private const int BeamSize = 5;
     private const string DefaultPrompt = "Мысли вслух, встречи, диалоги, рассуждения.";
@@ -35,23 +35,18 @@ public sealed class WhisperNetTranscriptionService
     private const int StreamWindowMs = 500;
     private const int StreamMaxBufferSeconds = 120;
 
-    private readonly IAppSettings _settings;
     private readonly IVadPreprocessor _vad;
     private readonly ILogger<WhisperNetTranscriptionService> _logger;
-    private readonly IdleResourceCache<WhisperFactory> _factoryCache;
+    private readonly IIdleResourceCache<WhisperFactory> _factoryCache;
 
     public WhisperNetTranscriptionService(
-        IAppSettings settings,
         IVadPreprocessor vad,
+        IIdleResourceCache<WhisperFactory> factoryCache,
         ILogger<WhisperNetTranscriptionService> logger)
     {
-        _settings = settings;
         _vad = vad;
+        _factoryCache = factoryCache;
         _logger = logger;
-        _factoryCache = new IdleResourceCache<WhisperFactory>(
-            factory: CreateFactory,
-            idleTimeoutProvider: () =>
-                TimeSpan.FromMinutes(Math.Max(0, _settings.DictationModelUnloadMinutes)));
     }
 
     public async Task<IReadOnlyList<TranscriptSegment>> TranscribeAsync(
@@ -69,7 +64,11 @@ public sealed class WhisperNetTranscriptionService
 
         _logger.LogInformation("Transcribing {AudioPath}", audioPath);
 
+        // The WhisperFactory reference is owned by the cache — we only borrow it
+        // between AcquireAsync and ReleaseAsync. The analyzer doesn't know.
+#pragma warning disable IDISP001
         var whisperFactory = await _factoryCache.AcquireAsync(ct);
+#pragma warning restore IDISP001
         try
         {
             await using var processor = BuildProcessor(whisperFactory, language, initialPrompt);
@@ -102,7 +101,10 @@ public sealed class WhisperNetTranscriptionService
 
         _logger.LogInformation("Starting streaming transcription");
 
+        // Borrowed reference — owned by the cache.
+#pragma warning disable IDISP001
         var whisperFactory = await _factoryCache.AcquireAsync(ct);
+#pragma warning restore IDISP001
         try
         {
             var buffer = new List<float>();
@@ -166,15 +168,6 @@ public sealed class WhisperNetTranscriptionService
         }
     }
 
-    public ValueTask DisposeAsync() => _factoryCache.DisposeAsync();
-
-    private WhisperFactory CreateFactory()
-    {
-        var modelPath = EnsureModelPath();
-        _logger.LogInformation("Loading Whisper model {Model}", Path.GetFileName(modelPath));
-        return WhisperFactory.FromPath(modelPath);
-    }
-
     private async Task<string> TranscribeBufferAsync(
         WhisperFactory whisperFactory,
         float[] samples,
@@ -195,18 +188,6 @@ public sealed class WhisperNetTranscriptionService
         }
 
         return string.Join(" ", parts).Trim();
-    }
-
-    private string EnsureModelPath()
-    {
-        var modelPath = _settings.WhisperModelPath;
-        if (string.IsNullOrWhiteSpace(modelPath) || !File.Exists(modelPath))
-        {
-            throw new InvalidOperationException(
-                $"Whisper model is not configured or missing on disk: '{modelPath}'. " +
-                "Download it via the Models page in Settings.");
-        }
-        return modelPath;
     }
 
     private static WhisperProcessor BuildProcessor(WhisperFactory factory, string language, string? initialPrompt)

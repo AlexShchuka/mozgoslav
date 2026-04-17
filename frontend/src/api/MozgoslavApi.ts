@@ -55,6 +55,12 @@ export class MozgoslavApi {
   listActiveJobs = async (): Promise<ProcessingJob[]> =>
     (await this.client.get<ProcessingJob[]>(API_ENDPOINTS.jobsActive)).data;
 
+  // BC-015 — queued / running jobs get cancelled through this endpoint.
+  // Backend flips the row to Cancelled and the SSE stream emits the update.
+  cancelQueueJob = async (id: string): Promise<void> => {
+    await this.client.delete(API_ENDPOINTS.queueCancel(id));
+  };
+
   // --- notes ---
   listNotes = async (): Promise<ProcessedNote[]> =>
     (await this.client.get<ProcessedNote[]>(API_ENDPOINTS.notes)).data;
@@ -65,6 +71,11 @@ export class MozgoslavApi {
   exportNote = async (id: string): Promise<ProcessedNote> =>
     (await this.client.post<ProcessedNote>(API_ENDPOINTS.noteExport(id))).data;
 
+  // BC-022 — "Add Note" modal submits a hand-written note which becomes part
+  // of the RAG corpus alongside transcribed recordings.
+  createNote = async (payload: { title: string; body: string }): Promise<ProcessedNote> =>
+    (await this.client.post<ProcessedNote>(API_ENDPOINTS.notes, payload)).data;
+
   // --- profiles ---
   listProfiles = async (): Promise<Profile[]> =>
     (await this.client.get<Profile[]>(API_ENDPOINTS.profiles)).data;
@@ -74,6 +85,17 @@ export class MozgoslavApi {
 
   updateProfile = async (id: string, payload: Omit<Profile, "id" | "isBuiltIn">): Promise<Profile> =>
     (await this.client.put<Profile>(API_ENDPOINTS.profile(id), payload)).data;
+
+  // Built-in profiles are protected by the backend (409 on delete). UI surfaces
+  // the error as a toast and keeps the row in the list.
+  deleteProfile = async (id: string): Promise<void> => {
+    await this.client.delete(API_ENDPOINTS.profile(id));
+  };
+
+  // Server-side copy with "(copy)" suffix — returns the new row so the UI can
+  // insert it without a full refresh.
+  duplicateProfile = async (id: string): Promise<Profile> =>
+    (await this.client.post<Profile>(API_ENDPOINTS.duplicateProfile(id))).data;
 
   // --- settings ---
   getSettings = async (): Promise<AppSettings> =>
@@ -97,6 +119,18 @@ export class MozgoslavApi {
   setupObsidian = async (vaultPath?: string) =>
     (await this.client.post(API_ENDPOINTS.obsidianSetup, { vaultPath })).data;
 
+  // BC-025 Phase 2 MR B — bulk-export every un-exported note in one request.
+  bulkExportObsidian = async (): Promise<{ exportedCount: number }> =>
+    (await this.client.post<{ exportedCount: number }>(API_ENDPOINTS.obsidianExportAll)).data;
+
+  // BC-025 Phase 2 MR B — rearrange vault files into the PARA folder scheme.
+  applyObsidianLayout = async (): Promise<{ createdFolders: number; movedNotes: number }> =>
+    (
+      await this.client.post<{ createdFolders: number; movedNotes: number }>(
+        API_ENDPOINTS.obsidianApplyLayout,
+      )
+    ).data;
+
   // --- backup ---
   listBackups = async () => (await this.client.get(API_ENDPOINTS.backup)).data;
   createBackup = async () => (await this.client.post(API_ENDPOINTS.backupCreate)).data;
@@ -112,6 +146,25 @@ export class MozgoslavApi {
 
   ragReindex = async (): Promise<{ indexed: number }> =>
     (await this.client.post<{ indexed: number }>(API_ENDPOINTS.ragReindex)).data;
+
+  // --- dictation ---
+  // BC-004 — lifecycle triplet. Browser pushes Opus-in-WebM chunks every
+  // 250 ms; backend /api/dictation/{id}/push must accept octet-stream bodies
+  // and decode via ffmpeg (coordination item flagged in phase2 report).
+  startDictation = async (payload: { source: string }): Promise<{ sessionId: string }> =>
+    (await this.client.post<{ sessionId: string }>(API_ENDPOINTS.dictationStart, payload)).data;
+
+  dictationPush = async (sessionId: string, audioBuffer: ArrayBuffer): Promise<void> => {
+    await this.client.post(API_ENDPOINTS.dictationPush(sessionId), audioBuffer, {
+      headers: { "Content-Type": "application/octet-stream" },
+      transformRequest: [(body: unknown) => body],
+    });
+  };
+
+  stopDictation = async (sessionId: string): Promise<{ transcript: string }> =>
+    (
+      await this.client.post<{ transcript: string }>(API_ENDPOINTS.dictationStop(sessionId))
+    ).data;
 }
 
 export const api = new MozgoslavApi();
