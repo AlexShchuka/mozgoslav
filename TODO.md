@@ -12,14 +12,14 @@
 - ✅ **Obsidian REST API** — `IObsidianRestClient` + `ObsidianRestApiClient` (typed HttpClient, bearer token), endpoints `POST /api/obsidian/open` + `GET /api/obsidian/rest-health`. Fallback на `obsidian://` URI когда плагин недоступен.
 - ✅ **DMG release pipeline** — `.github/workflows/release.yml` (macos-latest runner, on tag `v*.*.*`), `scripts/fetch-bundle-models.sh`, `scripts/build-icon.sh`, `electron-builder.yml` обновлён (extraResources, icon path), `frontend/build/bundle-models.manifest.json`. `GET /api/meta` для DMG sanity-check.
 - ✅ **CI green** — `ModelDownloadService` progress fix, `DictationPushWebmOpus` routing fix.
-- ✅ **Repo cleanup** — старые ADR-007 family → `docs/adr/.archive-v2/`; root reports → `.archive/reports/`; `CONTRIBUTING.md` отделён от `README.md`.
+- ✅ **Repo cleanup** — все superseded ADR (включая ADR-007 family и ADR-008) → `.archive/adrs/`; root reports → `.archive/reports/`; old TODO/SELF-REVIEW snapshots → `.archive/docs/`; `CONTRIBUTING.md` отделён от `README.md`.
 
 ## Phase 2 — отложено осознанно
 
 - **Apple Developer ID signing + notarisation.** План — `plan/v0.8/07-dmg-and-release.md` §8 (turn-key: env-vars, entitlements, `electron-notarize`, `afterSign` хук).
 - **GigaAM-v3 STT** — SOTA по русскому, не ggml; требует отдельный inference-стек. Не блокирует v0.8 (Tier 2 включает `antony66/whisper-large-v3-russian` WER 6.39%).
 - **Calendar / meeting autostart** (исторический ADR-006). Не востребовано в v0.8.
-- **Web-aware RAG** — `docs/adr/ADR-008-web-rag.md` (груминг готов, BC-каталог + риски приватности зафиксированы).
+- **Web-aware RAG** — `.archive/adrs/ADR-008-web-rag.md` (груминг готов, BC-каталог + риски приватности зафиксированы). Попадёт в ADR-014 living-backlog.
 - **shuka one-time действия для DMG релиза** (`plan/v0.8/07-dmg-and-release.md` §6):
   1. Создать GitHub Release `models-bundle-v1` и приложить Tier 1 файлы.
   2. Заполнить `release_tag` + sha256 в `frontend/build/bundle-models.manifest.json`.
