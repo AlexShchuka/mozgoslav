@@ -1,8 +1,8 @@
 import { FC, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronRight, ExternalLink } from "lucide-react";
+import { AnimatePresence, m, useReducedMotion } from "framer-motion";
+import { Check, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 
 import Button from "../../components/Button";
 import Card from "../../components/Card";
@@ -17,6 +17,7 @@ import {
   StepTitle,
   StepHint,
   Toolbar,
+  ToolbarGroup,
 } from "./Onboarding.style";
 
 type StepDefinition = {
@@ -52,9 +53,21 @@ const STEPS: readonly StepDefinition[] = [
 
 const TOTAL_STEPS = STEPS.length;
 
+export const ONBOARDING_COMPLETED_STORAGE_KEY = "mozgoslav.onboardingCompleted";
+
+const markOnboardingComplete = (): void => {
+  try {
+    window.localStorage.setItem(ONBOARDING_COMPLETED_STORAGE_KEY, "1");
+  } catch {
+    // ignore storage failures — the wizard still functions, it just reappears
+    // on next launch (acceptable degradation)
+  }
+};
+
 const Onboarding: FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const reduced = useReducedMotion();
   const [step, setStep] = useState(0);
 
   const done = step >= TOTAL_STEPS - 1;
@@ -64,13 +77,19 @@ const Onboarding: FC = () => {
 
   const next = () => {
     if (done) {
+      markOnboardingComplete();
       navigate(ROUTES.dashboard, { replace: true });
       return;
     }
     setStep((s) => Math.min(TOTAL_STEPS - 1, s + 1));
   };
 
-  const skip = () => navigate(ROUTES.dashboard, { replace: true });
+  const back = () => setStep((s) => Math.max(0, s - 1));
+
+  const skip = () => {
+    markOnboardingComplete();
+    navigate(ROUTES.dashboard, { replace: true });
+  };
 
   const openSystemPreferences = () => {
     if (!current.systemPreferencesUrl) return;
@@ -84,12 +103,12 @@ const Onboarding: FC = () => {
 
       <Card>
         <AnimatePresence mode="wait">
-          <motion.div
+          <m.div
             key={step}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.18 }}
+            initial={reduced ? false : { opacity: 0, x: 20 }}
+            animate={reduced ? { opacity: 1 } : { opacity: 1, x: 0 }}
+            exit={reduced ? { opacity: 0 } : { opacity: 0, x: -20 }}
+            transition={{ duration: reduced ? 0 : 0.18 }}
           >
             <StepBody>
               <StepTitle>{t(`${stepKey}.title` as const)}</StepTitle>
@@ -105,7 +124,7 @@ const Onboarding: FC = () => {
                 </Button>
               )}
             </StepBody>
-          </motion.div>
+          </m.div>
         </AnimatePresence>
       </Card>
 
@@ -119,13 +138,23 @@ const Onboarding: FC = () => {
         <Button variant="ghost" onClick={skip}>
           {t("onboarding.skip")}
         </Button>
-        <Button
-          variant="primary"
-          rightIcon={done ? <Check size={16} /> : <ChevronRight size={16} />}
-          onClick={next}
-        >
-          {done ? t("common.apply") : t("common.next")}
-        </Button>
+        <ToolbarGroup>
+          <Button
+            variant="ghost"
+            leftIcon={<ChevronLeft size={16} />}
+            onClick={back}
+            disabled={step === 0}
+          >
+            {t("common.back")}
+          </Button>
+          <Button
+            variant="primary"
+            rightIcon={done ? <Check size={16} /> : <ChevronRight size={16} />}
+            onClick={next}
+          >
+            {done ? t("common.apply") : t("common.next")}
+          </Button>
+        </ToolbarGroup>
       </Toolbar>
     </PageRoot>
   );

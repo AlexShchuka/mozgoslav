@@ -61,3 +61,9 @@ export const Toolbar = styled.div`
   align-items: center;
   gap: ${({ theme }) => theme.space(2)};
 `;
+
+export const ToolbarGroup = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.space(2)};
+  align-items: center;
+`;
