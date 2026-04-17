@@ -203,7 +203,25 @@ The frontend does **not** own audio capture in this ADR — it triggers the serv
 
 ### D-10 — i18n audit + ru/en parity enforcement
 
-<!-- TODO: decision + alternatives + consequences -->
+**Decision.** Sweep the renderer for hardcoded user-visible strings and migrate each to an i18next key present in both `ru.json` and `en.json`. The audit command is committed to `frontend/scripts/i18n-audit.mjs` so regressions can be caught locally:
+
+```sh
+node frontend/scripts/i18n-audit.mjs
+```
+
+It flags three classes of violation:
+
+1. JSX children containing non-whitespace literal text outside `t(...)`.
+2. `toast.*` calls with string literals.
+3. Missing keys / mismatched nesting between the ru and en JSON trees.
+
+Queue page (explicitly reported as missing translations) is migrated first; every other feature gets a drive-by during the B5 commit. Known gaps will be captured as new keys under the feature's existing namespace (e.g. `queue.cancel`, `dashboard.recordUnsupportedMacOnly`).
+
+**Alternatives considered.**
+- *Machine translation for the whole string catalogue.* Rejected: quality floor too low for UI copy, especially in Russian idioms we already own.
+- *Bolt on `i18next-parser`.* Overkill at our size; a ~100-line parity script is easier to read and owns no extra dep.
+
+**Consequences.** Both locale files end up with the same key shape; parity test runs in `npm test` (added in B5) so CI fails fast on future drift. One new script, no new runtime dep.
 
 ### D-11 — LM Studio discovery via /v1/models, no bundled downloader
 
