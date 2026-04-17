@@ -223,9 +223,23 @@ Queue page (explicitly reported as missing translations) is migrated first; ever
 
 **Consequences.** Both locale files end up with the same key shape; parity test runs in `npm test` (added in B5) so CI fails fast on future drift. One new script, no new runtime dep.
 
-### D-11 — LM Studio discovery via /v1/models, no bundled downloader
+### D-11 — LM Studio discovery via `/v1/models`, no bundled downloader
 
-<!-- TODO: decision + alternatives + consequences -->
+**Decision.** First-class, **discovery-only** integration with LM Studio. Mozgoslav assumes LM Studio is installed and running on the user's machine, never downloads models on behalf of the user, never bundles a model manager.
+
+- **Backend port.** New `ILmStudioClient` interface in `Mozgoslav.Application.Interfaces/` plus `LmStudioHttpClient` in `Infrastructure/Services/`. One method: `Task<IReadOnlyList<LmStudioModel>> ListModelsAsync(CancellationToken ct)` → `GET {endpoint}/v1/models` (LM Studio default `http://localhost:1234`, OpenAI-compatible schema). Endpoint base URL is read from `AppSettingsDto.LlmEndpoint` (already exists).
+- **Endpoint.** New `GET /api/lmstudio/models` in `LmStudioEndpoints.cs`. Returns `{ installed: LmStudioModel[], reachable: bool }`. When unreachable, `reachable = false` and `installed = []` — the UI switches to the empty-state copy below.
+- **Settings UI.** Under Settings → Local models (extended tab) two sub-lists:
+  - *Installed via LM Studio* — pulled live from `/v1/models`. Empty-state copy (i18n keys under `settings.lmStudio.*`): RU «Установи LM Studio, чтобы управлять моделями локально», EN "Install LM Studio to manage local models".
+  - *Suggested* — curated static list: Qwen 3 7B, Qwen 3 14B, Llama 3.3 8B, Gemma 3 9B, `whisper-large-v3-turbo`. Each row has a single **Open in LM Studio** CTA that deep-links via `lmstudio://models/<model-id>` (`electron.shell.openExternal`).
+- **Removal.** Existing per-model Download buttons in `features/Models/` are **removed** — the page becomes a read-only list of local `.bin`/`.mlmodelc` files discovered under `AppPaths.Models` plus a copy line pointing at LM Studio for everything else.
+
+**Alternatives considered.**
+- *Bundle a downloader à la `models/download` endpoint.* Rejected — user explicitly said «отдельные кнопочки не нужны»; LM Studio already solves "download models" with a better UX than we can ship.
+- *Probe Ollama in addition to LM Studio.* Deferred to D-14 (multi-provider) — LM Studio is the anchor because its OpenAI-compat API is what we already call.
+- *Require LM Studio via a bundled install.* Rejected — we do not install third-party apps on the user's machine.
+
+**Consequences.** Two new files (interface + http client), one new endpoint, one Settings sub-section, deletion of the existing download buttons. Pipeline consumption — `OpenAiCompatibleLlmService` reads `settings.LlmEndpoint` + `settings.LlmModel` exactly as before, so no change downstream once the user picks a model from the dropdown.
 
 ### D-12 — README one-liners for dev + prod
 
