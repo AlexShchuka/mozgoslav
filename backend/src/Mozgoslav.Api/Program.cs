@@ -106,6 +106,24 @@ try
     builder.Services.AddSingleton<ModelDownloadService>();
     builder.Services.AddSingleton<BackupService>();
     builder.Services.AddSingleton<MozgoslavMetrics>();
+    builder.Services.AddSingleton<SyncthingConfigService>();
+
+    // ADR-003 D3: Syncthing REST client. Base address is configurable — in
+    // production it is rewired by the Electron lifecycle service once the
+    // bundled syncthing binary reports its random localhost port + api-key;
+    // meanwhile the default points at the documented :8384 so stand-alone
+    // debugging against a user-installed syncthing also works.
+    builder.Services.AddHttpClient<ISyncthingClient, SyncthingHttpClient>(client =>
+    {
+        var baseAddress = builder.Configuration["Mozgoslav:SyncthingBaseUrl"]
+            ?? "http://127.0.0.1:8384";
+        client.BaseAddress = new Uri(baseAddress);
+        var apiKey = builder.Configuration["Mozgoslav:SyncthingApiKey"];
+        if (!string.IsNullOrWhiteSpace(apiKey))
+        {
+            client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
+        }
+    });
 
     builder.Services.AddOpenTelemetry().WithMetrics(m => m
         .AddMeter(MozgoslavMetrics.MeterName)
@@ -133,6 +151,7 @@ try
     app.MapLogsEndpoints();
     app.MapBackupEndpoints();
     app.MapDictationEndpoints();
+    app.MapSyncEndpoints();
 
     await app.RunAsync();
 }
