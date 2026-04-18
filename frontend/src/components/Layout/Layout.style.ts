@@ -2,7 +2,8 @@ import styled from "styled-components";
 
 export const LayoutRoot = styled.div`
   display: grid;
-  grid-template-columns: 240px 1fr;
+  /* Row 1: draggable TitleBar (44 px). Row 2: sidebar + main content. */
+  grid-template: 44px 1fr / 240px 1fr;
   height: 100vh;
   background: ${({ theme }) => theme.colors.bg.base};
 `;
@@ -13,7 +14,6 @@ export const Sidebar = styled.aside`
   padding: ${({ theme }) => theme.space(4)};
   background: ${({ theme }) => theme.colors.bg.elevated2};
   border-right: 1px solid ${({ theme }) => theme.colors.border.subtle};
-  -webkit-app-region: drag;
 `;
 
 export const Brand = styled.div`

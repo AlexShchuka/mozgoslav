@@ -5,6 +5,7 @@ import { Archive, Brain, Database, FolderCog, FolderTree, ListTree, MessageSquar
 
 import { useBackendHealth } from "../../hooks/useBackendHealth";
 import { ROUTES } from "../../constants/routes";
+import TitleBar from "../TitleBar";
 import {
   BackendStatusBanner,
   Content,
@@ -30,6 +31,7 @@ const Layout: FC<LayoutProps> = ({ children }) => {
 
   return (
     <LayoutRoot>
+      <TitleBar />
       <Sidebar>
         <SidebarSection>
           <SidebarGroup>
