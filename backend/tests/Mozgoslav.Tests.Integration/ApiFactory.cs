@@ -34,6 +34,15 @@ internal sealed class ApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("IntegrationTest");
+        // UseSetting writes into the hosting config layer which is applied
+        // before Program.cs reads builder.Configuration (ConfigureAppConfiguration
+        // runs at Build() time, which is too late for eager reads).
+        builder.UseSetting("Mozgoslav:DatabasePath", DatabasePath);
+        // G2 added a sensible default sidecar URL in appsettings.json so the
+        // production build picks up sentence-transformer embeddings. The
+        // integration test sandbox has no sidecar — explicitly disable it so
+        // the BoW fallback path is used and the circuit-breaker never trips.
+        builder.UseSetting("Mozgoslav:PythonSidecar:BaseUrl", string.Empty);
         // Kept as a belt-and-braces signal for any code that DOES read config late
         // (e.g. services that resolve IConfiguration after build). The DbContext
         // itself is overridden in ConfigureTestServices below.

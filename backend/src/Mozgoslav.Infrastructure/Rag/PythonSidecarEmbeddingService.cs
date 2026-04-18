@@ -89,13 +89,26 @@ public sealed class PythonSidecarEmbeddingService : IEmbeddingService
 
             return body.Embedding;
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidOperationException)
+        catch (Exception ex) when (IsTransientSidecarOutage(ex))
         {
             _logger.LogWarning(ex,
                 "Python sidecar /embed failed; falling back to bag-of-words for this call");
             return await _fallback.EmbedAsync(text, ct);
         }
     }
+
+    /// <summary>
+    /// G2 — recognise every exception shape the sidecar path can produce when
+    /// the service is unavailable. Includes Polly's
+    /// <see cref="Polly.ExecutionRejectedException"/> (covers
+    /// <c>BrokenCircuitException</c> + timeout rejection) so circuit-breaker
+    /// trips degrade to bag-of-words instead of bubbling a 500 up to the API.
+    /// </summary>
+    private static bool IsTransientSidecarOutage(Exception ex) =>
+        ex is HttpRequestException
+            or TaskCanceledException
+            or InvalidOperationException
+            or Polly.ExecutionRejectedException;
 
     // ADR-007-shared §2.4 — single-text request body.
     private sealed record EmbedRequest(
