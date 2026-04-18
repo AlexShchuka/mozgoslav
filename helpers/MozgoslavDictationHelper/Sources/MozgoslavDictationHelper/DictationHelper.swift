@@ -128,6 +128,25 @@ public final class DictationHelper {
                 "inputMonitoring": .string(inputMonitoring),
             ]))
 
+        case "permission.request":
+            // NEXT H1 fix — expose the native Accessibility / Input Monitoring
+            // prompts to the renderer so the Onboarding wizard can trigger
+            // them from a button click. `opened*` is true when we had to fall
+            // back to the System Settings deeplink because the OS suppressed
+            // the automatic prompt (user already denied once).
+            let accessibility = PermissionProbe.requestAccessibility()
+            let inputMonitoring = PermissionProbe.requestInputMonitoring()
+            var openedAccessibility = false
+            if !accessibility {
+                PermissionProbe.openAccessibilitySettings()
+                openedAccessibility = true
+            }
+            return JsonRpcResponse(id: request.id, result: .object([
+                "accessibility": .bool(accessibility),
+                "inputMonitoring": .bool(inputMonitoring),
+                "openedAccessibilitySettings": .bool(openedAccessibility),
+            ]))
+
         case "inject.text":
             let params = request.params?.objectValue() ?? [:]
             let text = params["text"]?.stringValue() ?? ""
