@@ -79,9 +79,12 @@ Pre-commit прогонит `dotnet format` / `eslint --fix` / `prettier --write
 - `CLAUDE.md` (root) — общая архитектура, конвенции.
 - `backend/CLAUDE.md`, `frontend/CLAUDE.md`, `python-sidecar/CLAUDE.md` — гид по каждой части.
 - `docs/README.md` — pipeline и устройство.
-- `docs/adr/` — `ADR-014-unrealized-backlog.md` (живой backlog). Shipped/superseded ADR — в `.archive/adrs/`.
-- `.archive/docs/v0.8-release/` — план релиза v0.8 поблочно (архив, shipped).
-- Live project status: `README.md` / `CLAUDE.md`. Историческая сводка v0.8 — `.archive/docs/TODO-2026-04-18.md`.
+- `docs/adr/NEXT.md` — активная очередь работы (critical + quick wins).
+- `docs/adr/POSTRELEASE.md` — задачи post-v1.0.
+- `docs/adr/ADR-014-unrealized-backlog.md` — low-priority backlog.
+- `docs/adr/ADR-016-*.md`, `ADR-017-*.md` — Proposed ADR (RAG history, /metrics).
+- Shipped/superseded ADR — `.archive/adrs/`. Release plan v0.8 — `.archive/docs/v0.8-release/`.
+- Live project status: `README.md` / `CLAUDE.md`.
 
 ## Adding a new frontend feature
 

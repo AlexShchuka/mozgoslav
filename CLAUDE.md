@@ -30,11 +30,15 @@ mozgoslav/
 - No primary constructors in frontend (see `.editorconfig`). styled-components for all styling; zero inline CSS.
 - `dotnet` commands always pass `-maxcpucount:1` (sandbox CPU rule).
 
-## Active ADRs
+## Active ADRs / планы
 
-- `docs/adr/ADR-014-unrealized-backlog.md` — living backlog of items сознательно отложенных или не тронутых. Единственный активный ADR.
+- `docs/adr/NEXT.md` — активная очередь работы (critical + quick wins).
+- `docs/adr/POSTRELEASE.md` — задачи post-v1.0 (DMG auto-update, Linux/Windows билды).
+- `docs/adr/ADR-014-unrealized-backlog.md` — living low-priority backlog.
+- `docs/adr/ADR-016-rag-chat-history-persistence.md` — Proposed. Персист бесед с RAG.
+- `docs/adr/ADR-017-backend-metrics-prometheus.md` — Proposed. `/metrics` Prometheus endpoint.
 
-Все shipped/superseded ADR перенесены в `.archive/adrs/` (ADR-001…013, 015). Release plan v0.8 — в `.archive/docs/v0.8-release/` (block-by-block).
+Все shipped/superseded ADR перенесены в `.archive/adrs/` (ADR-001…013, 015). Release plan v0.8 — в `.archive/docs/v0.8-release/`. Cancelled items с обоснованием — в `.archive/docs/backlog-cancelled-YYYY-MM-DD.md`.
 
 ## Privacy & security
 
