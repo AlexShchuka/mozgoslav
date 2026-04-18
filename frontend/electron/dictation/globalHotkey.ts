@@ -39,10 +39,19 @@ const notifyRenderer = (payload: GlobalHotkeyPayload): void => {
 /**
  * Registers the global accelerator. Safe to call multiple times — Electron
  * silently ignores duplicate registrations for the same accelerator.
+ *
+ * Task #10 — `accelerator` defaults to the cross-platform `CommandOrControl+
+ * Shift+Space` but callers can override from the persisted
+ * `AppSettings.dictationKeyboardHotkey`. Empty / whitespace falls back to the
+ * default so a blank field never breaks registration.
+ *
  * Returns `true` if the registration succeeded.
  */
-export const registerGlobalDictationHotkey = (): boolean => {
-  return globalShortcut.register(GLOBAL_HOTKEY_ACCELERATOR, () => {
+export const registerGlobalDictationHotkey = (
+  accelerator: string = GLOBAL_HOTKEY_ACCELERATOR,
+): boolean => {
+  const effective = accelerator.trim() === "" ? GLOBAL_HOTKEY_ACCELERATOR : accelerator;
+  return globalShortcut.register(effective, () => {
     notifyRenderer({ source: "global-hotkey" });
   });
 };

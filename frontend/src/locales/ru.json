@@ -169,6 +169,7 @@
       "storage": "Хранилище",
       "llm": "LLM",
       "whisper": "Whisper",
+      "dictation": "Диктовка",
       "obsidian": "Obsidian",
       "profiles": "Профили",
       "advanced": "Продвинутые",
@@ -184,9 +185,11 @@
       "whisperModelPath": "Путь к Whisper модели (.bin)",
       "vadModelPath": "Путь к VAD модели",
       "whisperThreads": "Whisper threads (0 = авто)",
+      "dictationKeyboardHotkey": "Глобальный хоткей диктовки",
       "obsidianApiHost": "Obsidian Local REST API host",
       "obsidianApiToken": "Obsidian Local REST API token"
     },
+    "hotkeyHint": "Нажми на поле и зажми желаемую комбинацию. Для активации требуется перезапуск приложения (hot-reload — в H1).",
     "theme": {
       "system": "Как в системе",
       "light": "Светлая",
@@ -329,6 +332,11 @@
     },
     "obsidian.detected": "Нашёл vault: {{path}}",
     "obsidian.notDetected": "Vault не найден — пропусти."
+  },
+  "hotkeyRecorder": {
+    "pressCombo": "Нажми комбинацию…",
+    "empty": "Не задано",
+    "clear": "Очистить"
   },
   "hotkeys": {
     "title": "Горячие клавиши",

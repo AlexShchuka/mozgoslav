@@ -6,6 +6,7 @@ import { FolderOpen, Play } from "lucide-react";
 
 import Button from "../../components/Button";
 import Card from "../../components/Card";
+import HotkeyRecorder from "../../components/HotkeyRecorder";
 import Input from "../../components/Input";
 import { AppSettings, DEFAULT_SETTINGS } from "../../domain/Settings";
 import { setThemeMode } from "../../styles/ThemeProvider";
@@ -13,7 +14,7 @@ import SyncPairing from "../SyncPairing";
 import type { SettingsProps } from "./types";
 import { PageRoot, PageTitle, Tabs, Tab, FormGrid, Toolbar, Row, SelectBox, SelectOption } from "./Settings.style";
 
-type TabKey = "general" | "storage" | "llm" | "whisper" | "obsidian" | "sync";
+type TabKey = "general" | "storage" | "llm" | "whisper" | "dictation" | "obsidian" | "sync";
 
 const Settings: FC<SettingsProps> = ({
   settings: loadedSettings,
@@ -97,6 +98,7 @@ const Settings: FC<SettingsProps> = ({
       { key: "storage" as TabKey, label: t("settings.tabs.storage") },
       { key: "llm" as TabKey, label: t("settings.tabs.llm") },
       { key: "whisper" as TabKey, label: t("settings.tabs.whisper") },
+      { key: "dictation" as TabKey, label: t("settings.tabs.dictation") },
       { key: "obsidian" as TabKey, label: t("settings.tabs.obsidian") },
       { key: "sync" as TabKey, label: t("settings.tabs.sync") },
     ]),
@@ -208,6 +210,22 @@ const Settings: FC<SettingsProps> = ({
               value={draft.whisperThreads}
               onChange={(e) => update("whisperThreads", Number(e.target.value) || 0)}
             />
+          </FormGrid>
+        </Card>
+      )}
+
+      {tab === "dictation" && (
+        <Card>
+          <FormGrid>
+            <div>
+              <label>{t("settings.fields.dictationKeyboardHotkey")}</label>
+              <HotkeyRecorder
+                value={draft.dictationKeyboardHotkey}
+                onChange={(accelerator) => update("dictationKeyboardHotkey", accelerator)}
+                hint={t("settings.hotkeyHint")}
+                testId="dictation"
+              />
+            </div>
           </FormGrid>
         </Card>
       )}

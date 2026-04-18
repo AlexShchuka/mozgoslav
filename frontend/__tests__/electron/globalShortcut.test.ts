@@ -78,4 +78,22 @@ describe("globalHotkey — electron main process (TODO-1)", () => {
       source: "global-hotkey",
     });
   });
+
+  it("task #10 — registers a custom accelerator when provided", () => {
+    registerGlobalDictationHotkey("CommandOrControl+Alt+M");
+
+    expect(registerMock).toHaveBeenCalledWith(
+      "CommandOrControl+Alt+M",
+      expect.any(Function),
+    );
+  });
+
+  it("task #10 — empty/whitespace accelerator falls back to the default", () => {
+    registerGlobalDictationHotkey("   ");
+
+    expect(registerMock).toHaveBeenCalledWith(
+      GLOBAL_HOTKEY_ACCELERATOR,
+      expect.any(Function),
+    );
+  });
 });

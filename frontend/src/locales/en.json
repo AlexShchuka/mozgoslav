@@ -169,6 +169,7 @@
       "storage": "Storage",
       "llm": "LLM",
       "whisper": "Whisper",
+      "dictation": "Dictation",
       "obsidian": "Obsidian",
       "profiles": "Profiles",
       "advanced": "Advanced",
@@ -184,9 +185,11 @@
       "whisperModelPath": "Whisper model path (.bin)",
       "vadModelPath": "VAD model path",
       "whisperThreads": "Whisper threads (0 = auto)",
+      "dictationKeyboardHotkey": "Global dictation hotkey",
       "obsidianApiHost": "Obsidian Local REST API host",
       "obsidianApiToken": "Obsidian Local REST API token"
     },
+    "hotkeyHint": "Click the field and hold the combination you want. Requires an app restart to take effect (hot-reload is tracked as H1).",
     "theme": {
       "system": "System",
       "light": "Light",
@@ -329,6 +332,11 @@
     },
     "obsidian.detected": "Found vault: {{path}}",
     "obsidian.notDetected": "Vault not found — skip for now."
+  },
+  "hotkeyRecorder": {
+    "pressCombo": "Press a combination…",
+    "empty": "Not set",
+    "clear": "Clear"
   },
   "hotkeys": {
     "title": "Keyboard shortcuts",

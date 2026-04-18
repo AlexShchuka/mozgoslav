@@ -271,15 +271,17 @@ app.whenReady().then(async () => {
 
   createWindow();
 
-  // Register the global dictation accelerator on every platform.
-  // Press-to-dictate on macOS is the primary use case but the accelerator is
-  // harmless on Linux/Windows (user can still invoke it).
-  const hotkeyRegistered = registerGlobalDictationHotkey();
-  if (!hotkeyRegistered) {
+  // Register the global dictation accelerator on every platform. Starts
+  // with the default (Cmd/Ctrl+Shift+Space) so the app is usable even if
+  // the backend hasn't finished booting; once settings are reachable we
+  // swap to the user's custom binding (task #10).
+  const defaultHotkeyOk = registerGlobalDictationHotkey();
+  if (!defaultHotkeyOk) {
     console.warn(
       "[globalShortcut] Failed to register CommandOrControl+Shift+Space — likely a conflicting OS binding.",
     );
   }
+  void applyCustomHotkeyFromSettings();
 
   if (process.platform === "darwin") {
     void initializeDictation();
@@ -291,6 +293,39 @@ app.whenReady().then(async () => {
     }
   });
 });
+
+/**
+ * Task #10 — swap the default dictation accelerator for the user-configured
+ * one once the backend is reachable. Polls `/api/settings` with a short
+ * back-off; gives up after a few attempts so a dead backend doesn't burn
+ * cycles. Hot-reload on subsequent saves is tracked as a follow-up
+ * (see NEXT.md H1 — it wires the native helper for push-to-talk anyway).
+ */
+const applyCustomHotkeyFromSettings = async (): Promise<void> => {
+  const maxAttempts = 8;
+  const delayMs = 750;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const response = await fetch(`${BACKEND_ORIGIN}/api/settings`);
+      if (!response.ok) throw new Error(`status ${response.status}`);
+      const settings = (await response.json()) as { dictationKeyboardHotkey?: string };
+      const custom = settings.dictationKeyboardHotkey?.trim() ?? "";
+      if (!custom) return; // user hasn't set anything — keep default.
+      unregisterGlobalDictationHotkey();
+      const ok = registerGlobalDictationHotkey(custom);
+      if (!ok) {
+        console.warn(
+          `[globalShortcut] Failed to register custom accelerator '${custom}'. Falling back to default.`,
+        );
+        registerGlobalDictationHotkey();
+      }
+      return;
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  console.warn("[globalShortcut] Backend unreachable after 8 attempts — keeping default accelerator.");
+};
 
 const initializeDictation = async (): Promise<void> => {
     try {
