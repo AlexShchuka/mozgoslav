@@ -47,7 +47,7 @@ public final class FileLog {
                 if FileManager.default.fileExists(atPath: logFile.path) {
                     if let handle = try? FileHandle(forWritingTo: logFile) {
                         defer { try? handle.close() }
-                        try? handle.seekToEnd()
+                        _ = try? handle.seekToEnd()
                         try? handle.write(contentsOf: data)
                     }
                 } else {
