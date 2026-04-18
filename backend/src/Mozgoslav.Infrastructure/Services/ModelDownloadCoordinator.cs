@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using Mozgoslav.Infrastructure.Platform;
@@ -52,13 +53,16 @@ public sealed class ModelDownloadCoordinator : IModelDownloadCoordinator, IDispo
     private readonly ModelDownloadService _downloader;
     private readonly ILogger<ModelDownloadCoordinator> _logger;
     private readonly ConcurrentDictionary<string, DownloadState> _downloads = new();
+    private readonly CancellationToken _hostStopping;
 
     public ModelDownloadCoordinator(
         ModelDownloadService downloader,
-        ILogger<ModelDownloadCoordinator> logger)
+        ILogger<ModelDownloadCoordinator> logger,
+        IHostApplicationLifetime lifetime)
     {
         _downloader = downloader;
         _logger = logger;
+        _hostStopping = lifetime.ApplicationStopping;
     }
 
     public string Start(string catalogueId, string url, string destinationPath, CancellationToken ct)
@@ -73,10 +77,14 @@ public sealed class ModelDownloadCoordinator : IModelDownloadCoordinator, IDispo
             SingleReader = false,
             SingleWriter = true
         });
-        var state = new DownloadState(channel);
+        // Link caller ct with host-stopping so background downloads abort when
+        // the app shuts down — prevents ObjectDisposedException from disposed
+        // IServiceProvider/IHttpClientFactory caught after teardown.
+        var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _hostStopping);
+        var state = new DownloadState(channel, linkedCts);
         _downloads[downloadId] = state;
 
-        _ = Task.Run(() => RunAsync(downloadId, url, destinationPath, ct), ct);
+        _ = Task.Run(() => RunAsync(downloadId, url, destinationPath, linkedCts.Token), linkedCts.Token);
         _logger.LogInformation("Queued model download {DownloadId} for {CatalogueId}", downloadId, catalogueId);
         return downloadId;
     }
@@ -137,6 +145,17 @@ public sealed class ModelDownloadCoordinator : IModelDownloadCoordinator, IDispo
                 Done: true,
                 Error: "cancelled"));
         }
+        catch (ObjectDisposedException)
+        {
+            // Host/IServiceProvider disposed mid-download (typical during test
+            // teardown or app shutdown). Treat the same as cancellation.
+            _ = state.Channel.Writer.TryWrite(new ModelDownloadProgress(
+                downloadId,
+                BytesRead: 0,
+                TotalBytes: null,
+                Done: true,
+                Error: "cancelled"));
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Model download {DownloadId} failed", downloadId);
@@ -157,7 +176,9 @@ public sealed class ModelDownloadCoordinator : IModelDownloadCoordinator, IDispo
     {
         foreach (var state in _downloads.Values)
         {
+            state.Cts.Cancel();
             state.Channel.Writer.TryComplete();
+            state.Cts.Dispose();
         }
         _downloads.Clear();
     }
@@ -165,10 +186,12 @@ public sealed class ModelDownloadCoordinator : IModelDownloadCoordinator, IDispo
     private sealed class DownloadState
     {
         public Channel<ModelDownloadProgress> Channel { get; }
+        public CancellationTokenSource Cts { get; }
 
-        public DownloadState(Channel<ModelDownloadProgress> channel)
+        public DownloadState(Channel<ModelDownloadProgress> channel, CancellationTokenSource cts)
         {
             Channel = channel;
+            Cts = cts;
         }
     }
 }

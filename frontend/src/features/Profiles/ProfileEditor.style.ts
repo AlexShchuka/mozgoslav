@@ -9,7 +9,7 @@ export const Column = styled.div`
     display: block;
     margin-bottom: ${({ theme }) => theme.space(1.5)};
     font-size: ${({ theme }) => theme.font.size.sm};
-    color: ${({ theme }) => theme.colors.textMuted};
+    color: ${({ theme }) => theme.colors.text.secondary};
   }
 `;
 
@@ -17,9 +17,9 @@ export const SelectBox = styled.select`
   width: 100%;
   height: 40px;
   padding: 0 ${({ theme }) => theme.space(3)};
-  background: ${({ theme }) => theme.colors.surface};
-  color: ${({ theme }) => theme.colors.text};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
+  color: ${({ theme }) => theme.colors.text.primary};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   border-radius: ${({ theme }) => theme.radii.md};
   font-family: inherit;
   font-size: ${({ theme }) => theme.font.size.md};
@@ -27,20 +27,20 @@ export const SelectBox = styled.select`
   &:focus-visible {
     outline: 2px solid ${({ theme }) => theme.colors.focusRing};
     outline-offset: 2px;
-    border-color: ${({ theme }) => theme.colors.accent};
+    border-color: ${({ theme }) => theme.colors.accent.primary};
   }
 `;
 
 export const SelectOption = styled.option`
-  background: ${({ theme }) => theme.colors.surface};
-  color: ${({ theme }) => theme.colors.text};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const TextArea = styled.textarea`
   width: 100%;
-  background: ${({ theme }) => theme.colors.surface};
-  color: ${({ theme }) => theme.colors.text};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
+  color: ${({ theme }) => theme.colors.text.primary};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   border-radius: ${({ theme }) => theme.radii.md};
   padding: ${({ theme }) => theme.space(2.5)};
   font-family: ${({ theme }) => theme.font.familyMono};
@@ -51,7 +51,7 @@ export const TextArea = styled.textarea`
   &:focus-visible {
     outline: 2px solid ${({ theme }) => theme.colors.focusRing};
     outline-offset: 2px;
-    border-color: ${({ theme }) => theme.colors.accent};
+    border-color: ${({ theme }) => theme.colors.accent.primary};
   }
 `;
 
@@ -61,7 +61,7 @@ export const TagEditor = styled.div`
   gap: ${({ theme }) => theme.space(1.5)};
   align-items: center;
   padding: ${({ theme }) => theme.space(2)};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   border-radius: ${({ theme }) => theme.radii.md};
 
   > div {
@@ -72,8 +72,8 @@ export const TagEditor = styled.div`
 
 export const TagPill = styled.button`
   border: 0;
-  background: ${({ theme }) => theme.colors.accentSoft};
-  color: ${({ theme }) => theme.colors.accent};
+  background: ${({ theme }) => theme.colors.accent.soft};
+  color: ${({ theme }) => theme.colors.accent.primary};
   padding: ${({ theme }) => `${theme.space(1)} ${theme.space(2)}`};
   border-radius: ${({ theme }) => theme.radii.full};
   font-size: ${({ theme }) => theme.font.size.xs};
@@ -97,7 +97,7 @@ export const ToggleRow = styled.div`
   label {
     margin: 0;
     cursor: pointer;
-    color: ${({ theme }) => theme.colors.text};
+    color: ${({ theme }) => theme.colors.text.primary};
   }
 `;
 

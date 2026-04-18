@@ -23,6 +23,9 @@ public sealed class ProcessQueueWorker
 {
     private const int TranscribeEnd = 50;
     private const int CorrectionEnd = 60;
+    // Plan v0.8 Block 5 — LLM correction stage sits between filler cleanup
+    // (60) and summarisation (85). Progress weighting matches the plan.
+    private const int LlmCorrectionEnd = 70;
     private const int SummarizeEnd = 85;
     private const int ExportEnd = 100;
 
@@ -36,8 +39,11 @@ public sealed class ProcessQueueWorker
     private readonly ILlmService _llmService;
     private readonly IMarkdownExporter _exporter;
     private readonly CorrectionService _correctionService;
+    private readonly GlossaryApplicator _glossary;
+    private readonly LlmCorrectionService _llmCorrection;
     private readonly IAppSettings _settings;
     private readonly IJobProgressNotifier _progressNotifier;
+    private readonly IJobCancellationRegistry _cancellationRegistry;
     private readonly ILogger<ProcessQueueWorker> _logger;
 
     public ProcessQueueWorker(
@@ -51,8 +57,11 @@ public sealed class ProcessQueueWorker
         ILlmService llmService,
         IMarkdownExporter exporter,
         CorrectionService correctionService,
+        GlossaryApplicator glossary,
+        LlmCorrectionService llmCorrection,
         IAppSettings settings,
         IJobProgressNotifier progressNotifier,
+        IJobCancellationRegistry cancellationRegistry,
         ILogger<ProcessQueueWorker> logger)
     {
         _jobs = jobs;
@@ -65,17 +74,22 @@ public sealed class ProcessQueueWorker
         _llmService = llmService;
         _exporter = exporter;
         _correctionService = correctionService;
+        _glossary = glossary;
+        _llmCorrection = llmCorrection;
         _settings = settings;
         _progressNotifier = progressNotifier;
+        _cancellationRegistry = cancellationRegistry;
         _logger = logger;
     }
 
     /// <summary>
     /// Loads <paramref name="jobId"/> from the repository and runs the full
     /// pipeline against it. Never throws for pipeline-internal failures — the
-    /// job row transitions to <see cref="JobStatus.Failed"/> with the error
-    /// message. Host-shutdown <see cref="OperationCanceledException"/> DOES
-    /// propagate so Quartz can ack the trigger cleanly.
+    /// job row transitions to <see cref="JobStatus.Failed"/> (or
+    /// <see cref="JobStatus.Cancelled"/> on user-initiated cancel via ADR-015)
+    /// with the error message. Host-shutdown
+    /// <see cref="OperationCanceledException"/> DOES propagate so Quartz can
+    /// ack the trigger cleanly.
     /// </summary>
     public async Task ProcessJobAsync(Guid jobId, CancellationToken ct)
     {
@@ -85,24 +99,52 @@ public sealed class ProcessQueueWorker
             _logger.LogWarning("Quartz trigger fired for unknown job {JobId} — skipping", jobId);
             return;
         }
-        if (job.Status is JobStatus.Done or JobStatus.Failed)
+        if (job.Status is JobStatus.Done or JobStatus.Failed or JobStatus.Cancelled)
         {
             _logger.LogInformation("Quartz trigger fired for already-terminal job {JobId} — skipping", jobId);
             return;
         }
 
+        // ADR-015 — register a per-job linked CTS so the cancel endpoint can
+        // signal cooperative cancellation on the active pipeline stage. The
+        // pipeline runs against `perJobToken`; the host-stopping `ct` is kept
+        // separately so the `when` filter below can distinguish a host-stopping
+        // OCE (re-thrown) from a user-cancel OCE (mark Cancelled).
+        var perJobToken = _cancellationRegistry.Register(job.Id, ct).Token;
+
         try
         {
-            await RunPipelineAsync(job, ct);
+            if (job.CancelRequested)
+            {
+                // Cancel was requested while the job was still Queued — skip
+                // the pipeline entirely and go straight to the terminal state.
+                await MarkCancelledAsync(job);
+                return;
+            }
+
+            await RunPipelineAsync(job, perJobToken);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            // Cooperative cancel — host is still running, only the per-job
+            // token was cancelled. Transition to the Cancelled terminal state
+            // using CancellationToken.None so the repo/notifier writes survive.
+            _logger.LogInformation("Processing job {JobId} cancelled by user", job.Id);
+            await MarkCancelledAsync(job);
         }
         catch (OperationCanceledException)
         {
+            // Host is shutting down — propagate upward so the loop can exit.
             throw;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Processing job {JobId} failed", job.Id);
             await MarkFailedAsync(job, ex.Message, ct);
+        }
+        finally
+        {
+            _cancellationRegistry.Unregister(job.Id);
         }
     }
 
@@ -120,8 +162,11 @@ public sealed class ProcessQueueWorker
         var wavPath = await _audioConverter.ConvertToWavAsync(recording.FilePath, ct);
 
         var segmentProgress = new Progress<int>(p => _ = UpdateProgressAsync(job, ScaleProgress(p, 0, TranscribeEnd), ct));
+        // Plan v0.8 Block 5 — glossary drives Whisper `initial_prompt`. Empty
+        // glossary → null → existing behaviour (no prompt override).
+        var whisperInitialPrompt = _glossary.TryBuildInitialPrompt(profile);
         var segments = await _transcriptionService.TranscribeAsync(
-            wavPath, _settings.Language, profile.SystemPrompt, segmentProgress, ct);
+            wavPath, _settings.Language, whisperInitialPrompt, segmentProgress, ct);
 
         var transcript = new Transcript
         {
@@ -138,11 +183,22 @@ public sealed class ProcessQueueWorker
         await TransitionAsync(job, JobStatus.Correcting, CorrectionEnd, "Cleaning transcript", ct);
         var cleanText = _correctionService.Correct(transcript.RawText, profile);
 
-        await TransitionAsync(job, JobStatus.Summarizing, CorrectionEnd, "Summarizing via LLM", ct);
+        // Plan v0.8 Block 5 — optional LLM correction pass. When the profile
+        // opts in and the LLM is reachable, rewrite the transcript to fix
+        // homophones / proper-noun spellings / punctuation. On any failure
+        // the service returns the raw text, so the pipeline never stalls.
+        if (profile.LlmCorrectionEnabled && await _llmService.IsAvailableAsync(ct))
+        {
+            await TransitionAsync(job, JobStatus.Correcting, LlmCorrectionEnd, "LLM correction", ct);
+            cleanText = await _llmCorrection.CorrectAsync(cleanText, profile, ct);
+        }
+
+        await TransitionAsync(job, JobStatus.Summarizing, LlmCorrectionEnd, "Summarizing via LLM", ct);
         LlmProcessingResult? llmResult = null;
         if (await _llmService.IsAvailableAsync(ct))
         {
-            llmResult = await _llmService.ProcessAsync(cleanText, profile.SystemPrompt, ct);
+            var summarisationSystemPrompt = ComposeSummarisationPrompt(profile);
+            llmResult = await _llmService.ProcessAsync(cleanText, summarisationSystemPrompt, ct);
         }
         else
         {
@@ -233,9 +289,30 @@ public sealed class ProcessQueueWorker
         await _progressNotifier.PublishAsync(job, ct);
     }
 
+    /// <summary>
+    /// ADR-015 — terminal transition for user-initiated cancellation. Uses
+    /// <see cref="CancellationToken.None"/> so the persistence + SSE publish
+    /// complete even though the per-job token is already in the cancelled state.
+    /// </summary>
+    private async Task MarkCancelledAsync(ProcessingJob job)
+    {
+        job.Status = JobStatus.Cancelled;
+        job.FinishedAt = DateTime.UtcNow;
+        await _jobs.UpdateAsync(job, CancellationToken.None);
+        await _progressNotifier.PublishAsync(job, CancellationToken.None);
+    }
+
     private static int ScaleProgress(int inputPercent, int rangeStart, int rangeEnd)
     {
         var clamped = Math.Clamp(inputPercent, 0, 100);
         return rangeStart + (int)((rangeEnd - rangeStart) * (clamped / 100.0));
+    }
+
+    private string ComposeSummarisationPrompt(Profile profile)
+    {
+        var suffix = _glossary.TryBuildLlmSystemPromptSuffix(profile);
+        return string.IsNullOrWhiteSpace(suffix)
+            ? profile.SystemPrompt
+            : profile.SystemPrompt + "\n\n" + suffix;
     }
 }

@@ -62,6 +62,74 @@ public sealed class EfProcessingJobRepositoryTests
     }
 
     [TestMethod]
+    public async Task GetActiveAsync_ExcludesCancelledJobs()
+    {
+        // ADR-015 — Cancelled is a terminal state; active queue must not
+        // surface it.
+        await using var db = new TestDatabase();
+        await using var ctx = db.CreateContext();
+        var repo = new EfProcessingJobRepository(ctx);
+
+        await repo.EnqueueAsync(new ProcessingJob
+        {
+            RecordingId = Guid.NewGuid(),
+            ProfileId = Guid.NewGuid(),
+            Status = JobStatus.Queued
+        }, CancellationToken.None);
+        await repo.EnqueueAsync(new ProcessingJob
+        {
+            RecordingId = Guid.NewGuid(),
+            ProfileId = Guid.NewGuid(),
+            Status = JobStatus.Transcribing
+        }, CancellationToken.None);
+        await repo.EnqueueAsync(new ProcessingJob
+        {
+            RecordingId = Guid.NewGuid(),
+            ProfileId = Guid.NewGuid(),
+            Status = JobStatus.Done
+        }, CancellationToken.None);
+        await repo.EnqueueAsync(new ProcessingJob
+        {
+            RecordingId = Guid.NewGuid(),
+            ProfileId = Guid.NewGuid(),
+            Status = JobStatus.Failed
+        }, CancellationToken.None);
+        await repo.EnqueueAsync(new ProcessingJob
+        {
+            RecordingId = Guid.NewGuid(),
+            ProfileId = Guid.NewGuid(),
+            Status = JobStatus.Cancelled
+        }, CancellationToken.None);
+
+        var active = await repo.GetActiveAsync(CancellationToken.None);
+        active.Should().HaveCount(2);
+        active.Select(j => j.Status).Should().BeEquivalentTo([JobStatus.Queued, JobStatus.Transcribing]);
+    }
+
+    [TestMethod]
+    public async Task SetCancelRequestedAsync_PersistsFlagAndPublishesToNotifier()
+    {
+        await using var db = new TestDatabase();
+        await using var ctx = db.CreateContext();
+        var repo = new EfProcessingJobRepository(ctx);
+
+        var job = new ProcessingJob
+        {
+            RecordingId = Guid.NewGuid(),
+            ProfileId = Guid.NewGuid(),
+            Status = JobStatus.Transcribing
+        };
+        await repo.EnqueueAsync(job, CancellationToken.None);
+
+        await repo.SetCancelRequestedAsync(job.Id, CancellationToken.None);
+
+        await using var freshCtx = db.CreateContext();
+        var reloaded = await new EfProcessingJobRepository(freshCtx).GetAllAsync(CancellationToken.None);
+        reloaded.Should().ContainSingle();
+        reloaded[0].CancelRequested.Should().BeTrue();
+    }
+
+    [TestMethod]
     public async Task UpdateAsync_PersistsProgressAndHint()
     {
         await using var db = new TestDatabase();

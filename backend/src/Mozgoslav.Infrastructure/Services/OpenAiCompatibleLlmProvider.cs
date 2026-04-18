@@ -10,7 +10,7 @@ using OpenAI.Chat;
 namespace Mozgoslav.Infrastructure.Services;
 
 /// <summary>
-/// TODO-3 — <see cref="ILlmProvider"/> for any OpenAI-compatible endpoint
+/// <see cref="ILlmProvider"/> for any OpenAI-compatible endpoint
 /// (LM Studio, Ollama's OpenAI adapter, llama.cpp HTTP server, etc.). Uses the
 /// official OpenAI .NET SDK; the base URL + API key + model come from
 /// <see cref="IAppSettings"/>. Network-level failures log a WARN and return an

@@ -60,6 +60,45 @@ public static class JobEndpoints
             return Results.Created($"/api/jobs/{job.Id}", job);
         });
 
+        // ADR-015 — cancel a processing job. Happy-path outcomes:
+        //   Queued    → 204 (flip straight to Cancelled + publish)
+        //   Active    → 202 (set CancelRequested + signal the per-job CTS;
+        //               worker transitions to Cancelled via SSE)
+        //   Done/Failed/Cancelled → 409 (already terminal)
+        //   Unknown id → 404
+        endpoints.MapPost("/api/jobs/{id:guid}/cancel", async (
+            Guid id,
+            IProcessingJobRepository jobs,
+            IJobCancellationRegistry registry,
+            IJobProgressNotifier notifier,
+            CancellationToken ct) =>
+        {
+            var job = await jobs.GetByIdAsync(id, ct);
+            if (job is null)
+            {
+                return Results.NotFound();
+            }
+
+            if (job.Status is JobStatus.Done or JobStatus.Failed or JobStatus.Cancelled)
+            {
+                return Results.Conflict(new { error = "job already in terminal state" });
+            }
+
+            if (job.Status == JobStatus.Queued)
+            {
+                job.Status = JobStatus.Cancelled;
+                job.FinishedAt = DateTime.UtcNow;
+                job.CancelRequested = true;
+                await jobs.UpdateAsync(job, ct);
+                await notifier.PublishAsync(job, ct);
+                return Results.NoContent();
+            }
+
+            await jobs.SetCancelRequestedAsync(id, ct);
+            registry.TryCancel(id);
+            return Results.Accepted();
+        });
+
         return endpoints;
     }
 }

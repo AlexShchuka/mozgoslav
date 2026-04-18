@@ -7,6 +7,8 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Domain.Entities;
+using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Tests.Integration;
 
@@ -57,18 +59,18 @@ public sealed class ObsidianBulkExportTests
                 var profiles = scope.ServiceProvider.GetRequiredService<IProfileRepository>();
 
                 var profile = (await profiles.GetAllAsync(TestContext.CancellationToken))[0];
-                var recording = new Mozgoslav.Domain.Entities.Recording
+                var recording = new Recording
                 {
                     FileName = "x.wav",
                     FilePath = "/tmp/x.wav",
                     Sha256 = Guid.NewGuid().ToString("N"),
-                    Format = Mozgoslav.Domain.Enums.AudioFormat.Wav,
-                    SourceType = Mozgoslav.Domain.Enums.SourceType.Imported,
-                    Status = Mozgoslav.Domain.Enums.RecordingStatus.Transcribed,
+                    Format = AudioFormat.Wav,
+                    SourceType = SourceType.Imported,
+                    Status = RecordingStatus.Transcribed,
                     Duration = TimeSpan.FromSeconds(1),
                 };
                 await recordings.AddAsync(recording, TestContext.CancellationToken);
-                var transcript = new Mozgoslav.Domain.Entities.Transcript
+                var transcript = new Transcript
                 {
                     RecordingId = recording.Id,
                     ModelUsed = "t",
@@ -76,7 +78,7 @@ public sealed class ObsidianBulkExportTests
                     RawText = "r",
                 };
                 await transcripts.AddAsync(transcript, TestContext.CancellationToken);
-                await notes.AddAsync(new Mozgoslav.Domain.Entities.ProcessedNote
+                await notes.AddAsync(new ProcessedNote
                 {
                     TranscriptId = transcript.Id,
                     ProfileId = profile.Id,

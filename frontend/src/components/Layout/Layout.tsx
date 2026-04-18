@@ -14,6 +14,7 @@ import {
   Sidebar,
   SidebarFooter,
   SidebarGroup,
+  SidebarIconSlot,
   SidebarItem,
   SidebarSection,
   StatusDot,
@@ -107,7 +108,7 @@ interface NavItemProps {
 
 const NavItem: FC<NavItemProps> = ({ to, icon, children }) => (
   <SidebarItem as={NavLink} to={to} end>
-    {icon}
+    <SidebarIconSlot>{icon}</SidebarIconSlot>
     <span>{children}</span>
   </SidebarItem>
 );

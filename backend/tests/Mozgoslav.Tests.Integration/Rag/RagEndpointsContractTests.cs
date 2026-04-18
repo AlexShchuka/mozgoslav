@@ -6,6 +6,10 @@ using FluentAssertions;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Domain.Entities;
+using Mozgoslav.Domain.Enums;
+
 namespace Mozgoslav.Tests.Integration.Rag;
 
 /// <summary>
@@ -105,24 +109,24 @@ public sealed class RagEndpointsContractTests
         Guid seededNoteId;
         using (var scope = factory.Services.CreateScope())
         {
-            var profiles = scope.ServiceProvider.GetRequiredService<Mozgoslav.Application.Interfaces.IProfileRepository>();
-            var notes = scope.ServiceProvider.GetRequiredService<Mozgoslav.Application.Interfaces.IProcessedNoteRepository>();
-            var transcripts = scope.ServiceProvider.GetRequiredService<Mozgoslav.Application.Interfaces.ITranscriptRepository>();
-            var recordings = scope.ServiceProvider.GetRequiredService<Mozgoslav.Application.Interfaces.IRecordingRepository>();
+            var profiles = scope.ServiceProvider.GetRequiredService<IProfileRepository>();
+            var notes = scope.ServiceProvider.GetRequiredService<IProcessedNoteRepository>();
+            var transcripts = scope.ServiceProvider.GetRequiredService<ITranscriptRepository>();
+            var recordings = scope.ServiceProvider.GetRequiredService<IRecordingRepository>();
 
             var profile = (await profiles.GetAllAsync(TestContext.CancellationToken))[0];
-            var recording = new Mozgoslav.Domain.Entities.Recording
+            var recording = new Recording
             {
                 FileName = "g.wav",
                 FilePath = "/tmp/g.wav",
                 Sha256 = Guid.NewGuid().ToString("N"),
-                Format = Mozgoslav.Domain.Enums.AudioFormat.Wav,
-                SourceType = Mozgoslav.Domain.Enums.SourceType.Imported,
-                Status = Mozgoslav.Domain.Enums.RecordingStatus.Transcribed,
+                Format = AudioFormat.Wav,
+                SourceType = SourceType.Imported,
+                Status = RecordingStatus.Transcribed,
                 Duration = TimeSpan.FromSeconds(1),
             };
             await recordings.AddAsync(recording, TestContext.CancellationToken);
-            var transcript = new Mozgoslav.Domain.Entities.Transcript
+            var transcript = new Transcript
             {
                 RecordingId = recording.Id,
                 ModelUsed = "test",
@@ -130,7 +134,7 @@ public sealed class RagEndpointsContractTests
                 RawText = "body",
             };
             await transcripts.AddAsync(transcript, TestContext.CancellationToken);
-            var note = new Mozgoslav.Domain.Entities.ProcessedNote
+            var note = new ProcessedNote
             {
                 TranscriptId = transcript.Id,
                 ProfileId = profile.Id,
@@ -187,24 +191,24 @@ public sealed class RagEndpointsContractTests
         await using var factory = new ApiFactory();
         using (var scope = factory.Services.CreateScope())
         {
-            var notes = scope.ServiceProvider.GetRequiredService<Mozgoslav.Application.Interfaces.IProcessedNoteRepository>();
-            var transcripts = scope.ServiceProvider.GetRequiredService<Mozgoslav.Application.Interfaces.ITranscriptRepository>();
-            var recordings = scope.ServiceProvider.GetRequiredService<Mozgoslav.Application.Interfaces.IRecordingRepository>();
-            var profiles = scope.ServiceProvider.GetRequiredService<Mozgoslav.Application.Interfaces.IProfileRepository>();
+            var notes = scope.ServiceProvider.GetRequiredService<IProcessedNoteRepository>();
+            var transcripts = scope.ServiceProvider.GetRequiredService<ITranscriptRepository>();
+            var recordings = scope.ServiceProvider.GetRequiredService<IRecordingRepository>();
+            var profiles = scope.ServiceProvider.GetRequiredService<IProfileRepository>();
 
             var profile = (await profiles.GetAllAsync(TestContext.CancellationToken))[0];
-            var recording = new Mozgoslav.Domain.Entities.Recording
+            var recording = new Recording
             {
                 FileName = "f.wav",
                 FilePath = "/tmp/f.wav",
                 Sha256 = Guid.NewGuid().ToString("N"),
-                Format = Mozgoslav.Domain.Enums.AudioFormat.Wav,
-                SourceType = Mozgoslav.Domain.Enums.SourceType.Imported,
-                Status = Mozgoslav.Domain.Enums.RecordingStatus.Transcribed,
+                Format = AudioFormat.Wav,
+                SourceType = SourceType.Imported,
+                Status = RecordingStatus.Transcribed,
                 Duration = TimeSpan.FromSeconds(1),
             };
             await recordings.AddAsync(recording, TestContext.CancellationToken);
-            var transcript = new Mozgoslav.Domain.Entities.Transcript
+            var transcript = new Transcript
             {
                 RecordingId = recording.Id,
                 ModelUsed = "test",
@@ -212,7 +216,7 @@ public sealed class RagEndpointsContractTests
                 RawText = "body",
             };
             await transcripts.AddAsync(transcript, TestContext.CancellationToken);
-            var note = new Mozgoslav.Domain.Entities.ProcessedNote
+            var note = new ProcessedNote
             {
                 TranscriptId = transcript.Id,
                 ProfileId = profile.Id,

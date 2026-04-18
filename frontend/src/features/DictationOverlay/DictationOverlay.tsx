@@ -1,5 +1,6 @@
 import { FC, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 import {
   OverlayRoot,
@@ -80,7 +81,7 @@ const DictationOverlay: FC<DictationOverlayProps> = ({ initialState }) => {
   );
 };
 
-const labelFor = (phase: DictationOverlayPhase, t: (key: string) => string): string => {
+const labelFor = (phase: DictationOverlayPhase, t: TFunction): string => {
   switch (phase) {
     case "recording":
       return t("dictation.overlay.recording");
@@ -95,7 +96,7 @@ const labelFor = (phase: DictationOverlayPhase, t: (key: string) => string): str
   }
 };
 
-const placeholderFor = (phase: DictationOverlayPhase, t: (key: string) => string): string => {
+const placeholderFor = (phase: DictationOverlayPhase, t: TFunction): string => {
   if (phase === "recording") return t("dictation.overlay.listening");
   if (phase === "processing") return t("dictation.overlay.finalizing");
   return "";

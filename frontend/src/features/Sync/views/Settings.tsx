@@ -2,9 +2,11 @@ import { FC, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 
-import { api } from "../../../api/MozgoslavApi";
+import { apiFactory } from "../../../api";
 import type { AppSettings } from "../../../domain/Settings";
 import { SubViewRoot, ToggleRow } from "../Sync.style";
+
+const settingsApi = apiFactory.createSettingsApi();
 
 // BC-050 — Settings sub-view toggles the Syncthing bridge at the settings
 // level. The backend's `syncthingEnabled` field drives whether the native
@@ -15,7 +17,7 @@ const SettingsView: FC = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    void api.getSettings().then(setSettings).catch(() => setSettings(null));
+    void settingsApi.getSettings().then(setSettings).catch(() => setSettings(null));
   }, []);
 
   const toggleEnabled = async (enabled: boolean) => {
@@ -23,7 +25,7 @@ const SettingsView: FC = () => {
     setSaving(true);
     const next = { ...settings, syncthingEnabled: enabled };
     try {
-      const saved = await api.saveSettings(next);
+      const saved = await settingsApi.saveSettings(next);
       setSettings(saved);
       toast.success(t("settings.savedToast"));
     } catch (err) {

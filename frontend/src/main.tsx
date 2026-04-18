@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { HashRouter } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
+import { MotionConfig } from "framer-motion";
 
 import App from "./App";
 import { configureAppStore } from "./store";
@@ -21,10 +22,16 @@ createRoot(rootElement).render(
   <StrictMode>
     <Provider store={store}>
       <MozgoslavThemeProvider>
-        <HashRouter>
-          <App />
-          <ToastContainer position="top-right" theme="colored" newestOnTop autoClose={3500} />
-        </HashRouter>
+        {/* ADR-013 — respect OS reduced-motion preference globally. framer-motion
+            strips transform/opacity animations when `reducedMotion="user"` and
+            the user enabled it in system settings. Non-framer CSS animations are
+            covered by GlobalStyle.ts @media (prefers-reduced-motion: reduce). */}
+        <MotionConfig reducedMotion="user">
+          <HashRouter>
+            <App />
+            <ToastContainer position="top-right" theme="colored" newestOnTop autoClose={3500} />
+          </HashRouter>
+        </MotionConfig>
       </MozgoslavThemeProvider>
     </Provider>
   </StrictMode>,

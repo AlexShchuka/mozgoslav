@@ -13,7 +13,7 @@ namespace Mozgoslav.Infrastructure.Services;
 /// excluded to keep the archive small; vault content is the user's responsibility
 /// and lives outside our directory.
 /// <para>
-/// TODO-9 — .NET 10's <c>ZipFile</c> API still does not expose
+/// Note: .NET 10's <c>ZipFile</c> API still does not expose
 /// <c>OpenAsync</c>, so the actual compression loop runs on a background
 /// thread via <see cref="Task.Run(System.Action,System.Threading.CancellationToken)"/>.
 /// This keeps the calling request thread free while hundreds of megabytes are

@@ -80,8 +80,8 @@ public sealed class BackupServiceTests
         var path = await svc.CreateAsync(CancellationToken.None);
         _producedBackups.Add(path);
 
-        using var fileStream = File.OpenRead(path);
-        using var archive = new ZipArchive(fileStream, ZipArchiveMode.Read);
+        await using var fileStream = File.OpenRead(path);
+        await using var archive = new ZipArchive(fileStream, ZipArchiveMode.Read);
         archive.Entries.Should().Contain(e => e.FullName == "mozgoslav.db");
     }
 

@@ -8,5 +8,9 @@ public enum JobStatus
     Summarizing,
     Exporting,
     Done,
-    Failed
+    Failed,
+    // ADR-015 — terminal state for user-initiated cancellation. Placed last so
+    // any caller that still reads the int ordinal (EF converter uses the name
+    // so not affected, but defence in depth) sees the historical values pinned.
+    Cancelled
 }

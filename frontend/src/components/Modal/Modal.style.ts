@@ -13,8 +13,8 @@ export const Backdrop = styled.div`
 `;
 
 export const Dialog = styled.div`
-  background: ${({ theme }) => theme.colors.surfaceElevated};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.bg.elevated3};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   border-radius: ${({ theme }) => theme.radii.lg};
   box-shadow: ${({ theme }) => theme.shadow.lg};
   max-width: 92vw;
@@ -30,14 +30,14 @@ export const Header = styled.header`
   justify-content: space-between;
   gap: ${({ theme }) => theme.space(3)};
   padding: ${({ theme }) => `${theme.space(4)} ${theme.space(5)}`};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border.subtle};
 `;
 
 export const Title = styled.h2`
   margin: 0;
   font-size: ${({ theme }) => theme.font.size.lg};
   font-weight: ${({ theme }) => theme.font.weight.semibold};
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const CloseButton = styled.button`
@@ -47,14 +47,14 @@ export const CloseButton = styled.button`
   padding: ${({ theme }) => theme.space(1.5)};
   background: transparent;
   border: 0;
-  color: ${({ theme }) => theme.colors.textMuted};
+  color: ${({ theme }) => theme.colors.text.secondary};
   border-radius: ${({ theme }) => theme.radii.sm};
   cursor: pointer;
-  transition: background ${({ theme }) => theme.motion.fast}, color ${({ theme }) => theme.motion.fast};
+  transition: background ${({ theme }) => theme.motion.duration.fast}, color ${({ theme }) => theme.motion.duration.fast};
 
   &:hover {
-    background: ${({ theme }) => theme.colors.bg};
-    color: ${({ theme }) => theme.colors.text};
+    background: ${({ theme }) => theme.colors.bg.base};
+    color: ${({ theme }) => theme.colors.text.primary};
   }
 `;
 
@@ -69,6 +69,6 @@ export const Footer = styled.footer`
   justify-content: flex-end;
   gap: ${({ theme }) => theme.space(2)};
   padding: ${({ theme }) => `${theme.space(3)} ${theme.space(5)}`};
-  border-top: 1px solid ${({ theme }) => theme.colors.border};
-  background: ${({ theme }) => theme.colors.bg};
+  border-top: 1px solid ${({ theme }) => theme.colors.border.subtle};
+  background: ${({ theme }) => theme.colors.bg.base};
 `;

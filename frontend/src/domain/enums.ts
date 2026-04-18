@@ -7,7 +7,9 @@ export type JobStatus =
   | "Summarizing"
   | "Exporting"
   | "Done"
-  | "Failed";
+  | "Failed"
+  // ADR-015 — terminal state for user-initiated cancellation.
+  | "Cancelled";
 export type RecordingStatus = "New" | "Transcribing" | "Transcribed" | "Failed";
 export type AudioFormat = "Mp3" | "M4A" | "Wav" | "Mp4" | "Ogg" | "Flac" | "Webm" | "Aac";
 export type SourceType = "Recorded" | "Imported";

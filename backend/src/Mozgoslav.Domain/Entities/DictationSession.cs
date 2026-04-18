@@ -16,7 +16,7 @@ public sealed class DictationSession
     public DateTime? FinishedAt { get; set; }
 
     /// <summary>
-    /// TODO-1 — origin of the session: "mouse5" (Electron mouse-button hotkey),
+    /// Origin of the session: "mouse5" (Electron mouse-button hotkey),
     /// "dashboard" (in-app record button), "global-hotkey" (system-wide shortcut).
     /// <c>null</c> for legacy callers that do not declare a source.
     /// </summary>

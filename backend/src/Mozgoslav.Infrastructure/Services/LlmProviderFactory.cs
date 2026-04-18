@@ -5,7 +5,7 @@ using Mozgoslav.Application.Interfaces;
 namespace Mozgoslav.Infrastructure.Services;
 
 /// <summary>
-/// TODO-3 / BC-036 — routes runtime LLM calls to the provider whose
+/// BC-036 routes runtime LLM calls to the provider whose
 /// <see cref="ILlmProvider.Kind"/> matches <see cref="IAppSettings.LlmProvider"/>.
 /// Unknown / empty values fall back to <see cref="DefaultKind"/> with a WARN.
 /// </summary>

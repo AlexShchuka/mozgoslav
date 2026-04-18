@@ -14,6 +14,35 @@ public static class AppPaths
 
     public static string Root => Path.Combine(AppDataRoot(), AppName);
     public static string Models => Path.Combine(Root, "models");
+
+    /// <summary>
+    /// Plan v0.8 Block 2 / ADR-010 §2.4 — Tier-1 bundle directory inside the
+    /// Electron resources tree. Populated at build time by
+    /// <c>scripts/fetch-bundle-models.sh</c>.
+    /// <para>
+    /// Resolution order:
+    /// <list type="number">
+    ///   <item><description>Env var <c>MOZGOSLAV_BUNDLE_MODELS_DIR</c> — set by
+    ///   the Electron launcher from <c>process.resourcesPath</c>.</description></item>
+    ///   <item><description>Repo-local <c>frontend/build/bundle-models</c> for
+    ///   dev boxes that ran <c>npm run dist:mac</c> at least once.</description></item>
+    ///   <item><description>Empty string when nothing is available; callers
+    ///   gracefully fall back to the Tier-2 download path.</description></item>
+    /// </list>
+    /// </para>
+    /// </summary>
+    public static string BundleModelsDir
+    {
+        get
+        {
+            var env = Environment.GetEnvironmentVariable("MOZGOSLAV_BUNDLE_MODELS_DIR");
+            if (!string.IsNullOrWhiteSpace(env) && Directory.Exists(env))
+            {
+                return env;
+            }
+            return string.Empty;
+        }
+    }
     public static string Database => Path.Combine(Root, "mozgoslav.db");
     public static string Logs => Path.Combine(Root, "logs");
     public static string Temp => Path.Combine(Root, "temp");

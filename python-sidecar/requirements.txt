@@ -1,8 +1,9 @@
 # Production dependencies for the Mozgoslav Python ML sidecar.
-# Versions mirror docs/original-idea/DEFAULT-CONFIG.md §4.
-# These are declared for packaging/production but NOT installed in the
-# local sandbox: the ML stack (torch, transformers, ...) weighs ~4 GB.
-# For local development, install requirements-dev.txt instead.
+# The full stack (torch + transformers + librosa + …) weighs ~4 GB
+# resolved; installing it happens at DMG build time on macOS and at
+# first sidecar start on Linux dev boxes. The CI Dockerfile
+# (``Dockerfile.test``) installs this file minus ``transformers``
+# (audeering gender/emotion — Tier 2, not in CI).
 
 # --- Web framework ---
 fastapi>=0.115.0
@@ -10,8 +11,15 @@ uvicorn[standard]>=0.32.0
 python-multipart>=0.0.18
 
 # --- ML runtime ---
-torch>=2.6.0
-torchaudio>=2.6.0
+# torch pulls ~4GB of CUDA wheels on Linux by default — overkill for the
+# sidecar which runs CPU-only. Pin Linux to the CPU-only index; macOS wheels
+# are CPU-native already and resolve from PyPI. PEP 440 forbids `>=` with
+# local version labels (`+cpu`), so Linux uses exact-pin.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.6.0 ; sys_platform == 'darwin'
+torch==2.6.0+cpu ; sys_platform == 'linux'
+torchaudio>=2.6.0 ; sys_platform == 'darwin'
+torchaudio==2.6.0+cpu ; sys_platform == 'linux'
 transformers>=4.49.0
 huggingface_hub>=0.29.0
 soundfile>=0.13.0
@@ -19,8 +27,14 @@ librosa>=0.10.2
 numpy>=2.2.0
 
 # --- Diarization stack ---
+# ``webrtcvad-wheels`` ships precompiled wheels for the resemblyzer's
+# mandatory ``webrtcvad`` dependency — the original ``webrtcvad``
+# package fails to build on Python 3.12 without a pre-installed C
+# toolchain. The wheels package exposes the same ``webrtcvad`` import
+# name, so no code change is needed.
 silero-vad>=5.1.2
 resemblyzer>=0.1.4
+webrtcvad-wheels>=2.0.14
 scikit-learn>=1.6.1
 
 # --- NER ---

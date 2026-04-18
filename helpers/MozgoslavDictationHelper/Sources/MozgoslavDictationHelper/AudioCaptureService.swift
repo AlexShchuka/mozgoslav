@@ -76,7 +76,131 @@ public final class AudioCaptureService {
         #endif
     }
 
+    // ----- File-capture mode (plan/v0.8/03-mac-native-recorder.md §2.4) -----
+    //
+    // Distinct from the streaming path above: the callback writes directly to
+    // a wav file on disk and we do not emit per-chunk events. Each sessionId
+    // owns one AVAudioFile. Stop closes the file and returns (path, durationMs).
+
     #if canImport(AVFoundation)
+    private final class FileSession {
+        let sessionId: String
+        let outputPath: String
+        let file: AVAudioFile
+        let startedAt: Date
+        var stopped = false
+
+        init(sessionId: String, outputPath: String, file: AVAudioFile, startedAt: Date) {
+            self.sessionId = sessionId
+            self.outputPath = outputPath
+            self.file = file
+            self.startedAt = startedAt
+        }
+    }
+
+    private var fileSessions: [String: FileSession] = [:]
+    #endif
+
+    public func startFileCapture(sessionId: String, outputPath: String, sampleRate: Int) throws {
+        #if canImport(AVFoundation)
+        let targetFormat = AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: Double(sampleRate),
+            channels: 1,
+            interleaved: false
+        )!
+
+        let url = URL(fileURLWithPath: outputPath)
+        let parent = url.deletingLastPathComponent()
+        try? FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+
+        let file = try AVAudioFile(
+            forWriting: url,
+            settings: targetFormat.settings,
+            commonFormat: .pcmFormatFloat32,
+            interleaved: false
+        )
+
+        let input = engine.inputNode
+        let inputFormat = input.outputFormat(forBus: 0)
+        guard let sessionConverter = AVAudioConverter(from: inputFormat, to: targetFormat) else {
+            throw HelperError(code: -32011, message: "Failed to create audio converter")
+        }
+
+        let session = FileSession(
+            sessionId: sessionId,
+            outputPath: outputPath,
+            file: file,
+            startedAt: Date()
+        )
+        fileSessions[sessionId] = session
+
+        if !engine.isRunning {
+            input.installTap(onBus: 0, bufferSize: 4_800, format: inputFormat) { [weak self] buffer, _ in
+                self?.writeToFiles(buffer: buffer, converter: sessionConverter, targetFormat: targetFormat)
+            }
+            try engine.start()
+        }
+        #else
+        _ = sessionId
+        _ = outputPath
+        _ = sampleRate
+        throw HelperError(code: -32020, message: "File capture is macOS-only")
+        #endif
+    }
+
+    public func stopFileCapture(sessionId: String) throws -> (path: String, durationMs: Int) {
+        #if canImport(AVFoundation)
+        guard let session = fileSessions.removeValue(forKey: sessionId) else {
+            throw HelperError(code: -32021, message: "Unknown file-capture sessionId: \(sessionId)")
+        }
+        session.stopped = true
+        let durationMs = Int(Date().timeIntervalSince(session.startedAt) * 1000)
+
+        // Stop engine only if no streaming + no other file sessions remain.
+        if fileSessions.isEmpty && !isRunning {
+            engine.inputNode.removeTap(onBus: 0)
+            engine.stop()
+        }
+        return (session.outputPath, durationMs)
+        #else
+        _ = sessionId
+        throw HelperError(code: -32020, message: "File capture is macOS-only")
+        #endif
+    }
+
+    #if canImport(AVFoundation)
+    private func writeToFiles(
+        buffer: AVAudioPCMBuffer,
+        converter: AVAudioConverter,
+        targetFormat: AVAudioFormat
+    ) {
+        let ratio = targetFormat.sampleRate / buffer.format.sampleRate
+        let outputFrameCapacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio) + 32
+        guard let outputBuffer = AVAudioPCMBuffer(
+            pcmFormat: targetFormat,
+            frameCapacity: outputFrameCapacity
+        ) else { return }
+
+        var error: NSError?
+        var consumed = false
+        let status = converter.convert(to: outputBuffer, error: &error) { _, inputStatus in
+            if consumed {
+                inputStatus.pointee = .noDataNow
+                return nil
+            }
+            consumed = true
+            inputStatus.pointee = .haveData
+            return buffer
+        }
+
+        guard status != .error, outputBuffer.frameLength > 0 else { return }
+
+        for session in fileSessions.values where !session.stopped {
+            try? session.file.write(from: outputBuffer)
+        }
+    }
+
     private func process(buffer: AVAudioPCMBuffer, targetFormat: AVAudioFormat) {
         guard let converter = converter else { return }
 

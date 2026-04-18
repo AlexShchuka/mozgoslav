@@ -4,20 +4,53 @@ import { ThemeProvider } from "styled-components";
 import { ToastContainer } from "react-toastify";
 
 import Dashboard from "../Dashboard";
-import { api } from "../../../api/MozgoslavApi";
 import { lightTheme } from "../../../styles/theme";
 import "../../../i18n";
 
-jest.mock("../../../api/MozgoslavApi", () => ({
-  api: {
-    listRecordings: jest.fn().mockResolvedValue([]),
-    uploadFiles: jest.fn(),
+jest.mock("../../../api", () => {
+  const actual = jest.requireActual("../../../api");
+  const recordingStub = {
+    getAll: jest.fn().mockResolvedValue([]),
+    getById: jest.fn(),
+    importFiles: jest.fn(),
     importByPaths: jest.fn(),
-    startDictation: jest.fn(),
-    dictationPush: jest.fn(),
-    stopDictation: jest.fn(),
-  },
-}));
+    upload: jest.fn(),
+    reprocess: jest.fn(),
+    importFromMeetily: jest.fn(),
+  };
+  const dictationStub = {
+    start: jest.fn(),
+    stop: jest.fn(),
+    push: jest.fn(),
+    audioCapabilities: jest.fn(),
+  };
+  return {
+    ...actual,
+    apiFactory: {
+      ...actual.apiFactory,
+      createRecordingApi: () => recordingStub,
+      createDictationApi: () => dictationStub,
+    },
+    __recordingStub: recordingStub,
+    __dictationStub: dictationStub,
+  };
+});
+
+const recordingStub = (
+  jest.requireMock("../../../api") as { __recordingStub: Record<string, jest.Mock> }
+).__recordingStub;
+const dictationStub = (
+  jest.requireMock("../../../api") as { __dictationStub: Record<string, jest.Mock> }
+).__dictationStub;
+
+const api = {
+  listRecordings: recordingStub.getAll,
+  uploadFiles: recordingStub.upload,
+  importByPaths: recordingStub.importByPaths,
+  startDictation: dictationStub.start,
+  dictationPush: dictationStub.push,
+  stopDictation: dictationStub.stop,
+};
 
 // ------------------------------------------------------------ MediaRecorder mock
 type DataHandler = (event: { data: Blob }) => void;
@@ -78,7 +111,7 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
 
   it("Dashboard_RecordButton_IdleToRecording", async () => {
     installMocks();
-    (api.startDictation as jest.Mock).mockResolvedValue({ sessionId: "sess-1" });
+    api.startDictation.mockResolvedValue({ sessionId: "sess-1" });
 
     renderDashboard();
     const btn = await screen.findByTestId("dashboard-record");
@@ -93,8 +126,8 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
 
   it("Dashboard_RecordButton_StopsAndRendersTranscript", async () => {
     installMocks();
-    (api.startDictation as jest.Mock).mockResolvedValue({ sessionId: "sess-2" });
-    (api.stopDictation as jest.Mock).mockResolvedValue({
+    api.startDictation.mockResolvedValue({ sessionId: "sess-2" });
+    api.stopDictation.mockResolvedValue({
       transcript: "Hello world",
     });
 
@@ -124,7 +157,7 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
   it("Dashboard_RecordButton_PermissionDenied_ShowsError", async () => {
     const { getUserMedia } = installMocks();
     getUserMedia.mockRejectedValueOnce(new Error("NotAllowedError"));
-    (api.startDictation as jest.Mock).mockResolvedValue({ sessionId: "sess-3" });
+    api.startDictation.mockResolvedValue({ sessionId: "sess-3" });
 
     renderDashboard();
     await userEvent.click(await screen.findByTestId("dashboard-record"));
@@ -135,13 +168,13 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
     );
   });
 
-  // TODO-1 frontend half — global hotkey fires the same recording pipeline as
+  // Global hotkey fires the same recording pipeline as
   // the mouse-5 entry. `window.mozgoslav.onGlobalHotkey` is the preload bridge
   // the renderer subscribes to; firing it must kick the dictation lifecycle
   // off with `source: "global-hotkey"`.
   it("Dashboard_GlobalHotkey_StartsDictation", async () => {
     installMocks();
-    (api.startDictation as jest.Mock).mockResolvedValue({ sessionId: "sess-hotkey" });
+    api.startDictation.mockResolvedValue({ sessionId: "sess-hotkey" });
 
     let firedCallback: ((payload: { source: string }) => void) | null = null;
     const unsubscribe = jest.fn();

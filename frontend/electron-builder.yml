@@ -17,7 +17,13 @@ mac:
   artifactName: ${productName}-${version}-${arch}.${ext}
   hardenedRuntime: false
   gatekeeperAssess: false
+  icon: build/icon.icns
   extraResources:
+    # Plan v0.8 Block 7 — Tier-1 bundle models. Populated by
+    # scripts/fetch-bundle-models.sh before electron-builder runs.
+    - from: build/bundle-models
+      to: bundle-models
+      filter: ["**/*"]
     # Push-to-talk helper — built from helpers/MozgoslavDictationHelper
     # via `swift build -c release` on macOS CI and copied into the bundle.
     - from: ../helpers/MozgoslavDictationHelper/.build/release/mozgoslav-dictation-helper

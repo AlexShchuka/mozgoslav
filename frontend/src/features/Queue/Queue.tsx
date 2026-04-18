@@ -8,16 +8,21 @@ import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
 import ProgressBar from "../../components/ProgressBar";
-import { api } from "../../api/MozgoslavApi";
+import { apiFactory } from "../../api";
 import { ProcessingJob } from "../../domain/ProcessingJob";
+
+const jobsApi = apiFactory.createJobsApi();
 import { BACKEND_URL, API_ENDPOINTS } from "../../constants/api";
 import { PageRoot, JobRow, JobHeader, JobMeta, PageTitle, ResumeCopy } from "./Queue.style";
 
-const TERMINAL: ProcessingJob["status"][] = ["Done", "Failed"];
+// ADR-015 — `Cancelled` joins Done/Failed as a terminal state; Cancel button
+// hidden and status badge rendered with a neutral tone.
+const TERMINAL: ProcessingJob["status"][] = ["Done", "Failed", "Cancelled"];
 
 const toneFor = (status: ProcessingJob["status"]): BadgeTone => {
   if (status === "Done") return "success";
   if (status === "Failed") return "error";
+  if (status === "Cancelled") return "neutral";
   if (status === "Queued") return "neutral";
   return "accent";
 };
@@ -43,7 +48,7 @@ const Queue: FC = () => {
     let cancelled = false;
     void (async () => {
       try {
-        const initial = await api.listJobs();
+        const initial = await jobsApi.list();
         if (!cancelled) setJobs(initial);
       } catch {
         // ignored — SSE will fill in once backend is up
@@ -96,7 +101,7 @@ const Queue: FC = () => {
         return next;
       });
       try {
-        await api.cancelQueueJob(job.id);
+        await jobsApi.cancel(job.id);
         setJobs((prev) => prev.filter((j) => j.id !== job.id));
       } catch (err) {
         toast.error(err instanceof Error ? err.message : String(err));

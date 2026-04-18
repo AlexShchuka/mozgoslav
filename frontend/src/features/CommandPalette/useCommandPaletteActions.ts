@@ -4,8 +4,12 @@ import { useTranslation } from "react-i18next";
 import { useRegisterActions, Action } from "kbar";
 import { toast } from "react-toastify";
 
-import { api } from "../../api/MozgoslavApi";
+import { apiFactory } from "../../api";
 import { ROUTES } from "../../constants/routes";
+
+const ragApi = apiFactory.createRagApi();
+const backupApi = apiFactory.createBackupApi();
+const settingsApi = apiFactory.createSettingsApi();
 
 /**
  * Registers the app-wide command-palette actions via kbar. Called once from
@@ -16,7 +20,7 @@ import { ROUTES } from "../../constants/routes";
  *   - Navigation: one per sidebar route.
  *   - Quick actions: shortcuts for frequent workflows (new note, reindex, …).
  *
- * Per TODO-5 kbar handles the `Cmd+K` / `Ctrl+K` toggle cross-platform; no
+ * kbar handles the `Cmd+K` / `Ctrl+K` toggle cross-platform; no
  * manual `useHotkeys` plumbing needed.
  */
 export const useCommandPaletteActions = (): void => {
@@ -124,8 +128,8 @@ export const useCommandPaletteActions = (): void => {
         keywords: "reindex rag embeddings vector refresh",
         section: t("commandPalette.sections.quick"),
         perform: () => {
-          void api
-            .ragReindex()
+          void ragApi
+            .reindex()
             .then((res) =>
               toast.success(t("rag.reindexedToast", { count: res.indexed })),
             )
@@ -140,8 +144,8 @@ export const useCommandPaletteActions = (): void => {
         keywords: "backup create snapshot archive",
         section: t("commandPalette.sections.quick"),
         perform: () => {
-          void api
-            .createBackup()
+          void backupApi
+            .create()
             .then(() => toast.success(t("commandPalette.actions.backupStarted")))
             .catch((err) =>
               toast.error(err instanceof Error ? err.message : String(err)),
@@ -162,7 +166,7 @@ export const useCommandPaletteActions = (): void => {
               : undefined;
           void (async () => {
             try {
-              const settings = await api.getSettings();
+              const settings = await settingsApi.getSettings();
               if (!settings.vaultPath) {
                 toast.info(t("commandPalette.actions.vaultMissing"));
                 return;

@@ -13,12 +13,12 @@ export const Title = styled.h1`
   margin: 0;
   font-size: ${({ theme }) => theme.font.size.xxl};
   font-weight: ${({ theme }) => theme.font.weight.semibold};
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const Subtitle = styled.p`
   margin: 0;
-  color: ${({ theme }) => theme.colors.textMuted};
+  color: ${({ theme }) => theme.colors.text.secondary};
   font-size: ${({ theme }) => theme.font.size.md};
 `;
 
@@ -29,12 +29,12 @@ export const StepBody = styled.div`
 export const StepTitle = styled.h2`
   margin: 0 0 ${({ theme }) => theme.space(1.5)};
   font-size: ${({ theme }) => theme.font.size.xl};
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const StepHint = styled.p`
   margin: 0;
-  color: ${({ theme }) => theme.colors.textMuted};
+  color: ${({ theme }) => theme.colors.text.secondary};
   font-size: ${({ theme }) => theme.font.size.md};
   line-height: 1.6;
 `;
@@ -49,8 +49,8 @@ export const Dot = styled.span<{ $active: boolean }>`
   width: 8px;
   height: 8px;
   border-radius: ${({ theme }) => theme.radii.full};
-  background: ${({ theme, $active }) => ($active ? theme.colors.accent : theme.colors.border)};
-  transition: background ${({ theme }) => theme.motion.base};
+  background: ${({ theme, $active }) => ($active ? theme.colors.accent.primary : theme.colors.border.subtle)};
+  transition: background ${({ theme }) => theme.motion.duration.base};
 `;
 
 export const Toolbar = styled.div`
@@ -68,7 +68,7 @@ export const SkipButton = styled.button`
   background: transparent;
   cursor: pointer;
   padding: ${({ theme }) => theme.space(1.5)} ${({ theme }) => theme.space(2)};
-  color: ${({ theme }) => theme.colors.textSubtle};
+  color: ${({ theme }) => theme.colors.text.muted};
   font: inherit;
   font-size: ${({ theme }) => theme.font.size.sm};
   opacity: 0.6; /* contract with BC-040 */
@@ -91,5 +91,5 @@ export const BrandMark = styled.div`
   gap: ${({ theme }) => theme.space(2)};
   font-size: ${({ theme }) => theme.font.size.xxl};
   font-weight: ${({ theme }) => theme.font.weight.semibold};
-  color: ${({ theme }) => theme.colors.accent};
+  color: ${({ theme }) => theme.colors.accent.primary};
 `;

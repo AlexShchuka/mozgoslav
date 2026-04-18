@@ -9,8 +9,10 @@ import { Copy, FolderOutput, RefreshCw } from "lucide-react";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import Badge from "../../components/Badge";
-import { api } from "../../api/MozgoslavApi";
+import { apiFactory } from "../../api";
 import { ProcessedNote } from "../../domain/ProcessedNote";
+
+const notesApi = apiFactory.createNotesApi();
 import { PageRoot, PageTitle, Actions, Meta, MarkdownBody } from "./NoteViewer.style";
 
 const NoteViewer: FC = () => {
@@ -20,7 +22,7 @@ const NoteViewer: FC = () => {
 
   useEffect(() => {
     if (!id) return;
-    void api.getNote(id).then(setNote).catch(() => setNote(null));
+    void notesApi.getById(id).then(setNote).catch(() => setNote(null));
   }, [id]);
 
   const onCopy = async () => {
@@ -32,7 +34,7 @@ const NoteViewer: FC = () => {
   const onExport = async () => {
     if (!note) return;
     try {
-      const updated = await api.exportNote(note.id);
+      const updated = await notesApi.exportNote(note.id);
       setNote(updated);
       toast.success(t("common.apply"));
     } catch (err) {

@@ -26,9 +26,9 @@ const Root = styled.div`
   flex-direction: column;
   gap: ${({ theme }) => theme.space(2)};
   padding: ${({ theme }) => theme.space(3)};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   border-radius: ${({ theme }) => theme.radii.md};
-  background: ${({ theme }) => theme.colors.surface};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
 `;
 
 const Meta = styled.div`
@@ -37,7 +37,7 @@ const Meta = styled.div`
   justify-content: space-between;
   gap: ${({ theme }) => theme.space(2)};
   font-size: ${({ theme }) => theme.font.size.sm};
-  color: ${({ theme }) => theme.colors.textMuted};
+  color: ${({ theme }) => theme.colors.text.secondary};
 `;
 
 const formatMb = (bytes: number): string =>

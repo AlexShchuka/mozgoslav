@@ -86,7 +86,7 @@ public sealed class DbContextValueComparerTests
         await using (var ctx = db.CreateContext())
         {
             var reloaded = await ctx.ProcessedNotes.FirstAsync(n => n.Id == note.Id, TestContext.CancellationToken);
-            reloaded.Tags.Should().BeEquivalentTo(new[] { "two", "three" });
+            reloaded.Tags.Should().BeEquivalentTo("two", "three");
         }
     }
 

@@ -1,5 +1,6 @@
 import { FC, FormEvent, KeyboardEvent, ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { AnimatePresence, motion } from "framer-motion";
 
 import Button from "../../components/Button";
@@ -112,7 +113,7 @@ const RagChat: FC<RagChatProps> = ({ messages, isAsking, onAsk, onCitationNaviga
 
 const renderMessageBody = (
   message: RagMessage,
-  t: (key: string) => string,
+  t: TFunction,
   onCitationNavigate: (citation: RagCitation) => void,
 ): ReactNode => {
   if (message.state === "pending") {

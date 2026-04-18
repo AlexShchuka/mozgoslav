@@ -7,6 +7,7 @@ using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Rag;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Application.UseCases;
+using Mozgoslav.Infrastructure.Configuration;
 using Mozgoslav.Infrastructure.Jobs;
 using Mozgoslav.Infrastructure.Observability;
 using Mozgoslav.Infrastructure.Persistence;
@@ -103,12 +104,18 @@ try
 
     // --- Application services ---
     builder.Services.AddScoped<CorrectionService>();
+    // Plan v0.8 Block 5 — glossary + LLM-correction stages.
+    builder.Services.AddSingleton<GlossaryApplicator>();
+    builder.Services.AddScoped<LlmCorrectionService>();
     builder.Services.AddScoped<ImportRecordingUseCase>();
     builder.Services.AddScoped<ReprocessUseCase>();
     // ADR-011 step 6 — ProcessQueueWorker no longer drives its own loop; it is
     // invoked once per Quartz trigger by ProcessRecordingQuartzJob.
     builder.Services.AddScoped<ProcessQueueWorker>();
     builder.Services.AddSingleton<IProcessingJobScheduler, QuartzProcessingJobScheduler>();
+    // ADR-015 — singleton so the cancel endpoint and the queue worker share
+    // the same map of active per-job cancellation token sources.
+    builder.Services.AddSingleton<IJobCancellationRegistry, JobCancellationRegistry>();
 
     // --- Infrastructure services ---
     builder.Services.AddHttpClient();
@@ -180,8 +187,8 @@ try
     builder.Services.AddSingleton<WhisperNetTranscriptionService>();
     builder.Services.AddSingleton<ITranscriptionService>(sp => sp.GetRequiredService<WhisperNetTranscriptionService>());
     builder.Services.AddSingleton<IStreamingTranscriptionService>(sp => sp.GetRequiredService<WhisperNetTranscriptionService>());
-    // TODO-3 / BC-036 — multi-provider LLM. Register each provider once against
-    // the ILlmProvider port; the factory picks the active one based on
+    // BC-036 multi-provider LLM. Register each provider once against the
+    // ILlmProvider port; the factory picks the active one based on
     // IAppSettings.LlmProvider. OpenAiCompatibleLlmService stays the upstream
     // adapter (chunking + JSON repair) and routes transport through the factory.
     builder.Services.AddSingleton<ILlmProvider, OpenAiCompatibleLlmProvider>();
@@ -190,7 +197,27 @@ try
     builder.Services.AddSingleton<ILlmProviderFactory, LlmProviderFactory>();
     builder.Services.AddSingleton<ILlmService, OpenAiCompatibleLlmService>();
     builder.Services.AddSingleton<IMarkdownExporter, FileMarkdownExporter>();
-    builder.Services.AddSingleton<IAudioRecorder, NoopAudioRecorder>();
+    // ADR-009 §2.1 row 1 — platform-aware recorder registration.
+    // macOS: AVFoundationAudioRecorder talks to the Swift helper via the
+    // Electron loopback bridge. Port is resolved from
+    // Mozgoslav:AudioRecorder:ElectronBridgePort in configuration (env-var
+    // override: Mozgoslav__AudioRecorder__ElectronBridgePort, populated by
+    // frontend/electron/utils/backendLauncher.ts).
+    // Linux/Windows: PlatformUnsupportedAudioRecorder honestly gates the
+    // feature (IsSupported=false) — UI hides the Record button accordingly.
+    builder.Services.Configure<AudioRecorderOptions>(
+        builder.Configuration.GetSection(AudioRecorderOptions.SectionName));
+    if (OperatingSystem.IsMacOS())
+    {
+        builder.Services.AddHttpClient<AVFoundationAudioRecorder>(client =>
+            client.Timeout = TimeSpan.FromSeconds(30));
+        builder.Services.AddSingleton<IAudioRecorder>(sp =>
+            sp.GetRequiredService<AVFoundationAudioRecorder>());
+    }
+    else
+    {
+        builder.Services.AddSingleton<IAudioRecorder, PlatformUnsupportedAudioRecorder>();
+    }
     builder.Services.AddSingleton<IPerAppCorrectionProfiles, InMemoryPerAppCorrectionProfiles>();
     builder.Services.AddSingleton<IDictationSessionManager, DictationSessionManager>();
     builder.Services.AddScoped<MeetilyImporterService>();
@@ -200,6 +227,21 @@ try
     // repositories (IProcessedNoteRepository, IProfileRepository, …).
     builder.Services.AddScoped<IObsidianExportService, ObsidianBulkExportService>();
     builder.Services.AddScoped<IObsidianLayoutService, ObsidianLayoutService>();
+    // Plan v0.8 Block 6 — Obsidian Local REST API client. The named HttpClient
+    // pins the localhost-scoped cert validation callback so the plugin's
+    // self-signed certificate does not break on the first request. Production
+    // code paths call `IsReachableAsync` first and fall back to file-I/O, so a
+    // missing plugin or wrong token never crashes the pipeline.
+    builder.Services.AddHttpClient(ObsidianRestApiClient.HttpClientName)
+        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = (request, _, _, _) =>
+            {
+                var host = request.RequestUri?.Host;
+                return host is "127.0.0.1" or "localhost";
+            },
+        });
+    builder.Services.AddScoped<IObsidianRestClient, ObsidianRestApiClient>();
     builder.Services.AddSingleton<ModelDownloadService>();
     builder.Services.AddSingleton<IModelDownloadCoordinator, ModelDownloadCoordinator>();
     builder.Services.AddSingleton<BackupService>();
@@ -241,11 +283,22 @@ try
                 sp.GetRequiredService<IHttpClientFactory>().CreateClient(SidecarClientName),
                 sp.GetRequiredService<BagOfWordsEmbeddingService>(),
                 sp.GetRequiredService<ILogger<PythonSidecarEmbeddingService>>()));
+        // The same sidecar also serves diarize/ner/gender/emotion. One
+        // typed client per endpoint would be overkill — we reuse the
+        // named HttpClient and register IPythonSidecarClient against it.
+        builder.Services.AddSingleton<IPythonSidecarClient>(sp =>
+            new PythonSidecarClient(
+                sp.GetRequiredService<IHttpClientFactory>().CreateClient(SidecarClientName),
+                sp.GetRequiredService<ILogger<PythonSidecarClient>>()));
     }
     else
     {
         builder.Services.AddSingleton<IEmbeddingService>(sp =>
             sp.GetRequiredService<BagOfWordsEmbeddingService>());
+        // No sidecar configured — IPythonSidecarClient stays unregistered.
+        // Callers that need it must opt-in via config; the queue worker
+        // and dictation polish pipelines currently do not depend on it
+        // so the missing registration is a no-op.
     }
     // Default: in-memory index. Flip ``Mozgoslav:Rag:Persist=true`` to use
     // the SQLite-backed store so the vector index survives restarts. The
@@ -350,6 +403,7 @@ try
     app.MapDictationEndpoints();
     app.MapSyncEndpoints();
     app.MapRagEndpoints();
+    app.MapMetaEndpoints();
 
     await app.RunAsync();
 }

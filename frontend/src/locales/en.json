@@ -83,7 +83,8 @@
       "Summarizing": "Summarizing",
       "Exporting": "Exporting",
       "Done": "Done",
-      "Failed": "Failed"
+      "Failed": "Failed",
+      "Cancelled": "Cancelled"
     }
   },
   "notes": {
@@ -233,6 +234,7 @@
     "title": "Models",
     "subtitle": "Download what you need — everything stays local.",
     "installed": "Installed",
+    "installedButton": "Installed",
     "notInstalled": "Not downloaded",
     "download": "Download",
     "sizeMb": "{{size}} MB"
@@ -266,46 +268,44 @@
     "subtitle": "Quick setup so your first call works out of the box.",
     "welcome": {
       "title": "Hello!",
-      "hint": "Nine quick steps ahead: models, Obsidian, LLM, Syncthing, and three macOS permissions."
+      "hint": "Let's get you set up. Starter models are already bundled."
     },
-    "models": {
-      "title": "Models",
-      "hint": "Grab Whisper + VAD — one time, ~1.5 GB."
-    },
-    "obsidian": {
-      "title": "Obsidian",
-      "hint": "Pick your vault; we'll prepare folders."
+    "tryItNow": {
+      "title": "Ready to go",
+      "hint": "Whisper Small RU, Silero VAD, and Natasha NER ship in the app. Upgrade anytime in Settings → Models."
     },
     "llm": {
-      "title": "LLM",
-      "hint": "Local LM Studio or Ollama endpoint."
+      "title": "LLM (optional)",
+      "hint": "LLM polishes your notes. Install LM Studio or Ollama — or skip and configure later."
     },
-    "syncthing": {
-      "title": "Syncthing",
-      "hint": "Encrypted cross-device sync. We'll start Syncthing and prepare 3 folders: recordings, notes, vault."
+    "obsidian": {
+      "title": "Obsidian (optional)",
+      "hint": "If you have a vault we'll pick it and prepare folders. Otherwise skip."
     },
     "mic": {
       "title": "Microphone access",
-      "hint": "Mozgoslav needs the microphone to transcribe when you press mouse button 5. macOS shows the prompt on first use; you can enable it proactively here."
+      "hint": "Needed for recording + dictation. You can skip — macOS prompts on the first click."
     },
-    "accessibility": {
-      "title": "Accessibility",
-      "hint": "Inserting text into the focused app (VSCode, Slack, Mail) requires Accessibility. Open Settings → Privacy & Security → Accessibility and add Mozgoslav."
-    },
-    "inputMonitoring": {
-      "title": "Input Monitoring",
-      "hint": "Watching mouse button 5 globally needs Input Monitoring. Open Settings → Privacy & Security → Input Monitoring and add Mozgoslav."
+    "dictation": {
+      "title": "Dictation permissions",
+      "hint": "Accessibility + Input Monitoring gate the global hotkey + text injection. Skippable."
     },
     "ready": {
       "title": "Ready",
-      "hint": "All set. Import your first conversation or dictate with mouse button 5."
+      "hint": "Hit Apply to start using Mozgoslav. Skipped steps are always available in Settings."
     },
     "openSystemPreferences": "Open System Preferences",
     "skip": "Skip",
-    "llmReachable": "LLM is reachable — you can continue.",
-    "llmUnreachable": "Waiting for the LLM endpoint to answer /api/health/llm…",
+    "llmReachable": "LLM is reachable — ready to polish notes.",
+    "llmUnreachable": "No LLM detected — skip or connect later.",
     "modelsReady": "Models are installed — you can continue.",
-    "modelsMissing": "Download or point to a Whisper/VAD model to continue."
+    "modelsMissing": "Download or point to a Whisper/VAD model to continue.",
+    "permissions": {
+      "ready": "Permissions granted.",
+      "pending": "Permissions not yet granted."
+    },
+    "obsidian.detected": "Found vault: {{path}}",
+    "obsidian.notDetected": "Vault not found — skip for now."
   },
   "hotkeys": {
     "title": "Keyboard shortcuts",

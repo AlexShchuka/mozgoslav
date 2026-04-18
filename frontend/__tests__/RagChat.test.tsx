@@ -9,16 +9,22 @@ import type { SagaIterator } from "redux-saga";
 import { ThemeProvider } from "styled-components";
 
 import RagChat from "../src/features/RagChat";
-import { api } from "../src/api/MozgoslavApi";
 import { ragReducer, watchRagSagas } from "../src/store/slices/rag";
 import { lightTheme } from "../src/styles/theme";
 import "../src/i18n";
 
-jest.mock("../src/api/MozgoslavApi", () => ({
-  api: {
-    ragQuery: jest.fn(),
-  },
-}));
+const ragQueryMock = jest.fn();
+
+jest.mock("../src/api", () => {
+  const actual = jest.requireActual("../src/api");
+  return {
+    ...actual,
+    apiFactory: {
+      ...actual.apiFactory,
+      createRagApi: () => ({ query: ragQueryMock, reindex: jest.fn() }),
+    },
+  };
+});
 
 // Minimal store exposing just the `rag` slice — the component only depends on
 // `state.rag`, so we do not pull in the app root reducer (keeps the test
@@ -76,7 +82,7 @@ describe("RagChat", () => {
   });
 
   it("submits a question and renders the answer with a citation chip", async () => {
-    (api.ragQuery as jest.Mock).mockResolvedValue({
+    ragQueryMock.mockResolvedValue({
       answer: "На встрече обсудили Q2-план.",
       llmAvailable: true,
       citations: [{ noteId: "n1", chunkId: "c1", text: "план Q2", score: 0.9 }],
@@ -89,13 +95,13 @@ describe("RagChat", () => {
     await waitFor(() =>
       expect(screen.getByText("На встрече обсудили Q2-план.")).toBeInTheDocument(),
     );
-    expect(api.ragQuery).toHaveBeenCalledWith("Что было на встрече?", undefined);
+    expect(ragQueryMock).toHaveBeenCalledWith("Что было на встрече?", undefined);
     expect(screen.getByText("Что было на встрече?")).toBeInTheDocument();
     expect(screen.getByTestId("rag-citation")).toBeInTheDocument();
   });
 
   it("surfaces the LLM-unreachable banner and still shows raw citations", async () => {
-    (api.ragQuery as jest.Mock).mockResolvedValue({
+    ragQueryMock.mockResolvedValue({
       answer: "",
       llmAvailable: false,
       citations: [{ noteId: "n2", chunkId: "c2", text: "цитата", score: 0.8 }],
@@ -112,7 +118,7 @@ describe("RagChat", () => {
   });
 
   it("navigates to the note when a citation chip is clicked", async () => {
-    (api.ragQuery as jest.Mock).mockResolvedValue({
+    ragQueryMock.mockResolvedValue({
       answer: "ok",
       llmAvailable: true,
       citations: [{ noteId: "note-xyz", chunkId: "c9", text: "t", score: 0.5 }],

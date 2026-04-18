@@ -11,7 +11,7 @@ export const PageTitle = styled.h1`
   margin: 0;
   font-size: ${({ theme }) => theme.font.size.xxl};
   font-weight: ${({ theme }) => theme.font.weight.semibold};
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const Toolbar = styled.div`
@@ -23,7 +23,7 @@ export const Toolbar = styled.div`
 export const FileName = styled.span`
   font-family: ${({ theme }) => theme.font.familyMono};
   font-size: ${({ theme }) => theme.font.size.sm};
-  color: ${({ theme }) => theme.colors.textMuted};
+  color: ${({ theme }) => theme.colors.text.secondary};
 `;
 
 export const LogPre = styled.pre`
@@ -32,7 +32,7 @@ export const LogPre = styled.pre`
   overflow: auto;
   font-family: ${({ theme }) => theme.font.familyMono};
   font-size: ${({ theme }) => theme.font.size.xs};
-  color: ${({ theme }) => theme.colors.textMuted};
+  color: ${({ theme }) => theme.colors.text.secondary};
   white-space: pre-wrap;
   word-break: break-word;
 `;

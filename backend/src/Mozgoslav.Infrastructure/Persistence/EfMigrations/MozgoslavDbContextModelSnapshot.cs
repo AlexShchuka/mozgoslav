@@ -132,6 +132,12 @@ namespace Mozgoslav.Infrastructure.Persistence.EfMigrations
                         .HasColumnType("TEXT")
                         .HasColumnName("id");
 
+                    b.Property<bool>("CancelRequested")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false)
+                        .HasColumnName("cancel_requested");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT")
                         .HasColumnName("created_at");
@@ -204,6 +210,11 @@ namespace Mozgoslav.Infrastructure.Persistence.EfMigrations
                         .HasColumnType("TEXT")
                         .HasColumnName("export_folder");
 
+                    b.Property<string>("Glossary")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("glossary_json");
+
                     b.Property<bool>("IsBuiltIn")
                         .HasColumnType("INTEGER")
                         .HasColumnName("is_built_in");
@@ -211,6 +222,10 @@ namespace Mozgoslav.Infrastructure.Persistence.EfMigrations
                     b.Property<bool>("IsDefault")
                         .HasColumnType("INTEGER")
                         .HasColumnName("is_default");
+
+                    b.Property<bool>("LlmCorrectionEnabled")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("llm_correction_enabled");
 
                     b.Property<string>("Name")
                         .IsRequired()

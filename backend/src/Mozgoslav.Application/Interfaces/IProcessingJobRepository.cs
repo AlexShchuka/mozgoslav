@@ -20,4 +20,14 @@ public interface IProcessingJobRepository
     Task<IReadOnlyList<ProcessingJob>> GetByRecordingIdAsync(Guid recordingId, CancellationToken ct);
     Task<IReadOnlyList<ProcessingJob>> GetActiveAsync(CancellationToken ct);
     Task<IReadOnlyList<ProcessingJob>> GetByStatusAsync(JobStatus status, CancellationToken ct);
+
+    /// <summary>
+    /// ADR-015 — atomically flips <c>CancelRequested=true</c> on a single job
+    /// without mutating any other column. Used by the cancel endpoint when the
+    /// job is active; the worker observes the flag on its next loop iteration
+    /// via the per-job <see cref="CancellationTokenSource"/> in the registry,
+    /// and transitions the row to <see cref="JobStatus.Cancelled"/>.
+    /// Returns <c>true</c> if a row was affected, <c>false</c> if the id is unknown.
+    /// </summary>
+    Task<bool> SetCancelRequestedAsync(Guid id, CancellationToken ct);
 }

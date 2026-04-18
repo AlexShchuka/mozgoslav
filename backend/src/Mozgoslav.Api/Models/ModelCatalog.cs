@@ -1,15 +1,26 @@
 namespace Mozgoslav.Api.Models;
 
 /// <summary>
-/// Publicly-hosted models Mozgoslav can download. URLs point to HuggingFace so
-/// downloads are verifiable against the original publishers. Default pick is the
-/// Russian fine-tune because it beats the multilingual base by ~3 WER points on
-/// conversational Russian speech.
+/// Publicly-hosted models Mozgoslav can download. Per ADR-010, entries
+/// are split between Tier 1 (bundled) and Tier 2 (user-opt-in downloads).
+/// Download URLs point at HuggingFace so users can verify the source; the
+/// GitHub-Releases-pinned bundle URL is used only by
+/// <c>frontend/scripts/fetch-bundle-models.sh</c> at DMG build time.
 /// </summary>
 public static class ModelCatalog
 {
     public static IReadOnlyList<CatalogEntry> All { get; } =
     [
+        // ---- Whisper STT --------------------------------------------------
+        new(
+            Id: "whisper-small-russian-bundle",
+            Name: "Whisper Small (Russian starter, bundled)",
+            Description: "Базовая STT-модель, поставляется с приложением. Русская речь на M1/M2 за разумное время.",
+            Url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small-q8_0.bin",
+            SizeMb: 260,
+            Kind: ModelKind.Stt,
+            Tier: ModelTier.Bundle,
+            IsDefault: false),
         new(
             Id: "whisper-large-v3-russian-antony66",
             Name: "Whisper Large v3 Russian (antony66) — рекомендуется для RU",
@@ -17,6 +28,7 @@ public static class ModelCatalog
             Url: "https://huggingface.co/Limtech/whisper-large-v3-russian-ggml/resolve/main/ggml-model-q8_0.bin",
             SizeMb: 1600,
             Kind: ModelKind.Stt,
+            Tier: ModelTier.Downloadable,
             IsDefault: true),
         new(
             Id: "whisper-large-v3-ru-podlodka",
@@ -25,6 +37,7 @@ public static class ModelCatalog
             Url: "https://huggingface.co/bond005/whisper-large-v3-ru-podlodka/resolve/main/ggml-model-q8_0.bin",
             SizeMb: 1600,
             Kind: ModelKind.Stt,
+            Tier: ModelTier.Downloadable,
             IsDefault: false),
         new(
             Id: "whisper-large-v3-q8",
@@ -33,6 +46,7 @@ public static class ModelCatalog
             Url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-q8_0.bin",
             SizeMb: 1500,
             Kind: ModelKind.Stt,
+            Tier: ModelTier.Downloadable,
             IsDefault: false),
         new(
             Id: "whisper-large-v3-turbo",
@@ -41,6 +55,7 @@ public static class ModelCatalog
             Url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q8_0.bin",
             SizeMb: 874,
             Kind: ModelKind.Stt,
+            Tier: ModelTier.Downloadable,
             IsDefault: false),
         new(
             Id: "whisper-medium",
@@ -49,7 +64,10 @@ public static class ModelCatalog
             Url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium-q8_0.bin",
             SizeMb: 500,
             Kind: ModelKind.Stt,
+            Tier: ModelTier.Downloadable,
             IsDefault: false),
+
+        // ---- Silero VAD ---------------------------------------------------
         new(
             Id: "silero-vad",
             Name: "Silero VAD v6.2.0",
@@ -57,7 +75,28 @@ public static class ModelCatalog
             Url: "https://huggingface.co/ggml-org/whisper-vad/resolve/main/ggml-silero-v6.2.0.bin",
             SizeMb: 4,
             Kind: ModelKind.Vad,
-            IsDefault: true)
+            Tier: ModelTier.Bundle,
+            IsDefault: true),
+
+        // ---- Audio-domain ML (python sidecar, Tier 2) ---------------------
+        new(
+            Id: "audeering-age-gender",
+            Name: "audeering age-gender (wav2vec2)",
+            Description: "Голосовая классификация пола. Примерно 380 МБ, опциональная установка.",
+            Url: "https://huggingface.co/audeering/wav2vec2-large-robust-24-ft-age-gender",
+            SizeMb: 380,
+            Kind: ModelKind.AudioMl,
+            Tier: ModelTier.Downloadable,
+            IsDefault: false),
+        new(
+            Id: "audeering-emotion-msp-dim",
+            Name: "audeering emotion MSP-dim (wav2vec2)",
+            Description: "Голосовая классификация эмоций (arousal/valence/dominance). ~380 МБ.",
+            Url: "https://huggingface.co/audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim",
+            SizeMb: 380,
+            Kind: ModelKind.AudioMl,
+            Tier: ModelTier.Downloadable,
+            IsDefault: false)
     ];
 
     // ADR-007 BC-034 / Phase 1 §DoD — the hand-off acceptance curls the

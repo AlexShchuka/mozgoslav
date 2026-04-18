@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Infrastructure.Services;
@@ -23,7 +25,7 @@ public sealed class DisabledSyncthingClient : ISyncthingClient
         Task.FromResult(string.Empty);
 
     public async IAsyncEnumerable<SyncthingEvent> StreamEventsAsync(
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct)
+        [EnumeratorCancellation] CancellationToken ct)
     {
         // Complete immediately — nothing to stream when Syncthing is disabled.
         await Task.CompletedTask;

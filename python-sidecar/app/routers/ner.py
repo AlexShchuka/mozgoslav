@@ -1,21 +1,17 @@
-"""``POST /api/ner`` — named entity recognition (V3 stub)."""
+"""``POST /api/ner`` — Russian named entity recognition (Tier 1)."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
+from app.ml.loader import get_ner_service
 from app.models.schemas import NerRequest, NerResponse
-from app.services.ner_service import NerService
 
 router = APIRouter(prefix="/api", tags=["ner"])
-
-
-def get_service() -> NerService:
-    return NerService()
 
 
 @router.post("/ner", response_model=NerResponse)
 async def extract_entities(
     payload: NerRequest,
-    service: NerService = Depends(get_service),
+    service = Depends(get_ner_service),  # noqa: ANN001 — deferred import
 ) -> NerResponse:
     return service.extract(payload)

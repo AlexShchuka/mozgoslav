@@ -1,13 +1,15 @@
 import { app, BrowserWindow, dialog, ipcMain, session, shell } from "electron";
 import path from "node:path";
-import { promises as fs } from "node:fs";
+import { existsSync, promises as fs } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { DictationOrchestrator } from "./dictation/DictationOrchestrator";
+import { NativeHelperClient } from "./dictation/NativeHelperClient";
 import {
   registerGlobalDictationHotkey,
   unregisterGlobalDictationHotkey,
 } from "./dictation/globalHotkey";
+import { RecordingBridge } from "./recording/RecordingBridge";
 import { stopBackend, tryStartBackend } from "./utils/backendLauncher";
 import { stopSyncthing, tryStartSyncthing } from "./utils/syncthingLauncher";
 
@@ -16,8 +18,64 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 const BACKEND_ORIGIN = "http://localhost:5050";
 
+const resolveDictationHelperPath = (): string => {
+    if (process.env.MOZGOSLAV_DICTATION_HELPER_BIN) {
+        return process.env.MOZGOSLAV_DICTATION_HELPER_BIN;
+    }
+
+    if (app.isPackaged) {
+        return path.join(process.resourcesPath, "mozgoslav-dictation-helper");
+    }
+
+    const candidates = [
+        path.resolve(
+            __dirname,
+            "..",
+            "..",
+            "helpers",
+            "MozgoslavDictationHelper",
+            ".build",
+            "release",
+            "mozgoslav-dictation-helper",
+        ),
+        path.resolve(
+            __dirname,
+            "..",
+            "..",
+            "helpers",
+            "MozgoslavDictationHelper",
+            ".build",
+            "arm64-apple-macosx",
+            "release",
+            "mozgoslav-dictation-helper",
+        ),
+        path.resolve(
+            __dirname,
+            "..",
+            "..",
+            "helpers",
+            "MozgoslavDictationHelper",
+            ".build",
+            "x86_64-apple-macosx",
+            "release",
+            "mozgoslav-dictation-helper",
+        ),
+    ];
+
+    const found = candidates.find((candidate) => existsSync(candidate));
+    if (!found) {
+        throw new Error(
+            `[recording:bridge] mozgoslav-dictation-helper not found. Tried:\n${candidates.join("\n")}`,
+        );
+    }
+
+    return found;
+};
+
 let mainWindow: BrowserWindow | null = null;
 let dictationOrchestrator: DictationOrchestrator | null = null;
+let recordingBridge: RecordingBridge | null = null;
+let recordingHelper: NativeHelperClient | null = null;
 
 const createWindow = (): void => {
   mainWindow = new BrowserWindow({
@@ -78,7 +136,7 @@ app.whenReady().then(async () => {
         "Content-Security-Policy": [
           [
             "default-src 'self'",
-            "script-src 'self'",
+              "script-src 'self' 'unsafe-inline'",
             "style-src 'self' 'unsafe-inline'",
             `connect-src 'self' ${BACKEND_ORIGIN} ws://localhost:5173 http://localhost:5173`,
             "img-src 'self' data: blob:",
@@ -108,7 +166,30 @@ app.whenReady().then(async () => {
         `--Mozgoslav:SyncthingApiKey=${syncthingConfig.apiKey}`,
       ]
     : [];
-  await tryStartBackend(userDataDir, { extraArgs: backendExtraArgs });
+  // AVFoundation recorder bridge. Start the dedicated helper process +
+  // internal loopback HTTP endpoint before the backend so the port is
+  // available via IConfiguration at backend spawn time
+  // (appsettings key: Mozgoslav:AudioRecorder:ElectronBridgePort).
+  const recorderEnv: Record<string, string> = {};
+  if (process.platform === "darwin") {
+    try {
+        const helperBinaryPath = resolveDictationHelperPath();
+      recordingHelper = new NativeHelperClient(helperBinaryPath);
+      recordingHelper.start();
+      recordingBridge = new RecordingBridge(recordingHelper);
+      const port = await recordingBridge.start();
+      recorderEnv["Mozgoslav__AudioRecorder__ElectronBridgePort"] = String(port);
+    } catch (err) {
+      console.error("[recording:bridge] failed to start:", err);
+      recordingBridge = null;
+      recordingHelper = null;
+    }
+  }
+
+  await tryStartBackend(userDataDir, {
+    extraArgs: backendExtraArgs,
+    extraEnv: recorderEnv,
+  });
 
   ipcMain.handle("dialog:openAudioFiles", async () => {
     if (!mainWindow) return { filePaths: [] };
@@ -153,6 +234,25 @@ app.whenReady().then(async () => {
     });
   });
 
+  // Plan v0.8 Block 3 — renderer-driven recording via NativeHelper. Thin
+  // passthroughs to the in-process RecordingBridge so renderer features that
+  // do not go through the backend can still record.
+  ipcMain.handle("record:start", async (_event, outputPath: string) => {
+    if (!recordingHelper) {
+      throw new Error("Native recorder is only available on macOS with a running helper.");
+    }
+    const sessionId = `renderer-${Date.now()}`;
+    await recordingHelper.startFileCapture(outputPath, sessionId);
+    return { sessionId };
+  });
+
+  ipcMain.handle("record:stop", async (_event, sessionId: string) => {
+    if (!recordingHelper) {
+      throw new Error("Native recorder is only available on macOS with a running helper.");
+    }
+    return recordingHelper.stopFileCapture(sessionId);
+  });
+
   // BC-050 — lists every `.sync-conflict-*` file under the given folder path.
   // Called by the Sync > Conflicts sub-view; resolution itself is manual via
   // Finder (see `docs/sync-conflicts.md`).
@@ -171,7 +271,7 @@ app.whenReady().then(async () => {
 
   createWindow();
 
-  // TODO-1 — register the global dictation accelerator on every platform.
+  // Register the global dictation accelerator on every platform.
   // Press-to-dictate on macOS is the primary use case but the accelerator is
   // harmless on Linux/Windows (user can still invoke it).
   const hotkeyRegistered = registerGlobalDictationHotkey();
@@ -193,30 +293,26 @@ app.whenReady().then(async () => {
 });
 
 const initializeDictation = async (): Promise<void> => {
-  try {
-    const helperBinaryPath = path.join(
-      process.resourcesPath ?? path.join(__dirname, ".."),
-      "mozgoslav-dictation-helper"
-    );
-    dictationOrchestrator = new DictationOrchestrator({
-      helperBinaryPath,
-      mouseButton: 5,
-      keyboardFallbackKeycode: null,
-      sampleRate: 48_000,
-      injectMode: "auto",
-      overlayEnabled: true,
-    });
-    await dictationOrchestrator.initialize(() => {
-      dictationOrchestrator?.destroy();
-      dictationOrchestrator = null;
-      app.quit();
-    });
-  } catch (error) {
-    console.error("[dictation] initialization failed:", error);
-    dictationOrchestrator = null;
-  }
+    try {
+        const helperBinaryPath = resolveDictationHelperPath();
+        dictationOrchestrator = new DictationOrchestrator({
+            helperBinaryPath,
+            mouseButton: 5,
+            keyboardFallbackKeycode: null,
+            sampleRate: 48_000,
+            injectMode: "auto",
+            overlayEnabled: true,
+        });
+        await dictationOrchestrator.initialize(() => {
+            dictationOrchestrator?.destroy();
+            dictationOrchestrator = null;
+            app.quit();
+        });
+    } catch (error) {
+        console.error("[dictation] initialization failed:", error);
+        dictationOrchestrator = null;
+    }
 };
-
 // BC-050 helper — depth-first walk for `.sync-conflict-*` filenames. Stays
 // inside the electron main process to avoid exposing fs access to the
 // renderer. Cap depth to avoid runaway walks on very deep vaults.
@@ -255,6 +351,10 @@ app.on("window-all-closed", () => {
 app.on("before-quit", () => {
   dictationOrchestrator?.destroy();
   dictationOrchestrator = null;
+  recordingBridge?.stop();
+  recordingBridge = null;
+  recordingHelper?.stop();
+  recordingHelper = null;
   stopBackend();
   void stopSyncthing();
 });

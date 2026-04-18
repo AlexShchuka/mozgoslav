@@ -1,7 +1,7 @@
 import { call, put, takeLatest } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 
-import { api } from "../../../api/MozgoslavApi";
+import { apiFactory } from "../../../api";
 import {
   ASK_QUESTION,
   askFailure,
@@ -34,7 +34,8 @@ export function* askQuestionSaga(action: AskQuestionAction): SagaIterator {
   yield put(askPending(userMessage, pendingAssistantId));
 
   try {
-    const answer: RagAnswer = yield call([api, api.ragQuery], question, topK);
+    const ragApi = apiFactory.createRagApi();
+    const answer: RagAnswer = yield call([ragApi, ragApi.query], question, topK);
     yield put(askSuccess(pendingAssistantId, answer));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

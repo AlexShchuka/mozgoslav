@@ -1,7 +1,7 @@
 namespace Mozgoslav.Application.Interfaces;
 
 /// <summary>
-/// TODO-3 / BC-036 — selects the currently active <see cref="ILlmProvider"/>
+/// BC-036 selects the currently active <see cref="ILlmProvider"/>
 /// based on <see cref="IAppSettings.LlmProvider"/>. The factory is cheap — it
 /// simply matches the setting value against the <see cref="ILlmProvider.Kind"/>
 /// of each registered provider. Unknown or empty values fall back to
