@@ -99,6 +99,21 @@ describe("Onboarding — plan v0.8 Block 4 (slim, platform-aware)", () => {
     );
   });
 
+  it("Skip button marks onboarding as complete (task #14)", async () => {
+    renderOnboarding();
+    // Welcome (required) → tryItNow (required) → llm (first skippable step).
+    await clickNext(2);
+    await waitFor(() =>
+      expect(screen.getByTestId("onboarding-skip")).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByTestId("onboarding-skip"));
+
+    await waitFor(() =>
+      expect(window.localStorage.getItem("mozgoslav.onboardingComplete")).toBe("true"),
+    );
+  });
+
   it("U1 — try-sample button uploads the bundled WAV via recordingApi.upload", async () => {
     // Stub fetch("/sample.wav") so the test doesn't need Vite or a Response shim.
     const wavBytes = new Uint8Array([0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00]);

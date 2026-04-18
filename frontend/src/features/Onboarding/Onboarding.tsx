@@ -95,6 +95,10 @@ const Onboarding: FC<OnboardingProps> = ({
   };
 
   const skip = () => {
+    // Skip must persist the completion flag so OnboardingCompleteGuard lets
+    // the user into the dashboard on the next launch; without this the guard
+    // bounced the user back here the moment they reloaded.
+    onComplete();
     navigate(ROUTES.dashboard, { replace: true });
   };
 
