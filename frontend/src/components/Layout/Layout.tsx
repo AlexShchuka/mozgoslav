@@ -1,14 +1,12 @@
 import { FC, ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Archive, Brain, Database, FolderCog, FolderTree, LayoutDashboard, ListChecks, ListTree, MessageSquare, RefreshCw, Settings, Sparkles, Wrench } from "lucide-react";
+import { Archive, Brain, Database, FolderCog, FolderTree, ListTree, MessageSquare, RefreshCw, Settings, Sparkles, Wrench } from "lucide-react";
 
 import { useBackendHealth } from "../../hooks/useBackendHealth";
 import { ROUTES } from "../../constants/routes";
 import {
-  AppName,
   BackendStatusBanner,
-  Brand,
   Content,
   LayoutRoot,
   Sidebar,
@@ -33,18 +31,13 @@ const Layout: FC<LayoutProps> = ({ children }) => {
   return (
     <LayoutRoot>
       <Sidebar>
-        <Brand>
-          <Sparkles size={20} />
-          <AppName>{t("app.name")}</AppName>
-        </Brand>
-
         <SidebarSection>
           <SidebarGroup>
-            <NavItem to={ROUTES.dashboard} icon={<LayoutDashboard size={16} />}>
-              {t("nav.dashboard")}
-            </NavItem>
-            <NavItem to={ROUTES.queue} icon={<ListChecks size={16} />}>
-              {t("nav.queue")}
+            {/* Task L1 — one "Мозгослав" entry replaces Dashboard + Queue;
+                the Sparkles mark migrated here from the sidebar header for
+                a cleaner minimalist layout. */}
+            <NavItem to={ROUTES.home} icon={<Sparkles size={16} />}>
+              {t("nav.home")}
             </NavItem>
             <NavItem to={ROUTES.notes} icon={<Brain size={16} />}>
               {t("nav.notes")}

@@ -51,7 +51,7 @@ describe("Models page — task #13 inline download progress", () => {
         description: "Bundled STT",
         url: "u",
         sizeMb: 260,
-        kind: "stt",
+        kind: "Stt",
         tier: "bundle",
         isDefault: false,
         destinationPath: "/models/ggml-small-q8_0.bin",

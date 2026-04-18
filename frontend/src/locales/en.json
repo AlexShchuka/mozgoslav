@@ -4,6 +4,7 @@
     "tagline": "Local second brain for conversations"
   },
   "nav": {
+    "home": "Mozgoslav",
     "dashboard": "Dashboard",
     "queue": "Queue",
     "notes": "Notes",
