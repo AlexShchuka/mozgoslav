@@ -15,7 +15,7 @@ frontend/
 │   ├── core/utils/      formatDuration
 │   ├── i18n/            initReactI18next + locales (ru + en)
 │   ├── locales/         ru.json, en.json
-│   ├── models/          TS types mirroring the C# domain
+│   ├── domain/         TS types mirroring the C# domain (single source; legacy `models/` removed by F1)
 │   ├── styles/          theme.ts (light/dark), ThemeProvider.tsx, GlobalStyle.ts
 │   ├── store/           Redux store + rootReducer + rootSaga + slices/recording (actionCreator + reducer + mutations + selectors + saga)
 │   ├── hooks/           useBackendHealth (health ping)

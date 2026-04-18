@@ -75,12 +75,6 @@ Diarization уже пишет speaker-labelled сегменты в `Transcript.S
 
 **Оценка:** S, 2 часа.
 
-### F1 — `models/` + `domain/` dedup
-
-Параллельные копии TS-типов в `frontend/src/models/` и `frontend/src/domain/` (ProcessedNote, ProcessingJob, Profile, Recording, Settings, Model). Выбрать один слой (предлагаю `domain/` — там больше value-объектов вроде `ActionItem`, `enums`), перепроставить импорты, удалить другой.
-
-**Оценка:** S, 2-3 часа (рутинный refactor + прогон tsc + tests).
-
 ## Как работать с этим файлом
 
 - Делаем пункт → удаляем отсюда. Краткое описание shipped версии попадёт в `README.md` / `CLAUDE.md`.
