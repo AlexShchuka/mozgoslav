@@ -1,20 +1,22 @@
 import { FC } from "react";
 
 import Dashboard from "../Dashboard";
-import Queue from "../Queue";
+import HomeList from "./HomeList";
+import { HomeRoot } from "./Home.style";
 
 /**
- * Task L1 — "Мозгослав" home page. Previously split as /dashboard (record
- * controls + recent recordings) and /queue (processing jobs). Operationally
- * it was always one screen: record → see what's running → see the note,
- * so the merge removes a click without losing any feature. Both children
- * keep their own data subscriptions; this component is a layout shell.
+ * Home — Dashboard (record / import controls) stacked on top of a unified
+ * recordings list that subsumes both the former standalone Queue page and
+ * the "recent notes" NotesList summary. One row per recording; progress bar
+ * lives on every row, showing the live pipeline state (or 100% for Done,
+ * idle for unscheduled recordings). Pagination is deferred until the post-
+ * migration backend lands (meeting note 2026-04-18).
  */
 const Home: FC = () => (
-  <>
+  <HomeRoot>
     <Dashboard />
-    <Queue />
-  </>
+    <HomeList />
+  </HomeRoot>
 );
 
 export default Home;

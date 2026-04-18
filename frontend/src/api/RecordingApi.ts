@@ -3,6 +3,8 @@ import type { Recording } from "../domain";
 import type { ProcessedNote } from "../domain/ProcessedNote";
 import { API_ENDPOINTS } from "../constants/api";
 
+export type { ProcessedNote };
+
 export interface ImportResponseDto {
   recordings: Recording[];
 }
@@ -20,6 +22,11 @@ export class RecordingApi extends BaseApi {
 
   public async getById(id: string): Promise<Recording> {
     const response = await this.get<Recording>(API_ENDPOINTS.recording(id));
+    return response.data;
+  }
+
+  public async getNotes(id: string): Promise<ProcessedNote[]> {
+    const response = await this.get<ProcessedNote[]>(API_ENDPOINTS.recordingNotes(id));
     return response.data;
   }
 

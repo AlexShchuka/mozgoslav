@@ -146,6 +146,20 @@ export const Content = styled.main`
   overflow: auto;
 `;
 
+/**
+ * Wraps the routed page under Content so pages can opt into a full-height
+ * flex layout (Home uses this to pin its list to the viewport bottom).
+ * Non-Home pages ignore it — they render their own PageRoot at natural
+ * height and Content's `overflow: auto` still scrolls when they exceed the
+ * viewport.
+ */
+export const ContentFrame = styled.div`
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+`;
+
 export const BackendStatusBanner = styled.div<{ $isOk: boolean }>`
   display: flex;
   align-items: center;
