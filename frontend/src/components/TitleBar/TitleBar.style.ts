@@ -1,15 +1,18 @@
-import styled, { keyframes } from "styled-components";
+import styled from "styled-components";
 
 /**
- * Slow diagonal breathing used by the TitleBar. We animate `background-position`
- * rather than the gradient itself so there's no per-frame shader-paint cost —
- * the GPU simply pans the pre-composited gradient across an oversized canvas.
+ * Static gradient. Previously we panned `background-position` on a full-width
+ * `linear-gradient` every frame for a "breathing" effect — but animating
+ * `background-position` on gradients falls to CPU paint (compositor cannot
+ * accelerate it), which means the browser repainted the entire top slab of
+ * the window at 60fps and starved the main thread, surfacing as sluggish
+ * clicks across the app. Static gradient keeps the look without the tax.
+ *
+ * Tint: a faint mint wash at the top-left corner (`accent.soft`) fades
+ * through the theme's elevated backgrounds. Reads as "near-grey with the
+ * barest hint of brand colour", matching the design ask to de-emphasise
+ * the green.
  */
-const breathe = keyframes`
-  0% { background-position: 0% 50%; }
-  100% { background-position: 100% 50%; }
-`;
-
 export const TitleBarRoot = styled.header`
   grid-column: 1 / -1;
   height: 44px;
@@ -23,13 +26,12 @@ export const TitleBarRoot = styled.header`
   padding: 0 ${({ theme }) => theme.space(4)} 0 78px;
   color: ${({ theme }) => theme.colors.text.primary};
   border-bottom: 1px solid ${({ theme }) => theme.colors.border.subtle};
-  background: linear-gradient(
+  background-color: ${({ theme }) => theme.colors.bg.elevated2};
+  background-image: linear-gradient(
     135deg,
-    ${({ theme }) => theme.colors.accent.primary} 0%,
-    ${({ theme }) => theme.colors.bg.elevated1} 100%
+    ${({ theme }) => theme.colors.accent.soft} 0%,
+    transparent 55%
   );
-  background-size: 200% 200%;
-  animation: ${breathe} 9s ease-in-out infinite alternate;
   -webkit-app-region: drag;
   user-select: none;
 `;
