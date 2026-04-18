@@ -89,8 +89,24 @@ try
     }
     var connectionString = $"Data Source={databasePath}";
 
-    builder.Services.AddDbContextFactory<MozgoslavDbContext>(options => options.UseSqlite(connectionString));
-    builder.Services.AddDbContext<MozgoslavDbContext>((_, options) => options.UseSqlite(connectionString),
+    // Observability-only — dumps ChangeTracker + caller stack on SaveChanges failure so the
+    // CascadeChanges NRE gains an application-level stack + entity dump. Remove once diagnosed.
+    builder.Services.AddSingleton<DiagnosticsSaveChangesInterceptor>();
+
+    void ConfigureDbContext(IServiceProvider sp, DbContextOptionsBuilder options)
+    {
+        options.UseSqlite(connectionString);
+        options.AddInterceptors(sp.GetRequiredService<DiagnosticsSaveChangesInterceptor>());
+        options.EnableDetailedErrors();
+        if (builder.Environment.IsDevelopment())
+        {
+            options.EnableSensitiveDataLogging();
+        }
+    }
+
+    builder.Services.AddDbContextFactory<MozgoslavDbContext>(ConfigureDbContext);
+    builder.Services.AddDbContext<MozgoslavDbContext>(
+        ConfigureDbContext,
         contextLifetime: ServiceLifetime.Scoped,
         optionsLifetime: ServiceLifetime.Singleton);
 
