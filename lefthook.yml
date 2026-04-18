@@ -20,5 +20,27 @@ pre-commit:
       glob: "python-sidecar/**/*.py"
       run: cd python-sidecar && ruff check --fix {staged_files} && black {staged_files}
       stage_fixed: true
+    # gitleaks: block secrets (PAT / API keys / .env payload) from reaching the
+    # commit. Scans only the staged slice so it stays sub-second. Skips quietly
+    # if the binary is absent — `brew install gitleaks` to enable locally.
+    gitleaks:
+      run: |
+        if command -v gitleaks >/dev/null 2>&1; then
+          gitleaks protect --staged --redact --verbose
+        else
+          echo "lefthook: gitleaks not installed — skipping secret scan. brew install gitleaks to enable."
+        fi
 
-# Pre-push: быстрые unit-тесты не гоняем (CI этим займётся).
+# Pre-push: быстрые unit-тесты не гоняем (CI этим займётся). Defence-in-depth
+# secret scan across the whole push diff, in case something sneaked in via
+# --no-verify, commits amended outside lefthook, or branches pulled from
+# elsewhere.
+pre-push:
+  commands:
+    gitleaks:
+      run: |
+        if command -v gitleaks >/dev/null 2>&1; then
+          gitleaks detect --redact --verbose --log-opts="origin/main..HEAD"
+        else
+          echo "lefthook: gitleaks not installed — skipping pre-push secret scan. brew install gitleaks to enable."
+        fi

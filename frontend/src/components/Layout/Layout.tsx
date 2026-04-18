@@ -1,6 +1,6 @@
-import { FC, ReactNode } from "react";
+import { FC, ReactNode, useCallback } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import {
   Archive,
@@ -19,7 +19,11 @@ import {
 
 import { useBackendHealth } from "../../hooks/useBackendHealth";
 import { ROUTES } from "../../constants/routes";
-import { resetOnboarding } from "../../store/slices/onboarding";
+import {
+  completeOnboarding,
+  resetOnboarding,
+  selectOnboardingCompleted,
+} from "../../store/slices/onboarding";
 import TitleBar from "../TitleBar";
 import {
   BackendStatusBanner,
@@ -51,12 +55,23 @@ const Layout: FC<LayoutProps> = ({ children }) => {
   // creator functions themselves.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dispatch = useDispatch() as (action: any) => void;
+  const onboardingCompleted = useSelector(selectOnboardingCompleted);
   const isHealthy = health.status === "ok";
 
   const onRestartOnboarding = () => {
     dispatch(resetOnboarding());
     navigate(ROUTES.onboarding);
   };
+
+  // "Menu as navigator" — clicking any sidebar entry while the user is still
+  // inside onboarding transparently completes onboarding and lets the click
+  // navigate. Without this the OnboardingCompleteGuard bounces the user
+  // straight back to /onboarding, making the menu feel broken.
+  const onNavClick = useCallback(() => {
+    if (!onboardingCompleted) {
+      dispatch(completeOnboarding());
+    }
+  }, [dispatch, onboardingCompleted]);
 
   return (
     <LayoutRoot>
@@ -67,40 +82,40 @@ const Layout: FC<LayoutProps> = ({ children }) => {
             {/* Task L1 — one "Мозгослав" entry replaces Dashboard + Queue;
                 the Sparkles mark migrated here from the sidebar header for
                 a cleaner minimalist layout. */}
-            <NavItem to={ROUTES.home} icon={<Sparkles size={16} />}>
+            <NavItem to={ROUTES.home} icon={<Sparkles size={16} />} onClick={onNavClick}>
               {t("nav.home")}
             </NavItem>
-            <NavItem to={ROUTES.notes} icon={<Brain size={16} />}>
+            <NavItem to={ROUTES.notes} icon={<Brain size={16} />} onClick={onNavClick}>
               {t("nav.notes")}
             </NavItem>
-            <NavItem to={ROUTES.rag} icon={<MessageSquare size={16} />}>
+            <NavItem to={ROUTES.rag} icon={<MessageSquare size={16} />} onClick={onNavClick}>
               {t("nav.rag")}
             </NavItem>
           </SidebarGroup>
 
           <SidebarGroup>
-            <NavItem to={ROUTES.profiles} icon={<ListTree size={16} />}>
+            <NavItem to={ROUTES.profiles} icon={<ListTree size={16} />} onClick={onNavClick}>
               {t("nav.profiles")}
             </NavItem>
-            <NavItem to={ROUTES.models} icon={<Database size={16} />}>
+            <NavItem to={ROUTES.models} icon={<Database size={16} />} onClick={onNavClick}>
               {t("nav.models")}
             </NavItem>
-            <NavItem to={ROUTES.obsidian} icon={<FolderTree size={16} />}>
+            <NavItem to={ROUTES.obsidian} icon={<FolderTree size={16} />} onClick={onNavClick}>
               {t("nav.obsidian")}
             </NavItem>
-            <NavItem to={ROUTES.sync} icon={<RefreshCw size={16} />}>
+            <NavItem to={ROUTES.sync} icon={<RefreshCw size={16} />} onClick={onNavClick}>
               {t("nav.sync")}
             </NavItem>
           </SidebarGroup>
 
           <SidebarGroup>
-            <NavItem to={ROUTES.settings} icon={<Settings size={16} />}>
+            <NavItem to={ROUTES.settings} icon={<Settings size={16} />} onClick={onNavClick}>
               {t("nav.settings")}
             </NavItem>
-            <NavItem to={ROUTES.logs} icon={<Wrench size={16} />}>
+            <NavItem to={ROUTES.logs} icon={<Wrench size={16} />} onClick={onNavClick}>
               {t("nav.logs")}
             </NavItem>
-            <NavItem to={ROUTES.backup} icon={<Archive size={16} />}>
+            <NavItem to={ROUTES.backup} icon={<Archive size={16} />} onClick={onNavClick}>
               {t("nav.backup")}
             </NavItem>
           </SidebarGroup>
@@ -139,10 +154,11 @@ interface NavItemProps {
   to: string;
   icon: ReactNode;
   children: ReactNode;
+  onClick?: () => void;
 }
 
-const NavItem: FC<NavItemProps> = ({ to, icon, children }) => (
-  <SidebarItem as={NavLink} to={to} end>
+const NavItem: FC<NavItemProps> = ({ to, icon, children, onClick }) => (
+  <SidebarItem as={NavLink} to={to} end onClick={onClick}>
     <SidebarIconSlot>{icon}</SidebarIconSlot>
     <span>{children}</span>
   </SidebarItem>

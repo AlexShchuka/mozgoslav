@@ -1,13 +1,25 @@
 import styled, { keyframes } from "styled-components";
 
 /**
- * Slow diagonal breathing used by the TitleBar. We animate `background-position`
- * rather than the gradient itself so there's no per-frame shader-paint cost —
- * the GPU simply pans the pre-composited gradient across an oversized canvas.
+ * Slow diagonal breathing on a `::before` pseudo-element using
+ * `transform: translate3d(...)`. Transforms are compositor-accelerated — the
+ * browser promotes the pseudo to its own GPU layer (hinted via
+ * `will-change`) and pans it without repainting. Animating the gradient's
+ * `background-position` directly — our previous implementation — falls to
+ * CPU paint on every frame across the full-width bar, starving the main
+ * thread and surfacing as click lag across the app. This version costs the
+ * main thread nothing.
+ *
+ * Layout: root holds the flat base colour + drag region. The pseudo sits
+ * behind content (`z-index: -1` inside an `isolation: isolate` stacking
+ * context) and extends 50% beyond each edge so the pan has room to travel
+ * without exposing empty corners. Gradient fades mint-soft → transparent →
+ * transparent → mint-soft so as the pseudo slides, a muted accent band
+ * drifts diagonally across the bar and back.
  */
 const breathe = keyframes`
-  0% { background-position: 0% 50%; }
-  100% { background-position: 100% 50%; }
+  0%   { transform: translate3d(-12%, -6%, 0); }
+  100% { transform: translate3d(12%, 6%, 0); }
 `;
 
 export const TitleBarRoot = styled.header`
@@ -23,15 +35,29 @@ export const TitleBarRoot = styled.header`
   padding: 0 ${({ theme }) => theme.space(4)} 0 78px;
   color: ${({ theme }) => theme.colors.text.primary};
   border-bottom: 1px solid ${({ theme }) => theme.colors.border.subtle};
-  background: linear-gradient(
-    135deg,
-    ${({ theme }) => theme.colors.accent.primary} 0%,
-    ${({ theme }) => theme.colors.bg.elevated1} 100%
-  );
-  background-size: 200% 200%;
-  animation: ${breathe} 9s ease-in-out infinite alternate;
+  background-color: ${({ theme }) => theme.colors.bg.elevated2};
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   -webkit-app-region: drag;
   user-select: none;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -50%;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(
+      135deg,
+      ${({ theme }) => theme.colors.accent.soft} 0%,
+      transparent 45%,
+      transparent 55%,
+      ${({ theme }) => theme.colors.accent.soft} 100%
+    );
+    animation: ${breathe} 9s ease-in-out infinite alternate;
+    will-change: transform;
+  }
 `;
 
 export const TitleBarLabel = styled.span`
