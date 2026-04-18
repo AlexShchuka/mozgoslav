@@ -277,7 +277,11 @@
     },
     "tryItNow": {
       "title": "Ready to go",
-      "hint": "Whisper Small RU, Silero VAD, and Natasha NER ship in the app. Upgrade anytime in Settings → Models."
+      "hint": "Whisper Small RU, Silero VAD, and Natasha NER ship in the app. Upgrade anytime in Settings → Models.",
+      "trySample": "Try on the bundled sample",
+      "sampleImporting": "Importing sample…",
+      "sampleImported": "Sample queued for processing",
+      "sampleFailed": "Sample import failed: {{error}}"
     },
     "llm": {
       "title": "LLM (optional)",

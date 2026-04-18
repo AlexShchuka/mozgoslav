@@ -98,4 +98,39 @@ describe("Onboarding — plan v0.8 Block 4 (slim, platform-aware)", () => {
       expect(window.localStorage.getItem("mozgoslav.onboardingComplete")).toBe("true"),
     );
   });
+
+  it("U1 — try-sample button uploads the bundled WAV via recordingApi.upload", async () => {
+    // Stub fetch("/sample.wav") so the test doesn't need Vite or a Response shim.
+    const wavBytes = new Uint8Array([0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00]);
+    const blob = new Blob([wavBytes], { type: "audio/wav" });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const originalFetch = (global as any).fetch;
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: () => Promise.resolve(blob),
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (global as any).fetch = fetchMock;
+    mockApi.recordingApi.upload.mockResolvedValue([]);
+
+    try {
+      renderOnboarding();
+      // Welcome → tryItNow takes one Next click.
+      await clickNext(1);
+
+      await waitFor(() =>
+        expect(screen.getByTestId("onboarding-try-sample")).toBeInTheDocument(),
+      );
+      fireEvent.click(screen.getByTestId("onboarding-try-sample"));
+
+      await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/sample.wav"));
+      await waitFor(() =>
+        expect(mockApi.recordingApi.upload).toHaveBeenCalledTimes(1),
+      );
+    } finally {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (global as any).fetch = originalFetch;
+    }
+  });
 });

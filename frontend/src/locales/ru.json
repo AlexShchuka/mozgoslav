@@ -277,7 +277,11 @@
     },
     "tryItNow": {
       "title": "Всё готово к работе",
-      "hint": "В сборке уже есть Whisper Small RU, Silero VAD и Natasha NER. Можно начинать. Топовые модели докачаются в Settings → Models."
+      "hint": "В сборке уже есть Whisper Small RU, Silero VAD и Natasha NER. Можно начинать. Топовые модели докачаются в Settings → Models.",
+      "trySample": "Попробовать на готовом сэмпле",
+      "sampleImporting": "Загружаю сэмпл…",
+      "sampleImported": "Сэмпл добавлен в очередь обработки",
+      "sampleFailed": "Не удалось загрузить сэмпл: {{error}}"
     },
     "llm": {
       "title": "LLM (опционально)",

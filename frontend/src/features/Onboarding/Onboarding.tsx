@@ -1,11 +1,13 @@
-import { FC, useEffect, useMemo } from "react";
+import { FC, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { m, LazyMotion, domAnimation } from "framer-motion";
-import { Check, ChevronRight, ExternalLink, Sparkles } from "lucide-react";
+import { Check, ChevronRight, ExternalLink, PlayCircle, Sparkles } from "lucide-react";
+import { toast } from "react-toastify";
 
 import Button from "../../components/Button";
 import Card from "../../components/Card";
+import { apiFactory } from "../../api";
 import { ROUTES } from "../../constants/routes";
 import { useAudioPermissions, useLlmDetection, useObsidianDetection } from "./hooks";
 import {
@@ -44,6 +46,14 @@ const PERMISSION_TEST_ID: Partial<Record<OnboardingStepKey, "mic" | "ax">> = {
   dictation: "ax",
 };
 
+// U1 — the try-it-now card offers a one-click import of this 30 s mono
+// 16 kHz sine sample so the user hits a real ProcessedNote before
+// installing an LLM, Obsidian, or granting mic permissions. The asset
+// ships from `frontend/public/` so Vite serves it in dev and Electron
+// copies it into the app bundle for packaged builds.
+const SAMPLE_AUDIO_URL = "/sample.wav";
+const SAMPLE_AUDIO_FILENAME = "mozgoslav-sample.wav";
+
 const Onboarding: FC<OnboardingProps> = ({
   currentStepIndex,
   onNextStep,
@@ -53,6 +63,8 @@ const Onboarding: FC<OnboardingProps> = ({
   const navigate = useNavigate();
   const platform = useMemo(detectPlatform, []);
   const steps = useMemo(() => stepsForPlatform(platform), [platform]);
+  const [sampleImporting, setSampleImporting] = useState(false);
+  const recordingApi = useMemo(() => apiFactory.createRecordingApi(), []);
   // Clamp against the step list here — the reducer has no idea of the
   // platform and thus can't bound the index on its own.
   const index = Math.max(0, Math.min(steps.length - 1, currentStepIndex));
@@ -102,6 +114,30 @@ const Onboarding: FC<OnboardingProps> = ({
     void window.open(systemPreferencesUrl, "_blank");
   };
 
+  const tryOnSample = async (): Promise<void> => {
+    if (sampleImporting) return;
+    setSampleImporting(true);
+    try {
+      const response = await fetch(SAMPLE_AUDIO_URL);
+      if (!response.ok) {
+        throw new Error(`sample fetch failed (${response.status})`);
+      }
+      const blob = await response.blob();
+      const file = new File([blob], SAMPLE_AUDIO_FILENAME, { type: "audio/wav" });
+      await recordingApi.upload([file]);
+      toast.success(t("onboarding.tryItNow.sampleImported"));
+      navigate(ROUTES.queue);
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? t("onboarding.tryItNow.sampleFailed", { error: err.message })
+          : t("onboarding.tryItNow.sampleFailed", { error: String(err) }),
+      );
+    } finally {
+      setSampleImporting(false);
+    }
+  };
+
   return (
     <PageRoot>
       <LazyMotion features={domAnimation} strict>
@@ -132,6 +168,20 @@ const Onboarding: FC<OnboardingProps> = ({
             <StepBody>
               <StepTitle>{t(`${stepKey}.title` as const)}</StepTitle>
               <StepHint>{t(`${stepKey}.hint` as const)}</StepHint>
+
+              {currentStep === "tryItNow" && (
+                <Button
+                  data-testid="onboarding-try-sample"
+                  variant="primary"
+                  leftIcon={<PlayCircle size={16} />}
+                  disabled={sampleImporting}
+                  onClick={tryOnSample}
+                >
+                  {sampleImporting
+                    ? t("onboarding.tryItNow.sampleImporting")
+                    : t("onboarding.tryItNow.trySample")}
+                </Button>
+              )}
 
               {systemPreferencesUrl && permissionTestId && (
                 <Button
