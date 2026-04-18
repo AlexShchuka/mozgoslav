@@ -70,6 +70,23 @@ export class DictationOrchestrator {
     this.sseController?.abort();
   }
 
+  /**
+   * NEXT H1 — start the helper's global keyboard monitor for the configured
+   * Electron accelerator (orthogonal to the mouse-5 / keycode press-to-talk
+   * path above; this one is gated by AppSettings.DictationPushToTalk).
+   */
+  async startKeyboardHotkey(accelerator: string): Promise<void> {
+    await this.helper.startHotkey(accelerator);
+  }
+
+  async stopKeyboardHotkey(): Promise<void> {
+    await this.helper.stopHotkey();
+  }
+
+  onKeyboardHotkeyEvent(cb: (payload: { kind: "press" | "release"; accelerator: string; observedAt: string }) => void): void {
+    this.helper.on("hotkey", cb);
+  }
+
   private async handlePress(): Promise<void> {
     if (this.phase !== "idle") return;
 

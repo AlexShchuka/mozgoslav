@@ -16,6 +16,7 @@ import { Recording } from "../../domain/Recording";
 const recordingApi = apiFactory.createRecordingApi();
 const dictationApi = apiFactory.createDictationApi();
 import { formatDuration } from "../../core/utils/format";
+import { usePushToTalk } from "../../hooks/usePushToTalk";
 import {
   DashboardRoot,
   DropzoneRoot,
@@ -266,6 +267,18 @@ const Dashboard: FC = () => {
     });
     return unsubscribe;
   }, []);
+
+  // NEXT H1 — push-to-talk. Backend only publishes hotkey frames when the
+  // Swift helper is running (i.e. on macOS with AppSettings.DictationPushToTalk=true).
+  // Press starts a recording if idle, release stops it if still recording.
+  usePushToTalk({
+    onPress: () => {
+      if (!sessionRef.current) void startRecording();
+    },
+    onRelease: () => {
+      if (sessionRef.current) void stopRecording();
+    },
+  });
 
   const getFormatLabel = (format: unknown) => {
     if (typeof format === "string") return format.toUpperCase();

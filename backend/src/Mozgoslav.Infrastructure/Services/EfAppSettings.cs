@@ -41,6 +41,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     public string DictationHotkeyType => Snapshot.DictationHotkeyType;
     public int DictationMouseButton => Snapshot.DictationMouseButton;
     public string DictationKeyboardHotkey => Snapshot.DictationKeyboardHotkey;
+    public bool DictationPushToTalk => Snapshot.DictationPushToTalk;
     public string DictationLanguage => Snapshot.DictationLanguage;
     public string DictationWhisperModelId => Snapshot.DictationWhisperModelId;
     public int DictationCaptureSampleRate => Snapshot.DictationCaptureSampleRate;
@@ -97,7 +98,8 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             SyncthingEnabled: ParseBool(map, Keys.SyncthingEnabled, defaults.SyncthingEnabled),
             SyncthingObsidianVaultPath: map.GetValueOrDefault(Keys.SyncthingObsidianVaultPath, defaults.SyncthingObsidianVaultPath),
             SyncthingApiKey: map.GetValueOrDefault(Keys.SyncthingApiKey, defaults.SyncthingApiKey),
-            SyncthingBaseUrl: map.GetValueOrDefault(Keys.SyncthingBaseUrl, defaults.SyncthingBaseUrl));
+            SyncthingBaseUrl: map.GetValueOrDefault(Keys.SyncthingBaseUrl, defaults.SyncthingBaseUrl),
+            DictationPushToTalk: ParseBool(map, Keys.DictationPushToTalk, defaults.DictationPushToTalk));
 
         await _lock.WaitAsync(ct);
         try { Snapshot = dto; }
@@ -144,6 +146,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             (Keys.SyncthingObsidianVaultPath, dto.SyncthingObsidianVaultPath),
             (Keys.SyncthingApiKey, dto.SyncthingApiKey),
             (Keys.SyncthingBaseUrl, dto.SyncthingBaseUrl),
+            (Keys.DictationPushToTalk, BoolToString(dto.DictationPushToTalk)),
         };
 
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
@@ -248,6 +251,8 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         public const string DictationHotkeyType = "dictation_hotkey_type";
         public const string DictationMouseButton = "dictation_mouse_button";
         public const string DictationKeyboardHotkey = "dictation_keyboard_hotkey";
+        // NEXT H1 — hold-to-record (release to stop) semantics. False ⇒ toggle.
+        public const string DictationPushToTalk = "dictation_push_to_talk";
         public const string DictationLanguage = "dictation_language";
         public const string DictationWhisperModelId = "dictation_whisper_model_id";
         public const string DictationCaptureSampleRate = "dictation_capture_sample_rate";

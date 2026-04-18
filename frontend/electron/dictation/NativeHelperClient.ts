@@ -128,6 +128,15 @@ export class NativeHelperClient extends EventEmitter {
     await this.send<object>("inject.text", { text, mode });
   }
 
+  /** NEXT H1 — start/stop the global push-to-talk hotkey monitor. */
+  async startHotkey(accelerator: string): Promise<void> {
+    await this.send<object>("hotkey.start", { accelerator });
+  }
+
+  async stopHotkey(): Promise<void> {
+    await this.send<object>("hotkey.stop", undefined);
+  }
+
   async detectTarget(): Promise<FocusedTarget> {
     const result = (await this.send<FocusedTarget>("inject.detectTarget", undefined)) as
       | { bundleId?: string; appName?: string; useAX?: boolean }
@@ -194,6 +203,9 @@ export class NativeHelperClient extends EventEmitter {
       const params = message.result?.params;
       if (event === "audio" && params) {
         this.emit("audio", params as unknown as AudioChunkPayload);
+      } else if (event === "hotkey" && params) {
+        // NEXT H1 — forward to main so it can POST to /_internal/hotkey/event.
+        this.emit("hotkey", params as unknown as HotkeyEventPayload);
       }
       return;
     }
@@ -220,6 +232,12 @@ interface HelperMessage {
   id?: string;
   result?: { event?: string; params?: unknown } & Record<string, unknown>;
   error?: { code: number; message: string };
+}
+
+export interface HotkeyEventPayload {
+  kind: "press" | "release";
+  accelerator: string;
+  observedAt: string;
 }
 
 const normalizePermission = (

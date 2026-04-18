@@ -176,6 +176,8 @@ try
     // D3 — hot-plug microphone events. Singleton fan-out; Swift helper POSTs,
     // the renderer subscribes via SSE.
     builder.Services.AddSingleton<IAudioDeviceChangeNotifier, ChannelAudioDeviceChangeNotifier>();
+    // NEXT H1 — push-to-talk fan-out.
+    builder.Services.AddSingleton<IHotkeyEventNotifier, ChannelHotkeyEventNotifier>();
     builder.Services.AddSingleton<IAudioConverter, FfmpegAudioConverter>();
     // Task #19 — probe imported audio files for duration via ffprobe so the
     // recording list shows real lengths instead of TimeSpan.Zero.

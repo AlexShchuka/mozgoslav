@@ -49,6 +49,36 @@ public static class SseEndpoints
                 eventType: "device-changed");
         });
 
+        // NEXT H1 — push-to-talk. The Swift helper POSTs press / release
+        // events for the configured accelerator; Electron main subscribes to
+        // /api/hotkey/stream and drives the DictationOrchestrator (start on
+        // press, stop on release) instead of globalShortcut's keyDown toggle.
+        endpoints.MapPost("/_internal/hotkey/event", async (
+            [FromBody] HotkeyEvent payload,
+            IHotkeyEventNotifier notifier,
+            CancellationToken ct) =>
+        {
+            if (payload is null)
+            {
+                return Results.BadRequest(new { error = "payload required" });
+            }
+            if (payload.Kind != "press" && payload.Kind != "release")
+            {
+                return Results.BadRequest(new { error = "kind must be press or release" });
+            }
+            await notifier.PublishAsync(payload, ct);
+            return Results.Ok(new { accepted = true });
+        });
+
+        endpoints.MapGet("/api/hotkey/stream", (
+            IHotkeyEventNotifier notifier,
+            CancellationToken ct) =>
+        {
+            return TypedResults.ServerSentEvents(
+                notifier.SubscribeAsync(ct),
+                eventType: "hotkey");
+        });
+
         return endpoints;
     }
 

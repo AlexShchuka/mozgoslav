@@ -187,6 +187,7 @@
       "vadModelPath": "Путь к VAD модели",
       "whisperThreads": "Whisper threads (0 = авто)",
       "dictationKeyboardHotkey": "Глобальный хоткей диктовки",
+      "dictationPushToTalk": "Удерживать для записи (отпустил — стоп)",
       "obsidianApiHost": "Obsidian Local REST API host",
       "obsidianApiToken": "Obsidian Local REST API token"
     },

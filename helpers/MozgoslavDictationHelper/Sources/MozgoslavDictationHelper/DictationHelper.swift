@@ -11,6 +11,7 @@ public final class DictationHelper {
     private let audioCapture: AudioCaptureService
     private let textInjector: TextInjectionService
     private let focusDetector: FocusedAppDetector
+    private let hotkeyMonitor: HotkeyMonitor
 
     public init(
         stdin: FileHandle = .standardInput,
@@ -21,6 +22,7 @@ public final class DictationHelper {
         self.audioCapture = AudioCaptureService()
         self.textInjector = TextInjectionService()
         self.focusDetector = FocusedAppDetector()
+        self.hotkeyMonitor = HotkeyMonitor()
     }
 
     public func run() {
@@ -29,6 +31,17 @@ public final class DictationHelper {
                 "samples": .array(chunk.samples.map { .double(Double($0)) }),
                 "sampleRate": .int(chunk.sampleRate),
                 "offsetMs": .int(chunk.offsetMs),
+            ]))
+        }
+
+        // NEXT H1 — emit press / release events for the configured dictation
+        // hotkey. Electron main POSTs them to /_internal/hotkey/event so the
+        // renderer (SSE subscriber) can drive true push-to-talk lifecycle.
+        hotkeyMonitor.onEvent = { [weak self] payload in
+            self?.emit(event: "hotkey", params: .object([
+                "kind": .string(payload.kind),
+                "accelerator": .string(payload.accelerator),
+                "observedAt": .string(payload.observedAt),
             ]))
         }
 
@@ -140,7 +153,21 @@ public final class DictationHelper {
                 "useAX": .bool(strategy == .accessibility),
             ]))
 
+        case "hotkey.start":
+            let params = request.params?.objectValue() ?? [:]
+            let accelerator = params["accelerator"]?.stringValue() ?? ""
+            hotkeyMonitor.start(accelerator: accelerator)
+            return JsonRpcResponse(id: request.id, result: .object([
+                "started": .bool(!accelerator.isEmpty),
+                "accelerator": .string(accelerator),
+            ]))
+
+        case "hotkey.stop":
+            hotkeyMonitor.stop()
+            return JsonRpcResponse(id: request.id, result: .object(["stopped": .bool(true)]))
+
         case "shutdown":
+            hotkeyMonitor.stop()
             audioCapture.stop()
             exit(0)
 

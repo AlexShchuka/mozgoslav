@@ -226,6 +226,15 @@ const Settings: FC<SettingsProps> = ({
                 testId="dictation"
               />
             </div>
+            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input
+                type="checkbox"
+                data-testid="settings-dictation-push-to-talk"
+                checked={draft.dictationPushToTalk}
+                onChange={(e) => update("dictationPushToTalk", e.target.checked)}
+              />
+              <span>{t("settings.fields.dictationPushToTalk")}</span>
+            </label>
           </FormGrid>
         </Card>
       )}

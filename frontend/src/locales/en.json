@@ -187,6 +187,7 @@
       "vadModelPath": "VAD model path",
       "whisperThreads": "Whisper threads (0 = auto)",
       "dictationKeyboardHotkey": "Global dictation hotkey",
+      "dictationPushToTalk": "Hold to record (release to stop)",
       "obsidianApiHost": "Obsidian Local REST API host",
       "obsidianApiToken": "Obsidian Local REST API token"
     },
