@@ -161,7 +161,7 @@ public sealed class ProcessQueueWorker
 
         var wavPath = await _audioConverter.ConvertToWavAsync(recording.FilePath, ct);
 
-        var segmentProgress = new Progress<int>(p => _ = UpdateProgressAsync(job, ScaleProgress(p, 0, TranscribeEnd), ct));
+        var segmentProgress = new Progress<int>(p => _ = NotifyProgressAsync(job, ScaleProgress(p, 0, TranscribeEnd), ct));
         // Plan v0.8 Block 5 — glossary drives Whisper `initial_prompt`. Empty
         // glossary → null → existing behaviour (no prompt override).
         var whisperInitialPrompt = _glossary.TryBuildInitialPrompt(profile);
@@ -273,10 +273,22 @@ public sealed class ProcessQueueWorker
         await _progressNotifier.PublishAsync(job, ct);
     }
 
-    private async Task UpdateProgressAsync(ProcessingJob job, int progress, CancellationToken ct)
+    /// <summary>
+    /// Progress tick from <see cref="Progress{T}"/> handlers — fired on pool
+    /// threads concurrently with the main pipeline and with each other. MUST
+    /// NOT touch the scoped DbContext: concurrent <c>SaveChangesAsync</c>
+    /// calls on a single context trip EF Core's <c>ConcurrencyDetector</c>
+    /// (InvalidOperationException "A second operation was started...") or —
+    /// worse — corrupt the change tracker and surface later as
+    /// <c>NullReferenceException</c> inside <c>StateManager.CascadeChanges</c>.
+    /// Progress ticks are a UI concern; they travel via SSE only. Durable
+    /// progress is persisted on stage boundaries in
+    /// <see cref="TransitionAsync"/>, which runs awaited on the pipeline's
+    /// single logical thread.
+    /// </summary>
+    private async Task NotifyProgressAsync(ProcessingJob job, int progress, CancellationToken ct)
     {
         job.Progress = progress;
-        await _jobs.UpdateAsync(job, ct);
         await _progressNotifier.PublishAsync(job, ct);
     }
 
