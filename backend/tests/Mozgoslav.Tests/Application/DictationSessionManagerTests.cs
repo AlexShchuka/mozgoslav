@@ -431,6 +431,7 @@ public sealed class DictationSessionManagerTests
         public IPerAppCorrectionProfiles PerAppProfiles { get; } =
             Substitute.For<IPerAppCorrectionProfiles>();
         public FakeStreamingService Streaming { get; } = new();
+        public FakeDictationPcmStream PcmStream { get; } = new();
         public bool LlmPolish { get; init; }
 
         public DictationSessionManager Manager => field ??= new DictationSessionManager(
@@ -438,6 +439,7 @@ public sealed class DictationSessionManagerTests
             Llm,
             Settings,
             PerAppProfiles,
+            PcmStream,
             NullLogger<DictationSessionManager>.Instance);
 
         public FakeStreamingService ArrangeEmptyStream()

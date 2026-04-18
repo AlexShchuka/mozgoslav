@@ -3,8 +3,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { KBarProvider } from "kbar";
 
 import { Layout } from "./components/Layout";
-import Dashboard from "./features/Dashboard";
-import Queue from "./features/Queue";
+import Home from "./features/Home";
 import NotesList from "./features/Notes/NotesList";
 import NoteViewer from "./features/Notes/NoteViewer";
 import RagChat from "./features/RagChat";
@@ -37,20 +36,17 @@ const AppShell: FC = () => {
         <Routes>
           <Route path={ROUTES.onboarding} element={<Onboarding />} />
           <Route
-            path={ROUTES.dashboard}
+            path={ROUTES.home}
             element={
               <OnboardingCompleteGuard>
-                <Dashboard />
+                <Home />
               </OnboardingCompleteGuard>
             }
           />
+          {/* Task L1 — keep /queue bookmarks alive by redirecting to /home. */}
           <Route
             path={ROUTES.queue}
-            element={
-              <OnboardingCompleteGuard>
-                <Queue />
-              </OnboardingCompleteGuard>
-            }
+            element={<Navigate to={ROUTES.home} replace />}
           />
           <Route
             path={ROUTES.notes}
@@ -132,7 +128,7 @@ const AppShell: FC = () => {
               </OnboardingCompleteGuard>
             }
           />
-          <Route path="*" element={<Navigate to={ROUTES.dashboard} replace />} />
+          <Route path="*" element={<Navigate to={ROUTES.home} replace />} />
         </Routes>
       </Layout>
       <CommandPalette />

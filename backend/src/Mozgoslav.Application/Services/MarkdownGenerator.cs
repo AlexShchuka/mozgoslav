@@ -2,16 +2,31 @@ using System.Globalization;
 using System.Text;
 
 using Mozgoslav.Domain.Entities;
+using Mozgoslav.Domain.ValueObjects;
 
 namespace Mozgoslav.Application.Services;
 
 /// <summary>
 /// Renders a <see cref="ProcessedNote"/> as Markdown with YAML frontmatter, following
 /// the output format from ADR-001 §7. Pure function — safe for unit tests.
+/// <para>
+/// T3 — when a non-empty segment list is supplied to
+/// <see cref="Generate"/> and at least one segment has a
+/// <see cref="TranscriptSegment.SpeakerLabel"/>, the <c>## Full Transcript</c>
+/// section groups consecutive same-speaker segments and renders them as
+/// <c>**Alice (mm:ss):**\n text\n\n</c>. Segments without a speaker label
+/// are grouped under a neutral "Speaker" header only when they sit between
+/// diarized segments; a fully-null-speaker transcript renders identically
+/// to the legacy plain-text output (byte-for-byte).
+/// </para>
 /// </summary>
 public static class MarkdownGenerator
 {
-    public static string Generate(ProcessedNote note, Profile profile, Recording recording)
+    public static string Generate(
+        ProcessedNote note,
+        Profile profile,
+        Recording recording,
+        IReadOnlyList<TranscriptSegment>? transcriptSegments = null)
     {
         ArgumentNullException.ThrowIfNull(note);
         ArgumentNullException.ThrowIfNull(profile);
@@ -19,7 +34,7 @@ public static class MarkdownGenerator
 
         var body = new StringBuilder();
         AppendFrontmatter(body, note, profile, recording);
-        AppendBody(body, note);
+        AppendBody(body, note, transcriptSegments);
         return body.ToString();
     }
 
@@ -50,7 +65,10 @@ public static class MarkdownGenerator
         sb.AppendLine();
     }
 
-    private static void AppendBody(StringBuilder sb, ProcessedNote note)
+    private static void AppendBody(
+        StringBuilder sb,
+        ProcessedNote note,
+        IReadOnlyList<TranscriptSegment>? transcriptSegments)
     {
         if (!string.IsNullOrWhiteSpace(note.Summary))
         {
@@ -95,8 +113,92 @@ public static class MarkdownGenerator
         if (!string.IsNullOrWhiteSpace(note.FullTranscript))
         {
             sb.AppendLine("## Full Transcript");
-            sb.AppendLine(note.FullTranscript);
+            if (HasAnySpeaker(transcriptSegments))
+            {
+                AppendSpeakerGroupedTranscript(sb, transcriptSegments!);
+            }
+            else
+            {
+                sb.AppendLine(note.FullTranscript);
+            }
         }
+    }
+
+    private static bool HasAnySpeaker(IReadOnlyList<TranscriptSegment>? segments)
+    {
+        if (segments is null || segments.Count == 0)
+        {
+            return false;
+        }
+        foreach (var segment in segments)
+        {
+            if (!string.IsNullOrWhiteSpace(segment.SpeakerLabel))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Renders the transcript as speaker-headed groups. Consecutive segments
+    /// that share the same label (including null — rendered as "Speaker") are
+    /// joined into a single block headed by <c>**Label (mm:ss):**</c> where
+    /// mm:ss is the block's starting offset. The null-speaker policy: treat
+    /// null as its own group so interleaved system-narration / single-speaker
+    /// passages inside a diarized recording get their own header rather than
+    /// being silently absorbed into the previous speaker.
+    /// </summary>
+    private static void AppendSpeakerGroupedTranscript(
+        StringBuilder sb,
+        IReadOnlyList<TranscriptSegment> segments)
+    {
+        const string UnknownLabel = "Speaker";
+
+        var groupStart = 0;
+        for (var i = 1; i <= segments.Count; i++)
+        {
+            var prevLabel = NormalizeLabel(segments[groupStart].SpeakerLabel);
+            var currentLabel = i < segments.Count
+                ? NormalizeLabel(segments[i].SpeakerLabel)
+                : null;
+
+            if (i < segments.Count && string.Equals(prevLabel, currentLabel, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var header = prevLabel ?? UnknownLabel;
+            var groupStartTime = segments[groupStart].Start;
+            sb.Append("**")
+                .Append(header)
+                .Append(" (")
+                .Append(FormatTimestamp(groupStartTime))
+                .Append("):**")
+                .AppendLine();
+            sb.AppendLine();
+
+            var block = new StringBuilder();
+            for (var j = groupStart; j < i; j++)
+            {
+                if (block.Length > 0) block.Append(' ');
+                block.Append(segments[j].Text.Trim());
+            }
+            sb.AppendLine(block.ToString());
+            sb.AppendLine();
+
+            groupStart = i;
+        }
+    }
+
+    private static string? NormalizeLabel(string? label) =>
+        string.IsNullOrWhiteSpace(label) ? null : label.Trim();
+
+    private static string FormatTimestamp(TimeSpan offset)
+    {
+        var totalMinutes = (int)offset.TotalMinutes;
+        var seconds = offset.Seconds;
+        return $"{totalMinutes:D2}:{seconds:D2}";
     }
 
     private static void AppendBulletSection(StringBuilder sb, string heading, IReadOnlyList<string> items)

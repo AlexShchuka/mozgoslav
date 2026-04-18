@@ -29,6 +29,7 @@ export const detectPlatform = (): OnboardingPlatform => {
 export type OnboardingStepKey =
   | "welcome"
   | "tryItNow"
+  | "models"
   | "llm"
   | "obsidian"
   | "mic"
@@ -38,6 +39,10 @@ export type OnboardingStepKey =
 const ALL_STEPS: readonly OnboardingStepKey[] = [
   "welcome",
   "tryItNow",
+  // Task #12b — Tier 1 models (Whisper Small + Silero VAD) must be on disk
+  // before transcription works. The step surfaces the status and offers a
+  // single "Скачать" CTA that pulls everything missing in sequence.
+  "models",
   "llm",
   "obsidian",
   "mic",
@@ -51,9 +56,9 @@ export const stepsForPlatform = (
   if (platform === "macos") {
     return ALL_STEPS;
   }
-  // Linux / Windows / other: only 4 cards — no mic/dictation permissions.
+  // Linux / Windows / other: only 5 cards — no mic/dictation permissions.
   return ALL_STEPS.filter((step) => step !== "mic" && step !== "dictation");
 };
 
 export const isRequiredStep = (step: OnboardingStepKey): boolean =>
-  step === "welcome" || step === "tryItNow" || step === "ready";
+  step === "welcome" || step === "tryItNow" || step === "models" || step === "ready";

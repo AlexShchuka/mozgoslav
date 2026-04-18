@@ -1,5 +1,5 @@
 export type { ActionItem } from "./ActionItem";
-export type { ModelEntry } from "./Model";
+export type { ModelEntry, ModelTier } from "./Model";
 export type { ProcessedNote } from "./ProcessedNote";
 export type { ProcessingJob } from "./ProcessingJob";
 export type { Profile } from "./Profile";

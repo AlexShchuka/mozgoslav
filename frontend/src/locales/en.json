@@ -4,6 +4,7 @@
     "tagline": "Local second brain for conversations"
   },
   "nav": {
+    "home": "Mozgoslav",
     "dashboard": "Dashboard",
     "queue": "Queue",
     "notes": "Notes",
@@ -67,6 +68,9 @@
     "recordStart": "Record",
     "recordStop": "Stop",
     "recordUnsupported": "Recording is macOS-only",
+    "audioLevel": "Microphone input level",
+    "deviceUnknown": "unknown device",
+    "deviceChanged": "Microphone \"{{name}}\" — {{kind}}",
     "recentTitle": "Recent recordings",
     "empty": "No recordings yet — import or record your first one."
   },
@@ -126,6 +130,11 @@
       "backupStarted": "Backup started",
       "vaultMissing": "Obsidian vault path is not configured yet.",
       "bridgeMissing": "Native shell is unavailable in browser mode."
+    },
+    "hint": {
+      "navigate": "navigate",
+      "select": "select",
+      "dismiss": "dismiss"
     }
   },
   "profiles": {
@@ -161,6 +170,7 @@
       "storage": "Storage",
       "llm": "LLM",
       "whisper": "Whisper",
+      "dictation": "Dictation",
       "obsidian": "Obsidian",
       "profiles": "Profiles",
       "advanced": "Advanced",
@@ -176,9 +186,12 @@
       "whisperModelPath": "Whisper model path (.bin)",
       "vadModelPath": "VAD model path",
       "whisperThreads": "Whisper threads (0 = auto)",
+      "dictationKeyboardHotkey": "Global dictation hotkey",
+      "dictationPushToTalk": "Hold to record (release to stop)",
       "obsidianApiHost": "Obsidian Local REST API host",
       "obsidianApiToken": "Obsidian Local REST API token"
     },
+    "hotkeyHint": "Click the field and hold the combination you want. Requires an app restart to take effect (hot-reload is tracked as H1).",
     "theme": {
       "system": "System",
       "light": "Light",
@@ -272,7 +285,22 @@
     },
     "tryItNow": {
       "title": "Ready to go",
-      "hint": "Whisper Small RU, Silero VAD, and Natasha NER ship in the app. Upgrade anytime in Settings → Models."
+      "hint": "Whisper Small RU, Silero VAD, and Natasha NER ship in the app. Upgrade anytime in Settings → Models.",
+      "trySample": "Try on the bundled sample",
+      "sampleImporting": "Importing sample…",
+      "sampleImported": "Sample queued for processing",
+      "sampleFailed": "Sample import failed: {{error}}"
+    },
+    "models": {
+      "title": "Models",
+      "hint": "Download the bundled models — they are required for the app to work.",
+      "installed": "Installed",
+      "missing": "Missing",
+      "sizeMb": "{{size}} MB",
+      "downloadAll": "Download all",
+      "downloading": "Downloading…",
+      "downloadFailed": "Download failed: {{error}}",
+      "loadFailed": "Failed to load the catalogue: {{error}}"
     },
     "llm": {
       "title": "LLM (optional)",
@@ -306,6 +334,11 @@
     },
     "obsidian.detected": "Found vault: {{path}}",
     "obsidian.notDetected": "Vault not found — skip for now."
+  },
+  "hotkeyRecorder": {
+    "pressCombo": "Press a combination…",
+    "empty": "Not set",
+    "clear": "Clear"
   },
   "hotkeys": {
     "title": "Keyboard shortcuts",

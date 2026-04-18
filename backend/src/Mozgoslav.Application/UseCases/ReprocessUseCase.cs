@@ -80,7 +80,7 @@ public sealed class ReprocessUseCase
             FullTranscript = transcript.RawText,
             Tags = llm?.Tags.ToList() ?? []
         };
-        note.MarkdownContent = MarkdownGenerator.Generate(note, profile, recording);
+        note.MarkdownContent = MarkdownGenerator.Generate(note, profile, recording, transcript.Segments);
 
         if (!string.IsNullOrWhiteSpace(_settings.VaultPath))
         {

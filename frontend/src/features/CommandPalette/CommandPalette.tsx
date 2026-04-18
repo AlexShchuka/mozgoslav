@@ -12,12 +12,15 @@ import type { ActionImpl } from "kbar";
 
 import {
   Backdrop,
+  Chip,
+  FooterHint,
   Input,
   Item,
   ItemHint,
   ItemList,
   Palette,
   Section,
+  SectionHeader,
 } from "./CommandPalette.style";
 
 /**
@@ -54,21 +57,6 @@ const RenderItem = forwardRef<
 });
 RenderItem.displayName = "CommandPalette.RenderItem";
 
-const SectionHeader: FC<React.HTMLAttributes<HTMLDivElement>> = ({ children, ...rest }) => (
-  <div
-    {...rest}
-    style={{
-      padding: "8px 12px",
-      fontSize: 12,
-      textTransform: "uppercase",
-      letterSpacing: "0.04em",
-      opacity: 0.6,
-    }}
-  >
-    {children}
-  </div>
-);
-
 const Results: FC = () => {
   const { results } = useMatches();
   return (
@@ -99,6 +87,15 @@ const CommandPalette: FC = () => {
                   <Results />
                 </ItemList>
               </Section>
+              <FooterHint data-testid="kbar-footer">
+                <Chip>↑</Chip>
+                <Chip>↓</Chip>
+                <span>{t("commandPalette.hint.navigate")}</span>
+                <Chip>↵</Chip>
+                <span>{t("commandPalette.hint.select")}</span>
+                <Chip>Esc</Chip>
+                <span>{t("commandPalette.hint.dismiss")}</span>
+              </FooterHint>
             </Palette>
           </KBarAnimator>
         </Backdrop>

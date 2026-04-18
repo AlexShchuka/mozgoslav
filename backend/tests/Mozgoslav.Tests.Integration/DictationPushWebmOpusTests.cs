@@ -20,12 +20,13 @@ using Mozgoslav.Infrastructure.Persistence;
 namespace Mozgoslav.Tests.Integration;
 
 /// <summary>
-/// ADR-007 BC-004 (Phase 2 frontend coordination item) — the Dashboard record
-/// button pushes Opus-in-WebM chunks to
-/// <c>/api/dictation/{sessionId}/push</c> with Content-Type
-/// <c>application/octet-stream</c>. The backend must decode them to 16 kHz
-/// float32 mono PCM (the shape Whisper.net's streaming path accepts) before
-/// forwarding into the session manager.
+/// ADR-007 BC-004 / D4 — the Dashboard record button pushes Opus-in-WebM
+/// chunks to <c>/api/dictation/{sessionId}/push</c> with Content-Type
+/// <c>application/octet-stream</c>. The backend routes each chunk into the
+/// session's long-running ffmpeg decoder; only the first chunk carries the
+/// WebM EBML header, so the implementation has to hold stdin open across
+/// chunks. A one-shot decoder fails the follow-up chunks with exit code 183
+/// (invalid data) — this test pins the fix.
 /// </summary>
 [TestClass]
 public sealed class DictationPushWebmOpusTests
@@ -33,13 +34,17 @@ public sealed class DictationPushWebmOpusTests
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     [TestMethod]
-    public async Task Push_WebmOpusPayload_DecodesAndAccumulates()
+    public async Task Push_WebmOpusChunks_DecodeAcrossBoundariesAndAccumulate()
     {
+        if (!HasFfmpeg())
+        {
+            Assert.Inconclusive("ffmpeg not installed in this sandbox");
+        }
+
         var sink = new CapturingStreamingService();
         await using var factory = new DictationPushTestFactory(sink);
         using var client = factory.CreateClient();
 
-        // Start a session.
         using var start = await client.PostAsync("/api/dictation/start", content: null, TestContext.CancellationToken);
         start.StatusCode.Should().Be(HttpStatusCode.OK);
         var startBody = await start.Content.ReadFromJsonAsync<StartResponse>(Json, TestContext.CancellationToken);
@@ -48,31 +53,35 @@ public sealed class DictationPushWebmOpusTests
 
         try
         {
-            var fixturePath = LocateFixture("dictation-sample.webm");
-            var fixtureBytes = await File.ReadAllBytesAsync(fixturePath, TestContext.CancellationToken);
-            fixtureBytes.Length.Should().BeGreaterThan(0);
+            var chunkPaths = Directory.EnumerateFiles(LocateFixtureDir(), "chunk-*.bin")
+                .OrderBy(p => p, StringComparer.Ordinal)
+                .ToArray();
+            chunkPaths.Should().NotBeEmpty("chunk fixtures are required for D4 regression coverage");
 
-            using var payload = new ByteArrayContent(fixtureBytes);
-            payload.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+            foreach (var chunkPath in chunkPaths)
+            {
+                var bytes = await File.ReadAllBytesAsync(chunkPath, TestContext.CancellationToken);
+                using var payload = new ByteArrayContent(bytes);
+                payload.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
-            using var response = await client.PostAsync(
-                $"/api/dictation/{sessionId}/push", payload, TestContext.CancellationToken);
+                using var response = await client.PostAsync(
+                    $"/api/dictation/{sessionId}/push", payload, TestContext.CancellationToken);
 
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+                response.StatusCode.Should().Be(HttpStatusCode.OK,
+                    "every MediaRecorder chunk must be accepted, including header-less continuations");
+            }
 
-            // Stop cleanly — the streaming service drains and emits no partials.
             using var stop = await client.PostAsync(
                 $"/api/dictation/stop/{sessionId}", content: null, TestContext.CancellationToken);
             stop.StatusCode.Should().Be(HttpStatusCode.OK);
 
             sink.ReceivedChunks.Should().NotBeEmpty(
-                "the decoded WebM/Opus payload must reach the streaming transcription service");
-            var pushedChunk = sink.ReceivedChunks[0];
-            pushedChunk.SampleRate.Should().Be(16_000,
+                "the decoded WebM/Opus chunks must reach the streaming transcription service");
+            var totalSamples = sink.ReceivedChunks.Sum(c => c.Samples.Length);
+            totalSamples.Should().BeGreaterThan(16_000,
+                "a 3-second fixture at 16 kHz is about 48 000 samples — expect a generous lower bound");
+            sink.ReceivedChunks[0].SampleRate.Should().Be(16_000,
                 "the push handler renormalises to the Whisper streaming rate");
-            // The 1-second fixture at 16 kHz should decode to ~16 000 samples.
-            pushedChunk.Samples.Length.Should().BeGreaterThan(8_000,
-                "a 1 s sample decoded at 16 kHz should produce about 16 000 float samples");
         }
         finally
         {
@@ -81,15 +90,27 @@ public sealed class DictationPushWebmOpusTests
         }
     }
 
-    private static string LocateFixture(string fileName)
+    private static string LocateFixtureDir()
     {
-        // Content items copied to the test bin directory.
-        var candidate = Path.Combine(AppContext.BaseDirectory, "_fixtures", fileName);
-        if (File.Exists(candidate))
+        var candidate = Path.Combine(
+            AppContext.BaseDirectory, "Fixtures", "dictation-webm-chunks");
+        if (Directory.Exists(candidate))
         {
             return candidate;
         }
-        throw new FileNotFoundException($"Test fixture not found at {candidate}");
+        throw new DirectoryNotFoundException($"Test fixture directory not found at {candidate}");
+    }
+
+    private static bool HasFfmpeg()
+    {
+        var path = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+        foreach (var dir in path.Split(Path.PathSeparator))
+        {
+            if (string.IsNullOrWhiteSpace(dir)) continue;
+            if (File.Exists(Path.Combine(dir, "ffmpeg"))) return true;
+            if (File.Exists(Path.Combine(dir, "ffmpeg.exe"))) return true;
+        }
+        return false;
     }
 
     private sealed record StartResponse(Guid SessionId);

@@ -42,6 +42,14 @@ export const MarkdownBody = styled.div`
 
   p, li { color: ${({ theme }) => theme.colors.text.primary}; }
 
+  /* T3 speaker header. The markdown bold wrapper for speaker labels renders
+     as <strong>; tint it with the accent colour so it stands out from the
+     transcript body without needing a dedicated heading tag. */
+  strong {
+    color: ${({ theme }) => theme.colors.accent.primary};
+    font-weight: ${({ theme }) => theme.font.weight.semibold};
+  }
+
   code {
     padding: 2px 6px;
     border-radius: ${({ theme }) => theme.radii.sm};

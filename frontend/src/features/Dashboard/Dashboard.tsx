@@ -4,16 +4,19 @@ import { useTranslation } from "react-i18next";
 import { FileAudio, Mic, Square, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 
+import AudioLevelMeter from "../../components/AudioLevelMeter";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
 import Badge from "../../components/Badge";
 import { apiFactory } from "../../api";
+import { API_ENDPOINTS, BACKEND_URL } from "../../constants/api";
 import { Recording } from "../../domain/Recording";
 
 const recordingApi = apiFactory.createRecordingApi();
 const dictationApi = apiFactory.createDictationApi();
 import { formatDuration } from "../../core/utils/format";
+import { usePushToTalk } from "../../hooks/usePushToTalk";
 import {
   DashboardRoot,
   DropzoneRoot,
@@ -42,6 +45,7 @@ const Dashboard: FC = () => {
   const [uploading, setUploading] = useState(false);
   const [recordState, setRecordState] = useState<RecordState>("idle");
   const [transcript, setTranscript] = useState<string | null>(null);
+  const [activeStream, setActiveStream] = useState<MediaStream | null>(null);
   const sessionRef = useRef<ActiveSession | null>(null);
 
   const refresh = useCallback(async () => {
@@ -56,6 +60,37 @@ const Dashboard: FC = () => {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // D3 — subscribe to hot-plug microphone events. The Swift helper observes
+  // AVCaptureDevice.wasConnected/wasDisconnected and POSTs the fresh device
+  // list to /_internal/devices/changed on the backend; the backend re-emits
+  // via SSE "device-changed" so we can toast + ensure Start is enabled.
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.EventSource === "undefined") {
+      return undefined;
+    }
+    const es = new EventSource(`${BACKEND_URL}${API_ENDPOINTS.devicesStream}`);
+    es.addEventListener("device-changed", (event) => {
+      try {
+        const payload = JSON.parse((event as MessageEvent).data) as {
+          kind: string;
+          devices: { id: string; name: string; isDefault: boolean }[];
+        };
+        // Snapshot-kind events fire once on subscription and shouldn't toast.
+        if (payload.kind === "snapshot") return;
+        const defaultName =
+          payload.devices.find((d) => d.isDefault)?.name ??
+          payload.devices[0]?.name ??
+          t("dashboard.deviceUnknown");
+        toast.info(
+          t("dashboard.deviceChanged", { kind: payload.kind, name: defaultName }),
+        );
+      } catch {
+        // Ignore malformed events — SSE noise never blocks the record path.
+      }
+    });
+    return () => es.close();
+  }, [t]);
 
   const onDrop = useCallback(
     async (files: File[]) => {
@@ -134,12 +169,14 @@ const Dashboard: FC = () => {
           });
       };
       sessionRef.current = { sessionId, recorder, stream };
+      setActiveStream(stream);
       recorder.start(250); // 250 ms chunks matches ADR-002 D9
       setRecordState("recording");
     } catch (err) {
       setRecordState("idle");
       toast.error(err instanceof Error ? err.message : String(err));
       sessionRef.current = null;
+      setActiveStream(null);
     }
   };
 
@@ -159,6 +196,7 @@ const Dashboard: FC = () => {
       toast.error(err instanceof Error ? err.message : String(err));
     } finally {
       sessionRef.current = null;
+      setActiveStream(null);
       setRecordState("idle");
     }
   };
@@ -215,18 +253,32 @@ const Dashboard: FC = () => {
                 .catch(() => {});
             };
             sessionRef.current = { sessionId: started.sessionId, recorder, stream };
+            setActiveStream(stream);
             recorder.start(250);
             setRecordState("recording");
           } catch (err) {
             setRecordState("idle");
             toast.error(err instanceof Error ? err.message : String(err));
             sessionRef.current = null;
+            setActiveStream(null);
           }
         })();
       }
     });
     return unsubscribe;
   }, []);
+
+  // NEXT H1 — push-to-talk. Backend only publishes hotkey frames when the
+  // Swift helper is running (i.e. on macOS with AppSettings.DictationPushToTalk=true).
+  // Press starts a recording if idle, release stops it if still recording.
+  usePushToTalk({
+    onPress: () => {
+      if (!sessionRef.current) void startRecording();
+    },
+    onRelease: () => {
+      if (sessionRef.current) void stopRecording();
+    },
+  });
 
   const getFormatLabel = (format: unknown) => {
     if (typeof format === "string") return format.toUpperCase();
@@ -268,6 +320,14 @@ const Dashboard: FC = () => {
               : t("dashboard.recordStart")}
           </Button>
         </Row>
+        {recordState === "recording" && activeStream && (
+          <div style={{ marginTop: 12 }} data-testid="dashboard-levels">
+            <AudioLevelMeter
+              stream={activeStream}
+              ariaLabel={t("dashboard.audioLevel")}
+            />
+          </div>
+        )}
         {transcript && (
           <div
             data-testid="dashboard-transcript"

@@ -34,6 +34,17 @@ public final class AudioCaptureService {
     public func start(deviceId: String?, sampleRate: Int) throws {
         #if canImport(AVFoundation)
         guard !isRunning else { return }
+        // D1 / P1 — single-tap guarantee. inputNode supports exactly one tap
+        // on bus 0; if file-capture is already running, streaming would
+        // silently replace its callback and file writes would stop. Reject
+        // with a clear error so the caller can surface it instead of debugging
+        // an empty file hours later.
+        guard fileSessions.isEmpty else {
+            throw HelperError(
+                code: -32022,
+                message: "Audio streaming cannot start while \(fileSessions.count) file-capture session(s) are active."
+            )
+        }
         let input = engine.inputNode
         let inputFormat = input.outputFormat(forBus: 0)
 
@@ -86,7 +97,12 @@ public final class AudioCaptureService {
     private final class FileSession {
         let sessionId: String
         let outputPath: String
-        let file: AVAudioFile
+        // D1 / P2 — mutable so stopFileCapture can explicitly release the
+        // AVAudioFile before returning. Releasing the only strong reference
+        // closes the file handle and flushes the WAV header, preventing the
+        // ImportRecordingUseCase race where the file was still zero-length
+        // when the backend tried to read it.
+        var file: AVAudioFile?
         let startedAt: Date
         var stopped = false
 
@@ -103,6 +119,17 @@ public final class AudioCaptureService {
 
     public func startFileCapture(sessionId: String, outputPath: String, sampleRate: Int) throws {
         #if canImport(AVFoundation)
+        // D1 / P1 — mirror of the streaming guard above. inputNode only has
+        // one tap; a streaming session would starve the file session of audio.
+        guard !isRunning else {
+            throw HelperError(
+                code: -32023,
+                message: "File capture cannot start while streaming capture is active."
+            )
+        }
+        FileLog.shared.info(
+            "startFileCapture enter sessionId=\(sessionId) outputPath=\(outputPath) sampleRate=\(sampleRate)"
+        )
         let targetFormat = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
             sampleRate: Double(sampleRate),
@@ -162,6 +189,22 @@ public final class AudioCaptureService {
             engine.inputNode.removeTap(onBus: 0)
             engine.stop()
         }
+
+        // D1 / P2 — drop the only strong reference to the AVAudioFile so the
+        // underlying file handle closes synchronously before we hand the path
+        // back to the caller. Without this the file sat open via ARC until the
+        // helper scope unwound, and ImportRecordingUseCase occasionally saw a
+        // 0-byte file. Sync-safety: the tap callback drops a buffer for any
+        // `session.stopped == true`, and stopFileCapture runs serial on the
+        // JSON-RPC dispatch queue, so there is no writer racing us here.
+        session.file = nil
+
+        let size = (try? FileManager.default
+            .attributesOfItem(atPath: session.outputPath)[.size] as? NSNumber)?.int64Value ?? -1
+        FileLog.shared.info(
+            "stopFileCapture done sessionId=\(sessionId) outputPath=\(session.outputPath) size=\(size) durationMs=\(durationMs)"
+        )
+
         return (session.outputPath, durationMs)
         #else
         _ = sessionId
@@ -197,7 +240,9 @@ public final class AudioCaptureService {
         guard status != .error, outputBuffer.frameLength > 0 else { return }
 
         for session in fileSessions.values where !session.stopped {
-            try? session.file.write(from: outputBuffer)
+            if let file = session.file {
+                try? file.write(from: outputBuffer)
+            }
         }
     }
 

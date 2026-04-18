@@ -77,6 +77,24 @@ describe("CommandPalette — kbar integration", () => {
     await waitFor(() => expect(lastNavigatedTo).toBe("/queue"));
   });
 
+  it("CommandPalette_RendersFooterKeyboardHints", async () => {
+    renderPalette();
+
+    fireEvent.keyDown(window, { key: "k", code: "KeyK", ctrlKey: true });
+    await waitFor(() =>
+      expect(screen.getByTestId("kbar-palette")).toBeInTheDocument(),
+    );
+
+    // U2 — themed chip row at the palette footer lists the core shortcuts
+    // so users discover navigation without trial and error.
+    const footer = screen.getByTestId("kbar-footer");
+    expect(footer).toBeInTheDocument();
+    expect(footer.textContent).toContain("↑");
+    expect(footer.textContent).toContain("↓");
+    expect(footer.textContent).toContain("↵");
+    expect(footer.textContent).toContain("Esc");
+  });
+
   it("CommandPalette_QuickAction_NewNote_DispatchesNoteCreate", async () => {
     renderPalette();
 

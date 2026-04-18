@@ -4,6 +4,7 @@
     "tagline": "Локальный второй мозг для разговоров"
   },
   "nav": {
+    "home": "Мозгослав",
     "dashboard": "Дашборд",
     "queue": "Очередь",
     "notes": "Заметки",
@@ -67,6 +68,9 @@
     "recordStart": "Записать",
     "recordStop": "Остановить",
     "recordUnsupported": "Запись доступна только на macOS",
+    "audioLevel": "Уровень сигнала микрофона",
+    "deviceUnknown": "неизвестное устройство",
+    "deviceChanged": "Микрофон «{{name}}» — {{kind}}",
     "recentTitle": "Последние записи",
     "empty": "Записей пока нет — импортируй или запиши первую."
   },
@@ -126,6 +130,11 @@
       "backupStarted": "Бэкап запущен",
       "vaultMissing": "Путь к Obsidian vault ещё не настроен.",
       "bridgeMissing": "Нативный shell недоступен в browser-режиме."
+    },
+    "hint": {
+      "navigate": "переместиться",
+      "select": "выбрать",
+      "dismiss": "закрыть"
     }
   },
   "profiles": {
@@ -161,6 +170,7 @@
       "storage": "Хранилище",
       "llm": "LLM",
       "whisper": "Whisper",
+      "dictation": "Диктовка",
       "obsidian": "Obsidian",
       "profiles": "Профили",
       "advanced": "Продвинутые",
@@ -176,9 +186,12 @@
       "whisperModelPath": "Путь к Whisper модели (.bin)",
       "vadModelPath": "Путь к VAD модели",
       "whisperThreads": "Whisper threads (0 = авто)",
+      "dictationKeyboardHotkey": "Глобальный хоткей диктовки",
+      "dictationPushToTalk": "Удерживать для записи (отпустил — стоп)",
       "obsidianApiHost": "Obsidian Local REST API host",
       "obsidianApiToken": "Obsidian Local REST API token"
     },
+    "hotkeyHint": "Нажми на поле и зажми желаемую комбинацию. Для активации требуется перезапуск приложения (hot-reload — в H1).",
     "theme": {
       "system": "Как в системе",
       "light": "Светлая",
@@ -272,7 +285,22 @@
     },
     "tryItNow": {
       "title": "Всё готово к работе",
-      "hint": "В сборке уже есть Whisper Small RU, Silero VAD и Natasha NER. Можно начинать. Топовые модели докачаются в Settings → Models."
+      "hint": "В сборке уже есть Whisper Small RU, Silero VAD и Natasha NER. Можно начинать. Топовые модели докачаются в Settings → Models.",
+      "trySample": "Попробовать на готовом сэмпле",
+      "sampleImporting": "Загружаю сэмпл…",
+      "sampleImported": "Сэмпл добавлен в очередь обработки",
+      "sampleFailed": "Не удалось загрузить сэмпл: {{error}}"
+    },
+    "models": {
+      "title": "Модели",
+      "hint": "Скачай встроенные модели — они нужны для работы приложения.",
+      "installed": "Установлено",
+      "missing": "Не скачано",
+      "sizeMb": "{{size}} МБ",
+      "downloadAll": "Скачать всё",
+      "downloading": "Скачиваю…",
+      "downloadFailed": "Не удалось скачать: {{error}}",
+      "loadFailed": "Не удалось загрузить список моделей: {{error}}"
     },
     "llm": {
       "title": "LLM (опционально)",
@@ -306,6 +334,11 @@
     },
     "obsidian.detected": "Нашёл vault: {{path}}",
     "obsidian.notDetected": "Vault не найден — пропусти."
+  },
+  "hotkeyRecorder": {
+    "pressCombo": "Нажми комбинацию…",
+    "empty": "Не задано",
+    "clear": "Очистить"
   },
   "hotkeys": {
     "title": "Горячие клавиши",

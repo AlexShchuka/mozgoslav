@@ -19,6 +19,7 @@ export interface AppSettings {
   dictationHotkeyType: HotkeyType;
   dictationMouseButton: number;
   dictationKeyboardHotkey: string;
+  dictationPushToTalk: boolean;
   dictationLanguage: string;
   dictationWhisperModelId: string;
   dictationCaptureSampleRate: number;
@@ -51,6 +52,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   dictationHotkeyType: "mouse",
   dictationMouseButton: 4,
   dictationKeyboardHotkey: "",
+  dictationPushToTalk: false,
   dictationLanguage: "ru",
   dictationWhisperModelId: "",
   dictationCaptureSampleRate: 16000,

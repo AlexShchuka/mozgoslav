@@ -84,19 +84,21 @@ public static class DictationEndpoints
             }
         });
 
-        // ADR-007 BC-004 / Phase 2 frontend coordination — Dashboard record button.
-        // The browser's MediaRecorder ships Opus-in-WebM chunks at
+        // ADR-007 BC-004 / D4 — Dashboard record button. The browser's
+        // MediaRecorder ships Opus-in-WebM chunks at
         // `POST /api/dictation/{sessionId}/push` with Content-Type
         // `application/octet-stream` (or `audio/webm;codecs=opus`). The handler
-        // decodes to 16 kHz float32 mono PCM via ffmpeg and feeds the session
-        // manager the same way the JSON `samples[]` path does. When the body
-        // looks like raw PCM (legacy tests / Electron native path) we skip the
-        // decode step.
+        // forwards each chunk into the session's long-running ffmpeg decoder
+        // (see IDictationPcmStream). Only the first chunk carries the WebM
+        // EBML header, so decoding each chunk in isolation fails with exit
+        // code 183 — hence the per-session process that holds stdin open.
+        // When the body looks like raw PCM (legacy tests / Electron native
+        // path) we skip the decoder entirely.
         endpoints.MapPost("/api/dictation/{sessionId:guid}/push", async (
             Guid sessionId,
             HttpContext context,
             IDictationSessionManager manager,
-            IAudioPcmDecoder decoder,
+            IDictationPcmStream pcmStream,
             CancellationToken ct) =>
         {
             using var memoryStream = new MemoryStream();
@@ -109,22 +111,23 @@ public static class DictationEndpoints
 
             try
             {
-                var samples = LooksLikeRawPcm(context.Request.ContentType, payload)
-                    ? BytesToFloat32Le(payload)
-                    : await decoder.DecodeToPcmAsync(payload, ct);
-
-                if (samples.Length == 0)
+                if (LooksLikeRawPcm(context.Request.ContentType, payload))
                 {
-                    // Harmless — MediaRecorder may emit a handful of header-only chunks at start.
-                    return Results.Ok(new { accepted = true, samples = 0 });
+                    var samples = BytesToFloat32Le(payload);
+                    if (samples.Length == 0)
+                    {
+                        return Results.Ok(new { accepted = true, samples = 0 });
+                    }
+                    var chunk = new AudioChunk(
+                        Samples: samples,
+                        SampleRate: pcmStream.TargetSampleRate,
+                        Offset: TimeSpan.Zero);
+                    await manager.PushAudioAsync(sessionId, chunk, ct);
+                    return Results.Ok(new { accepted = true, samples = samples.Length });
                 }
 
-                var chunk = new AudioChunk(
-                    Samples: samples,
-                    SampleRate: decoder.TargetSampleRate,
-                    Offset: TimeSpan.Zero);
-                await manager.PushAudioAsync(sessionId, chunk, ct);
-                return Results.Ok(new { accepted = true, samples = samples.Length });
+                await manager.PushRawChunkAsync(sessionId, payload, ct);
+                return Results.Ok(new { accepted = true });
             }
             catch (KeyNotFoundException ex)
             {

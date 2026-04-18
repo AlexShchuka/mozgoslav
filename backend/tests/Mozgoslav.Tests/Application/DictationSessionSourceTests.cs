@@ -76,11 +76,14 @@ public sealed class DictationSessionSourceTests
             Substitute.For<IPerAppCorrectionProfiles>();
         public FakeStreamingService Streaming { get; } = new();
 
+        public FakeDictationPcmStream PcmStream { get; } = new();
+
         public DictationSessionManager Manager => field ??= new DictationSessionManager(
             Streaming,
             Llm,
             Settings,
             PerAppProfiles,
+            PcmStream,
             NullLogger<DictationSessionManager>.Instance);
     }
 

@@ -36,6 +36,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
     private readonly ILlmService _llm;
     private readonly IAppSettings _settings;
     private readonly IPerAppCorrectionProfiles _perAppProfiles;
+    private readonly IDictationPcmStream _pcmStream;
     private readonly ILogger<DictationSessionManager> _logger;
 
     private readonly ConcurrentDictionary<Guid, SessionRuntime> _sessions = new();
@@ -48,12 +49,14 @@ public sealed class DictationSessionManager : IDictationSessionManager
         ILlmService llm,
         IAppSettings settings,
         IPerAppCorrectionProfiles perAppProfiles,
+        IDictationPcmStream pcmStream,
         ILogger<DictationSessionManager> logger)
     {
         _streaming = streaming;
         _llm = llm;
         _settings = settings;
         _perAppProfiles = perAppProfiles;
+        _pcmStream = pcmStream;
         _logger = logger;
     }
 
@@ -96,6 +99,80 @@ public sealed class DictationSessionManager : IDictationSessionManager
         }
     }
 
+    public async Task PushRawChunkAsync(Guid sessionId, byte[] encodedChunk, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(encodedChunk);
+        var runtime = GetRuntimeOrThrow(sessionId);
+        if (runtime.Session.State != DictationState.Recording)
+        {
+            throw new InvalidOperationException(
+                $"Session {sessionId} is not recording (state={runtime.Session.State}).");
+        }
+
+        // Spin the long-running ffmpeg decoder lazily on the first chunk: the
+        // Electron native path never hits PushRawChunkAsync, so a session that
+        // only uses PushAudioAsync (PCM) never pays the process-start cost.
+        await EnsurePcmStreamAsync(runtime, ct).ConfigureAwait(false);
+        await _pcmStream.WriteAsync(sessionId, encodedChunk, ct).ConfigureAwait(false);
+    }
+
+    private async Task EnsurePcmStreamAsync(SessionRuntime runtime, CancellationToken ct)
+    {
+        if (runtime.PcmStreamStarted)
+        {
+            return;
+        }
+        await runtime.PcmStartLock.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            if (runtime.PcmStreamStarted)
+            {
+                return;
+            }
+            await _pcmStream.StartAsync(runtime.Session.Id, ct).ConfigureAwait(false);
+            runtime.PcmStreamStarted = true;
+            // Fan-out task: wrap each float[] from ffmpeg into an AudioChunk and push
+            // into the existing audio channel so the transcription loop sees the same
+            // shape regardless of whether the source was PCM or WebM/Opus.
+#pragma warning disable CA2025
+            runtime.PcmForwardTask = ForwardDecodedPcmAsync(runtime);
+#pragma warning restore CA2025
+        }
+        finally
+        {
+            runtime.PcmStartLock.Release();
+        }
+    }
+
+    private async Task ForwardDecodedPcmAsync(SessionRuntime runtime)
+    {
+        try
+        {
+            var reader = _pcmStream.GetReader(runtime.Session.Id);
+            await foreach (var samples in reader.ReadAllAsync(runtime.Cts.Token))
+            {
+                if (samples.Length == 0)
+                {
+                    continue;
+                }
+                var chunk = new AudioChunk(
+                    Samples: samples,
+                    SampleRate: _pcmStream.TargetSampleRate,
+                    Offset: TimeSpan.Zero);
+                await runtime.AudioWriter.WriteAsync(chunk, runtime.Cts.Token).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // expected on stop / cancel
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Failed to forward decoded PCM for session {SessionId}", runtime.Session.Id);
+        }
+    }
+
     public ValueTask PushAudioAsync(Guid sessionId, AudioChunk chunk, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(chunk);
@@ -133,6 +210,39 @@ public sealed class DictationSessionManager : IDictationSessionManager
         var runtime = GetRuntimeOrThrow(sessionId);
 
         runtime.Session.State = DictationState.Processing;
+
+        // Flush the long-running PCM decoder (if we ever started one) BEFORE
+        // completing the audio channel — we still want any remaining decoded
+        // samples to reach the transcription loop.
+        if (runtime.PcmStreamStarted)
+        {
+            try
+            {
+                await _pcmStream.StopAsync(sessionId, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or IOException)
+            {
+                _logger.LogWarning(ex,
+                    "ffmpeg PCM stream stop failed for session {SessionId}", sessionId);
+            }
+            if (runtime.PcmForwardTask is not null)
+            {
+                try
+                {
+                    await runtime.PcmForwardTask.WaitAsync(ct).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex,
+                        "PCM forwarder failed for session {SessionId}", sessionId);
+                }
+            }
+        }
+
         runtime.AudioWriter.TryComplete();
 
         // Wait for the transcription loop to drain and the final partial to settle.
@@ -178,14 +288,26 @@ public sealed class DictationSessionManager : IDictationSessionManager
         return new FinalTranscript(rawText, polished, duration);
     }
 
-    public Task CancelAsync(Guid sessionId, CancellationToken ct)
+    public async Task CancelAsync(Guid sessionId, CancellationToken ct)
     {
         if (!_sessions.TryRemove(sessionId, out var runtime))
         {
-            return Task.CompletedTask;
+            return;
         }
 
         runtime.Cts.Cancel();
+        if (runtime.PcmStreamStarted)
+        {
+            try
+            {
+                await _pcmStream.CancelAsync(sessionId, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "ffmpeg PCM stream cancel failed for session {SessionId}", sessionId);
+            }
+        }
         runtime.AudioWriter.TryComplete();
         runtime.Partials.Writer.TryComplete();
         runtime.Session.State = DictationState.Idle;
@@ -195,7 +317,6 @@ public sealed class DictationSessionManager : IDictationSessionManager
         DeleteAudioBuffer(runtime);
         runtime.Dispose();
         _logger.LogInformation("Dictation session {SessionId} cancelled", sessionId);
-        return Task.CompletedTask;
     }
 
     public DictationSession? TryGet(Guid sessionId) =>
@@ -456,6 +577,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
             Cts = new CancellationTokenSource();
             TranscriptionTask = Task.CompletedTask;
             LastPartialText = string.Empty;
+            PcmStartLock = new SemaphoreSlim(1, 1);
             AudioBufferPath = audioBufferPath;
             if (audioBufferPath is not null)
             {
@@ -479,6 +601,9 @@ public sealed class DictationSessionManager : IDictationSessionManager
         public string LastPartialText { get; set; }
         public string? AudioBufferPath { get; }
         public FileStream? AudioBuffer { get; private set; }
+        public SemaphoreSlim PcmStartLock { get; }
+        public bool PcmStreamStarted { get; set; }
+        public Task? PcmForwardTask { get; set; }
         /// <summary>
         /// Domain profile whose <see cref="DomainProfile.TranscriptionPromptOverride"/>
         /// (when non-empty) biases Whisper. Today the runtime always starts without a
@@ -498,6 +623,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
         {
             CloseAudioBuffer();
             Cts.Dispose();
+            PcmStartLock.Dispose();
         }
     }
 }

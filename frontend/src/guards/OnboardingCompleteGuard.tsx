@@ -1,38 +1,20 @@
-import { FC, PropsWithChildren, useEffect, useState } from "react";
+import { FC, PropsWithChildren } from "react";
 import { Navigate } from "react-router-dom";
 
 import { ROUTES } from "../constants/routes";
-import { ONBOARDING_COMPLETE_STORAGE_KEY } from "../store/slices/onboarding";
 
 /**
  * Blocks a route until the user has completed (or skipped to completion)
  * the onboarding wizard.
  *
- * Source of truth is `localStorage.mozgoslav.onboardingComplete`. Reading
- * happens once on mount so a later setItem inside the same tree does not
- * retroactively redirect an already-rendered subtree — by that point the
- * navigation has already happened via `navigate(ROUTES.dashboard)` inside
- * the Onboarding component's finish handler.
+ * TEMP (task #15, 2026-04-18): during active development the guard always
+ * redirects to onboarding so changes to the wizard are visible on every
+ * launch. To revert when onboarding stabilises: restore the previous
+ * localStorage-based implementation from git history (also fixes Skip via
+ * task #14).
  */
-const OnboardingCompleteGuard: FC<PropsWithChildren> = ({ children }) => {
-  const [status, setStatus] = useState<"checking" | "allowed" | "redirect">(
-    "checking",
-  );
-
-  useEffect(() => {
-    try {
-      const flag = window.localStorage.getItem(ONBOARDING_COMPLETE_STORAGE_KEY);
-      setStatus(flag === "true" ? "allowed" : "redirect");
-    } catch {
-      // localStorage may be locked (e.g. tests / private mode). Treat as a
-      // fresh install and send the user through onboarding.
-      setStatus("redirect");
-    }
-  }, []);
-
-  if (status === "checking") return null;
-  if (status === "redirect") return <Navigate to={ROUTES.onboarding} replace />;
-  return <>{children}</>;
+const OnboardingCompleteGuard: FC<PropsWithChildren> = () => {
+  return <Navigate to={ROUTES.onboarding} replace />;
 };
 
 export default OnboardingCompleteGuard;

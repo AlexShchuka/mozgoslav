@@ -1,11 +1,15 @@
-import { FC, useEffect, useMemo } from "react";
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { m, LazyMotion, domAnimation } from "framer-motion";
-import { Check, ChevronRight, ExternalLink, Sparkles } from "lucide-react";
+import { Check, CheckCircle2, ChevronRight, Download, ExternalLink, PlayCircle, Sparkles } from "lucide-react";
+import { toast } from "react-toastify";
 
 import Button from "../../components/Button";
 import Card from "../../components/Card";
+import ModelDownloadProgress from "../../components/ModelDownloadProgress";
+import type { ModelEntry } from "../../domain/Model";
+import { apiFactory } from "../../api";
 import { ROUTES } from "../../constants/routes";
 import { useAudioPermissions, useLlmDetection, useObsidianDetection } from "./hooks";
 import {
@@ -44,6 +48,14 @@ const PERMISSION_TEST_ID: Partial<Record<OnboardingStepKey, "mic" | "ax">> = {
   dictation: "ax",
 };
 
+// U1 — the try-it-now card offers a one-click import of this 30 s mono
+// 16 kHz sine sample so the user hits a real ProcessedNote before
+// installing an LLM, Obsidian, or granting mic permissions. The asset
+// ships from `frontend/public/` so Vite serves it in dev and Electron
+// copies it into the app bundle for packaged builds.
+const SAMPLE_AUDIO_URL = "/sample.wav";
+const SAMPLE_AUDIO_FILENAME = "mozgoslav-sample.wav";
+
 const Onboarding: FC<OnboardingProps> = ({
   currentStepIndex,
   onNextStep,
@@ -53,6 +65,65 @@ const Onboarding: FC<OnboardingProps> = ({
   const navigate = useNavigate();
   const platform = useMemo(detectPlatform, []);
   const steps = useMemo(() => stepsForPlatform(platform), [platform]);
+  const [sampleImporting, setSampleImporting] = useState(false);
+  const recordingApi = useMemo(() => apiFactory.createRecordingApi(), []);
+  const modelsApi = useMemo(() => apiFactory.createModelsApi(), []);
+
+  // Task #12b — Tier 1 bundle model status for the Models onboarding step.
+  const [bundleModels, setBundleModels] = useState<ModelEntry[]>([]);
+  const [activeDownloads, setActiveDownloads] = useState<Record<string, string>>({});
+  const [downloadAllInFlight, setDownloadAllInFlight] = useState(false);
+  const modelCompletionResolvers = useRef<Record<string, () => void>>({});
+
+  const refreshBundleModels = useCallback(async () => {
+    try {
+      const all = await modelsApi.list();
+      setBundleModels(all.filter((m) => m.tier === "bundle"));
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? t("onboarding.models.loadFailed", { error: err.message })
+          : t("onboarding.models.loadFailed", { error: String(err) }),
+      );
+    }
+  }, [modelsApi, t]);
+
+  const handleModelDownloadComplete = useCallback((downloadId: string) => {
+    setActiveDownloads((prev) => {
+      const next: Record<string, string> = {};
+      for (const [catalogueId, dId] of Object.entries(prev)) {
+        if (dId !== downloadId) next[catalogueId] = dId;
+        else modelCompletionResolvers.current[catalogueId]?.();
+      }
+      return next;
+    });
+  }, []);
+
+  const handleDownloadAll = async (): Promise<void> => {
+    if (downloadAllInFlight) return;
+    const missing = bundleModels.filter((m) => !m.installed);
+    if (missing.length === 0) return;
+    setDownloadAllInFlight(true);
+    try {
+      for (const model of missing) {
+        const { downloadId } = await modelsApi.download(model.id);
+        setActiveDownloads((prev) => ({ ...prev, [model.id]: downloadId }));
+        await new Promise<void>((resolve) => {
+          modelCompletionResolvers.current[model.id] = resolve;
+        });
+        delete modelCompletionResolvers.current[model.id];
+        await refreshBundleModels();
+      }
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? t("onboarding.models.downloadFailed", { error: err.message })
+          : t("onboarding.models.downloadFailed", { error: String(err) }),
+      );
+    } finally {
+      setDownloadAllInFlight(false);
+    }
+  };
   // Clamp against the step list here — the reducer has no idea of the
   // platform and thus can't bound the index on its own.
   const index = Math.max(0, Math.min(steps.length - 1, currentStepIndex));
@@ -83,6 +154,10 @@ const Onboarding: FC<OnboardingProps> = ({
   };
 
   const skip = () => {
+    // Skip must persist the completion flag so OnboardingCompleteGuard lets
+    // the user into the dashboard on the next launch; without this the guard
+    // bounced the user back here the moment they reloaded.
+    onComplete();
     navigate(ROUTES.dashboard, { replace: true });
   };
 
@@ -92,6 +167,15 @@ const Onboarding: FC<OnboardingProps> = ({
     if (done && currentStepIndex >= steps.length - 1) return;
   }, [done, currentStepIndex, steps.length]);
 
+  // Task #12b — load Tier 1 status when the user lands on the models step.
+  useEffect(() => {
+    if (currentStep !== "models") return;
+    void refreshBundleModels();
+  }, [currentStep, refreshBundleModels]);
+
+  const missingBundleModels = bundleModels.filter((m) => !m.installed);
+  const modelsBlockingNext = currentStep === "models" && missingBundleModels.length > 0;
+
   const showSkip = !isRequiredStep(currentStep);
 
   const systemPreferencesUrl = SYSTEM_PREFERENCES_URLS[currentStep];
@@ -100,6 +184,30 @@ const Onboarding: FC<OnboardingProps> = ({
   const openSystemPreferences = () => {
     if (!systemPreferencesUrl) return;
     void window.open(systemPreferencesUrl, "_blank");
+  };
+
+  const tryOnSample = async (): Promise<void> => {
+    if (sampleImporting) return;
+    setSampleImporting(true);
+    try {
+      const response = await fetch(SAMPLE_AUDIO_URL);
+      if (!response.ok) {
+        throw new Error(`sample fetch failed (${response.status})`);
+      }
+      const blob = await response.blob();
+      const file = new File([blob], SAMPLE_AUDIO_FILENAME, { type: "audio/wav" });
+      await recordingApi.upload([file]);
+      toast.success(t("onboarding.tryItNow.sampleImported"));
+      navigate(ROUTES.queue);
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? t("onboarding.tryItNow.sampleFailed", { error: err.message })
+          : t("onboarding.tryItNow.sampleFailed", { error: String(err) }),
+      );
+    } finally {
+      setSampleImporting(false);
+    }
   };
 
   return (
@@ -133,6 +241,20 @@ const Onboarding: FC<OnboardingProps> = ({
               <StepTitle>{t(`${stepKey}.title` as const)}</StepTitle>
               <StepHint>{t(`${stepKey}.hint` as const)}</StepHint>
 
+              {currentStep === "tryItNow" && (
+                <Button
+                  data-testid="onboarding-try-sample"
+                  variant="primary"
+                  leftIcon={<PlayCircle size={16} />}
+                  disabled={sampleImporting}
+                  onClick={tryOnSample}
+                >
+                  {sampleImporting
+                    ? t("onboarding.tryItNow.sampleImporting")
+                    : t("onboarding.tryItNow.trySample")}
+                </Button>
+              )}
+
               {systemPreferencesUrl && permissionTestId && (
                 <Button
                   data-testid={`onboarding-open-prefs-${permissionTestId}`}
@@ -142,6 +264,61 @@ const Onboarding: FC<OnboardingProps> = ({
                 >
                   {t("onboarding.openSystemPreferences")}
                 </Button>
+              )}
+
+              {currentStep === "models" && (
+                <div data-testid="onboarding-models-list" style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {bundleModels.map((model) => (
+                    <div
+                      key={model.id}
+                      data-testid={`onboarding-models-item-${model.id}`}
+                      style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, fontSize: 14 }}
+                    >
+                      <span>
+                        <strong>{model.name}</strong>
+                        {" · "}
+                        {t("onboarding.models.sizeMb", { size: model.sizeMb })}
+                      </span>
+                      {model.installed ? (
+                        <span
+                          data-testid={`onboarding-models-installed-${model.id}`}
+                          style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "currentColor", opacity: 0.7 }}
+                        >
+                          <CheckCircle2 size={16} />
+                          {t("onboarding.models.installed")}
+                        </span>
+                      ) : (
+                        <span
+                          data-testid={`onboarding-models-missing-${model.id}`}
+                          style={{ opacity: 0.7 }}
+                        >
+                          {t("onboarding.models.missing")}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {Object.entries(activeDownloads).map(([catalogueId, downloadId]) => (
+                    <ModelDownloadProgress
+                      key={downloadId}
+                      downloadId={downloadId}
+                      label={bundleModels.find((m) => m.id === catalogueId)?.name ?? catalogueId}
+                      onComplete={handleModelDownloadComplete}
+                    />
+                  ))}
+                  {missingBundleModels.length > 0 && (
+                    <Button
+                      data-testid="onboarding-models-download-all"
+                      variant="primary"
+                      leftIcon={<Download size={16} />}
+                      disabled={downloadAllInFlight}
+                      onClick={() => void handleDownloadAll()}
+                    >
+                      {downloadAllInFlight
+                        ? t("onboarding.models.downloading")
+                        : t("onboarding.models.downloadAll")}
+                    </Button>
+                  )}
+                </div>
               )}
 
               {currentStep === "llm" && (
@@ -197,6 +374,7 @@ const Onboarding: FC<OnboardingProps> = ({
             variant="primary"
             rightIcon={done ? <Check size={16} /> : <ChevronRight size={16} />}
             onClick={next}
+            disabled={modelsBlockingNext}
           >
             {done ? t("common.apply") : t("common.next")}
           </Button>

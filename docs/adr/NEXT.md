@@ -1,94 +1,95 @@
 # NEXT — активная очередь работы
 
-- **Status:** Active queue. Пункт выполнили → удалили из файла.
+- **Status:** Active queue. Пункт проверили → удалили из файла.
 - **Date:** 2026-04-18
-- **Scope:** only что-то реализуем прямо сейчас или в ближайшей итерации. Backlog (то, что отложено) — `ADR-014-unrealized-backlog.md`. Post-v1.0 production — `POSTRELEASE.md`. Новые архитектурные решения — `ADR-016`, `ADR-017`.
+- **Scope:** acceptance-чеклист для Mac-валидации ветки `shuka/next-queue-2026-04-18` перед merge в `main`. Sandbox-тесты зелёные (backend 208 unit + 158 integration, frontend 144); ниже — то, что нужно глазами на реальном Mac.
+- **Prev snapshots (shipped):**
+  - `.archive/docs/backlog-try-ready-to-prod-2026-04-18.md` — D1/D2/D3/D4/F1/G2/T3/U1/U2 + U3 в ADR-014
+  - `.archive/docs/backlog-hotkey-ui-and-home-merge-2026-04-18.md` — H1 (push-to-talk) + L1 (Home merge)
 
-## Critical — блокирует релиз / деградация основного флоу
+## UNVERIFIED ON MAC — критично проверить перед мёрджем
 
-### D1 — Dictation: запись не доезжает до приложения (bug)
+### V1 — Dictation: файл записи доезжает до приложения (D1 fix)
 
-**Симптом:** после нажатия Stop файл либо не существует, либо лежит не там. Должен автоматически появиться в списке `Recording` в UI.
+Агент починил P1 single-tap конфликт (mutually-exclusive с explicit error) и P2 AVAudioFile flush (явный `session.file = nil` до возврата). Добавил structured logging на всех handoff'ах.
 
-**Что проверять (из кода):**
+**Как проверить:**
+1. `cd frontend && npm run dev`.
+2. Дашборд → Record → говори 5 секунд → Stop.
+3. Запись **должна** появиться в «Recent recordings».
+4. Если нет — открой `~/Library/Logs/Mozgoslav/helper-YYYYMMDD.log` и `~/Library/Application Support/Mozgoslav/logs/mozgoslav-*.log`, ищи `D1 handoff` — должна быть цепочка с непрерывным outputPath и ненулевым size. Пустой файл → WARN в ImportRecordingUseCase.
 
-1. `backend/src/Mozgoslav.Api/Endpoints/RecordingEndpoints.cs` §109/141 — генерирует `outputPath = AppPaths.Recordings/recording-YYYYMMDD-HHmmss-{guid}.wav`, передаёт в `IAudioRecorder.StartAsync`; на Stop вызывает `recorder.StopAsync(ct)` → получает `path` → `importUseCase.ExecuteAsync([path], null, ct)`.
-2. `backend/src/Mozgoslav.Infrastructure/Services/AVFoundationAudioRecorder.cs` — POST на Electron bridge `/_internal/record/start` и `/_internal/record/stop/{sessionId}`, ждёт JSON `{path, durationMs}` в ответ.
-3. `frontend/electron/recording/RecordingBridge.ts` — проксит в `NativeHelperClient.stopFileCapture(sessionId)`, возвращает `{path}` из хелпера.
-4. `helpers/MozgoslavDictationHelper/Sources/MozgoslavDictationHelper/AudioCaptureService.swift` — `startFileCapture` / `stopFileCapture`.
+### V2 — Hot-plug микрофонов (D3 fix)
 
-**Подозреваемые причины (приоритет проверки):**
+Swift `DeviceWatcher` подписан на `AVCaptureDevice.wasConnectedNotification` / `wasDisconnectedNotification`. Backend ретранслирует на SSE `/api/devices/stream`, Dashboard показывает toast.
 
-- **(P1) Single-tap конфликт.** В `AudioCaptureService.swift:138` tap на inputNode ставится только если `!engine.isRunning`. Если до file-capture уже работает streaming (`start()` ставит tap с callback'ом `process:`), file-сессия НЕ получает аудио — `writeToFiles:` просто не вызывается. File будет создан (AVAudioFile при `forWriting:` создаёт пустой файл с header'ом), но пустой / почти пустой. Фикс: (a) использовать один tap, вызывающий оба callback'а, либо (b) гарантировать что file-capture и streaming взаимоисключающи (reject на backend).
-- **(P2) Race при Stop.** `stopFileCapture` возвращает `outputPath` синхронно, но AVAudioFile закрывается через ARC при выходе из scope — возможен ранний возврат до фактического flush на диск. ImportRecordingUseCase сразу пытается читать файл → миссится. Фикс: явно обнулить ссылку на `AVAudioFile` (сбрасывает последний `write` и закрывает fd) перед `return (path, durationMs)`.
-- **(P3) Permissions / sandbox.** Если `AppPaths.Recordings` указывает на путь, куда helper не может писать (sandbox container Electron vs host filesystem у backend'а) — файл создаётся в одном месте, читается в другом. Маловероятно, т.к. оба процесса должны жить в `~/Library/Application Support/Mozgoslav/recordings/`. Но стоит логировать оба пути вокруг handoff'а.
-- **(P4) ImportRecordingUseCase молчит.** Если путь ОК, но файл пустой/битый — use-case может не создать `Recording` entity и не зажурналить warning. `/api/recordings/stop` вернёт `{path, recordings: []}` и UI ничего не увидит.
+**Как проверить:** подключи/отключи Bluetooth-наушники во время активной сессии записи — должен прилететь toast, кнопка Start должна стать активной. Snapshot-кадр при старте приложения подавляется, чтобы не спамить.
 
-**Минимальный диагностический план (10-15 мин):**
-1. Добавить логирование `outputPath` на каждом handoff'е (backend start, bridge, Swift startFile, Swift stopFile, backend stop, ImportRecordingUseCase).
-2. Воспроизвести на Mac с просмотром логов.
-3. Проверить `ls -la ~/Library/Application Support/Mozgoslav/recordings/` после Stop — есть ли файл, его размер.
-4. Если файл есть но пустой — P1/P2. Если нет — P3 или ранняя ошибка в helper.
+### V3 — Push-to-talk (H1) [UNVERIFIED ON MAC, main risk]
 
-**Оценка фикса:** M, 2-4 часа включая Mac-валидацию. Если это P2 — фикс в 1 строку (обнулить `session.file`) + тест.
+Swift `HotkeyMonitor` слушает `NSEvent.addGlobalMonitorForEvents(.keyDown/.keyUp)` для Electron-стильного accelerator. Dashboard подписан на SSE `/api/hotkey/stream`: press → startRecording, release → stopRecording.
 
-### T3 — Speaker-aware transcript formatting
+**Prereq:** Settings → Диктовка → задай хоткей + включи чекбокс «Удерживать для записи». Перезапусти приложение (в main.ts bootstrap-путь читает настройку; hot-reload без restart — future work).
 
-Diarization уже пишет speaker-labelled сегменты в `Transcript.Segments`, но `MarkdownGenerator` рендерит plain text. Пользователь видит blob вместо «Alice: … / Bob: …».
+**Как проверить:**
+1. Открой System Settings → Privacy & Security → **Accessibility** → убедись, что Mozgoslav добавлен.
+2. Фокус любое приложение (Notes, Chrome).
+3. Удерживай заданный хоткей — должна появиться overlay/запись.
+4. Отпусти — запись останавливается, текст инжектится в фокусное приложение.
+5. Если ничего не происходит — проверь `~/Library/Logs/Mozgoslav/helper-YYYYMMDD.log`, ищи `H1 HotkeyMonitor started` при старте и `press`/`release` события при нажатии.
 
-Что делать:
-- Расширить `TranscriptSegment` (уже value object) полем `SpeakerLabel?` (уже может быть там, проверить).
-- Правка `MarkdownGenerator.Generate` — если хотя бы у одного сегмента есть speaker, группировать по speaker и рендерить «**Alice (00:03):**\n текст…\n\n**Bob (00:15):**\n …».
-- В `frontend/src/features/Notes/NoteViewer` вывод тоже обновить — наш markdown уже передаётся, но styling для speaker-header стоит добавить.
+Fallback: если выключишь «Удерживать для записи», должен сработать старый toggle через `globalShortcut` (keydown-only).
 
-**Оценка:** S, 2-3 часа backend + 1 час frontend.
+### V4 — Custom hotkey persists (#10)
 
-## Quick wins — дёшево и сейчас
+Settings → Диктовка → запиши комбинацию через HotkeyRecorder → Save → **перезапусти приложение**. После restart main.ts polls `/api/settings` и регистрирует custom accelerator вместо дефолтного `⌘+Shift+Space`.
 
-### D2 — Live audio level meters в Dashboard record state
+**Как проверить:** поменяй на `⌘+⌥+M`, restart, убедись что `⌘+Shift+Space` больше не реагирует а `⌘+⌥+M` — да. Hot-reload без restart тоже в будущем.
 
-Сейчас peak-meter только в DictationOverlay. Есть `RecordingBridge` с уже живым аудио-потоком; прокинуть RMS/peak события в UI через ту же SSE-шину.
+## Санити после чистой установки
 
-**Оценка:** S, 2-3 часа.
+### V5 — Обновление с legacy-БД
 
-### D3 — Hot-plug микрофонов
+Если у тебя БД создана ещё через `EnsureCreated` (до ADR-011) — новый `Migrate()` упадёт с `table "processed_notes" already exists`. Это уже случалось сегодня. Решение: `rm ~/Library/Application\ Support/Mozgoslav/mozgoslav.db` перед первым запуском фикса.
 
-Реакция на `AVCaptureDeviceWasConnected/Disconnected` в Swift helper → re-probe capabilities → backend эмитит событие → UI показывает toast и даёт повторно нажать Start.
+### V6 — Онбординг-модели (#12b)
 
-**Оценка:** M, пол-дня (плюс Mac-тест двух hot-plug сценариев).
+Delete local `mozgoslav.db` → запусти бек+фронт. Онбординг должен показать новый шаг `models` с двумя Tier-1 bundled entries (Whisper Small, Silero VAD). Если модели не в `BundleModelsDir` — кнопка «Скачать всё» последовательно тянет их с SSE-прогрессом. Когда все `installed=true` — toolbar Next разблокируется как «Продолжить».
 
-### G2 — Sentence-transformer default вместо BagOfWords
+### V7 — Default paths
 
-`PythonSidecarEmbeddingService` уже есть. Сейчас дефолт — `BagOfWordsEmbeddingService`. Переключить: в `Program.cs` при наличии `Mozgoslav:PythonSidecar:BaseUrl` делать `sidecar` первым выбором, `BagOfWords` — только fallback при sidecar-outage (как сейчас уже работает, но надо проверить, что quality-бонус реально доезжает до production-config).
+После первого запуска (V5) проверь:
+- `WhisperModelPath` = путь на bundled `ggml-small-q8_0.bin` (а не на antony66 `ggml-model-q8_0.bin`, как было раньше).
+- `VaultPath` = `~/Documents/Obsidian Vault` **только если папка существует**, иначе пусто.
 
-**Оценка:** S, 1 час + sanity-тест на реальном notes-корпусе.
+### V8 — Dashboard + Queue = Home (L1)
 
-### U1 — Sample-audio "try it" button в онбординге
+Sidebar — один пункт «Мозгослав» (иконка Sparkles), роут `/`. Внутри страницы: record controls сверху, live queue снизу. `/queue` редиректит на `/`. Заголовок "Мозгослав" больше не дублируется в sidebar header (там только иконка).
 
-На Welcome-шаге кнопка «попробовать на готовом сэмпле». Бандлить 30-секундный `sample.wav` в `frontend/build/` → кнопка копирует его в `AppPaths.Recordings` → триггерит import через обычный pipeline → онбординг продолжается на реальном ProcessedNote.
+### V9 — Models progress (#13)
 
-**Оценка:** S, 2-3 часа.
+Settings → Модели → жми Скачать на антон-модели → под ряду появится progress-bar с bytes/total через SSE `/api/models/download/stream`. По завершении строка подсвечивается `Установлено`.
 
-### U2 — CommandPalette custom-styling
+### V10 — Duration (#18 + #19)
 
-Сейчас kbar в дефолтном look&feel. Применить design-tokens из `frontend/src/styles/theme.ts` — backdrop-blur, accent glow, typography, keyboard hints.
+После V5 импортни любой wav через drag-n-drop. В Recent Recordings должна сразу отобразиться реальная длительность (ffprobe). Если ffprobe не в PATH → показывается `—`, не `0:00`.
 
-**Оценка:** S, 2 часа.
+### V11 — Queue status локализация (#17)
 
-### U3 — EmptyState illustrations (дизайнер внутри)
+Запусти любой job. В Queue статусы должны быть «В очереди» / «Транскрибация» / «Готово» / «Ошибка» / «Отменено» — не `queue.status.6` как было раньше (JobStatus теперь сериализуется строкой).
 
-Сейчас текстовые empty states в `NotesList`, `Queue`, `Models`, `Logs`. Заменить на SVG-иллюстрации per-context, живущие в `frontend/src/components/EmptyState/illustrations/`. Design tokens — из `theme.ts` (accent + soft bg + subtle stroke).
+### V12 — Onboarding Skip + always-show (#14 + #15)
 
-**Оценка:** M, дизайн + интеграция, пол-дня.
-
-### F1 — `models/` + `domain/` dedup
-
-Параллельные копии TS-типов в `frontend/src/models/` и `frontend/src/domain/` (ProcessedNote, ProcessingJob, Profile, Recording, Settings, Model). Выбрать один слой (предлагаю `domain/` — там больше value-объектов вроде `ActionItem`, `enums`), перепроставить импорты, удалить другой.
-
-**Оценка:** S, 2-3 часа (рутинный refactor + прогон tsc + tests).
+Онбординг сейчас показывается **на каждом запуске** (TEMP dev-override #15). Skip-кнопка работает правильно — переводит на `/`. После ревёрта #15 онбординг будет только при первом запуске.
 
 ## Как работать с этим файлом
 
-- Делаем пункт → удаляем отсюда. Краткое описание shipped версии попадёт в `README.md` / `CLAUDE.md`.
-- Открыли новый блокер / появился reactive bug → добавляем сюда с секцией `Critical`.
-- Пункт забуксовал / стал не приоритетен → переместить в `ADR-014-unrealized-backlog.md` в соответствующий раздел.
+- Проверили пункт → удалили отсюда.
+- Не сработало → пиши в комменты ветки / новый bug, фиксим инкрементом.
+- Когда список пуст → ветку можно мёрджить в main.
+- Новые задачи (не acceptance) — обычным порядком: Critical / Quick wins.
+
+## Known future work (отложено, не acceptance для текущей ветки)
+
+- **H1 hot-reload:** смена хоткея в Settings применяется только после restart. Live re-register — в следующей итерации (нужен IPC-канал Settings save → main → orchestrator.stopKeyboardHotkey + startKeyboardHotkey).
+- **#15 revert:** после того как онбординг стабилизируется (шагов больше не добавляем, баги протестированы) — вернуть `OnboardingCompleteGuard` к localStorage-проверке.

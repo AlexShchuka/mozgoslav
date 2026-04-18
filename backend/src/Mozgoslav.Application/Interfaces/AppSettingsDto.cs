@@ -53,7 +53,12 @@ public sealed record AppSettingsDto(
     // ADR-007-shared §2.8 / Migration 0010 — Syncthing REST base URL, persisted so the
     // SyncthingHttpClient wires against the freshly-spawned instance without restart.
     // Empty = base URL not yet determined (binary-absent branch).
-    string SyncthingBaseUrl)
+    string SyncthingBaseUrl,
+    // Task #10 follow-up (NEXT H1) — when true, the dictation hotkey acts
+    // as push-to-talk (hold to record, release to stop) instead of toggle.
+    // Requires the native Swift helper to publish keyUp events; on non-macOS
+    // platforms the flag is read but has no runtime effect.
+    bool DictationPushToTalk = false)
 {
     public static AppSettingsDto Defaults { get; } = new(
         VaultPath: string.Empty,

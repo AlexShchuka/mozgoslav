@@ -24,6 +24,7 @@ public interface IAppSettings
     string DictationHotkeyType { get; }
     int DictationMouseButton { get; }
     string DictationKeyboardHotkey { get; }
+    bool DictationPushToTalk { get; }
     string DictationLanguage { get; }
     string DictationWhisperModelId { get; }
     int DictationCaptureSampleRate { get; }

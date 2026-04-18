@@ -1,3 +1,6 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.Enums;
@@ -15,17 +18,42 @@ public sealed class ImportRecordingUseCase
     private readonly IProcessingJobRepository _jobs;
     private readonly IProfileRepository _profiles;
     private readonly IProcessingJobScheduler _scheduler;
+    private readonly IAudioMetadataProbe? _metadataProbe;
+    private readonly ILogger<ImportRecordingUseCase> _logger;
 
     public ImportRecordingUseCase(
         IRecordingRepository recordings,
         IProcessingJobRepository jobs,
         IProfileRepository profiles,
         IProcessingJobScheduler scheduler)
+        : this(recordings, jobs, profiles, scheduler, metadataProbe: null, NullLogger<ImportRecordingUseCase>.Instance)
+    {
+    }
+
+    public ImportRecordingUseCase(
+        IRecordingRepository recordings,
+        IProcessingJobRepository jobs,
+        IProfileRepository profiles,
+        IProcessingJobScheduler scheduler,
+        ILogger<ImportRecordingUseCase> logger)
+        : this(recordings, jobs, profiles, scheduler, metadataProbe: null, logger)
+    {
+    }
+
+    public ImportRecordingUseCase(
+        IRecordingRepository recordings,
+        IProcessingJobRepository jobs,
+        IProfileRepository profiles,
+        IProcessingJobScheduler scheduler,
+        IAudioMetadataProbe? metadataProbe,
+        ILogger<ImportRecordingUseCase> logger)
     {
         _recordings = recordings;
         _jobs = jobs;
         _profiles = profiles;
         _scheduler = scheduler;
+        _metadataProbe = metadataProbe;
+        _logger = logger;
     }
 
     public async Task<IReadOnlyList<Recording>> ExecuteAsync(
@@ -55,6 +83,28 @@ public sealed class ImportRecordingUseCase
                 throw new FileNotFoundException($"Audio file not found: {path}", path);
             }
 
+            // D1 handoff log: every inbound path + size, so the operator can
+            // correlate missing-recording bugs end-to-end.
+            long size = -1;
+            try
+            {
+                size = new FileInfo(path).Length;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _logger.LogWarning(ex, "D1 handoff: cannot stat {Path}", path);
+            }
+            if (size <= 0)
+            {
+                _logger.LogWarning(
+                    "D1 handoff: import saw empty/missing audio file (path={Path}, size={Size}b) — skipping Recording creation",
+                    path, size);
+                continue;
+            }
+            _logger.LogInformation(
+                "D1 handoff: ImportRecordingUseCase path={Path} size={Size}b",
+                path, size);
+
             var extension = Path.GetExtension(path);
             if (!AudioFormatDetector.TryFromExtension(extension, out var format))
             {
@@ -70,13 +120,22 @@ public sealed class ImportRecordingUseCase
                 continue;
             }
 
+            // Task #19 — probe the media length at import time so the list
+            // shows the real duration immediately instead of TimeSpan.Zero
+            // (which used to render as "0:00" and now shows the "—" pending
+            // placeholder from task #18).
+            var duration = _metadataProbe is not null
+                ? await _metadataProbe.GetDurationAsync(path, ct)
+                : TimeSpan.Zero;
+
             var recording = new Recording
             {
                 FileName = Path.GetFileName(path),
                 FilePath = path,
                 Sha256 = sha256,
                 Format = format,
-                SourceType = SourceType.Imported
+                SourceType = SourceType.Imported,
+                Duration = duration
             };
 
             await _recordings.AddAsync(recording, ct);

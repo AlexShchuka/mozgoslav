@@ -271,15 +271,17 @@ app.whenReady().then(async () => {
 
   createWindow();
 
-  // Register the global dictation accelerator on every platform.
-  // Press-to-dictate on macOS is the primary use case but the accelerator is
-  // harmless on Linux/Windows (user can still invoke it).
-  const hotkeyRegistered = registerGlobalDictationHotkey();
-  if (!hotkeyRegistered) {
+  // Register the global dictation accelerator on every platform. Starts
+  // with the default (Cmd/Ctrl+Shift+Space) so the app is usable even if
+  // the backend hasn't finished booting; once settings are reachable we
+  // swap to the user's custom binding (task #10).
+  const defaultHotkeyOk = registerGlobalDictationHotkey();
+  if (!defaultHotkeyOk) {
     console.warn(
       "[globalShortcut] Failed to register CommandOrControl+Shift+Space — likely a conflicting OS binding.",
     );
   }
+  void applyCustomHotkeyFromSettings();
 
   if (process.platform === "darwin") {
     void initializeDictation();
@@ -291,6 +293,81 @@ app.whenReady().then(async () => {
     }
   });
 });
+
+/**
+ * Task #10 — swap the default dictation accelerator for the user-configured
+ * one once the backend is reachable. Polls `/api/settings` with a short
+ * back-off. When `dictationPushToTalk=true` (NEXT H1) we skip globalShortcut
+ * entirely and forward the native helper's keyDown/keyUp events to the
+ * backend instead, so the renderer can drive true push-to-talk via SSE.
+ */
+const applyCustomHotkeyFromSettings = async (): Promise<void> => {
+  const maxAttempts = 8;
+  const delayMs = 750;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const response = await fetch(`${BACKEND_ORIGIN}/api/settings`);
+      if (!response.ok) throw new Error(`status ${response.status}`);
+      const settings = (await response.json()) as {
+        dictationKeyboardHotkey?: string;
+        dictationPushToTalk?: boolean;
+      };
+      const custom = settings.dictationKeyboardHotkey?.trim() ?? "";
+      const pushToTalk = settings.dictationPushToTalk === true;
+
+      if (pushToTalk && dictationOrchestrator && custom) {
+        // NEXT H1 — hand the accelerator to the Swift helper; we no longer
+        // want globalShortcut firing a keyDown-only toggle on the same combo.
+        unregisterGlobalDictationHotkey();
+        try {
+          dictationOrchestrator.onKeyboardHotkeyEvent((payload) => {
+            void forwardHotkeyToBackend(payload);
+          });
+          await dictationOrchestrator.startKeyboardHotkey(custom);
+          console.log(`[hotkey] push-to-talk monitor started for '${custom}'.`);
+        } catch (err) {
+          console.warn("[hotkey] failed to start native monitor; falling back to globalShortcut toggle:", err);
+          registerGlobalDictationHotkey(custom);
+        }
+        return;
+      }
+
+      if (!custom) return; // user hasn't set anything — keep default toggle.
+      unregisterGlobalDictationHotkey();
+      const ok = registerGlobalDictationHotkey(custom);
+      if (!ok) {
+        console.warn(
+          `[globalShortcut] Failed to register custom accelerator '${custom}'. Falling back to default.`,
+        );
+        registerGlobalDictationHotkey();
+      }
+      return;
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  console.warn("[globalShortcut] Backend unreachable after 8 attempts — keeping default accelerator.");
+};
+
+/**
+ * NEXT H1 — forward every helper-emitted hotkey press/release to the
+ * backend so the SSE bus relays it to the renderer.
+ */
+const forwardHotkeyToBackend = async (payload: {
+  kind: string;
+  accelerator: string;
+  observedAt: string;
+}): Promise<void> => {
+  try {
+    await fetch(`${BACKEND_ORIGIN}/_internal/hotkey/event`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    console.warn("[hotkey] failed to forward helper event to backend:", err);
+  }
+};
 
 const initializeDictation = async (): Promise<void> => {
     try {

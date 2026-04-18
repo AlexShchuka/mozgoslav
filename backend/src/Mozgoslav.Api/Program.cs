@@ -173,11 +173,21 @@ try
             options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
         });
     builder.Services.AddSingleton<IJobProgressNotifier, ChannelJobProgressNotifier>();
+    // D3 — hot-plug microphone events. Singleton fan-out; Swift helper POSTs,
+    // the renderer subscribes via SSE.
+    builder.Services.AddSingleton<IAudioDeviceChangeNotifier, ChannelAudioDeviceChangeNotifier>();
+    // NEXT H1 — push-to-talk fan-out.
+    builder.Services.AddSingleton<IHotkeyEventNotifier, ChannelHotkeyEventNotifier>();
     builder.Services.AddSingleton<IAudioConverter, FfmpegAudioConverter>();
-    // ADR-007 BC-004 — Dashboard record button posts Opus-in-WebM chunks; the
-    // decoder turns them into the same 16 kHz float32 mono PCM the streaming
-    // transcription service already accepts.
-    builder.Services.AddSingleton<IAudioPcmDecoder, FfmpegPcmDecoder>();
+    // Task #19 — probe imported audio files for duration via ffprobe so the
+    // recording list shows real lengths instead of TimeSpan.Zero.
+    builder.Services.AddSingleton<IAudioMetadataProbe, FfprobeAudioMetadataProbe>();
+    // D4 — Dashboard record button posts Opus-in-WebM chunks; a per-session
+    // long-running ffmpeg decoder turns the continuous stream into 16 kHz
+    // float32 mono PCM. A one-shot decoder cannot handle header-less
+    // continuation chunks (exit 183), hence IDictationPcmStream replaces the
+    // old IAudioPcmDecoder.
+    builder.Services.AddSingleton<IDictationPcmStream, FfmpegPcmStreamService>();
     builder.Services.AddSingleton<IVadPreprocessor, SileroVadPreprocessor>();
     // ADR-011 step 2 — IMemoryCache replaces the homebrew IdleResourceCache<T>.
     // The Whisper factory entry is created lazily by WhisperNetTranscriptionService

@@ -1,16 +1,25 @@
+const PENDING_PLACEHOLDER = "—";
+
 /**
  * Formats a duration string returned by the backend (expected ISO 8601 "hh:mm:ss"
  * or total-seconds number as string) into a human-readable `M:SS` / `H:MM:SS` form.
+ *
+ * Task #18 — when the backend hasn't populated Duration yet (fresh import,
+ * transcription not finished, TimeSpan.Zero on the wire as "00:00:00") we
+ * now return the em-dash placeholder instead of a lying "0:00". Task #19
+ * tracks the root fix (ffprobe at import).
+ *
  * Returns the original input if it cannot be parsed.
  */
 export const formatDuration = (raw: string): string => {
   if (!raw) {
-    return "0:00";
+    return PENDING_PLACEHOLDER;
   }
 
   const asNumber = Number(raw);
   if (!Number.isNaN(asNumber)) {
-    return secondsToString(Math.max(0, Math.round(asNumber)));
+    const seconds = Math.max(0, Math.round(asNumber));
+    return seconds === 0 ? PENDING_PLACEHOLDER : secondsToString(seconds);
   }
 
   const parts = raw.split(":").map((p) => Number(p));
@@ -19,7 +28,8 @@ export const formatDuration = (raw: string): string => {
       parts.length === 3
         ? parts[0]! * 3600 + parts[1]! * 60 + parts[2]!
         : parts[0]! * 60 + parts[1]!;
-    return secondsToString(Math.max(0, Math.round(totalSeconds)));
+    const seconds = Math.max(0, Math.round(totalSeconds));
+    return seconds === 0 ? PENDING_PLACEHOLDER : secondsToString(seconds);
   }
 
   return raw;

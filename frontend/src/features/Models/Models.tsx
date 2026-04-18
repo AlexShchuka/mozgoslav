@@ -7,6 +7,7 @@ import Badge from "../../components/Badge";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
+import ModelDownloadProgress from "../../components/ModelDownloadProgress";
 import { apiFactory } from "../../api";
 import { ModelEntry } from "../../domain/Model";
 
@@ -17,6 +18,11 @@ const Models: FC = () => {
   const { t } = useTranslation();
   const [models, setModels] = useState<ModelEntry[]>([]);
   const [downloading, setDownloading] = useState<string | null>(null);
+  // Task #13 — catalogueId → downloadId for in-flight transfers so we can
+  // mount <ModelDownloadProgress/> underneath the row and surface bytes /
+  // total. Previously clicking Download gave no visual feedback until the
+  // 1.5 GB GET finished, which reads as "nothing happens" for the user.
+  const [activeDownloads, setActiveDownloads] = useState<Record<string, string>>({});
 
   const refresh = useCallback(async () => {
     try {
@@ -30,12 +36,26 @@ const Models: FC = () => {
     void refresh();
   }, [refresh]);
 
+  const handleDownloadComplete = useCallback(
+    (downloadId: string) => {
+      setActiveDownloads((prev) => {
+        const next: Record<string, string> = {};
+        for (const [id, dId] of Object.entries(prev)) {
+          if (dId !== downloadId) next[id] = dId;
+        }
+        return next;
+      });
+      void refresh();
+    },
+    [refresh],
+  );
+
   const handleDownload = async (id: string) => {
     setDownloading(id);
     try {
-      await modelsApi.download(id);
+      const { downloadId } = await modelsApi.download(id);
+      setActiveDownloads((prev) => ({ ...prev, [id]: downloadId }));
       toast.success(`${id} → ${t("common.download")}`);
-      await refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));
     } finally {
@@ -92,6 +112,15 @@ const Models: FC = () => {
                 <span>{t("models.sizeMb", { size: model.sizeMb })}</span>
                 <code>{model.destinationPath}</code>
               </ModelMeta>
+              {activeDownloads[model.id] && (
+                <div style={{ marginTop: 12 }}>
+                  <ModelDownloadProgress
+                    downloadId={activeDownloads[model.id]!}
+                    label={model.name}
+                    onComplete={handleDownloadComplete}
+                  />
+                </div>
+              )}
             </Card>
           </ModelCard>
         ))
