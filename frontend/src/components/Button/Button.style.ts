@@ -22,15 +22,22 @@ const sizeStyles = {
 } satisfies Record<ButtonSize, ReturnType<typeof css>>;
 
 const variantStyles = {
+  /* Resting state is deliberately muted — tinted fill + accent border — so
+     primary affordances don't overwhelm the surrounding layout. Hover
+     promotes the button to the full accent gradient + glow (the previous
+     resting look) to make the affordance unmistakable at the moment of
+     interaction. */
   primary: css`
-    background: linear-gradient(
-      135deg,
-      ${({ theme }) => theme.colors.accent.primary} 0%,
-      ${({ theme }) => theme.colors.accent.secondary} 100%
-    );
-    color: ${({ theme }) => theme.colors.accent.contrast};
+    background: ${({ theme }) => theme.colors.accent.soft};
+    color: ${({ theme }) => theme.colors.accent.primary};
+    border: 1px solid ${({ theme }) => theme.colors.accent.primary};
     &:hover:not(:disabled) {
-      filter: brightness(1.05);
+      background: linear-gradient(
+        135deg,
+        ${({ theme }) => theme.colors.accent.primary} 0%,
+        ${({ theme }) => theme.colors.accent.secondary} 100%
+      );
+      color: ${({ theme }) => theme.colors.accent.contrast};
       box-shadow: ${({ theme }) => theme.shadow.accent};
     }
   `,
@@ -51,11 +58,19 @@ const variantStyles = {
       color: ${({ theme }) => theme.colors.accent.primary};
     }
   `,
+  /* Same resting-muted / hover-intensifies pattern as primary, but with the
+     error palette. Tinted fill is defined inline because the theme exposes
+     only the solid `error` colour; adding an `error.soft` token would
+     require a theme contract change for a single use-site. */
   danger: css`
-    background: ${({ theme }) => theme.colors.error};
-    color: #fff;
+    background: rgba(248, 113, 113, 0.12);
+    color: ${({ theme }) => theme.colors.error};
+    border: 1px solid ${({ theme }) => theme.colors.error};
     &:hover:not(:disabled) {
-      filter: brightness(1.05);
+      background: ${({ theme }) => theme.colors.error};
+      color: #fff;
+      box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.35),
+        0 8px 24px rgba(248, 113, 113, 0.18);
     }
   `,
   /* Confirmatory resting state — used for "already installed / already done"
