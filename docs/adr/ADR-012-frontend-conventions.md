@@ -1,6 +1,6 @@
 # ADR-012 — Frontend conventions
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-04-17
 - **Scope:** `frontend/src/**`. Where our code drifts from standard feature-based React + Redux-Saga conventions, and what to fix.
 
