@@ -1,8 +1,8 @@
 # ADR-014 — Backlog: что ещё не реализовано
 
 - **Status:** Living — обновляется по мере реализации / отмены пунктов.
-- **Date:** 2026-04-17
-- **Scope:** явный перечень фич/задач, которые мы сознательно не сделали. Current-state-доки в `README`/`CLAUDE.md`/`TODO.md` описывают только shipped — всё остальное живёт здесь.
+- **Date:** 2026-04-18
+- **Scope:** явный перечень фич/задач, которые мы сознательно не сделали. Current-state-доки в `README.md` / `CLAUDE.md` описывают только shipped — всё остальное живёт здесь.
 
 ## Политика
 
@@ -48,7 +48,6 @@
 
 ### Onboarding / UX
 
-- **Reduced-motion fallback.** `prefers-reduced-motion: reduce` — пока не обрабатывается. Обязательно делаем одновременно с ADR-013.
 - **Onboarding sample-audio "try it" button.** В ADR-004 (`plan/v0.8/04-onboarding-slim.md`) был как Should-have, в итоге не зашили.
 - **CommandPalette custom-styling** — сейчас дефолтный kbar.
 - **EmptyState illustrations** — сейчас текстовые.
@@ -64,25 +63,14 @@
 - **Calendar autostart.** Исторический ADR-006. Не востребовано.
 - **Meeting bot integration** (Zoom/Google Meet hook).
 
-### Maintenance / infra (из ADR-011 backend velosypedy)
+### Backend (ADR-011 deferred items)
 
-- Quartz.NET замена `QueueBackgroundService`.
-- `MemoryCache` замена `IdleResourceCache`.
-- `Microsoft.Extensions.Http.Resilience` на HTTP-клиентах.
-- EF Core Migrations вместо custom runner.
-- `Microsoft.ML.Tokenizers` вместо символного chunker'а.
-- `CliWrap` вместо `Process.Start` для ffmpeg.
-- SSE через standard helpers.
+- **Quartz.NET AdoJobStore/SQLite swap.** ADR-011 §1 deviation. Сейчас durable business state живёт в таблице `processing_jobs` + `ProcessingJobRehydrator`; Quartz держит триггеры в RAMJobStore. AdoJobStore добавит второй источник state без дополнительной гарантии — swap остаётся задачей будущего MR, если появится требование.
+- **`HttpResilience` на `OpenAiCompatibleLlmProvider`.** ADR-011 §3 deviation. Сейчас провайдер использует OpenAI SDK и его собственный HTTP-pipeline — навесить `AddStandardResilienceHandler` без предварительного отказа от SDK невозможно. Отдельный MR: убрать SDK → raw `HttpClient` → прицепить named `"llm"` клиент с resilience.
 
 ### Frontend (из ADR-012 non-conformance)
 
-- Убрать `MozgoslavApi.ts`, разложить по per-domain API classes.
-- Container + Presentational для write-path features.
-- Domain-based store slices (`profiles`, `models`, `settings`, `obsidian`, `sync`).
-- `guards/` директория для gate-wrappers.
-- `testUtils/` для общего render + mock API.
-- Typed i18n keys.
-- `models/` + `domain/` dedup.
+- **`models/` + `domain/` dedup.** Оба слоя держат параллельные типы (`ProcessedNote`, `ProcessingJob`, `Profile`, `Recording`, `Settings`, `Model`); надо сойтись на одном источнике.
 
 ### Dark/light polish
 
@@ -94,12 +82,12 @@
 
 ## Как обновлять этот файл
 
-- Реализовали пункт → убрать отсюда, добавить в `TODO.md` секцию «Shipped» и в `README.md` / `CLAUDE.md` как current state.
+- Реализовали пункт → убрать отсюда, отразить в `README.md` / `CLAUDE.md` как current state.
 - Отменили пункт → переместить в `## Cancelled` с коротким обоснованием «почему не делаем».
 - Появилось новое отложенное — добавить в соответствующий раздел.
 
 ## Что НЕ попадает в этот файл
 
 - Баги (они идут в GitHub Issues).
-- Рефакторинг без изменения поведения (это ADR-011/012).
-- Стилистические замечания (это ADR-013).
+- Рефакторинг без изменения поведения (архивные ADR-011 / ADR-012 — в `.archive/adrs/`).
+- Стилистические замечания (архивный ADR-013 — в `.archive/adrs/`).
