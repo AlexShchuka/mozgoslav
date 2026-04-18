@@ -114,6 +114,34 @@ public sealed class ImportRecordingUseCaseTests
         }
     }
 
+    [TestMethod]
+    public async Task ExecuteAsync_EmptyFile_LogsWarningAndSkipsRecording()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"mozgoslav-empty-{Guid.NewGuid():N}.wav");
+        await File.WriteAllBytesAsync(path, [], TestContext.CancellationToken);
+
+        try
+        {
+            var recordings = Substitute.For<IRecordingRepository>();
+            var jobs = Substitute.For<IProcessingJobRepository>();
+            var profiles = Substitute.For<IProfileRepository>();
+            profiles.TryGetDefaultAsync(Arg.Any<CancellationToken>()).Returns(CreateDefaultProfile());
+            var scheduler = Substitute.For<IProcessingJobScheduler>();
+            var useCase = new ImportRecordingUseCase(recordings, jobs, profiles, scheduler);
+
+            var result = await useCase.ExecuteAsync([path], profileId: null, CancellationToken.None);
+
+            result.Should().BeEmpty(
+                "D1 — empty audio file means the Swift recorder flush failed; skip instead of creating a broken Recording");
+            await recordings.DidNotReceive().AddAsync(Arg.Any<Recording>(), Arg.Any<CancellationToken>());
+            await jobs.DidNotReceive().EnqueueAsync(Arg.Any<ProcessingJob>(), Arg.Any<CancellationToken>());
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     private static Profile CreateDefaultProfile() => new()
     {
         Name = "Test Default",

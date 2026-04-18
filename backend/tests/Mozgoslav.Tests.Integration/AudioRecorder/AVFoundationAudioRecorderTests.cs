@@ -91,5 +91,35 @@ public sealed class AVFoundationAudioRecorderTests : IDisposable
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
+    [TestMethod]
+    public async Task StartAsync_LogsHandoffMarker_ForD1Diagnostics()
+    {
+        if (!OperatingSystem.IsMacOS())
+        {
+            // We still verify the non-mac log path throws; handoff logging on
+            // macOS is asserted in the combined StartAsync + StopAsync test
+            // below (when implemented). Mac-side validation is out of scope
+            // for the Linux sandbox.
+            return;
+        }
+
+        var messages = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        var loggingRecorder = new AVFoundationAudioRecorder(
+            _http,
+            new CapturingLogger<AVFoundationAudioRecorder>(messages),
+            new Uri(_server.Urls[0]).Port);
+
+        _server.Given(Request.Create().WithPath("/_internal/record/start").UsingPost())
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody("""{"sessionId":"abc-123"}"""));
+
+        await loggingRecorder.StartAsync("/tmp/out.wav", TestContext.CancellationToken);
+
+        var lines = messages.ToArray();
+        lines.Should().Contain(line => line.Contains("D1 handoff", StringComparison.Ordinal));
+    }
+
     public TestContext TestContext { get; set; } = null!;
 }

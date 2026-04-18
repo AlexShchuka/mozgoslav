@@ -92,8 +92,13 @@ public sealed class AVFoundationAudioRecorder : IAudioRecorder
             }
         }
 
+        var bridgeUri = ResolveBridgeUri("/_internal/record/start");
+        _logger.LogInformation(
+            "D1 handoff: POST {BridgeUri} outputPath={OutputPath}",
+            bridgeUri, outputPath);
+
         using var response = await _http.PostAsJsonAsync(
-            ResolveBridgeUri("/_internal/record/start"),
+            bridgeUri,
             new { outputPath },
             ct);
         response.EnsureSuccessStatusCode();
@@ -105,7 +110,9 @@ public sealed class AVFoundationAudioRecorder : IAudioRecorder
             _activeSessionId = body.SessionId;
             _startedAtUtc = DateTime.UtcNow;
         }
-        _logger.LogInformation("AVFoundation recorder started session {SessionId} → {Path}", body.SessionId, outputPath);
+        _logger.LogInformation(
+            "D1 handoff: recorder started session {SessionId} → {Path}",
+            body.SessionId, outputPath);
     }
 
     public async Task<string> StopAsync(CancellationToken ct)
@@ -119,16 +126,31 @@ public sealed class AVFoundationAudioRecorder : IAudioRecorder
 
         try
         {
+            var bridgeUri = ResolveBridgeUri($"/_internal/record/stop/{sessionId}");
+            _logger.LogInformation("D1 handoff: POST {BridgeUri}", bridgeUri);
             using var response = await _http.PostAsJsonAsync(
-                ResolveBridgeUri($"/_internal/record/stop/{sessionId}"),
+                bridgeUri,
                 new { },
                 ct);
             response.EnsureSuccessStatusCode();
             var body = await response.Content.ReadFromJsonAsync<StopResponse>(ct)
                 ?? throw new InvalidOperationException("Electron bridge returned an empty stop payload.");
+            long fileSize = -1;
+            try
+            {
+                if (File.Exists(body.Path))
+                {
+                    fileSize = new FileInfo(body.Path).Length;
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _logger.LogWarning(ex,
+                    "D1 handoff: could not stat {Path} after stop", body.Path);
+            }
             _logger.LogInformation(
-                "AVFoundation recorder stopped session {SessionId} → {Path} ({DurationMs}ms)",
-                sessionId, body.Path, body.DurationMs);
+                "D1 handoff: recorder stopped session {SessionId} → {Path} ({DurationMs}ms, size={Size}b)",
+                sessionId, body.Path, body.DurationMs, fileSize);
             return body.Path;
         }
         finally

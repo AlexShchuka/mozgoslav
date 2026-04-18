@@ -109,8 +109,10 @@ public static class RecordingEndpoints
         endpoints.MapPost("/api/recordings/start", async (
             StartRecordingRequest request,
             IAudioRecorder recorder,
+            ILoggerFactory loggerFactory,
             CancellationToken ct) =>
         {
+            var log = loggerFactory.CreateLogger("RecordingEndpoints");
             if (!recorder.IsSupported)
             {
                 return Results.StatusCode(501);
@@ -135,6 +137,9 @@ public static class RecordingEndpoints
                 _activeSession = started;
             }
 
+            log.LogInformation(
+                "D1 handoff: /api/recordings/start sessionId={SessionId} outputPath={OutputPath}",
+                sessionId, outputPath);
             return await StartAsync(recorder, started, ct);
         });
 
@@ -142,8 +147,10 @@ public static class RecordingEndpoints
             string sessionId,
             IAudioRecorder recorder,
             ImportRecordingUseCase importUseCase,
+            ILoggerFactory loggerFactory,
             CancellationToken ct) =>
         {
+            var log = loggerFactory.CreateLogger("RecordingEndpoints");
             ActiveSession? snapshot;
             lock (ActiveSessionLock)
             {
@@ -156,6 +163,18 @@ public static class RecordingEndpoints
             }
 
             var path = await recorder.StopAsync(ct);
+            long size = -1;
+            try
+            {
+                if (File.Exists(path)) size = new FileInfo(path).Length;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                log.LogWarning(ex, "D1 handoff: cannot stat {Path} before import", path);
+            }
+            log.LogInformation(
+                "D1 handoff: /api/recordings/stop sessionId={SessionId} path={Path} size={Size}b",
+                sessionId, path, size);
             var imported = await importUseCase.ExecuteAsync([path], null, ct);
             return Results.Ok(new
             {

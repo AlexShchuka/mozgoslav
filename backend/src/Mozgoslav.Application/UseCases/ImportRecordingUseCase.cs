@@ -1,3 +1,6 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.Enums;
@@ -15,17 +18,29 @@ public sealed class ImportRecordingUseCase
     private readonly IProcessingJobRepository _jobs;
     private readonly IProfileRepository _profiles;
     private readonly IProcessingJobScheduler _scheduler;
+    private readonly ILogger<ImportRecordingUseCase> _logger;
 
     public ImportRecordingUseCase(
         IRecordingRepository recordings,
         IProcessingJobRepository jobs,
         IProfileRepository profiles,
         IProcessingJobScheduler scheduler)
+        : this(recordings, jobs, profiles, scheduler, NullLogger<ImportRecordingUseCase>.Instance)
+    {
+    }
+
+    public ImportRecordingUseCase(
+        IRecordingRepository recordings,
+        IProcessingJobRepository jobs,
+        IProfileRepository profiles,
+        IProcessingJobScheduler scheduler,
+        ILogger<ImportRecordingUseCase> logger)
     {
         _recordings = recordings;
         _jobs = jobs;
         _profiles = profiles;
         _scheduler = scheduler;
+        _logger = logger;
     }
 
     public async Task<IReadOnlyList<Recording>> ExecuteAsync(
@@ -54,6 +69,28 @@ public sealed class ImportRecordingUseCase
             {
                 throw new FileNotFoundException($"Audio file not found: {path}", path);
             }
+
+            // D1 handoff log: every inbound path + size, so the operator can
+            // correlate missing-recording bugs end-to-end.
+            long size = -1;
+            try
+            {
+                size = new FileInfo(path).Length;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _logger.LogWarning(ex, "D1 handoff: cannot stat {Path}", path);
+            }
+            if (size <= 0)
+            {
+                _logger.LogWarning(
+                    "D1 handoff: import saw empty/missing audio file (path={Path}, size={Size}b) — skipping Recording creation",
+                    path, size);
+                continue;
+            }
+            _logger.LogInformation(
+                "D1 handoff: ImportRecordingUseCase path={Path} size={Size}b",
+                path, size);
 
             var extension = Path.GetExtension(path);
             if (!AudioFormatDetector.TryFromExtension(extension, out var format))
