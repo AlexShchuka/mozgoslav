@@ -174,10 +174,12 @@ try
         });
     builder.Services.AddSingleton<IJobProgressNotifier, ChannelJobProgressNotifier>();
     builder.Services.AddSingleton<IAudioConverter, FfmpegAudioConverter>();
-    // ADR-007 BC-004 — Dashboard record button posts Opus-in-WebM chunks; the
-    // decoder turns them into the same 16 kHz float32 mono PCM the streaming
-    // transcription service already accepts.
-    builder.Services.AddSingleton<IAudioPcmDecoder, FfmpegPcmDecoder>();
+    // D4 — Dashboard record button posts Opus-in-WebM chunks; a per-session
+    // long-running ffmpeg decoder turns the continuous stream into 16 kHz
+    // float32 mono PCM. A one-shot decoder cannot handle header-less
+    // continuation chunks (exit 183), hence IDictationPcmStream replaces the
+    // old IAudioPcmDecoder.
+    builder.Services.AddSingleton<IDictationPcmStream, FfmpegPcmStreamService>();
     builder.Services.AddSingleton<IVadPreprocessor, SileroVadPreprocessor>();
     // ADR-011 step 2 — IMemoryCache replaces the homebrew IdleResourceCache<T>.
     // The Whisper factory entry is created lazily by WhisperNetTranscriptionService

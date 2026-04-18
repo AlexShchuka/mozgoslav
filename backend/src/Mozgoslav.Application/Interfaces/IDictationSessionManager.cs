@@ -23,6 +23,14 @@ public interface IDictationSessionManager
     ValueTask PushAudioAsync(Guid sessionId, AudioChunk chunk, CancellationToken ct);
 
     /// <summary>
+    /// Feeds an encoded chunk (typically Opus-in-WebM from the browser's
+    /// <c>MediaRecorder</c>) into the session's long-running decoder. The
+    /// decoded PCM is forwarded to the streaming transcription service as if
+    /// <see cref="PushAudioAsync"/> had been called with the resulting PCM.
+    /// </summary>
+    Task PushRawChunkAsync(Guid sessionId, byte[] encodedChunk, CancellationToken ct);
+
+    /// <summary>
     /// Subscribes to the partial-transcript stream for a session. The stream
     /// completes when the session is stopped or cancelled.
     /// </summary>

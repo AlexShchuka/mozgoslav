@@ -20,4 +20,10 @@
   <ItemGroup>
     <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- D4 — WebM/Opus chunks for FfmpegPcmStreamServiceTests (header-less continuation). -->
+    <Content Include="Fixtures\dictation-webm-chunks\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>
