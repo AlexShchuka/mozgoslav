@@ -44,6 +44,16 @@
 
 - **C2 Meeting bot integration** (Zoom/Google Meet webhook). Получение аудио с внешних платформ. Большая история, нужен отдельный ADR с privacy-implications.
 
+## UX — low priority
+
+### U3 — EmptyState illustrations (дизайнер внутри)
+
+> Archived from NEXT on 2026-04-18 — design-asset dependency (no designer available).
+
+Сейчас текстовые empty states в `NotesList`, `Queue`, `Models`, `Logs`. Заменить на SVG-иллюстрации per-context, живущие в `frontend/src/components/EmptyState/illustrations/`. Design tokens — из `theme.ts` (accent + soft bg + subtle stroke).
+
+**Оценка:** M, дизайн + интеграция, пол-дня.
+
 ## Backend (ADR-011 deferred items)
 
 - **B1 Quartz.NET AdoJobStore/SQLite swap.** ADR-011 §1 deviation. Сейчас durable business state живёт в таблице `processing_jobs` + `ProcessingJobRehydrator`; Quartz держит триггеры в RAMJobStore. AdoJobStore добавит второй источник state без дополнительной гарантии — swap имеет смысл только при появлении конкретного требования (multi-node scheduling, долго-живущие триггеры через рестарты без rehydrator).

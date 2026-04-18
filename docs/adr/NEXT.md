@@ -75,12 +75,6 @@ Diarization уже пишет speaker-labelled сегменты в `Transcript.S
 
 **Оценка:** S, 2 часа.
 
-### U3 — EmptyState illustrations (дизайнер внутри)
-
-Сейчас текстовые empty states в `NotesList`, `Queue`, `Models`, `Logs`. Заменить на SVG-иллюстрации per-context, живущие в `frontend/src/components/EmptyState/illustrations/`. Design tokens — из `theme.ts` (accent + soft bg + subtle stroke).
-
-**Оценка:** M, дизайн + интеграция, пол-дня.
-
 ### F1 — `models/` + `domain/` dedup
 
 Параллельные копии TS-типов в `frontend/src/models/` и `frontend/src/domain/` (ProcessedNote, ProcessingJob, Profile, Recording, Settings, Model). Выбрать один слой (предлагаю `domain/` — там больше value-объектов вроде `ActionItem`, `enums`), перепроставить импорты, удалить другой.
