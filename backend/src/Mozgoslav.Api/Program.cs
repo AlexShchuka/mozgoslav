@@ -177,6 +177,9 @@ try
     // the renderer subscribes via SSE.
     builder.Services.AddSingleton<IAudioDeviceChangeNotifier, ChannelAudioDeviceChangeNotifier>();
     builder.Services.AddSingleton<IAudioConverter, FfmpegAudioConverter>();
+    // Task #19 — probe imported audio files for duration via ffprobe so the
+    // recording list shows real lengths instead of TimeSpan.Zero.
+    builder.Services.AddSingleton<IAudioMetadataProbe, FfprobeAudioMetadataProbe>();
     // D4 — Dashboard record button posts Opus-in-WebM chunks; a per-session
     // long-running ffmpeg decoder turns the continuous stream into 16 kHz
     // float32 mono PCM. A one-shot decoder cannot handle header-less

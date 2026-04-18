@@ -25,5 +25,9 @@
     <Content Include="Fixtures\dictation-webm-chunks\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- Task #19 — 2-second sine WAV for FfprobeAudioMetadataProbeTests. -->
+    <Content Include="Fixtures\probe-2s.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>
