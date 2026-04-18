@@ -13,8 +13,8 @@ mozgoslav/
 ├── python-sidecar/    FastAPI app — diarize / NER (real, v0.8) + gender / emotion (downloadable, 503 envelope until model fetched)
 ├── docs/
 │   ├── README.md                       what each piece does
-│   └── adr/                            architecture decisions (008/009/010 active; .archive-v1/ + .archive-v2/ historical)
-├── plan/v0.8/                          release plan, block-by-block
+│   └── adr/                            architecture decisions (ADR-014 living backlog; shipped ADRs in .archive/adrs/)
+├── .archive/                           historical / superseded materials (ignore as source of truth)
 ├── LICENSE            MIT
 ├── README.md          user-facing "install + first run on macOS"
 └── CONTRIBUTING.md    developer setup (Rider, tests, lefthook, conventions)
@@ -32,11 +32,9 @@ mozgoslav/
 
 ## Active ADRs
 
-- `docs/adr/ADR-008-web-rag.md` — groomed, NOT in v0.8.
-- `docs/adr/ADR-009-production-readiness-no-stubs.md` — accepted, drives v0.8: real ML, no Noop fallbacks where prod expected.
-- `docs/adr/ADR-010-bundled-russian-models.md` — accepted, drives v0.8: Tier 1 models bundled into DMG, Tier 2 downloadable (`ModelCatalog`).
+- `docs/adr/ADR-014-unrealized-backlog.md` — living backlog of items сознательно отложенных или не тронутых. Единственный активный ADR.
 
-Iteration-7 ADRs (007 family) shipped — archived in `docs/adr/.archive-v2/`.
+Все shipped/superseded ADR перенесены в `.archive/adrs/` (ADR-001…013, 015). Release plan v0.8 — в `.archive/docs/v0.8-release/` (block-by-block).
 
 ## Privacy & security
 
@@ -53,7 +51,7 @@ Iteration-7 ADRs (007 family) shipped — archived in `docs/adr/.archive-v2/`.
 
 ## Out of scope (Phase 2, not v0.8)
 
-- Apple Developer ID signing + notarisation (DMG ships unsigned in v0.8 — `plan/v0.8/07-dmg-and-release.md` §8).
-- Web-aware RAG (groomed in ADR-008).
+- Apple Developer ID signing + notarisation (DMG ships unsigned in v0.8 — `.archive/docs/v0.8-release/07-dmg-and-release.md` §8).
+- Web-aware RAG (groomed in archived `.archive/adrs/ADR-008-web-rag.md`).
 - Calendar / meeting autostart.
 - GigaAM-v3 STT integration (current STT: Whisper.cpp Tier 1 bundled + Tier 2 downloadable).

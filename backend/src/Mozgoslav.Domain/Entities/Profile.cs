@@ -29,7 +29,7 @@ public sealed class Profile
     ///   <item>forwards them in the LLM summarisation system prompt so
     ///         the model preserves spelling verbatim.</item>
     /// </list>
-    /// Plan v0.8 Block 5 (<c>plan/v0.8/05-glossary-and-llm-correction.md</c>).
+    /// Plan v0.8 Block 5 (<c>.archive/docs/v0.8-release/05-glossary-and-llm-correction.md</c>).
     /// </summary>
     public List<string> Glossary { get; set; } = [];
 

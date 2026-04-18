@@ -5,7 +5,7 @@ import type { AddressInfo } from "node:net";
 import { NativeHelperClient } from "../dictation/NativeHelperClient";
 
 /**
- * Block 3 (plan/v0.8/03-mac-native-recorder.md §2.3). The backend talks to
+ * Block 3 (.archive/docs/v0.8-release/03-mac-native-recorder.md §2.3). The backend talks to
  * Electron over a tiny loopback HTTP endpoint so the AVFoundation-native
  * recorder lives inside the Swift helper — there is exactly one helper
  * instance per Electron host, and exactly one hotkey / AX-permission prompt.

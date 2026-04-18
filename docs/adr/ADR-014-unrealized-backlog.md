@@ -12,7 +12,7 @@
 
 ### Release / distribution
 
-- **Apple Developer ID signing + notarization.** Требует $99/год, приватный ключ у shuka. План миграции — в архивном `plan/v0.8/07-dmg-and-release.md` §8.
+- **Apple Developer ID signing + notarization.** Требует $99/год, приватный ключ у shuka. План миграции — в архивном `.archive/docs/v0.8-release/07-dmg-and-release.md` §8.
 - **DMG auto-update (Sparkle / electron-updater).** Privacy-first политика текущая — «zero network checks». Если передумаем — отдельное ADR.
 - **Linux/Windows билды.** Сейчас macOS-first. Не в планах.
 
@@ -30,13 +30,13 @@
 
 ### Dictation
 
-- **Global hotkey round-trip Mac verification.** Код написан, Swift helper расширен (`PermissionProbe.swift`), но живой прогон на Mac с AX permission + PCM capture + AX inject не подтверждён. Чек-лист — в `plan/v0.8/03-mac-native-recorder.md` §7.
+- **Global hotkey round-trip Mac verification.** Код написан, Swift helper расширен (`PermissionProbe.swift`), но живой прогон на Mac с AX permission + PCM capture + AX inject не подтверждён. Чек-лист — в `.archive/docs/v0.8-release/03-mac-native-recorder.md` §7.
 - **Live audio level meters в Dashboard record state.** Сейчас только в DictationOverlay.
 - **Hot-plug микрофонов** (USB mic inserted/removed mid-session).
 
 ### Sync (Syncthing)
 
-- **Phone pairing end-to-end verification на Mac.** REST/SSE + QR-pairing UI всё написано, реальный phone не тестировали. Чек-лист — `plan/v0.8/.../sync`.
+- **Phone pairing end-to-end verification на Mac.** REST/SSE + QR-pairing UI всё написано, реальный phone не тестировали. Чек-лист — в архивном release-плане `.archive/docs/v0.8-release/`.
 - **Conflict resolution UI.** Сейчас `listSyncConflicts` возвращает список, но UI-reconciler нет.
 
 ### RAG
@@ -48,7 +48,7 @@
 
 ### Onboarding / UX
 
-- **Onboarding sample-audio "try it" button.** В ADR-004 (`plan/v0.8/04-onboarding-slim.md`) был как Should-have, в итоге не зашили.
+- **Onboarding sample-audio "try it" button.** В ADR-004 (`.archive/docs/v0.8-release/04-onboarding-slim.md`) был как Should-have, в итоге не зашили.
 - **CommandPalette custom-styling** — сейчас дефолтный kbar.
 - **EmptyState illustrations** — сейчас текстовые.
 
