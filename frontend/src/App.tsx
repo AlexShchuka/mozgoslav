@@ -20,6 +20,7 @@ import DictationOverlay from "./features/DictationOverlay";
 import CommandPalette, { useCommandPaletteActions } from "./features/CommandPalette";
 import { useGlobalHotkeys } from "./hooks/useGlobalHotkeys";
 import { ROUTES } from "./constants/routes";
+import { OnboardingCompleteGuard } from "./guards";
 
 const OVERLAY_ROUTE = "/dictation-overlay";
 
@@ -35,18 +36,102 @@ const AppShell: FC = () => {
       <Layout>
         <Routes>
           <Route path={ROUTES.onboarding} element={<Onboarding />} />
-          <Route path={ROUTES.dashboard} element={<Dashboard />} />
-          <Route path={ROUTES.queue} element={<Queue />} />
-          <Route path={ROUTES.notes} element={<NotesList />} />
-          <Route path={ROUTES.note} element={<NoteViewer />} />
-          <Route path={ROUTES.rag} element={<RagChat />} />
-          <Route path={ROUTES.profiles} element={<Profiles />} />
-          <Route path={ROUTES.models} element={<Models />} />
-          <Route path={ROUTES.settings} element={<SettingsPage />} />
-          <Route path={ROUTES.logs} element={<Logs />} />
-          <Route path={ROUTES.backup} element={<Backups />} />
-          <Route path={ROUTES.obsidian} element={<Obsidian />} />
-          <Route path={ROUTES.sync} element={<Sync />} />
+          <Route
+            path={ROUTES.dashboard}
+            element={
+              <OnboardingCompleteGuard>
+                <Dashboard />
+              </OnboardingCompleteGuard>
+            }
+          />
+          <Route
+            path={ROUTES.queue}
+            element={
+              <OnboardingCompleteGuard>
+                <Queue />
+              </OnboardingCompleteGuard>
+            }
+          />
+          <Route
+            path={ROUTES.notes}
+            element={
+              <OnboardingCompleteGuard>
+                <NotesList />
+              </OnboardingCompleteGuard>
+            }
+          />
+          <Route
+            path={ROUTES.note}
+            element={
+              <OnboardingCompleteGuard>
+                <NoteViewer />
+              </OnboardingCompleteGuard>
+            }
+          />
+          <Route
+            path={ROUTES.rag}
+            element={
+              <OnboardingCompleteGuard>
+                <RagChat />
+              </OnboardingCompleteGuard>
+            }
+          />
+          <Route
+            path={ROUTES.profiles}
+            element={
+              <OnboardingCompleteGuard>
+                <Profiles />
+              </OnboardingCompleteGuard>
+            }
+          />
+          <Route
+            path={ROUTES.models}
+            element={
+              <OnboardingCompleteGuard>
+                <Models />
+              </OnboardingCompleteGuard>
+            }
+          />
+          <Route
+            path={ROUTES.settings}
+            element={
+              <OnboardingCompleteGuard>
+                <SettingsPage />
+              </OnboardingCompleteGuard>
+            }
+          />
+          <Route
+            path={ROUTES.logs}
+            element={
+              <OnboardingCompleteGuard>
+                <Logs />
+              </OnboardingCompleteGuard>
+            }
+          />
+          <Route
+            path={ROUTES.backup}
+            element={
+              <OnboardingCompleteGuard>
+                <Backups />
+              </OnboardingCompleteGuard>
+            }
+          />
+          <Route
+            path={ROUTES.obsidian}
+            element={
+              <OnboardingCompleteGuard>
+                <Obsidian />
+              </OnboardingCompleteGuard>
+            }
+          />
+          <Route
+            path={ROUTES.sync}
+            element={
+              <OnboardingCompleteGuard>
+                <Sync />
+              </OnboardingCompleteGuard>
+            }
+          />
           <Route path="*" element={<Navigate to={ROUTES.dashboard} replace />} />
         </Routes>
       </Layout>
