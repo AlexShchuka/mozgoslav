@@ -126,6 +126,11 @@
       "backupStarted": "Backup started",
       "vaultMissing": "Obsidian vault path is not configured yet.",
       "bridgeMissing": "Native shell is unavailable in browser mode."
+    },
+    "hint": {
+      "navigate": "navigate",
+      "select": "select",
+      "dismiss": "dismiss"
     }
   },
   "profiles": {

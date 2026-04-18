@@ -126,6 +126,11 @@
       "backupStarted": "Бэкап запущен",
       "vaultMissing": "Путь к Obsidian vault ещё не настроен.",
       "bridgeMissing": "Нативный shell недоступен в browser-режиме."
+    },
+    "hint": {
+      "navigate": "переместиться",
+      "select": "выбрать",
+      "dismiss": "закрыть"
     }
   },
   "profiles": {

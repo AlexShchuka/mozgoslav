@@ -52,12 +52,6 @@
 
 **Оценка:** S, 2-3 часа.
 
-### U2 — CommandPalette custom-styling
-
-Сейчас kbar в дефолтном look&feel. Применить design-tokens из `frontend/src/styles/theme.ts` — backdrop-blur, accent glow, typography, keyboard hints.
-
-**Оценка:** S, 2 часа.
-
 ## Как работать с этим файлом
 
 - Делаем пункт → удаляем отсюда. Краткое описание shipped версии попадёт в `README.md` / `CLAUDE.md`.
