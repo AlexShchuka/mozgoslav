@@ -172,6 +172,45 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
   // the mouse-5 entry. `window.mozgoslav.onGlobalHotkey` is the preload bridge
   // the renderer subscribes to; firing it must kick the dictation lifecycle
   // off with `source: "global-hotkey"`.
+  it("Dashboard_DeviceChangedSse_ShowsToastOnHotPlug", async () => {
+    installMocks();
+
+    // Stub EventSource so the Dashboard subscribes deterministically.
+    const listeners = new Map<string, (event: MessageEvent) => void>();
+    const closeMock = jest.fn();
+    class FakeEventSource {
+      public addEventListener(name: string, cb: (event: MessageEvent) => void): void {
+        listeners.set(name, cb);
+      }
+      public close = closeMock;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const originalEventSource = (globalThis as any).EventSource;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (globalThis as any).EventSource = FakeEventSource;
+
+    try {
+      renderDashboard();
+      await waitFor(() => expect(listeners.has("device-changed")).toBe(true));
+
+      act(() => {
+        listeners.get("device-changed")?.({
+          data: JSON.stringify({
+            kind: "connected",
+            devices: [{ id: "id-1", name: "AirPods Pro", isDefault: true }],
+          }),
+        } as MessageEvent);
+      });
+
+      await waitFor(() =>
+        expect(screen.getByText(/AirPods Pro/)).toBeInTheDocument(),
+      );
+    } finally {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (globalThis as any).EventSource = originalEventSource;
+    }
+  });
+
   it("Dashboard_GlobalHotkey_StartsDictation", async () => {
     installMocks();
     api.startDictation.mockResolvedValue({ sessionId: "sess-hotkey" });

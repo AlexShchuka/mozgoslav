@@ -68,6 +68,8 @@
     "recordStop": "Остановить",
     "recordUnsupported": "Запись доступна только на macOS",
     "audioLevel": "Уровень сигнала микрофона",
+    "deviceUnknown": "неизвестное устройство",
+    "deviceChanged": "Микрофон «{{name}}» — {{kind}}",
     "recentTitle": "Последние записи",
     "empty": "Записей пока нет — импортируй или запиши первую."
   },

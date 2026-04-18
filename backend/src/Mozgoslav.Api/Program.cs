@@ -173,6 +173,9 @@ try
             options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
         });
     builder.Services.AddSingleton<IJobProgressNotifier, ChannelJobProgressNotifier>();
+    // D3 — hot-plug microphone events. Singleton fan-out; Swift helper POSTs,
+    // the renderer subscribes via SSE.
+    builder.Services.AddSingleton<IAudioDeviceChangeNotifier, ChannelAudioDeviceChangeNotifier>();
     builder.Services.AddSingleton<IAudioConverter, FfmpegAudioConverter>();
     // D4 — Dashboard record button posts Opus-in-WebM chunks; a per-session
     // long-running ffmpeg decoder turns the continuous stream into 16 kHz

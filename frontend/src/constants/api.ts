@@ -21,6 +21,8 @@ export const API_ENDPOINTS = {
   jobs: "/api/jobs",
   jobsActive: "/api/jobs/active",
   jobsStream: "/api/jobs/stream",
+  // D3 — hot-plug microphone events. SSE topic "device-changed".
+  devicesStream: "/api/devices/stream",
   enqueueJob: "/api/jobs",
   // ADR-015 — POST /api/jobs/{id}/cancel. Happy-path returns:
   // 204 (Queued), 202 (Active), 409 (terminal), 404 (unknown).

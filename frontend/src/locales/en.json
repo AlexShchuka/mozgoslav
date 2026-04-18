@@ -68,6 +68,8 @@
     "recordStop": "Stop",
     "recordUnsupported": "Recording is macOS-only",
     "audioLevel": "Microphone input level",
+    "deviceUnknown": "unknown device",
+    "deviceChanged": "Microphone \"{{name}}\" — {{kind}}",
     "recentTitle": "Recent recordings",
     "empty": "No recordings yet — import or record your first one."
   },

@@ -10,6 +10,7 @@ import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
 import Badge from "../../components/Badge";
 import { apiFactory } from "../../api";
+import { API_ENDPOINTS, BACKEND_URL } from "../../constants/api";
 import { Recording } from "../../domain/Recording";
 
 const recordingApi = apiFactory.createRecordingApi();
@@ -58,6 +59,37 @@ const Dashboard: FC = () => {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // D3 — subscribe to hot-plug microphone events. The Swift helper observes
+  // AVCaptureDevice.wasConnected/wasDisconnected and POSTs the fresh device
+  // list to /_internal/devices/changed on the backend; the backend re-emits
+  // via SSE "device-changed" so we can toast + ensure Start is enabled.
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.EventSource === "undefined") {
+      return undefined;
+    }
+    const es = new EventSource(`${BACKEND_URL}${API_ENDPOINTS.devicesStream}`);
+    es.addEventListener("device-changed", (event) => {
+      try {
+        const payload = JSON.parse((event as MessageEvent).data) as {
+          kind: string;
+          devices: { id: string; name: string; isDefault: boolean }[];
+        };
+        // Snapshot-kind events fire once on subscription and shouldn't toast.
+        if (payload.kind === "snapshot") return;
+        const defaultName =
+          payload.devices.find((d) => d.isDefault)?.name ??
+          payload.devices[0]?.name ??
+          t("dashboard.deviceUnknown");
+        toast.info(
+          t("dashboard.deviceChanged", { kind: payload.kind, name: defaultName }),
+        );
+      } catch {
+        // Ignore malformed events — SSE noise never blocks the record path.
+      }
+    });
+    return () => es.close();
+  }, [t]);
 
   const onDrop = useCallback(
     async (files: File[]) => {

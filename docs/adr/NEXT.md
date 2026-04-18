@@ -4,15 +4,11 @@
 - **Date:** 2026-04-18
 - **Scope:** only что-то реализуем прямо сейчас или в ближайшей итерации. Backlog (то, что отложено) — `ADR-014-unrealized-backlog.md`. Post-v1.0 production — `POSTRELEASE.md`. Новые архитектурные решения — `ADR-016`, `ADR-017`.
 
+Очередь пуста на 2026-04-18; добавляйте новые пункты сюда.
+
 ## Critical — блокирует релиз / деградация основного флоу
 
 ## Quick wins — дёшево и сейчас
-
-### D3 — Hot-plug микрофонов
-
-Реакция на `AVCaptureDeviceWasConnected/Disconnected` в Swift helper → re-probe capabilities → backend эмитит событие → UI показывает toast и даёт повторно нажать Start.
-
-**Оценка:** M, пол-дня (плюс Mac-тест двух hot-plug сценариев).
 
 ## Как работать с этим файлом
 

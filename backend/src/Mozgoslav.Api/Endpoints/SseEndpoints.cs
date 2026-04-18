@@ -1,5 +1,7 @@
 using System.Runtime.CompilerServices;
 
+using Microsoft.AspNetCore.Mvc;
+
 using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Api.Endpoints;
@@ -19,6 +21,32 @@ public static class SseEndpoints
             return TypedResults.ServerSentEvents(
                 ProjectAsync(notifier, ct),
                 eventType: "job");
+        });
+
+        // D3 — hot-plug microphone notifications. Inbound POST from the Swift
+        // helper (via the Electron loopback bridge) carries the fresh device
+        // list; outbound SSE re-emits it to the renderer so the Dashboard can
+        // toast + re-enable Start when a mic is swapped mid-session.
+        endpoints.MapPost("/_internal/devices/changed", async (
+            [FromBody] AudioDeviceChangePayload payload,
+            IAudioDeviceChangeNotifier notifier,
+            CancellationToken ct) =>
+        {
+            if (payload is null)
+            {
+                return Results.BadRequest(new { error = "payload required" });
+            }
+            await notifier.PublishAsync(payload, ct);
+            return Results.Ok(new { accepted = true });
+        });
+
+        endpoints.MapGet("/api/devices/stream", (
+            IAudioDeviceChangeNotifier notifier,
+            CancellationToken ct) =>
+        {
+            return TypedResults.ServerSentEvents(
+                notifier.SubscribeAsync(ct),
+                eventType: "device-changed");
         });
 
         return endpoints;
