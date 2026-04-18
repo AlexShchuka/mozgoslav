@@ -76,8 +76,19 @@ public final class DeviceWatcher {
 
     #if canImport(AVFoundation) && os(macOS)
     private func emit(kind: String) {
+        // macOS 14+ added a unified `.microphone` device type; the package
+        // still targets .macOS(.v13), so we fall back to the pre-14 set
+        // (.builtInMicrophone + .externalUnknown) on older systems. Both
+        // surface the same AVCaptureDevice instances for audio inputs, so
+        // the payload shape is identical downstream.
+        let deviceTypes: [AVCaptureDevice.DeviceType]
+        if #available(macOS 14.0, *) {
+            deviceTypes = [.microphone, .externalUnknown]
+        } else {
+            deviceTypes = [.builtInMicrophone, .externalUnknown]
+        }
         let session = AVCaptureDevice.DiscoverySession(
-            deviceTypes: [.microphone, .externalUnknown],
+            deviceTypes: deviceTypes,
             mediaType: .audio,
             position: .unspecified
         )
