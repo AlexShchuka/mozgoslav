@@ -57,12 +57,6 @@ Diarization уже пишет speaker-labelled сегменты в `Transcript.S
 
 **Оценка:** M, пол-дня (плюс Mac-тест двух hot-plug сценариев).
 
-### G2 — Sentence-transformer default вместо BagOfWords
-
-`PythonSidecarEmbeddingService` уже есть. Сейчас дефолт — `BagOfWordsEmbeddingService`. Переключить: в `Program.cs` при наличии `Mozgoslav:PythonSidecar:BaseUrl` делать `sidecar` первым выбором, `BagOfWords` — только fallback при sidecar-outage (как сейчас уже работает, но надо проверить, что quality-бонус реально доезжает до production-config).
-
-**Оценка:** S, 1 час + sanity-тест на реальном notes-корпусе.
-
 ### U1 — Sample-audio "try it" button в онбординге
 
 На Welcome-шаге кнопка «попробовать на готовом сэмпле». Бандлить 30-секундный `sample.wav` в `frontend/build/` → кнопка копирует его в `AppPaths.Recordings` → триггерит import через обычный pipeline → онбординг продолжается на реальном ProcessedNote.
