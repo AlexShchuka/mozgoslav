@@ -60,10 +60,10 @@ public sealed class ModelDownloadService
 
         var total = response.Content.Headers.ContentLength;
         await using var source = await response.Content.ReadAsStreamAsync(ct);
+        long received = 0;
         await using (var target = File.Create(tempPath))
         {
             var buffer = new byte[81_920];
-            long received = 0;
             int read;
             while ((read = await source.ReadAsync(buffer, ct)) > 0)
             {
@@ -75,6 +75,11 @@ public sealed class ModelDownloadService
                 progress?.Report(new Progress(received, total, percent));
             }
         }
+
+        // Deterministic final "done" report — small payloads may complete in a
+        // single read, so consumers that only care about the terminal state
+        // don't race against the in-loop Progress<T>.Report thread-pool post.
+        progress?.Report(new Progress(received, total, 100));
 
         File.Move(tempPath, destinationPath, overwrite: true);
         _logger.LogInformation("Downloaded {Url} → {Path}", url, destinationPath);

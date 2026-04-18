@@ -64,6 +64,14 @@ public sealed class ModelDownloadServiceTests : IDisposable
         var service = new ModelDownloadService(factory, NullLogger<ModelDownloadService>.Instance);
         var result = await service.DownloadAsync("https://example.invalid/model.bin", destination, progress, TestContext.CancellationToken);
 
+        // Progress<T>.Report queues callbacks on the ThreadPool when no sync
+        // context is captured (MSTest); wait briefly so the final report lands
+        // before we assert on the collected list.
+        for (var i = 0; i < 20 && reports.Count == 0; i++)
+        {
+            await Task.Delay(10, TestContext.CancellationToken);
+        }
+
         result.Should().Be(destination);
         File.Exists(destination).Should().BeTrue();
         new FileInfo(destination).Length.Should().Be(payload.Length);

@@ -28,6 +28,7 @@
 
     <!-- ADR-011 — ML tokenizers / CliWrap / Quartz -->
     <PackageVersion Include="Microsoft.ML.Tokenizers" Version="1.*" />
+    <PackageVersion Include="Microsoft.ML.Tokenizers.Data.Cl100kBase" Version="1.*" />
     <PackageVersion Include="CliWrap" Version="3.*" />
     <PackageVersion Include="Quartz" Version="3.*" />
     <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.*" />

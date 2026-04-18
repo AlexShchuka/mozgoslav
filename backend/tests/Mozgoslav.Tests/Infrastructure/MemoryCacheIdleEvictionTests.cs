@@ -60,10 +60,10 @@ public sealed class MemoryCacheIdleEvictionTests
     }
 
     [TestMethod]
-    public void Eviction_TriggersPostEvictionCallback_WithCachedResource()
+    public async Task Eviction_TriggersPostEvictionCallback_WithCachedResource()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        TrackedResource? evicted = null;
+        var evictionSignal = new TaskCompletionSource<TrackedResource?>();
         var resource = new TrackedResource();
 
         cache.Set("key", resource, new MemoryCacheEntryOptions
@@ -71,23 +71,25 @@ public sealed class MemoryCacheIdleEvictionTests
             SlidingExpiration = TimeSpan.FromMinutes(5),
         }.RegisterPostEvictionCallback((_, value, _, _) =>
         {
-            evicted = value as TrackedResource;
+            evictionSignal.TrySetResult(value as TrackedResource);
         }));
 
         cache.Remove("key");
 
+        var evicted = await evictionSignal.Task.WaitAsync(TimeSpan.FromSeconds(5));
         evicted.Should().NotBeNull();
         evicted.Should().BeSameAs(resource);
     }
 
     [TestMethod]
-    public void PostEvictionCallback_DisposesResource()
+    public async Task PostEvictionCallback_DisposesResource()
     {
         // Production wiring: WhisperNetTranscriptionService registers a
         // PostEvictionCallback that Dispose()s the evicted WhisperFactory.
         // This test pins that pattern with a stand-in disposable.
         using var cache = new MemoryCache(new MemoryCacheOptions());
         var resource = new TrackedResource();
+        var disposedSignal = new TaskCompletionSource();
 
         cache.Set("key", resource, new MemoryCacheEntryOptions
         {
@@ -98,10 +100,12 @@ public sealed class MemoryCacheIdleEvictionTests
             {
                 disposable.Dispose();
             }
+            disposedSignal.TrySetResult();
         }));
 
         cache.Remove("key");
 
+        await disposedSignal.Task.WaitAsync(TimeSpan.FromSeconds(5));
         resource.Disposed.Should().BeTrue();
     }
 

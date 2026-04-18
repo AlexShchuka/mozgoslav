@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.IO.Pipelines;
 using System.Text;
 
 using CliWrap;
@@ -45,13 +44,12 @@ public sealed class FfmpegPcmDecoder : IAudioPcmDecoder
             return [];
         }
 
-        var stdoutPipe = new Pipe();
+        using var stdoutBuffer = new MemoryStream();
         var stderr = new StringBuilder();
 
-        // Pipe.Writer.AsStream returns a wrapper whose lifetime is the Pipe's;
-        // the PipeTarget.ToStream wrapper flushes + closes on completion.
-        // IDISP004 cannot see through the indirection.
-#pragma warning disable IDISP004, IDISP001
+        // IDISP001 — CliWrap.Command is a builder struct whose lifetime ends
+        // at ExecuteAsync; IDisposableAnalyzers cannot see that.
+#pragma warning disable IDISP001
         var execution = Cli.Wrap(FfmpegExecutable)
             .WithArguments(args => args
                 .Add("-hide_banner")
@@ -62,29 +60,18 @@ public sealed class FfmpegPcmDecoder : IAudioPcmDecoder
                 .Add("-ar").Add(TargetSampleRate.ToString(CultureInfo.InvariantCulture))
                 .Add("pipe:1"))
             .WithStandardInputPipe(PipeSource.FromBytes(encodedPayload))
-            .WithStandardOutputPipe(PipeTarget.ToStream(stdoutPipe.Writer.AsStream(leaveOpen: false)))
+            .WithStandardOutputPipe(PipeTarget.ToStream(stdoutBuffer))
             .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stderr))
             .WithValidation(CommandResultValidation.None);
-#pragma warning restore IDISP004, IDISP001
-
-        byte[] pcmBytes;
-        try
-        {
-            var executionTask = execution.ExecuteAsync(ct);
-            pcmBytes = await DrainAsync(stdoutPipe.Reader, ct).ConfigureAwait(false);
-            // CliWrap's CommandResult is a record — no IDisposable. The
-            // analyzer misidentifies it; suppress.
-#pragma warning disable IDISP001
-            var result = await executionTask.ConfigureAwait(false);
 #pragma warning restore IDISP001
 
-            if (result.ExitCode != 0)
-            {
-                _logger.LogWarning(
-                    "ffmpeg decode failed with exit {ExitCode}: {Stderr}", result.ExitCode, stderr);
-                throw new InvalidOperationException(
-                    $"ffmpeg decode exited with code {result.ExitCode}: {stderr}");
-            }
+        CommandResult result;
+        try
+        {
+            // CommandResult is a record; IDISP001 false-positive.
+#pragma warning disable IDISP001
+            result = await execution.ExecuteAsync(ct).ConfigureAwait(false);
+#pragma warning restore IDISP001
         }
         catch (CommandExecutionException ex) when (ex.InnerException is System.ComponentModel.Win32Exception)
         {
@@ -99,6 +86,15 @@ public sealed class FfmpegPcmDecoder : IAudioPcmDecoder
                 "(or 'apt-get install ffmpeg' on Linux).", ex);
         }
 
+        if (result.ExitCode != 0)
+        {
+            _logger.LogWarning(
+                "ffmpeg decode failed with exit {ExitCode}: {Stderr}", result.ExitCode, stderr);
+            throw new InvalidOperationException(
+                $"ffmpeg decode exited with code {result.ExitCode}: {stderr}");
+        }
+
+        var pcmBytes = stdoutBuffer.ToArray();
         if (pcmBytes.Length == 0)
         {
             return [];
@@ -112,25 +108,5 @@ public sealed class FfmpegPcmDecoder : IAudioPcmDecoder
         var samples = new float[pcmBytes.Length / sizeof(float)];
         Buffer.BlockCopy(pcmBytes, 0, samples, 0, pcmBytes.Length);
         return samples;
-    }
-
-    private static async Task<byte[]> DrainAsync(PipeReader reader, CancellationToken ct)
-    {
-        using var buffer = new MemoryStream();
-        while (true)
-        {
-            var result = await reader.ReadAsync(ct).ConfigureAwait(false);
-            foreach (var segment in result.Buffer)
-            {
-                buffer.Write(segment.Span);
-            }
-            reader.AdvanceTo(result.Buffer.End);
-            if (result.IsCompleted)
-            {
-                break;
-            }
-        }
-        await reader.CompleteAsync().ConfigureAwait(false);
-        return buffer.ToArray();
     }
 }

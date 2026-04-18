@@ -151,8 +151,10 @@ try
             // ADR-011 step 9 — the bespoke retry loop in ModelDownloadService is
             // replaced by HttpResilience's retry + circuit-breaker. Per-attempt
             // budget is generous (30 min) so multi-GB HuggingFace transfers
-            // never time out mid-download; retries back off exponentially.
-            options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(30);
+            // never time out mid-download; retries back off exponentially. The
+            // circuit-breaker sampling duration must be ≥ 2× attempt timeout
+            // (Polly validation), so at 30 min/attempt we use 90 min.
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(90);
             options.AttemptTimeout.Timeout = TimeSpan.FromMinutes(30);
             options.Retry.MaxRetryAttempts = 3;
             options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
@@ -160,7 +162,7 @@ try
             options.Retry.UseJitter = true;
             options.CircuitBreaker.FailureRatio = 0.5;
             options.CircuitBreaker.MinimumThroughput = 5;
-            options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+            options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(60);
             options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
         });
     builder.Services.AddSingleton<IJobProgressNotifier, ChannelJobProgressNotifier>();
@@ -230,7 +232,8 @@ try
             options.Retry.UseJitter = true;
             options.CircuitBreaker.FailureRatio = 0.5;
             options.CircuitBreaker.MinimumThroughput = 5;
-            options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+            // Polly validation: SamplingDuration >= 2 * AttemptTimeout (30 s).
+            options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(1);
             options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
         });
         builder.Services.AddSingleton<IEmbeddingService>(sp =>
