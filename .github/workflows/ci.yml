@@ -11,6 +11,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Secret scan first so if a PAT / key slipped past the lefthook pre-push the
+  # build fails fast, before burning minutes on backend/frontend matrices.
+  gitleaks:
+    name: Gitleaks (secret scan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 lets gitleaks diff the full branch history on PRs,
+          # matching what the local pre-push hook sees.
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   backend:
     name: Backend (.NET ${{ matrix.os }})
     strategy:
