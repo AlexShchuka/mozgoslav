@@ -70,13 +70,29 @@ class FakeMediaRecorder {
   public stop: jest.Mock;
   public ondataavailable: DataHandler | null = null;
   public onstop: (() => void) | null = null;
+  private stopListeners: Array<() => void> = [];
 
   constructor(public stream: MediaStream, _opts?: unknown) {
     const recorderInstance = this;
     this.stop = jest.fn(() => {
       recorderInstance.onstop?.();
+      // Drain a snapshot so once-listeners added via the real API get the
+      // event even though this fake doesn't model a full EventTarget.
+      const snapshot = recorderInstance.stopListeners.slice();
+      recorderInstance.stopListeners.length = 0;
+      for (const listener of snapshot) listener();
     });
     lastRecorder = recorderInstance;
+  }
+
+  public addEventListener(type: string, listener: () => void): void {
+    if (type === "stop") this.stopListeners.push(listener);
+  }
+
+  public removeEventListener(type: string, listener: () => void): void {
+    if (type !== "stop") return;
+    const idx = this.stopListeners.indexOf(listener);
+    if (idx !== -1) this.stopListeners.splice(idx, 1);
   }
 }
 /* eslint-enable @typescript-eslint/no-this-alias */

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { AnimatePresence, motion } from "framer-motion";
 
+import Badge from "../../components/Badge";
 import Button from "../../components/Button";
 import type { RagCitation, RagMessage } from "../../store/slices/rag/types";
 import type { RagChatProps } from "./types";
@@ -63,6 +64,9 @@ const RagChat: FC<RagChatProps> = ({ messages, isAsking, onAsk, onCitationNaviga
     <ChatRoot>
       <Header>
         <Title>{t("rag.title")}</Title>
+        <Badge tone="warning" data-testid="rag-wip-badge">
+          {t("rag.wipBadge")}
+        </Badge>
       </Header>
 
       <MessageList ref={listRef} data-testid="rag-message-list">

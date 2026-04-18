@@ -29,7 +29,8 @@
     "llmUnavailable": "LLM unavailable — showing raw citations below.",
     "error": "Request failed",
     "citationLink": "open in note",
-    "openNote": "Open note"
+    "openNote": "Open note",
+    "wipBadge": "Work in progress"
   },
   "common": {
     "save": "Save",
@@ -82,7 +83,8 @@
     "deviceUnknown": "unknown device",
     "deviceChanged": "Microphone \"{{name}}\" — {{kind}}",
     "recentTitle": "Recent recordings",
-    "empty": "No recordings yet — import or record your first one."
+    "empty": "No recordings yet — import or record your first one.",
+    "recordedSaved": "Recording saved and queued for processing"
   },
   "queue": {
     "title": "Processing queue",
