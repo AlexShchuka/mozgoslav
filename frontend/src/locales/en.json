@@ -67,6 +67,7 @@
     "recordStart": "Record",
     "recordStop": "Stop",
     "recordUnsupported": "Recording is macOS-only",
+    "audioLevel": "Microphone input level",
     "recentTitle": "Recent recordings",
     "empty": "No recordings yet — import or record your first one."
   },

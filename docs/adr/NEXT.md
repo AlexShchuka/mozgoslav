@@ -34,12 +34,6 @@
 
 ## Quick wins — дёшево и сейчас
 
-### D2 — Live audio level meters в Dashboard record state
-
-Сейчас peak-meter только в DictationOverlay. Есть `RecordingBridge` с уже живым аудио-потоком; прокинуть RMS/peak события в UI через ту же SSE-шину.
-
-**Оценка:** S, 2-3 часа.
-
 ### D3 — Hot-plug микрофонов
 
 Реакция на `AVCaptureDeviceWasConnected/Disconnected` в Swift helper → re-probe capabilities → backend эмитит событие → UI показывает toast и даёт повторно нажать Start.

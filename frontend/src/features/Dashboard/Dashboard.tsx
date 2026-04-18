@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { FileAudio, Mic, Square, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 
+import AudioLevelMeter from "../../components/AudioLevelMeter";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
@@ -42,6 +43,7 @@ const Dashboard: FC = () => {
   const [uploading, setUploading] = useState(false);
   const [recordState, setRecordState] = useState<RecordState>("idle");
   const [transcript, setTranscript] = useState<string | null>(null);
+  const [activeStream, setActiveStream] = useState<MediaStream | null>(null);
   const sessionRef = useRef<ActiveSession | null>(null);
 
   const refresh = useCallback(async () => {
@@ -134,12 +136,14 @@ const Dashboard: FC = () => {
           });
       };
       sessionRef.current = { sessionId, recorder, stream };
+      setActiveStream(stream);
       recorder.start(250); // 250 ms chunks matches ADR-002 D9
       setRecordState("recording");
     } catch (err) {
       setRecordState("idle");
       toast.error(err instanceof Error ? err.message : String(err));
       sessionRef.current = null;
+      setActiveStream(null);
     }
   };
 
@@ -159,6 +163,7 @@ const Dashboard: FC = () => {
       toast.error(err instanceof Error ? err.message : String(err));
     } finally {
       sessionRef.current = null;
+      setActiveStream(null);
       setRecordState("idle");
     }
   };
@@ -215,12 +220,14 @@ const Dashboard: FC = () => {
                 .catch(() => {});
             };
             sessionRef.current = { sessionId: started.sessionId, recorder, stream };
+            setActiveStream(stream);
             recorder.start(250);
             setRecordState("recording");
           } catch (err) {
             setRecordState("idle");
             toast.error(err instanceof Error ? err.message : String(err));
             sessionRef.current = null;
+            setActiveStream(null);
           }
         })();
       }
@@ -268,6 +275,14 @@ const Dashboard: FC = () => {
               : t("dashboard.recordStart")}
           </Button>
         </Row>
+        {recordState === "recording" && activeStream && (
+          <div style={{ marginTop: 12 }} data-testid="dashboard-levels">
+            <AudioLevelMeter
+              stream={activeStream}
+              ariaLabel={t("dashboard.audioLevel")}
+            />
+          </div>
+        )}
         {transcript && (
           <div
             data-testid="dashboard-transcript"
