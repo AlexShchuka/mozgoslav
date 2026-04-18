@@ -1,14 +1,30 @@
 import { FC, ReactNode } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Archive, Brain, Database, FolderCog, FolderTree, ListTree, MessageSquare, RefreshCw, Settings, Sparkles, Wrench } from "lucide-react";
+import {
+  Archive,
+  Brain,
+  Database,
+  FolderCog,
+  FolderTree,
+  HelpCircle,
+  ListTree,
+  MessageSquare,
+  RefreshCw,
+  Settings,
+  Sparkles,
+  Wrench,
+} from "lucide-react";
 
 import { useBackendHealth } from "../../hooks/useBackendHealth";
 import { ROUTES } from "../../constants/routes";
+import { resetOnboarding } from "../../store/slices/onboarding";
 import TitleBar from "../TitleBar";
 import {
   BackendStatusBanner,
   Content,
+  HelpButton,
   LayoutRoot,
   Sidebar,
   SidebarFooter,
@@ -16,6 +32,7 @@ import {
   SidebarIconSlot,
   SidebarItem,
   SidebarSection,
+  SidebarStatus,
   StatusDot,
 } from "./Layout.style";
 
@@ -27,7 +44,19 @@ const Layout: FC<LayoutProps> = ({ children }) => {
   const { t } = useTranslation();
   const health = useBackendHealth();
   const location = useLocation();
+  const navigate = useNavigate();
+  // react-redux v9 expects `UnknownAction` with an index-signature; our slice
+  // actions are discriminated unions. Widen at dispatch time (mirrors
+  // features/Sync/Sync.tsx) — type safety of the action is enforced by the
+  // creator functions themselves.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dispatch = useDispatch() as (action: any) => void;
   const isHealthy = health.status === "ok";
+
+  const onRestartOnboarding = () => {
+    dispatch(resetOnboarding());
+    navigate(ROUTES.onboarding);
+  };
 
   return (
     <LayoutRoot>
@@ -78,8 +107,19 @@ const Layout: FC<LayoutProps> = ({ children }) => {
         </SidebarSection>
 
         <SidebarFooter>
-          <StatusDot $ok={isHealthy} />
-          {isHealthy ? t("backendHealth.online") : t("backendHealth.offline")}
+          <SidebarStatus>
+            <StatusDot $ok={isHealthy} />
+            {isHealthy ? t("backendHealth.online") : t("backendHealth.offline")}
+          </SidebarStatus>
+          <HelpButton
+            type="button"
+            aria-label={t("sidebar.restartOnboarding")}
+            title={t("sidebar.restartOnboarding")}
+            onClick={onRestartOnboarding}
+            data-testid="sidebar-restart-onboarding"
+          >
+            <HelpCircle size={18} />
+          </HelpButton>
         </SidebarFooter>
       </Sidebar>
       <Content>

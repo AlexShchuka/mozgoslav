@@ -60,6 +60,9 @@
     "offline": "Backend not responding",
     "hint": "Start the backend: `dotnet run` inside backend/"
   },
+  "sidebar": {
+    "restartOnboarding": "Restart onboarding"
+  },
   "dashboard": {
     "title": "Dashboard",
     "importTitle": "Add recording",
