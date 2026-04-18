@@ -11,6 +11,12 @@ module.exports = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
     "\\.(css|less|scss|sass)$": "identity-obj-proxy",
+    // react-markdown + remark-gfm ship ESM-only builds that ts-jest cannot parse
+    // in CommonJS mode. The NoteViewer tests only care about the rendered text
+    // content — map both packages to lightweight CJS stubs that pass children
+    // through as plain divs.
+    "^react-markdown$": "<rootDir>/src/testUtils/reactMarkdownStub.tsx",
+    "^remark-gfm$": "<rootDir>/src/testUtils/remarkGfmStub.ts",
   },
   transform: {
     "^.+\\.(ts|tsx)$": [

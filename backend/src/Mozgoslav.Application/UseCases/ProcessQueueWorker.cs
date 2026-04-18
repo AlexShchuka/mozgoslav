@@ -209,7 +209,7 @@ public sealed class ProcessQueueWorker
         var version = existingNotes.Count == 0 ? 1 : existingNotes.Max(n => n.Version) + 1;
 
         var note = BuildNote(transcript, profile, recording, cleanText, llmResult, version);
-        note.MarkdownContent = MarkdownGenerator.Generate(note, profile, recording);
+        note.MarkdownContent = MarkdownGenerator.Generate(note, profile, recording, transcript.Segments);
 
         await TransitionAsync(job, JobStatus.Exporting, SummarizeEnd, "Exporting to vault", ct);
         if (!string.IsNullOrWhiteSpace(_settings.VaultPath))

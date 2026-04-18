@@ -32,17 +32,6 @@
 
 **Оценка фикса:** M, 2-4 часа включая Mac-валидацию. Если это P2 — фикс в 1 строку (обнулить `session.file`) + тест.
 
-### T3 — Speaker-aware transcript formatting
-
-Diarization уже пишет speaker-labelled сегменты в `Transcript.Segments`, но `MarkdownGenerator` рендерит plain text. Пользователь видит blob вместо «Alice: … / Bob: …».
-
-Что делать:
-- Расширить `TranscriptSegment` (уже value object) полем `SpeakerLabel?` (уже может быть там, проверить).
-- Правка `MarkdownGenerator.Generate` — если хотя бы у одного сегмента есть speaker, группировать по speaker и рендерить «**Alice (00:03):**\n текст…\n\n**Bob (00:15):**\n …».
-- В `frontend/src/features/Notes/NoteViewer` вывод тоже обновить — наш markdown уже передаётся, но styling для speaker-header стоит добавить.
-
-**Оценка:** S, 2-3 часа backend + 1 час frontend.
-
 ## Quick wins — дёшево и сейчас
 
 ### D2 — Live audio level meters в Dashboard record state
