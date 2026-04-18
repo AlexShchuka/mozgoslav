@@ -10,7 +10,7 @@ namespace Mozgoslav.Tests.Integration;
 public sealed class EfProcessingJobRepositoryTests
 {
     [TestMethod]
-    public async Task EnqueueAsync_ThenDequeueNext_ReturnsQueuedJob()
+    public async Task EnqueueAsync_PersistsJob()
     {
         await using var db = new TestDatabase();
         await using var ctx = db.CreateContext();
@@ -24,29 +24,10 @@ public sealed class EfProcessingJobRepositoryTests
         await repo.EnqueueAsync(job, CancellationToken.None);
 
         await using var freshCtx = db.CreateContext();
-        var dequeued = await new EfProcessingJobRepository(freshCtx).DequeueNextAsync(CancellationToken.None);
+        var fetched = await new EfProcessingJobRepository(freshCtx).GetByIdAsync(job.Id, CancellationToken.None);
 
-        dequeued.Should().NotBeNull();
-        dequeued.Id.Should().Be(job.Id);
-        dequeued.Status.Should().Be(JobStatus.Queued);
-    }
-
-    [TestMethod]
-    public async Task DequeueNextAsync_OnlyReturnsQueuedJobs()
-    {
-        await using var db = new TestDatabase();
-        await using var ctx = db.CreateContext();
-        var repo = new EfProcessingJobRepository(ctx);
-
-        await repo.EnqueueAsync(new ProcessingJob
-        {
-            RecordingId = Guid.NewGuid(),
-            ProfileId = Guid.NewGuid(),
-            Status = JobStatus.Done
-        }, CancellationToken.None);
-
-        var dequeued = await repo.DequeueNextAsync(CancellationToken.None);
-        dequeued.Should().BeNull();
+        fetched.Should().NotBeNull();
+        fetched!.Status.Should().Be(JobStatus.Queued);
     }
 
     [TestMethod]
@@ -173,5 +154,31 @@ public sealed class EfProcessingJobRepositoryTests
         all[0].Status.Should().Be(JobStatus.Transcribing);
         all[0].CurrentStep.Should().Be("Transcribing audio");
         all[0].UserHint.Should().Be("meeting about Q2");
+    }
+
+    [TestMethod]
+    public async Task GetByStatusAsync_FiltersByStatus()
+    {
+        await using var db = new TestDatabase();
+        await using var ctx = db.CreateContext();
+        var repo = new EfProcessingJobRepository(ctx);
+
+        await repo.EnqueueAsync(new ProcessingJob
+        {
+            RecordingId = Guid.NewGuid(),
+            ProfileId = Guid.NewGuid(),
+            Status = JobStatus.Queued,
+        }, CancellationToken.None);
+        await repo.EnqueueAsync(new ProcessingJob
+        {
+            RecordingId = Guid.NewGuid(),
+            ProfileId = Guid.NewGuid(),
+            Status = JobStatus.Transcribing,
+        }, CancellationToken.None);
+
+        var queued = await repo.GetByStatusAsync(JobStatus.Queued, CancellationToken.None);
+
+        queued.Should().HaveCount(1);
+        queued[0].Status.Should().Be(JobStatus.Queued);
     }
 }

@@ -10,13 +10,21 @@ using Mozgoslav.Infrastructure.Platform;
 namespace Mozgoslav.Infrastructure.Seed;
 
 /// <summary>
-/// Runs once at startup: ensures the SQLite schema exists (EF Core
-/// <c>EnsureCreated</c>), seeds built-in profiles, and populates sensible default
-/// settings for macOS so the app works out of the box. The implementation is
-/// singleton-safe — it resolves the scoped <see cref="IProfileRepository"/> via
-/// <see cref="IServiceScopeFactory"/> so there is no captive-dependency bug
-/// and the "Seeded 3 built-in profiles" line is logged exactly once
-/// (ADR-007 BC-052, bug 8).
+/// Runs once at startup: applies pending EF Core migrations (ADR-011 step 1 —
+/// replaces the legacy <c>EnsureCreated</c> + marker-file ledger with the
+/// standard <c>DbContext.Database.MigrateAsync</c> pipeline), seeds built-in
+/// profiles, and populates sensible default settings for macOS so the app
+/// works out of the box. The implementation is singleton-safe — it resolves
+/// the scoped <see cref="IProfileRepository"/> via <see cref="IServiceScopeFactory"/>
+/// so there is no captive-dependency bug and the "Seeded 3 built-in profiles"
+/// line is logged exactly once.
+/// <para>
+/// Intentionally stays on <see cref="IHostedService"/> rather than
+/// <see cref="BackgroundService"/>: <c>StartAsync</c> blocks the host from
+/// serving requests until the schema is ready. <c>BackgroundService.ExecuteAsync</c>
+/// runs *after* the host reports "Started", which would race with an incoming
+/// request hitting a half-migrated DB.
+/// </para>
 /// </summary>
 public sealed class DatabaseInitializer : IHostedService
 {
@@ -42,9 +50,9 @@ public sealed class DatabaseInitializer : IHostedService
 
         await using (var db = await contextFactory.CreateDbContextAsync(cancellationToken))
         {
-            await db.Database.EnsureCreatedAsync(cancellationToken);
+            await db.Database.MigrateAsync(cancellationToken);
         }
-        _logger.LogInformation("SQLite schema ensured");
+        _logger.LogInformation("EF Core migrations applied");
 
         foreach (var profile in BuiltInProfiles.All)
         {

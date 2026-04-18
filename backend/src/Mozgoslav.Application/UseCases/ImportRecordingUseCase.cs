@@ -14,15 +14,18 @@ public sealed class ImportRecordingUseCase
     private readonly IRecordingRepository _recordings;
     private readonly IProcessingJobRepository _jobs;
     private readonly IProfileRepository _profiles;
+    private readonly IProcessingJobScheduler _scheduler;
 
     public ImportRecordingUseCase(
         IRecordingRepository recordings,
         IProcessingJobRepository jobs,
-        IProfileRepository profiles)
+        IProfileRepository profiles,
+        IProcessingJobScheduler scheduler)
     {
         _recordings = recordings;
         _jobs = jobs;
         _profiles = profiles;
+        _scheduler = scheduler;
     }
 
     public async Task<IReadOnlyList<Recording>> ExecuteAsync(
@@ -78,13 +81,16 @@ public sealed class ImportRecordingUseCase
 
             await _recordings.AddAsync(recording, ct);
 
-            await _jobs.EnqueueAsync(
+            var processingJob = await _jobs.EnqueueAsync(
                 new ProcessingJob
                 {
                     RecordingId = recording.Id,
                     ProfileId = profile.Id
                 },
                 ct);
+            // ADR-011 step 6 — hand the job to Quartz. The processing_jobs row
+            // remains the durable UI-facing state; Quartz owns the run cadence.
+            await _scheduler.ScheduleAsync(processingJob.Id, ct);
 
             result.Add(recording);
         }

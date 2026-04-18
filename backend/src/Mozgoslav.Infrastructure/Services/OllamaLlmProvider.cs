@@ -15,7 +15,6 @@ namespace Mozgoslav.Infrastructure.Services;
 /// </summary>
 public sealed class OllamaLlmProvider : ILlmProvider
 {
-    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(120);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
@@ -41,8 +40,8 @@ public sealed class OllamaLlmProvider : ILlmProvider
     {
         try
         {
+            // ADR-011 step 3 — resilience lives on the named "llm" HttpClient.
             using var client = _httpClientFactory.CreateClient("llm");
-            client.Timeout = Timeout;
 
             var endpoint = new Uri(new Uri(_settings.LlmEndpoint), "/api/chat");
             var model = string.IsNullOrWhiteSpace(_settings.LlmModel) ? "llama3.2" : _settings.LlmModel;

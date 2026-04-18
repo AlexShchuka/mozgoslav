@@ -30,7 +30,9 @@ public sealed class StartupLogTests
 
         using var _ = factory.CreateClient();
 
-        captured.Count(line => line.Contains("SQLite schema ensured", StringComparison.Ordinal))
+        // ADR-011 step 1 — DatabaseInitializer now logs "EF Core migrations applied"
+        // after running MigrateAsync (replaced the legacy "SQLite schema ensured" line).
+        captured.Count(line => line.Contains("EF Core migrations applied", StringComparison.Ordinal))
             .Should().Be(1);
     }
 

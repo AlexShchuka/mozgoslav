@@ -9,4 +9,13 @@
     <ProjectReference Include="..\Mozgoslav.Domain\Mozgoslav.Domain.csproj" />
     <ProjectReference Include="..\Mozgoslav.Infrastructure\Mozgoslav.Infrastructure.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- ADR-011 step 1 — EF migration tooling (design-time only) lives alongside
+         the startup project so `dotnet ef migrations add ...` can spin up the
+         composition root without a separate tooling project. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
 </Project>

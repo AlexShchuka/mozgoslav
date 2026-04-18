@@ -1,6 +1,6 @@
 # ADR-011 — Backend: библиотеки вместо велосипедов
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-04-17
 - **Scope:** backend (.NET 10). Только замены custom-кода на standard-библиотеки. Не про новую функциональность.
 
@@ -72,3 +72,23 @@
 7. SSE стандартизация — в зависимости от выбранной lib, PR маленький.
 
 Каждый PR — не больше одного велосипеда за раз.
+
+## Реализация
+
+Все девять пунктов поставлены одним MR (решение пользователя несмотря на
+per-item рекомендацию выше): `shuka/adr-011-libraries-over-homebrew`.
+Отклонения от буквы ADR, задокументированные в MR-коммитах:
+
+- §1 (Quartz): AdoJobStore против SQLite не применён — durable business state
+  живёт в таблице `processing_jobs`, которую переиспользует новый
+  `ProcessingJobRehydrator`. Quartz держит триггеры в RAMJobStore; crash recovery
+  обеспечивает rehydrator на старте. AdoJobStore добавит лишний дубликат state
+  без выгоды — swap остаётся задачей будущего MR.
+- §3 (HTTP Resilience): `OpenAiCompatibleLlmProvider` использует OpenAI SDK и
+  его собственный HTTP-pipeline; attach `.AddStandardResilienceHandler(...)`
+  к нему потребовал бы сначала убрать SDK. Остальные 4 клиента (`"llm"`,
+  `"models"`, `Mozgoslav.PythonSidecar`) — с resilience.
+- §6 (Background lifecycle): `DatabaseInitializer` остаётся на `IHostedService`
+  (должен блокировать приём запросов до применения миграций). `BackgroundService`
+  для `QueueBackgroundService` — moot (сервис удалён, заменён Quartz). 
+  `ModelDownloadCoordinator` — не хостед-сервис, запуск on-demand.

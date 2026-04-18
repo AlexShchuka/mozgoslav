@@ -79,9 +79,12 @@ Pre-commit прогонит `dotnet format` / `eslint --fix` / `prettier --write
 - `CLAUDE.md` (root) — общая архитектура, конвенции.
 - `backend/CLAUDE.md`, `frontend/CLAUDE.md`, `python-sidecar/CLAUDE.md` — гид по каждой части.
 - `docs/README.md` — pipeline и устройство.
-- `docs/adr/` — активные ADR (009, 010) + groom-only (008). Архив в `.archive-v1/` и `.archive-v2/`.
-- `plan/v0.8/` — план релиза v0.8 поблочно.
-- `TODO.md` — что уже отгружено в v0.8 и что отложено в Phase 2.
+- `docs/adr/NEXT.md` — активная очередь работы (critical + quick wins).
+- `docs/adr/POSTRELEASE.md` — задачи post-v1.0.
+- `docs/adr/ADR-014-unrealized-backlog.md` — low-priority backlog.
+- `docs/adr/ADR-016-*.md`, `ADR-017-*.md` — Proposed ADR (RAG history, /metrics).
+- Shipped/superseded ADR — `.archive/adrs/`. Release plan v0.8 — `.archive/docs/v0.8-release/`.
+- Live project status: `README.md` / `CLAUDE.md`.
 
 ## Adding a new frontend feature
 
@@ -118,4 +121,4 @@ Read-only pages (`Logs`, `Notes viewer`, `DictationOverlay`) остаются ho
 
 ## Подробнее про DMG / релиз
 
-См. `plan/v0.8/07-dmg-and-release.md`. v0.8 ships unsigned; signing/notarisation вынесены в Phase 2 (§8 того же плана).
+См. `.archive/docs/v0.8-release/07-dmg-and-release.md`. v0.8 ships unsigned; signing/notarisation вынесены в Phase 2 (§8 того же плана).

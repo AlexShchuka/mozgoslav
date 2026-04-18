@@ -15,31 +15,46 @@ using NSubstitute;
 
 namespace Mozgoslav.Tests.Application;
 
+/// <summary>
+/// ADR-011 step 6 — the worker is no longer loop-driven; Quartz triggers hand
+/// it a specific job id. These tests pin the per-id pipeline semantics (happy
+/// path, LLM unavailable, vault empty, transcription failure, host shutdown).
+/// </summary>
 [TestClass]
 public sealed class ProcessQueueWorkerTests
 {
     [TestMethod]
-    public async Task ProcessNextAsync_EmptyQueue_ReturnsFalse()
+    public async Task ProcessJobAsync_UnknownJob_IsNoOp()
     {
         var fixture = new Fixture();
-        fixture.Jobs.DequeueNextAsync(Arg.Any<CancellationToken>()).Returns((ProcessingJob?)null);
+        fixture.Jobs.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns((ProcessingJob?)null);
 
-        var result = await fixture.Worker.ProcessNextAsync(CancellationToken.None);
+        await fixture.Worker.ProcessJobAsync(Guid.NewGuid(), CancellationToken.None);
 
-        result.Should().BeFalse();
         await fixture.Recordings.DidNotReceiveWithAnyArgs().GetByIdAsync(Guid.Empty, CancellationToken.None);
     }
 
     [TestMethod]
-    public async Task ProcessNextAsync_HappyPath_RunsFullPipelineAndMarksJobDone()
+    public async Task ProcessJobAsync_AlreadyTerminal_IsNoOp()
     {
         var fixture = new Fixture();
-        var job = fixture.EnqueueJob();
+        var job = fixture.SeedJob(JobStatus.Done);
+
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
+
+        await fixture.Recordings.DidNotReceiveWithAnyArgs().GetByIdAsync(Guid.Empty, CancellationToken.None);
+    }
+
+    [TestMethod]
+    public async Task ProcessJobAsync_HappyPath_RunsFullPipelineAndMarksJobDone()
+    {
+        var fixture = new Fixture();
+        var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
 
-        var result = await fixture.Worker.ProcessNextAsync(CancellationToken.None);
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
 
-        result.Should().BeTrue();
         job.Status.Should().Be(JobStatus.Done);
         job.Progress.Should().Be(100);
         job.FinishedAt.Should().NotBeNull();
@@ -53,10 +68,10 @@ public sealed class ProcessQueueWorkerTests
     }
 
     [TestMethod]
-    public async Task ProcessNextAsync_NoteVersion_StartsAtOne_WhenNoPriorNotesExist()
+    public async Task ProcessJobAsync_NoteVersion_StartsAtOne_WhenNoPriorNotesExist()
     {
         var fixture = new Fixture();
-        fixture.EnqueueJob();
+        var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
         fixture.Notes.GetByTranscriptIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(Array.Empty<ProcessedNote>());
@@ -66,16 +81,16 @@ public sealed class ProcessQueueWorkerTests
             Arg.Do<ProcessedNote>(n => captured = n),
             Arg.Any<CancellationToken>());
 
-        await fixture.Worker.ProcessNextAsync(CancellationToken.None);
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
 
         captured!.Version.Should().Be(1);
     }
 
     [TestMethod]
-    public async Task ProcessNextAsync_NoteVersion_IncrementsPastLatest_OnReprocessing()
+    public async Task ProcessJobAsync_NoteVersion_IncrementsPastLatest_OnReprocessing()
     {
         var fixture = new Fixture();
-        fixture.EnqueueJob();
+        var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
 
         fixture.Notes.GetByTranscriptIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
@@ -90,16 +105,16 @@ public sealed class ProcessQueueWorkerTests
             Arg.Do<ProcessedNote>(n => captured = n),
             Arg.Any<CancellationToken>());
 
-        await fixture.Worker.ProcessNextAsync(CancellationToken.None);
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
 
         captured!.Version.Should().Be(3);
     }
 
     [TestMethod]
-    public async Task ProcessNextAsync_LlmUnavailable_KeepsRawTranscriptAndStillProducesNote()
+    public async Task ProcessJobAsync_LlmUnavailable_KeepsRawTranscriptAndStillProducesNote()
     {
         var fixture = new Fixture();
-        fixture.EnqueueJob();
+        var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline(llmAvailable: false);
 
         ProcessedNote? captured = null;
@@ -107,7 +122,7 @@ public sealed class ProcessQueueWorkerTests
             Arg.Do<ProcessedNote>(n => captured = n),
             Arg.Any<CancellationToken>());
 
-        await fixture.Worker.ProcessNextAsync(CancellationToken.None);
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
 
         captured.Should().NotBeNull();
         captured.Summary.Should().BeEmpty();
@@ -117,10 +132,10 @@ public sealed class ProcessQueueWorkerTests
     }
 
     [TestMethod]
-    public async Task ProcessNextAsync_ExportFailure_StillSavesNoteWithoutVaultPath()
+    public async Task ProcessJobAsync_ExportFailure_StillSavesNoteWithoutVaultPath()
     {
         var fixture = new Fixture();
-        var job = fixture.EnqueueJob();
+        var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
         fixture.Exporter.ExportAsync(
                 Arg.Any<ProcessedNote>(), Arg.Any<Profile>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -131,9 +146,8 @@ public sealed class ProcessQueueWorkerTests
             Arg.Do<ProcessedNote>(n => captured = n),
             Arg.Any<CancellationToken>());
 
-        var result = await fixture.Worker.ProcessNextAsync(CancellationToken.None);
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
 
-        result.Should().BeTrue();
         captured.Should().NotBeNull();
         captured.ExportedToVault.Should().BeFalse();
         captured.VaultPath.Should().BeNull();
@@ -141,59 +155,58 @@ public sealed class ProcessQueueWorkerTests
     }
 
     [TestMethod]
-    public async Task ProcessNextAsync_VaultPathEmpty_DoesNotCallExporter()
+    public async Task ProcessJobAsync_VaultPathEmpty_DoesNotCallExporter()
     {
         var fixture = new Fixture { VaultPath = string.Empty };
-        fixture.EnqueueJob();
+        var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
 
-        await fixture.Worker.ProcessNextAsync(CancellationToken.None);
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
 
         await fixture.Exporter.DidNotReceiveWithAnyArgs().ExportAsync(null!, null!, null!, CancellationToken.None);
     }
 
     [TestMethod]
-    public async Task ProcessNextAsync_UnknownRecording_MarksJobFailed()
+    public async Task ProcessJobAsync_UnknownRecording_MarksJobFailed()
     {
         var fixture = new Fixture();
-        var job = fixture.EnqueueJob();
+        var job = fixture.SeedJob();
         fixture.Recordings.GetByIdAsync(job.RecordingId, Arg.Any<CancellationToken>())
             .Returns((Recording?)null);
 
-        var result = await fixture.Worker.ProcessNextAsync(CancellationToken.None);
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
 
-        result.Should().BeTrue();
         job.Status.Should().Be(JobStatus.Failed);
         job.ErrorMessage.Should().Contain("Recording");
         job.FinishedAt.Should().NotBeNull();
     }
 
     [TestMethod]
-    public async Task ProcessNextAsync_TranscriptionThrows_MarksJobFailedButDoesNotStallQueue()
+    public async Task ProcessJobAsync_TranscriptionThrows_MarksJobFailedButDoesNotStallPipeline()
     {
         var fixture = new Fixture();
-        var job = fixture.EnqueueJob();
+        var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
         fixture.Transcription
             .TranscribeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>(),
                 Arg.Any<IProgress<int>?>(), Arg.Any<CancellationToken>())
             .Returns<IReadOnlyList<TranscriptSegment>>(_ => throw new InvalidOperationException("STT failed"));
 
-        var result = await fixture.Worker.ProcessNextAsync(CancellationToken.None);
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
 
-        result.Should().BeTrue();
         job.Status.Should().Be(JobStatus.Failed);
         job.ErrorMessage.Should().Contain("STT failed");
     }
 
     [TestMethod]
-    public async Task ProcessNextAsync_WhenHostStopping_RethrowsCancellation()
+    public async Task ProcessJobAsync_WhenHostStopping_RethrowsCancellation()
     {
-        // ADR-015 — host-stopping OCE (stoppingToken is cancelled) must still
-        // propagate upward so the background service can exit its loop cleanly.
-        // The in-flight job does NOT transition to Cancelled in this path.
+        // ADR-015 — host-stopping OCE (the ct handed to ProcessJobAsync is
+        // cancelled) must still propagate upward so Quartz can ack the trigger
+        // cleanly. The in-flight job does NOT transition to Cancelled in this
+        // path.
         var fixture = new Fixture();
-        var job = fixture.EnqueueJob();
+        var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
         using var hostStopping = new CancellationTokenSource();
         await hostStopping.CancelAsync();
@@ -203,26 +216,25 @@ public sealed class ProcessQueueWorkerTests
                 Arg.Any<IProgress<int>?>(), Arg.Any<CancellationToken>())
             .Returns<IReadOnlyList<TranscriptSegment>>(_ => throw new OperationCanceledException(hostStopping.Token));
 
-        var act = async () => await fixture.Worker.ProcessNextAsync(hostStopping.Token);
+        var act = async () => await fixture.Worker.ProcessJobAsync(job.Id, hostStopping.Token);
 
         await act.Should().ThrowAsync<OperationCanceledException>();
         job.Status.Should().NotBe(JobStatus.Cancelled);
     }
 
     [TestMethod]
-    public async Task ProcessNextAsync_WhenCancelRequestedBeforeTranscribe_MarksCancelled()
+    public async Task ProcessJobAsync_WhenCancelRequestedBeforeTranscribe_MarksCancelled()
     {
         // ADR-015 — cancel requested on a Queued job. Worker picks it up, sees
         // CancelRequested=true at the top of ProcessJobAsync and exits
         // immediately without running any pipeline stage.
         var fixture = new Fixture();
-        var job = fixture.EnqueueJob();
+        var job = fixture.SeedJob();
         job.CancelRequested = true;
         fixture.ArrangeHappyPipeline();
 
-        var result = await fixture.Worker.ProcessNextAsync(CancellationToken.None);
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
 
-        result.Should().BeTrue();
         job.Status.Should().Be(JobStatus.Cancelled);
         job.FinishedAt.Should().NotBeNull();
         await fixture.Transcription.DidNotReceiveWithAnyArgs().TranscribeAsync(
@@ -232,14 +244,14 @@ public sealed class ProcessQueueWorkerTests
     }
 
     [TestMethod]
-    public async Task ProcessNextAsync_WhenTokenCancelledDuringTranscribe_MarksCancelled()
+    public async Task ProcessJobAsync_WhenTokenCancelledDuringTranscribe_MarksCancelled()
     {
         // ADR-015 — cooperative cancel during a pipeline stage. The per-job CT
         // in the registry is triggered (NOT the host-stopping token). Worker
-        // catches OCE via `when (!stoppingToken.IsCancellationRequested)` and
-        // marks Cancelled instead of Failed.
+        // catches OCE via `when (!ct.IsCancellationRequested)` and marks
+        // Cancelled instead of Failed.
         var fixture = new Fixture();
-        var job = fixture.EnqueueJob();
+        var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
 
         // Simulate the cancel endpoint flipping the registry for this job right
@@ -258,9 +270,8 @@ public sealed class ProcessQueueWorkerTests
                 throw new InvalidOperationException("perJobToken should have been cancelled");
             });
 
-        var result = await fixture.Worker.ProcessNextAsync(CancellationToken.None);
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
 
-        result.Should().BeTrue();
         job.Status.Should().Be(JobStatus.Cancelled);
         job.FinishedAt.Should().NotBeNull();
         job.ErrorMessage.Should().BeNull();
@@ -296,14 +307,15 @@ public sealed class ProcessQueueWorkerTests
             CancellationRegistry,
             NullLogger<ProcessQueueWorker>.Instance);
 
-        public ProcessingJob EnqueueJob()
+        public ProcessingJob SeedJob(JobStatus status = JobStatus.Queued)
         {
             var job = new ProcessingJob
             {
                 RecordingId = Guid.NewGuid(),
-                ProfileId = Guid.NewGuid()
+                ProfileId = Guid.NewGuid(),
+                Status = status,
             };
-            Jobs.DequeueNextAsync(Arg.Any<CancellationToken>()).Returns(job);
+            Jobs.GetByIdAsync(job.Id, Arg.Any<CancellationToken>()).Returns(job);
             return job;
         }
 

@@ -8,10 +8,16 @@ using Mozgoslav.Domain.Enums;
 namespace Mozgoslav.Application.UseCases;
 
 /// <summary>
-/// Consumes one <see cref="ProcessingJob"/> from the queue and runs it through the
-/// transcription → correction → summarization → export pipeline. Catches all
-/// exceptions and marks the job as <see cref="JobStatus.Failed"/> on error so that
-/// a single bad file never stalls the queue.
+/// Runs a single <see cref="ProcessingJob"/> through the transcription →
+/// correction → summarization → export pipeline. Catches all exceptions and
+/// marks the job as <see cref="JobStatus.Failed"/> on error so that a single
+/// bad file never stalls downstream Quartz triggers.
+/// <para>
+/// ADR-011 step 6 — this type used to drive the queue loop itself
+/// (<c>ProcessNextAsync</c>) by polling <c>IProcessingJobRepository.DequeueNextAsync</c>.
+/// The loop has moved into Quartz.NET; this worker now accepts a job id from
+/// whichever Quartz <c>IJob</c> trigger fired and processes that one job.
+/// </para>
 /// </summary>
 public sealed class ProcessQueueWorker
 {
@@ -76,21 +82,35 @@ public sealed class ProcessQueueWorker
         _logger = logger;
     }
 
-    public async Task<bool> ProcessNextAsync(CancellationToken stoppingToken)
+    /// <summary>
+    /// Loads <paramref name="jobId"/> from the repository and runs the full
+    /// pipeline against it. Never throws for pipeline-internal failures — the
+    /// job row transitions to <see cref="JobStatus.Failed"/> (or
+    /// <see cref="JobStatus.Cancelled"/> on user-initiated cancel via ADR-015)
+    /// with the error message. Host-shutdown
+    /// <see cref="OperationCanceledException"/> DOES propagate so Quartz can
+    /// ack the trigger cleanly.
+    /// </summary>
+    public async Task ProcessJobAsync(Guid jobId, CancellationToken ct)
     {
-        var job = await _jobs.DequeueNextAsync(stoppingToken);
+        var job = await _jobs.GetByIdAsync(jobId, ct);
         if (job is null)
         {
-            return false;
+            _logger.LogWarning("Quartz trigger fired for unknown job {JobId} — skipping", jobId);
+            return;
+        }
+        if (job.Status is JobStatus.Done or JobStatus.Failed or JobStatus.Cancelled)
+        {
+            _logger.LogInformation("Quartz trigger fired for already-terminal job {JobId} — skipping", jobId);
+            return;
         }
 
         // ADR-015 — register a per-job linked CTS so the cancel endpoint can
         // signal cooperative cancellation on the active pipeline stage. The
-        // pipeline runs against `perJobToken`; `stoppingToken` is kept
+        // pipeline runs against `perJobToken`; the host-stopping `ct` is kept
         // separately so the `when` filter below can distinguish a host-stopping
         // OCE (re-thrown) from a user-cancel OCE (mark Cancelled).
-        var perJobCts = _cancellationRegistry.Register(job.Id, stoppingToken);
-        var perJobToken = perJobCts.Token;
+        var perJobToken = _cancellationRegistry.Register(job.Id, ct).Token;
 
         try
         {
@@ -99,12 +119,12 @@ public sealed class ProcessQueueWorker
                 // Cancel was requested while the job was still Queued — skip
                 // the pipeline entirely and go straight to the terminal state.
                 await MarkCancelledAsync(job);
-                return true;
+                return;
             }
 
-            await ProcessJobAsync(job, perJobToken);
+            await RunPipelineAsync(job, perJobToken);
         }
-        catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
             // Cooperative cancel — host is still running, only the per-job
             // token was cancelled. Transition to the Cancelled terminal state
@@ -120,17 +140,15 @@ public sealed class ProcessQueueWorker
         catch (Exception ex)
         {
             _logger.LogError(ex, "Processing job {JobId} failed", job.Id);
-            await MarkFailedAsync(job, ex.Message, stoppingToken);
+            await MarkFailedAsync(job, ex.Message, ct);
         }
         finally
         {
             _cancellationRegistry.Unregister(job.Id);
         }
-
-        return true;
     }
 
-    private async Task ProcessJobAsync(ProcessingJob job, CancellationToken ct)
+    private async Task RunPipelineAsync(ProcessingJob job, CancellationToken ct)
     {
         var recording = await _recordings.GetByIdAsync(job.RecordingId, ct)
             ?? throw new InvalidOperationException($"Recording {job.RecordingId} not found");

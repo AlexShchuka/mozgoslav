@@ -24,12 +24,6 @@ public sealed class EfProcessingJobRepository : IProcessingJobRepository
         return job;
     }
 
-    public Task<ProcessingJob?> DequeueNextAsync(CancellationToken ct) =>
-        _db.ProcessingJobs.AsNoTracking()
-            .Where(j => j.Status == JobStatus.Queued)
-            .OrderBy(j => j.CreatedAt)
-            .FirstOrDefaultAsync(ct);
-
     public Task<ProcessingJob?> GetByIdAsync(Guid id, CancellationToken ct) =>
         _db.ProcessingJobs.AsNoTracking()
             .FirstOrDefaultAsync(j => j.Id == id, ct);

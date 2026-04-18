@@ -20,7 +20,8 @@ public sealed class ImportRecordingUseCaseTests
         var profiles = Substitute.For<IProfileRepository>();
         profiles.TryGetDefaultAsync(Arg.Any<CancellationToken>()).Returns(CreateDefaultProfile());
 
-        var useCase = new ImportRecordingUseCase(recordings, jobs, profiles);
+        var scheduler = Substitute.For<IProcessingJobScheduler>();
+        var useCase = new ImportRecordingUseCase(recordings, jobs, profiles, scheduler);
 
         var missingPath = Path.Combine(Path.GetTempPath(), $"missing-{Guid.NewGuid():N}.mp3");
 
@@ -52,7 +53,8 @@ public sealed class ImportRecordingUseCaseTests
             jobs.EnqueueAsync(Arg.Any<ProcessingJob>(), Arg.Any<CancellationToken>())
                 .Returns(call => call.Arg<ProcessingJob>());
 
-            var useCase = new ImportRecordingUseCase(recordings, jobs, profiles);
+            var scheduler = Substitute.For<IProcessingJobScheduler>();
+            var useCase = new ImportRecordingUseCase(recordings, jobs, profiles, scheduler);
 
             var result = await useCase.ExecuteAsync([path], profileId: null, CancellationToken.None);
 
@@ -97,7 +99,8 @@ public sealed class ImportRecordingUseCaseTests
             recordings.GetBySha256Async(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(existing);
 
-            var useCase = new ImportRecordingUseCase(recordings, jobs, profiles);
+            var scheduler = Substitute.For<IProcessingJobScheduler>();
+            var useCase = new ImportRecordingUseCase(recordings, jobs, profiles, scheduler);
 
             var result = await useCase.ExecuteAsync([path], profileId: null, CancellationToken.None);
 

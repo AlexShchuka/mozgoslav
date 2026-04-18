@@ -31,4 +31,4 @@ LLM суммаризация (structured JSON) → markdown + frontmatter → Ob
 - **V2** — пользовательские профили (CRUD), glossary для коррекции, aggregated notes, Obsidian REST API.
 - **V3** — diarization, gender, emotion, NER через python-sidecar, speaker identification, live transcription.
 
-Актуальный backlog см. в `../TODO.md`.
+Актуальный backlog см. в [`adr/ADR-014-unrealized-backlog.md`](adr/ADR-014-unrealized-backlog.md).
