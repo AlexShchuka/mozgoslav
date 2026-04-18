@@ -79,7 +79,11 @@ public sealed class MozgoslavDbContext : DbContext
             e.Property(x => x.SourceType).HasColumnName("source_type").HasConversion<string>().IsRequired();
             e.Property(x => x.Status).HasColumnName("status").HasConversion<string>().IsRequired();
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
-            e.HasIndex(x => x.Sha256).IsUnique();
+            // Non-unique index. Idempotency on import was removed per product
+            // decision (2026-04-19) — the same audio file may now be imported
+            // multiple times, producing distinct Recording rows. Vault-export
+            // idempotency remains enforced at the note level, not here.
+            e.HasIndex(x => x.Sha256);
             e.HasIndex(x => x.CreatedAt);
         });
 

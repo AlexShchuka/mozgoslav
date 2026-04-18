@@ -11,6 +11,7 @@ import EmptyState from "../../components/EmptyState";
 import ProgressBar from "../../components/ProgressBar";
 import { apiFactory } from "../../api";
 import { API_ENDPOINTS, BACKEND_URL } from "../../constants/api";
+import { RECORDINGS_CHANGED_EVENT } from "../../constants/events";
 import { noteRoute } from "../../constants/routes";
 import type { ProcessingJob } from "../../domain/ProcessingJob";
 import type { Recording } from "../../domain/Recording";
@@ -96,6 +97,20 @@ const HomeList: FC = () => {
       es.close();
     };
   }, [reconnectKey]);
+
+  // Refetch recordings whenever Dashboard publishes a new import / recorded
+  // file — SSE only covers ProcessingJob updates, so Recording creation
+  // needs its own notify channel.
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const handler = (): void => {
+      void recordingsApi.getAll().then(setRecordings).catch(() => {
+        // Tolerated: the next user action will retry.
+      });
+    };
+    window.addEventListener(RECORDINGS_CHANGED_EVENT, handler);
+    return () => window.removeEventListener(RECORDINGS_CHANGED_EVENT, handler);
+  }, []);
 
   // Latest-by-createdAt ProcessingJob per recording. The worker reprocess flow
   // (POST /api/recordings/{id}/reprocess) creates a fresh job, so a recording

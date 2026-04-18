@@ -151,8 +151,12 @@ public sealed class ImportRecordingUseCaseTests
     }
 
     [TestMethod]
-    public async Task ExecuteAsync_DuplicateSha256_IsIdempotentAndDoesNotEnqueue()
+    public async Task ExecuteAsync_DuplicateSha256_CreatesDistinctRowAndEnqueuesAgain()
     {
+        // Product decision 2026-04-19 — import is no longer idempotent on
+        // sha256. Re-importing the same audio content produces a new
+        // Recording row + a fresh ProcessingJob. This replaces the previous
+        // "deduplicate by sha256" behaviour.
         var path = Path.Combine(Path.GetTempPath(), $"mozgoslav-dup-{Guid.NewGuid():N}.wav");
         await File.WriteAllBytesAsync(path, [9, 9, 9], TestContext.CancellationToken);
 
@@ -163,26 +167,26 @@ public sealed class ImportRecordingUseCaseTests
             var profiles = Substitute.For<IProfileRepository>();
 
             profiles.TryGetDefaultAsync(Arg.Any<CancellationToken>()).Returns(CreateDefaultProfile());
-
-            var existing = new Recording
-            {
-                FileName = "old.wav",
-                FilePath = path,
-                Sha256 = "deadbeef",
-                Format = AudioFormat.Wav,
-                SourceType = SourceType.Imported
-            };
-            recordings.GetBySha256Async(Arg.Any<string>(), Arg.Any<CancellationToken>())
-                .Returns(existing);
+            recordings.AddAsync(Arg.Any<Recording>(), Arg.Any<CancellationToken>())
+                .Returns(call => call.Arg<Recording>());
+            jobs.EnqueueAsync(Arg.Any<ProcessingJob>(), Arg.Any<CancellationToken>())
+                .Returns(call => call.Arg<ProcessingJob>());
 
             var scheduler = Substitute.For<IProcessingJobScheduler>();
             var useCase = new ImportRecordingUseCase(recordings, jobs, profiles, scheduler);
 
-            var result = await useCase.ExecuteAsync([path], profileId: null, CancellationToken.None);
+            var first = await useCase.ExecuteAsync([path], profileId: null, CancellationToken.None);
+            var second = await useCase.ExecuteAsync([path], profileId: null, CancellationToken.None);
 
-            result.Should().ContainSingle().Which.Should().BeSameAs(existing);
-            await recordings.DidNotReceive().AddAsync(Arg.Any<Recording>(), Arg.Any<CancellationToken>());
-            await jobs.DidNotReceive().EnqueueAsync(Arg.Any<ProcessingJob>(), Arg.Any<CancellationToken>());
+            first.Should().ContainSingle();
+            second.Should().ContainSingle();
+            first[0].Sha256.Should().Be(second[0].Sha256, "same content produces same hash");
+            first[0].Id.Should().NotBe(second[0].Id, "but the two imports are distinct rows");
+
+            await recordings.Received(2).AddAsync(Arg.Any<Recording>(), Arg.Any<CancellationToken>());
+            await jobs.Received(2).EnqueueAsync(Arg.Any<ProcessingJob>(), Arg.Any<CancellationToken>());
+            // Never consult the lookup — the use case doesn't short-circuit on sha anymore.
+            await recordings.DidNotReceive().GetBySha256Async(Arg.Any<string>(), Arg.Any<CancellationToken>());
         }
         finally
         {

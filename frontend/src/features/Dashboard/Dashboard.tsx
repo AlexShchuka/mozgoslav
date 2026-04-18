@@ -7,15 +7,9 @@ import { toast } from "react-toastify";
 import AudioLevelMeter from "../../components/AudioLevelMeter";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
-import EmptyState from "../../components/EmptyState";
-import Badge from "../../components/Badge";
 import { apiFactory } from "../../api";
 import { API_ENDPOINTS, BACKEND_URL } from "../../constants/api";
-import { Recording } from "../../domain/Recording";
-
-const recordingApi = apiFactory.createRecordingApi();
-const dictationApi = apiFactory.createDictationApi();
-import { formatDuration } from "../../core/utils/format";
+import { RECORDINGS_CHANGED_EVENT } from "../../constants/events";
 import { usePushToTalk } from "../../hooks/usePushToTalk";
 import {
   DashboardRoot,
@@ -24,12 +18,11 @@ import {
   DropzoneIcon,
   DropzoneTitle,
   DropzoneHint,
-  RecordingRow,
-  RecordingMeta,
-  RecordingName,
   Row,
-  SectionTitle,
 } from "./Dashboard.style";
+
+const recordingApi = apiFactory.createRecordingApi();
+const dictationApi = apiFactory.createDictationApi();
 
 type RecordState = "idle" | "starting" | "recording" | "stopping";
 
@@ -37,29 +30,39 @@ interface ActiveSession {
   readonly sessionId: string;
   readonly recorder: MediaRecorder;
   readonly stream: MediaStream;
+  /**
+   * When true (Dashboard "Записать" button path), accumulated webm chunks
+   * are uploaded on stop so a Recording row is created and the full
+   * pipeline runs. When false (push-to-talk dictation hotkey), the session
+   * is ephemeral — finalised text is injected into the focused app and the
+   * audio is discarded.
+   */
+  readonly persistOnStop: boolean;
 }
 
+const notifyRecordingsChanged = (): void => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(RECORDINGS_CHANGED_EVENT));
+  }
+};
+
+/**
+ * Dashboard — record controls + audio-import surface. No more embedded
+ * "recent recordings" list: the single unified HomeList below owns that
+ * view (2026-04-19 meeting note — one list of files, not two views of the
+ * same thing).
+ */
 const Dashboard: FC = () => {
   const { t } = useTranslation();
-  const [recordings, setRecordings] = useState<Recording[]>([]);
   const [uploading, setUploading] = useState(false);
   const [recordState, setRecordState] = useState<RecordState>("idle");
   const [transcript, setTranscript] = useState<string | null>(null);
   const [activeStream, setActiveStream] = useState<MediaStream | null>(null);
   const sessionRef = useRef<ActiveSession | null>(null);
-
-  const refresh = useCallback(async () => {
-    try {
-      setRecordings(await recordingApi.getAll());
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      toast.error(message);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  // Accumulates every MediaRecorder `dataavailable` blob so we can upload
+  // the captured audio as a file on stop (persistOnStop=true path). Cleared
+  // on every new recording so a prior session's chunks don't leak.
+  const chunksRef = useRef<Blob[]>([]);
 
   // D3 — subscribe to hot-plug microphone events. The Swift helper observes
   // AVCaptureDevice.wasConnected/wasDisconnected and POSTs the fresh device
@@ -76,7 +79,6 @@ const Dashboard: FC = () => {
           kind: string;
           devices: { id: string; name: string; isDefault: boolean }[];
         };
-        // Snapshot-kind events fire once on subscription and shouldn't toast.
         if (payload.kind === "snapshot") return;
         const defaultName =
           payload.devices.find((d) => d.isDefault)?.name ??
@@ -99,14 +101,14 @@ const Dashboard: FC = () => {
       try {
         await recordingApi.upload(files);
         toast.success(`${files.length} → импорт`);
-        await refresh();
+        notifyRecordingsChanged();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : String(err));
       } finally {
         setUploading(false);
       }
     },
-    [refresh]
+    [],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -127,19 +129,23 @@ const Dashboard: FC = () => {
     setUploading(true);
     try {
       await recordingApi.importByPaths(result.filePaths);
-      await refresh();
+      notifyRecordingsChanged();
     } finally {
       setUploading(false);
     }
   };
 
-  // BC-004 — Dashboard record button. Flow: start session → capture mic via
-  // MediaRecorder (Opus-in-WebM @ 48 kHz, 250 ms chunks) → push each chunk as
-  // octet-stream to /api/dictation/{sessionId}/push → stop on second click,
-  // fetch the final transcript and render it.
-  const startRecording = async () => {
+  // BC-004 — Dashboard record button. Flow: start dictation session → capture
+  // mic via MediaRecorder (Opus-in-WebM @ 48 kHz, 250 ms chunks) → push each
+  // chunk as octet-stream to /api/dictation/{sessionId}/push for the inline
+  // streaming transcript preview AND locally accumulate the same chunks. On
+  // stop (persistOnStop=true path) the accumulated blob is uploaded to
+  // /api/recordings/upload so a Recording row is created and the full
+  // transcribe → correct → summarise → export pipeline runs.
+  const startRecording = async (persistOnStop: boolean = false) => {
     setRecordState("starting");
     setTranscript(null);
+    chunksRef.current = [];
     let sessionId: string | null = null;
     try {
       const started = await dictationApi.start({ source: "dashboard" });
@@ -148,7 +154,9 @@ const Dashboard: FC = () => {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { channelCount: 1, sampleRate: 48000 },
       });
-      const MediaRecorderCtor = (globalThis as unknown as { MediaRecorder?: typeof MediaRecorder }).MediaRecorder;
+      const MediaRecorderCtor = (globalThis as unknown as {
+        MediaRecorder?: typeof MediaRecorder;
+      }).MediaRecorder;
       if (!MediaRecorderCtor) {
         throw new Error("MediaRecorder API is not available in this environment");
       }
@@ -161,6 +169,12 @@ const Dashboard: FC = () => {
         const data = event.data;
         if (!data || (data as Blob).size === 0) return;
         const blob = data as Blob;
+        // Accumulating 250 ms chunks yields a valid single webm container
+        // on concatenation — each chunk is a continuation of the same
+        // MediaRecorder-owned stream, not a standalone file.
+        if (persistOnStop) {
+          chunksRef.current.push(blob);
+        }
         void blob
           .arrayBuffer()
           .then((buf) => dictationApi.push(sessionId!, buf))
@@ -168,7 +182,7 @@ const Dashboard: FC = () => {
             // One-chunk push failures are non-fatal; later chunks still flow.
           });
       };
-      sessionRef.current = { sessionId, recorder, stream };
+      sessionRef.current = { sessionId, recorder, stream, persistOnStop };
       setActiveStream(stream);
       recorder.start(250); // 250 ms chunks matches ADR-002 D9
       setRecordState("recording");
@@ -177,6 +191,7 @@ const Dashboard: FC = () => {
       toast.error(err instanceof Error ? err.message : String(err));
       sessionRef.current = null;
       setActiveStream(null);
+      chunksRef.current = [];
     }
   };
 
@@ -188,13 +203,41 @@ const Dashboard: FC = () => {
     }
     setRecordState("stopping");
     try {
+      // Wait for the final `dataavailable` + `stop` events before touching
+      // chunksRef — MediaRecorder flushes one last slice on stop, and we
+      // must capture it or the tail of the recording is lost.
+      const stopped = new Promise<void>((resolve) => {
+        active.recorder.addEventListener("stop", () => resolve(), { once: true });
+      });
       active.recorder.stop();
       active.stream.getTracks().forEach((track) => track.stop());
-      const result = await dictationApi.stop(active.sessionId);
-      setTranscript(result.transcript);
+      await stopped;
+
+      // Dictation transcript preview — best-effort. A backend failure here
+      // must not block the persistence step below.
+      try {
+        const result = await dictationApi.stop(active.sessionId);
+        setTranscript(result.transcript);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : String(err));
+      }
+
+      if (active.persistOnStop && chunksRef.current.length > 0) {
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const fileName = `recording-${new Date().toISOString().replace(/[:.]/g, "-")}.webm`;
+        const file = new File([blob], fileName, { type: "audio/webm" });
+        try {
+          await recordingApi.upload([file]);
+          notifyRecordingsChanged();
+          toast.success(t("dashboard.recordedSaved"));
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : String(err));
+        }
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));
     } finally {
+      chunksRef.current = [];
       sessionRef.current = null;
       setActiveStream(null);
       setRecordState("idle");
@@ -203,18 +246,18 @@ const Dashboard: FC = () => {
 
   const toggleRecord = () => {
     if (recordState === "idle") {
-      void startRecording();
+      // Dashboard button path — save the recording as a file so it lands in
+      // the home list and kicks the pipeline.
+      void startRecording(true);
     } else if (recordState === "recording") {
       void stopRecording();
     }
   };
 
-  // Subscribe to the global dictation hotkey
-  // (Cmd/Ctrl+Shift+Space). Electron's main process forwards it via the
-  // preload bridge. We kick off the same lifecycle used by the on-page
-  // Record button. Unlike the mouse-5 entry the `source` travels via
-  // `api.startDictation`; backend decides per-source routing (e.g. which
-  // profile to apply).
+  // Global dictation hotkey (Cmd/Ctrl+Shift+Space) — dictation-for-inject,
+  // ephemeral by design (no Recording row). Electron forwards the keypress
+  // via the preload bridge. Reuses the mic + chunk-push lifecycle but pins
+  // persistOnStop=false to match the dictation semantics.
   useEffect(() => {
     const bridge = typeof window !== "undefined" ? window.mozgoslav : undefined;
     if (!bridge?.onGlobalHotkey) return;
@@ -227,9 +270,6 @@ const Dashboard: FC = () => {
           setTranscript(null);
           try {
             const started = await dictationApi.start({ source: payload.source });
-            // Re-use the standard start flow for the mic pipe + chunk push;
-            // a second `api.startDictation` call inside `startRecording` is
-            // avoided by seeding the session ref after this one returns.
             const stream = await navigator.mediaDevices.getUserMedia({
               audio: { channelCount: 1, sampleRate: 48000 },
             });
@@ -252,7 +292,12 @@ const Dashboard: FC = () => {
                 .then((buf) => dictationApi.push(started.sessionId, buf))
                 .catch(() => {});
             };
-            sessionRef.current = { sessionId: started.sessionId, recorder, stream };
+            sessionRef.current = {
+              sessionId: started.sessionId,
+              recorder,
+              stream,
+              persistOnStop: false,
+            };
             setActiveStream(stream);
             recorder.start(250);
             setRecordState("recording");
@@ -268,23 +313,17 @@ const Dashboard: FC = () => {
     return unsubscribe;
   }, []);
 
-  // NEXT H1 — push-to-talk. Backend only publishes hotkey frames when the
-  // Swift helper is running (i.e. on macOS with AppSettings.DictationPushToTalk=true).
-  // Press starts a recording if idle, release stops it if still recording.
+  // NEXT H1 — push-to-talk. Backend publishes hotkey frames when the Swift
+  // helper runs with AppSettings.DictationPushToTalk=true. Press starts a
+  // dictation (non-persisted) session; release stops.
   usePushToTalk({
     onPress: () => {
-      if (!sessionRef.current) void startRecording();
+      if (!sessionRef.current) void startRecording(false);
     },
     onRelease: () => {
       if (sessionRef.current) void stopRecording();
     },
   });
-
-  const getFormatLabel = (format: unknown) => {
-    if (typeof format === "string") return format.toUpperCase();
-    if (typeof format === "number") return String(format);
-    return "UNKNOWN";
-  };
 
   return (
     <DashboardRoot>
@@ -337,40 +376,6 @@ const Dashboard: FC = () => {
           </div>
         )}
       </Card>
-
-      <SectionTitle>{t("dashboard.recentTitle")}</SectionTitle>
-      {recordings.length === 0 ? (
-        <EmptyState
-          title={t("dashboard.empty")}
-          body={t("dashboard.dropzoneHint")}
-          icon={<FileAudio size={28} />}
-        />
-      ) : (
-        <Card>
-          {recordings.map((r) => (
-            <RecordingRow key={r.id}>
-              <FileAudio size={18} />
-              <RecordingMeta>
-                <RecordingName>{r.fileName}</RecordingName>
-                <small>
-                  {getFormatLabel(r.format)} · {formatDuration(r.duration)}
-                </small>
-              </RecordingMeta>
-              <Badge
-                tone={
-                  r.status === "Transcribed"
-                    ? "success"
-                    : r.status === "Failed"
-                      ? "error"
-                      : "neutral"
-                }
-              >
-                {r.status}
-              </Badge>
-            </RecordingRow>
-          ))}
-        </Card>
-      )}
     </DashboardRoot>
   );
 };
