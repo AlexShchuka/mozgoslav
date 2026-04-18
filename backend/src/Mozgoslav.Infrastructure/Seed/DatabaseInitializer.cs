@@ -61,7 +61,7 @@ public sealed class DatabaseInitializer : IHostedService
         _logger.LogInformation("Seeded {Count} built-in profiles", BuiltInProfiles.All.Count);
 
         var loaded = await settings.LoadAsync(cancellationToken);
-        var withDefaults = ApplyRuntimeDefaults(loaded);
+        var withDefaults = RuntimeDefaults.Apply(loaded);
         if (!loaded.Equals(withDefaults))
         {
             await settings.SaveAsync(withDefaults, cancellationToken);
@@ -73,17 +73,4 @@ public sealed class DatabaseInitializer : IHostedService
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-
-    private static AppSettingsDto ApplyRuntimeDefaults(AppSettingsDto current) => current with
-    {
-        WhisperModelPath = string.IsNullOrWhiteSpace(current.WhisperModelPath)
-            ? AppPaths.DefaultWhisperModelPath
-            : current.WhisperModelPath,
-        VadModelPath = string.IsNullOrWhiteSpace(current.VadModelPath)
-            ? AppPaths.DefaultVadModelPath
-            : current.VadModelPath,
-        VaultPath = string.IsNullOrWhiteSpace(current.VaultPath)
-            ? string.Empty
-            : current.VaultPath
-    };
 }

@@ -54,16 +54,32 @@ public static class AppPaths
     public static string Notes => Path.Combine(Data, "notes");
     public static string SyncthingHome => Path.Combine(Root, "syncthing");
 
-    // ADR-007 BC-034 / bug 2 — filename MUST match the default ModelCatalog
-    // entry (Whisper Russian antony66 ggml). Previously the seed pointed at
-    // ``ggml-large-v3-q8_0.bin`` while the catalogue served
-    // ``ggml-model-q8_0.bin`` — downloaded file and configured path never
-    // agreed, breaking transcription on first run.
+    // Task #12 — first-run default points at the Tier 1 bundled Whisper Small
+    // (ADR-010 §Tier 1). Resolution: if MOZGOSLAV_BUNDLE_MODELS_DIR is set and
+    // the directory exists, serve the file from the DMG bundle; otherwise fall
+    // back to the user's Models dir where Onboarding's "Скачать" flow drops it.
+    // Previously pointed at ``ggml-model-q8_0.bin`` (Tier 2 antony66) which
+    // required a 1.5 GB download before the app could transcribe anything.
     public static string DefaultWhisperModelPath =>
-        Path.Combine(Models, "ggml-model-q8_0.bin");
+        ResolveBundledOrUserModel("ggml-small-q8_0.bin", BundleModelsDir, Models);
 
     public static string DefaultVadModelPath =>
-        Path.Combine(Models, "ggml-silero-v6.2.0.bin");
+        ResolveBundledOrUserModel("ggml-silero-v6.2.0.bin", BundleModelsDir, Models);
+
+    /// <summary>
+    /// Pure resolver — tests pass explicit <paramref name="bundleDir"/> and
+    /// <paramref name="userModelsDir"/> so they don't have to mutate the
+    /// shared <c>MOZGOSLAV_BUNDLE_MODELS_DIR</c> env var (which would break
+    /// parallel test execution).
+    /// </summary>
+    public static string ResolveBundledOrUserModel(string filename, string bundleDir, string userModelsDir)
+    {
+        if (!string.IsNullOrEmpty(bundleDir))
+        {
+            return Path.Combine(bundleDir, filename);
+        }
+        return Path.Combine(userModelsDir, filename);
+    }
 
     public static string DefaultVaultPath =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
