@@ -63,6 +63,13 @@
   "sidebar": {
     "restartOnboarding": "Restart onboarding"
   },
+  "home": {
+    "listTitle": "Recordings",
+    "empty": "No recordings yet — import or record your first one.",
+    "waiting": "Waiting",
+    "openNote": "Open note",
+    "noNoteYet": "Note is not ready yet"
+  },
   "dashboard": {
     "title": "Dashboard",
     "importTitle": "Add recording",

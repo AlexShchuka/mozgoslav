@@ -27,7 +27,7 @@ class StubEventSource {
   public close(): void {}
 }
 
-describe("Home (task L1 — Мозгослав unified page)", () => {
+describe("Home — unified Dashboard + HomeList page", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,7 +36,7 @@ describe("Home (task L1 — Мозгослав unified page)", () => {
     mockApi.jobsApi.list.mockResolvedValue([]);
   });
 
-  it("renders both Dashboard and Queue surfaces on a single page", async () => {
+  it("renders Dashboard controls and the unified HomeList on a single page", async () => {
     renderWithStore(
       <MemoryRouter>
         <Home />
@@ -46,9 +46,9 @@ describe("Home (task L1 — Мозгослав unified page)", () => {
 
     // Dashboard-side: the record button's testid is the stable anchor.
     expect(await screen.findByTestId("dashboard-record")).toBeInTheDocument();
-    // Queue-side: the component emits its empty-state when jobsApi.list returns [].
-    expect(
-      screen.getByText(/импортируй новую запись/i),
-    ).toBeInTheDocument();
+    // HomeList-side: the scroll container is the stable anchor. Empty copy
+    // overlaps with Dashboard's "recent recordings" empty state, so we rely on
+    // the structural testid instead of text.
+    expect(screen.getByTestId("home-list-scroll")).toBeInTheDocument();
   });
 });
