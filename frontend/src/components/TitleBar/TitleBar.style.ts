@@ -50,10 +50,10 @@ export const TitleBarRoot = styled.header`
     pointer-events: none;
     background: linear-gradient(
       135deg,
-      ${({ theme }) => theme.colors.accent.soft} 0%,
+      ${({ theme }) => theme.colors.accent.glow} 0%,
       transparent 45%,
       transparent 55%,
-      ${({ theme }) => theme.colors.accent.soft} 100%
+      ${({ theme }) => theme.colors.accent.glow} 100%
     );
     animation: ${breathe} 9s ease-in-out infinite alternate;
     will-change: transform;
