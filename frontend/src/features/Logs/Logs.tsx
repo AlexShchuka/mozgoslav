@@ -5,8 +5,10 @@ import { RefreshCw } from "lucide-react";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
-import { api } from "../../api/MozgoslavApi";
+import { apiFactory } from "../../api";
 import { PageRoot, PageTitle, LogPre, Toolbar, FileName } from "./Logs.style";
+
+const logsApi = apiFactory.createLogsApi();
 
 const Logs: FC = () => {
   const { t } = useTranslation();
@@ -15,7 +17,7 @@ const Logs: FC = () => {
 
   const refresh = useCallback(async () => {
     try {
-      const tail = await api.tailLog(undefined, 400);
+      const tail = await logsApi.tail(undefined, 400);
       setLines(tail.lines ?? []);
       setFileName(tail.file ?? "");
     } catch {

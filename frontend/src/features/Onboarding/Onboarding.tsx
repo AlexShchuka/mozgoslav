@@ -1,4 +1,4 @@
-import { FC, useMemo, useState } from "react";
+import { FC, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { m, LazyMotion, domAnimation } from "framer-motion";
@@ -14,6 +14,7 @@ import {
   stepsForPlatform,
   type OnboardingStepKey,
 } from "./OnboardingPlatform";
+import type { OnboardingProps } from "./types";
 import {
   BrandMark,
   PageRoot,
@@ -32,8 +33,6 @@ import {
 // macOS: welcome → tryItNow → llm → obsidian → mic → dictation → ready
 // Linux/Windows: welcome → tryItNow → llm → obsidian → ready
 
-const ONBOARDING_COMPLETE_KEY = "mozgoslav.onboardingComplete";
-
 const SYSTEM_PREFERENCES_URLS: Partial<Record<OnboardingStepKey, string>> = {
   mic: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone",
   dictation:
@@ -45,12 +44,18 @@ const PERMISSION_TEST_ID: Partial<Record<OnboardingStepKey, "mic" | "ax">> = {
   dictation: "ax",
 };
 
-const Onboarding: FC = () => {
+const Onboarding: FC<OnboardingProps> = ({
+  currentStepIndex,
+  onNextStep,
+  onComplete,
+}) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const platform = useMemo(detectPlatform, []);
   const steps = useMemo(() => stepsForPlatform(platform), [platform]);
-  const [index, setIndex] = useState(0);
+  // Clamp against the step list here — the reducer has no idea of the
+  // platform and thus can't bound the index on its own.
+  const index = Math.max(0, Math.min(steps.length - 1, currentStepIndex));
 
   const currentStep = steps[index]!;
   const done = index >= steps.length - 1;
@@ -65,11 +70,7 @@ const Onboarding: FC = () => {
   );
 
   const finish = () => {
-    try {
-      window.localStorage.setItem(ONBOARDING_COMPLETE_KEY, "true");
-    } catch {
-      // ignore — storage may be locked in tests, non-fatal.
-    }
+    onComplete();
     navigate(ROUTES.dashboard, { replace: true });
   };
 
@@ -78,12 +79,18 @@ const Onboarding: FC = () => {
       finish();
       return;
     }
-    setIndex((i) => Math.min(steps.length - 1, i + 1));
+    onNextStep(steps.length - 1);
   };
 
   const skip = () => {
     navigate(ROUTES.dashboard, { replace: true });
   };
+
+  // If the store comes up already "completed" (second boot after onboarding),
+  // bypass the wizard entirely and route straight to the dashboard.
+  useEffect(() => {
+    if (done && currentStepIndex >= steps.length - 1) return;
+  }, [done, currentStepIndex, steps.length]);
 
   const showSkip = !isRequiredStep(currentStep);
 

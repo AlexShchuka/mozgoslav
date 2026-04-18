@@ -6,15 +6,11 @@ import { toast } from "react-toastify";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
-import { api } from "../../api/MozgoslavApi";
+import { apiFactory } from "../../api";
+import type { BackupFile } from "../../api";
 import { PageRoot, PageTitle, BackupRow, BackupName, BackupMeta, Toolbar } from "./Backups.style";
 
-interface BackupFile {
-  name: string;
-  path: string;
-  sizeBytes: number;
-  createdAt: string;
-}
+const backupApi = apiFactory.createBackupApi();
 
 const Backups: FC = () => {
   const { t } = useTranslation();
@@ -23,7 +19,7 @@ const Backups: FC = () => {
 
   const refresh = useCallback(async () => {
     try {
-      const list = (await api.listBackups()) as BackupFile[];
+      const list = await backupApi.list();
       setItems(list);
     } catch {
       setItems([]);
@@ -37,7 +33,7 @@ const Backups: FC = () => {
   const onCreate = async () => {
     setCreating(true);
     try {
-      await api.createBackup();
+      await backupApi.create();
       toast.success(t("backup.successToast"));
       await refresh();
     } catch (err) {

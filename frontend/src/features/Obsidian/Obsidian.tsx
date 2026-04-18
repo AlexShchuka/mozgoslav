@@ -5,8 +5,8 @@ import { CheckCircle2, Circle, FolderTree, LayoutTemplate, UploadCloud } from "l
 
 import Button from "../../components/Button";
 import Card from "../../components/Card";
-import { api } from "../../api/MozgoslavApi";
 import { AppSettings, DEFAULT_SETTINGS } from "../../domain/Settings";
+import type { ObsidianProps } from "./types";
 import { FolderGrid, FolderItem, FolderHint, PageRoot, PageTitle, Subtitle, VaultRow, BulkButtonRow } from "./Obsidian.style";
 
 const PRESET_FOLDERS = [
@@ -18,48 +18,63 @@ const PRESET_FOLDERS = [
   { key: "Templates", required: false },
 ] as const;
 
-const Obsidian: FC = () => {
+const Obsidian: FC<ObsidianProps> = ({
+  settings: loadedSettings,
+  isBulkExporting,
+  isApplyingLayout,
+  isSetupInProgress,
+  lastBulkExportReport,
+  lastApplyLayoutReport,
+  lastSetupReport,
+  error,
+  onLoadSettings,
+  onSaveSettings,
+  onSetup,
+  onBulkExport,
+  onApplyLayout,
+}) => {
   const { t } = useTranslation();
-  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<AppSettings>(loadedSettings ?? DEFAULT_SETTINGS);
   const [selected, setSelected] = useState<Set<string>>(
     () => new Set(PRESET_FOLDERS.filter((f) => f.required).map((f) => f.key)),
   );
-  const [busy, setBusy] = useState(false);
-  const [bulkBusy, setBulkBusy] = useState(false);
-  const [layoutBusy, setLayoutBusy] = useState(false);
-
-  const syncAll = async () => {
-    setBulkBusy(true);
-    try {
-      const result = await api.bulkExportObsidian();
-      toast.success(t("obsidian.syncAllSuccess", { count: result.exportedCount }));
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBulkBusy(false);
-    }
-  };
-
-  const applyLayout = async () => {
-    setLayoutBusy(true);
-    try {
-      const result = await api.applyObsidianLayout();
-      toast.success(
-        t("obsidian.applyLayoutSuccess", {
-          folders: result.createdFolders,
-          notes: result.movedNotes,
-        }),
-      );
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLayoutBusy(false);
-    }
-  };
 
   useEffect(() => {
-    void api.getSettings().then(setSettings).catch(() => {});
-  }, []);
+    onLoadSettings();
+  }, [onLoadSettings]);
+
+  useEffect(() => {
+    if (loadedSettings) setSettings(loadedSettings);
+  }, [loadedSettings]);
+
+  useEffect(() => {
+    if (error) toast.error(error);
+  }, [error]);
+
+  useEffect(() => {
+    if (lastBulkExportReport) {
+      toast.success(t("obsidian.syncAllSuccess", { count: lastBulkExportReport.exportedCount }));
+    }
+  }, [lastBulkExportReport, t]);
+
+  useEffect(() => {
+    if (lastApplyLayoutReport) {
+      toast.success(
+        t("obsidian.applyLayoutSuccess", {
+          folders: lastApplyLayoutReport.createdFolders,
+          notes: lastApplyLayoutReport.movedNotes,
+        }),
+      );
+    }
+  }, [lastApplyLayoutReport, t]);
+
+  useEffect(() => {
+    if (lastSetupReport) {
+      toast.success(
+        t("obsidian.setupSuccess", { created: lastSetupReport.createdPaths.length }),
+      );
+    }
+  }, [lastSetupReport, t]);
 
   const toggle = (key: string, required: boolean) => {
     if (required) return;
@@ -77,24 +92,16 @@ const Obsidian: FC = () => {
     if (!res.canceled && res.filePaths[0]) {
       const updated = { ...settings, vaultPath: res.filePaths[0] };
       setSettings(updated);
-      await api.saveSettings(updated);
+      onSaveSettings(updated);
     }
   };
 
-  const applySetup = async () => {
+  const applySetup = () => {
     if (!settings.vaultPath) {
       toast.warning(t("settings.fields.vaultPath"));
       return;
     }
-    setBusy(true);
-    try {
-      const report = (await api.setupObsidian(settings.vaultPath)) as { createdPaths: string[] };
-      toast.success(t("obsidian.setupSuccess", { created: report.createdPaths.length }));
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
+    onSetup(settings.vaultPath);
   };
 
   const selectedArray = useMemo(() => Array.from(selected), [selected]);
@@ -121,9 +128,9 @@ const Obsidian: FC = () => {
             variant="primary"
             leftIcon={<UploadCloud size={16} />}
             data-testid="obsidian-sync-all"
-            isLoading={bulkBusy}
-            disabled={bulkBusy}
-            onClick={syncAll}
+            isLoading={isBulkExporting}
+            disabled={isBulkExporting}
+            onClick={onBulkExport}
           >
             {t("obsidian.syncAll")}
           </Button>
@@ -131,9 +138,9 @@ const Obsidian: FC = () => {
             variant="secondary"
             leftIcon={<LayoutTemplate size={16} />}
             data-testid="obsidian-apply-layout"
-            isLoading={layoutBusy}
-            disabled={layoutBusy}
-            onClick={applyLayout}
+            isLoading={isApplyingLayout}
+            disabled={isApplyingLayout}
+            onClick={onApplyLayout}
           >
             {t("obsidian.applyLayout")}
           </Button>
@@ -166,7 +173,7 @@ const Obsidian: FC = () => {
           <Button
             variant="primary"
             leftIcon={<FolderTree size={16} />}
-            isLoading={busy}
+            isLoading={isSetupInProgress}
             onClick={applySetup}
             disabled={!settings.vaultPath || selectedArray.length === 0}
           >

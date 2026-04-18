@@ -7,8 +7,10 @@ import Badge from "../../components/Badge";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
-import { api } from "../../api/MozgoslavApi";
+import { apiFactory } from "../../api";
 import { ModelEntry } from "../../domain/Model";
+
+const modelsApi = apiFactory.createModelsApi();
 import { PageRoot, PageTitle, Subtitle, ModelCard, ModelMeta, ModelHeader } from "./Models.style";
 
 const Models: FC = () => {
@@ -18,7 +20,7 @@ const Models: FC = () => {
 
   const refresh = useCallback(async () => {
     try {
-      setModels(await api.listModels());
+      setModels(await modelsApi.list());
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));
     }
@@ -31,7 +33,7 @@ const Models: FC = () => {
   const handleDownload = async (id: string) => {
     setDownloading(id);
     try {
-      await api.downloadModel(id);
+      await modelsApi.download(id);
       toast.success(`${id} → ${t("common.download")}`);
       await refresh();
     } catch (err) {

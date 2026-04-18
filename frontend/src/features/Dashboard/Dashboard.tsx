@@ -8,8 +8,11 @@ import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
 import Badge from "../../components/Badge";
-import { api } from "../../api/MozgoslavApi";
+import { apiFactory } from "../../api";
 import { Recording } from "../../domain/Recording";
+
+const recordingApi = apiFactory.createRecordingApi();
+const dictationApi = apiFactory.createDictationApi();
 import { formatDuration } from "../../core/utils/format";
 import {
   DashboardRoot,
@@ -43,7 +46,7 @@ const Dashboard: FC = () => {
 
   const refresh = useCallback(async () => {
     try {
-      setRecordings(await api.listRecordings());
+      setRecordings(await recordingApi.getAll());
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       toast.error(message);
@@ -59,7 +62,7 @@ const Dashboard: FC = () => {
       if (!files.length) return;
       setUploading(true);
       try {
-        await api.uploadFiles(files);
+        await recordingApi.upload(files);
         toast.success(`${files.length} → импорт`);
         await refresh();
       } catch (err) {
@@ -88,7 +91,7 @@ const Dashboard: FC = () => {
     if (result.canceled || !result.filePaths.length) return;
     setUploading(true);
     try {
-      await api.importByPaths(result.filePaths);
+      await recordingApi.importByPaths(result.filePaths);
       await refresh();
     } finally {
       setUploading(false);
@@ -104,7 +107,7 @@ const Dashboard: FC = () => {
     setTranscript(null);
     let sessionId: string | null = null;
     try {
-      const started = await api.startDictation({ source: "dashboard" });
+      const started = await dictationApi.start({ source: "dashboard" });
       sessionId = started.sessionId;
 
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -125,7 +128,7 @@ const Dashboard: FC = () => {
         const blob = data as Blob;
         void blob
           .arrayBuffer()
-          .then((buf) => api.dictationPush(sessionId!, buf))
+          .then((buf) => dictationApi.push(sessionId!, buf))
           .catch(() => {
             // One-chunk push failures are non-fatal; later chunks still flow.
           });
@@ -150,7 +153,7 @@ const Dashboard: FC = () => {
     try {
       active.recorder.stop();
       active.stream.getTracks().forEach((track) => track.stop());
-      const result = await api.stopDictation(active.sessionId);
+      const result = await dictationApi.stop(active.sessionId);
       setTranscript(result.transcript);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));
@@ -185,7 +188,7 @@ const Dashboard: FC = () => {
           setRecordState("starting");
           setTranscript(null);
           try {
-            const started = await api.startDictation({ source: payload.source });
+            const started = await dictationApi.start({ source: payload.source });
             // Re-use the standard start flow for the mic pipe + chunk push;
             // a second `api.startDictation` call inside `startRecording` is
             // avoided by seeding the session ref after this one returns.
@@ -208,7 +211,7 @@ const Dashboard: FC = () => {
               const blob = data as Blob;
               void blob
                 .arrayBuffer()
-                .then((buf) => api.dictationPush(started.sessionId, buf))
+                .then((buf) => dictationApi.push(started.sessionId, buf))
                 .catch(() => {});
             };
             sessionRef.current = { sessionId: started.sessionId, recorder, stream };

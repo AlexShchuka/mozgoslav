@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 
-import { api } from "../../api/MozgoslavApi";
+import { apiFactory } from "../../api";
+
+const healthApi = apiFactory.createHealthApi();
+const obsidianApi = apiFactory.createObsidianApi();
+const dictationApi = apiFactory.createDictationApi();
 
 /**
  * Plan v0.8 Block 4 §3.1 — LLM health poller. Runs at a 3 s cadence while
@@ -14,7 +18,7 @@ export const useLlmDetection = (enabled: boolean): { reachable: boolean } => {
     let active = true;
     const poll = async () => {
       try {
-        const value = await api.llmHealth();
+        const value = await healthApi.checkLlm();
         if (active) setReachable(value);
       } catch {
         if (active) setReachable(false);
@@ -48,7 +52,7 @@ export const useObsidianDetection = (
     let active = true;
     const poll = async () => {
       try {
-        const result = await api.detectObsidian();
+        const result = await obsidianApi.detect();
         if (active) setState({ detected: result.detected, loaded: true });
       } catch {
         if (active) setState({ detected: [], loaded: true });
@@ -88,7 +92,7 @@ export const useAudioPermissions = (
     let active = true;
     const poll = async () => {
       try {
-        const result = await api.audioCapabilities();
+        const result = await dictationApi.audioCapabilities();
         if (active) setState({ capabilities: result, loaded: true });
       } catch {
         if (active) setState({ capabilities: null, loaded: true });

@@ -83,6 +83,33 @@ Pre-commit прогонит `dotnet format` / `eslint --fix` / `prettier --write
 - `plan/v0.8/` — план релиза v0.8 поблочно.
 - `TODO.md` — что уже отгружено в v0.8 и что отложено в Phase 2.
 
+## Adding a new frontend feature
+
+All new frontend features/slices go through the plop generator so the scaffold stays identical across the repo.
+
+```bash
+cd frontend
+npm run plop
+```
+
+Two generators:
+
+- `feature` — создаёт `src/features/<Name>/` с полной связкой для Container + Presentational паттерна (ADR-012 §2):
+  - `<Name>.tsx` — presentational (props only, no API, no fetch)
+  - `<Name>.style.ts` — styled-components tokens
+  - `<Name>.container.ts` — `connect(mapStateToProps, mapDispatchToProps)` wrapper
+  - `types.ts` — props interfaces
+
+- `slice` — создаёт `src/store/slices/<name>/` с полной структурой (ADR-012 §4):
+  - `actions.ts` — action creators + action type unions
+  - `reducer.ts` — pure reducer switch
+  - `selectors.ts` — reselect memoised selectors
+  - `saga.ts` — side-effects / API calls
+
+Мы используем plop вместо ручного копирования, чтобы структура не дрейфовала между фичами (`recording` slice — канонический образец). После генерации: зарегистрируй редьюсер в `src/store/rootReducer.ts`, watcher — в `src/store/rootSaga.ts`, и экспорт из `src/features/<Name>/index.ts`.
+
+Read-only pages (`Logs`, `Notes viewer`, `DictationOverlay`) остаются hook-based per ADR-012 §2 — для них `feature` generator не используется.
+
 ## Соглашения
 
 - C#: один класс на файл, `sealed` на leaf, `internal` если кросс-проектная видимость не нужна, традиционные конструкторы (без primary), `Try`-префикс для методов, возвращающих null. Centralized package management (`Directory.Packages.props`).

@@ -3,17 +3,35 @@ import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "styled-components";
 
 import Queue from "../Queue";
-import { api } from "../../../api/MozgoslavApi";
 import { lightTheme } from "../../../styles/theme";
 import { ProcessingJob } from "../../../domain/ProcessingJob";
 import "../../../i18n";
 
-jest.mock("../../../api/MozgoslavApi", () => ({
-  api: {
-    listJobs: jest.fn(),
-    cancelQueueJob: jest.fn(),
-  },
-}));
+jest.mock("../../../api", () => {
+  const actual = jest.requireActual("../../../api");
+  const jobsStub = {
+    list: jest.fn(),
+    listActive: jest.fn(),
+    cancel: jest.fn(),
+  };
+  return {
+    ...actual,
+    apiFactory: {
+      ...actual.apiFactory,
+      createJobsApi: () => jobsStub,
+    },
+    __jobsStub: jobsStub,
+  };
+});
+
+const jobsStub = (
+  jest.requireMock("../../../api") as { __jobsStub: Record<string, jest.Mock> }
+).__jobsStub;
+
+const api = {
+  listJobs: jobsStub.list,
+  cancelQueueJob: jobsStub.cancel,
+};
 
 jest.mock("react-toastify", () => ({
   toast: {
@@ -108,8 +126,8 @@ const renderQueue = () =>
 describe("Queue — cancel UI (BC-015 / Bug 19)", () => {
   it("Queue_CancelQueued_FiresDelete_RemovesRow", async () => {
     const job = buildJob({ id: "job-q", status: "Queued" });
-    (api.listJobs as jest.Mock).mockResolvedValue([job]);
-    (api.cancelQueueJob as jest.Mock).mockResolvedValue(undefined);
+    api.listJobs.mockResolvedValue([job]);
+    api.cancelQueueJob.mockResolvedValue(undefined);
 
     renderQueue();
 
@@ -122,8 +140,8 @@ describe("Queue — cancel UI (BC-015 / Bug 19)", () => {
 
   it("Queue_CancelRunning_Confirmation_CallsDelete", async () => {
     const job = buildJob({ id: "job-r", status: "Transcribing", progress: 30 });
-    (api.listJobs as jest.Mock).mockResolvedValue([job]);
-    (api.cancelQueueJob as jest.Mock).mockResolvedValue(undefined);
+    api.listJobs.mockResolvedValue([job]);
+    api.cancelQueueJob.mockResolvedValue(undefined);
 
     // Running jobs surface a confirm prompt to avoid accidental cancellation.
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true);
@@ -141,7 +159,7 @@ describe("Queue — cancel UI (BC-015 / Bug 19)", () => {
   it("Queue_CancelHidden_OnDoneAndFailed", async () => {
     const done = buildJob({ id: "job-done-001", status: "Done", progress: 100 });
     const failed = buildJob({ id: "job-fail-001", status: "Failed" });
-    (api.listJobs as jest.Mock).mockResolvedValue([done, failed]);
+    api.listJobs.mockResolvedValue([done, failed]);
 
     renderQueue();
 
@@ -155,7 +173,7 @@ describe("Queue — cancel UI (BC-015 / Bug 19)", () => {
   });
 
   it("Queue_SseReconnect_OnConnectionLoss", async () => {
-    (api.listJobs as jest.Mock).mockResolvedValue([]);
+    api.listJobs.mockResolvedValue([]);
 
     const { unmount } = renderQueue();
 
@@ -186,7 +204,7 @@ describe("Queue — ADR-015 cancelled terminal state", () => {
       status: "Cancelled",
       finishedAt: new Date("2026-04-18T09:00:00Z").toISOString(),
     });
-    (api.listJobs as jest.Mock).mockResolvedValue([job]);
+    api.listJobs.mockResolvedValue([job]);
 
     renderQueue();
 
@@ -200,8 +218,8 @@ describe("Queue — ADR-015 cancelled terminal state", () => {
 
   it("Queue_CancelOnSuccess_DoesNotShowToastError", async () => {
     const job = buildJob({ id: "job-cancel-ok-001", status: "Queued" });
-    (api.listJobs as jest.Mock).mockResolvedValue([job]);
-    (api.cancelQueueJob as jest.Mock).mockResolvedValue(undefined);
+    api.listJobs.mockResolvedValue([job]);
+    api.cancelQueueJob.mockResolvedValue(undefined);
 
     const { toast } = jest.requireMock("react-toastify") as {
       toast: { error: jest.Mock };
@@ -225,7 +243,7 @@ describe("Queue — resume copy (BC-017 / Bug 21)", () => {
       resumedFromCheckpoint: true,
       checkpointAt: "2026-04-17T07:23:00Z",
     });
-    (api.listJobs as jest.Mock).mockResolvedValue([job]);
+    api.listJobs.mockResolvedValue([job]);
 
     renderQueue();
 
@@ -238,7 +256,7 @@ describe("Queue — resume copy (BC-017 / Bug 21)", () => {
       status: "Transcribing",
       progress: 20,
     });
-    (api.listJobs as jest.Mock).mockResolvedValue([job]);
+    api.listJobs.mockResolvedValue([job]);
 
     renderQueue();
 

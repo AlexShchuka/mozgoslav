@@ -1,44 +1,35 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { ThemeProvider } from "styled-components";
 
-import Onboarding from "../src/features/Onboarding/Onboarding";
-import { api } from "../src/api/MozgoslavApi";
+import Onboarding from "../src/features/Onboarding";
+import { watchOnboardingSagas } from "../src/store/slices/onboarding";
+import { renderWithStore, type MockApiBundle } from "../src/testUtils";
 import { darkTheme } from "../src/styles/theme";
 import "../src/i18n";
 
-jest.mock("../src/api/MozgoslavApi", () => ({
-  api: {
-    llmHealth: jest.fn().mockResolvedValue(true),
-    listModels: jest.fn().mockResolvedValue([
-      {
-        id: "whisper",
-        installed: true,
-        kind: "Stt",
-        name: "whisper",
-        sizeMb: 100,
-        description: "",
-        destinationPath: "",
-        isDefault: true,
-        url: "",
-      },
-    ]),
-    audioCapabilities: jest.fn().mockResolvedValue({
-      isSupported: true,
-      detectedPlatform: "macos",
-      permissionsRequired: ["microphone"],
-    }),
-    detectObsidian: jest.fn().mockResolvedValue({ detected: [], searched: [] }),
-  },
-}));
+jest.mock("../src/api", () => {
+  const actual = jest.requireActual("../src/api");
+  const {
+    createMockApi,
+  } = jest.requireActual("../src/testUtils/mockApi") as typeof import("../src/testUtils/mockApi");
+  const bundle = createMockApi();
+  return {
+    ...actual,
+    apiFactory: bundle.factory,
+    __bundle: bundle,
+  };
+});
+
+const mockApi = (
+  jest.requireMock("../src/api") as { __bundle: MockApiBundle }
+).__bundle;
 
 const renderOnboarding = () =>
-  render(
+  renderWithStore(
     <MemoryRouter>
-      <ThemeProvider theme={darkTheme}>
-        <Onboarding />
-      </ThemeProvider>
+      <Onboarding />
     </MemoryRouter>,
+    { sagas: [watchOnboardingSagas], theme: darkTheme },
   );
 
 const clickNext = async (times: number): Promise<void> => {
@@ -54,26 +45,14 @@ beforeEach(() => {
   jest.clearAllMocks();
   window.localStorage.clear();
   Object.defineProperty(navigator, "platform", { value: "MacIntel", configurable: true });
-  (api.llmHealth as jest.Mock).mockResolvedValue(true);
-  (api.listModels as jest.Mock).mockResolvedValue([
-    {
-      id: "whisper",
-      installed: true,
-      kind: "Stt",
-      name: "whisper",
-      sizeMb: 100,
-      description: "",
-      destinationPath: "",
-      isDefault: true,
-      url: "",
-    },
-  ]);
-  (api.audioCapabilities as jest.Mock).mockResolvedValue({
+  mockApi.healthApi.checkLlm.mockResolvedValue(true);
+  mockApi.modelsApi.list.mockResolvedValue([]);
+  mockApi.dictationApi.audioCapabilities.mockResolvedValue({
     isSupported: true,
     detectedPlatform: "macos",
     permissionsRequired: ["microphone"],
   });
-  (api.detectObsidian as jest.Mock).mockResolvedValue({ detected: [], searched: [] });
+  mockApi.obsidianApi.detect.mockResolvedValue({ detected: [], searched: [] });
 });
 
 describe("Onboarding — plan v0.8 Block 4 (slim, platform-aware)", () => {
@@ -113,7 +92,7 @@ describe("Onboarding — plan v0.8 Block 4 (slim, platform-aware)", () => {
   it("writes onboardingComplete flag when user reaches the Ready step and clicks Apply", async () => {
     renderOnboarding();
     // macOS: 7 cards → 6 Next clicks take us to Ready; the 7th click fires
-    // Apply → finish() → localStorage flag.
+    // Apply → persistCompletionSaga → localStorage flag.
     await clickNext(7);
     await waitFor(() =>
       expect(window.localStorage.getItem("mozgoslav.onboardingComplete")).toBe("true"),
