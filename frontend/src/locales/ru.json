@@ -60,6 +60,9 @@
     "offline": "Бэкенд не отвечает",
     "hint": "Запусти backend: `dotnet run` в папке backend/"
   },
+  "sidebar": {
+    "restartOnboarding": "Заново пройти онбординг"
+  },
   "dashboard": {
     "title": "Дашборд",
     "importTitle": "Добавить запись",

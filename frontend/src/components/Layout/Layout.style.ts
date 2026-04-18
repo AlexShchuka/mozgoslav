@@ -2,7 +2,8 @@ import styled from "styled-components";
 
 export const LayoutRoot = styled.div`
   display: grid;
-  grid-template-columns: 240px 1fr;
+  /* Row 1: draggable TitleBar (44 px). Row 2: sidebar + main content. */
+  grid-template: 44px 1fr / 240px 1fr;
   height: 100vh;
   background: ${({ theme }) => theme.colors.bg.base};
 `;
@@ -13,7 +14,6 @@ export const Sidebar = styled.aside`
   padding: ${({ theme }) => theme.space(4)};
   background: ${({ theme }) => theme.colors.bg.elevated2};
   border-right: 1px solid ${({ theme }) => theme.colors.border.subtle};
-  -webkit-app-region: drag;
 `;
 
 export const Brand = styled.div`
@@ -89,12 +89,46 @@ export const SidebarIconSlot = styled.span`
 export const SidebarFooter = styled.div`
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: ${({ theme }) => theme.space(2)};
   padding-top: ${({ theme }) => theme.space(3)};
   border-top: 1px solid ${({ theme }) => theme.colors.border.subtle};
   font-size: ${({ theme }) => theme.font.size.xs};
   color: ${({ theme }) => theme.colors.text.secondary};
   -webkit-app-region: no-drag;
+`;
+
+export const SidebarStatus = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.space(2)};
+`;
+
+export const HelpButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: ${({ theme }) => theme.radii.full};
+  background: transparent;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  cursor: pointer;
+  transition: background ${({ theme }) => theme.motion.duration.fast},
+    color ${({ theme }) => theme.motion.duration.fast};
+  -webkit-app-region: no-drag;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.bg.base};
+    color: ${({ theme }) => theme.colors.accent.primary};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.focusRing};
+    outline-offset: 2px;
+  }
 `;
 
 export const StatusDot = styled.span<{ $ok: boolean }>`
