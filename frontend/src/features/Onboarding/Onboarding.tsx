@@ -1,12 +1,14 @@
-import { FC, useEffect, useMemo, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { m, LazyMotion, domAnimation } from "framer-motion";
-import { Check, ChevronRight, ExternalLink, PlayCircle, Sparkles } from "lucide-react";
+import { Check, CheckCircle2, ChevronRight, Download, ExternalLink, PlayCircle, Sparkles } from "lucide-react";
 import { toast } from "react-toastify";
 
 import Button from "../../components/Button";
 import Card from "../../components/Card";
+import ModelDownloadProgress from "../../components/ModelDownloadProgress";
+import type { ModelEntry } from "../../domain/Model";
 import { apiFactory } from "../../api";
 import { ROUTES } from "../../constants/routes";
 import { useAudioPermissions, useLlmDetection, useObsidianDetection } from "./hooks";
@@ -65,6 +67,63 @@ const Onboarding: FC<OnboardingProps> = ({
   const steps = useMemo(() => stepsForPlatform(platform), [platform]);
   const [sampleImporting, setSampleImporting] = useState(false);
   const recordingApi = useMemo(() => apiFactory.createRecordingApi(), []);
+  const modelsApi = useMemo(() => apiFactory.createModelsApi(), []);
+
+  // Task #12b — Tier 1 bundle model status for the Models onboarding step.
+  const [bundleModels, setBundleModels] = useState<ModelEntry[]>([]);
+  const [activeDownloads, setActiveDownloads] = useState<Record<string, string>>({});
+  const [downloadAllInFlight, setDownloadAllInFlight] = useState(false);
+  const modelCompletionResolvers = useRef<Record<string, () => void>>({});
+
+  const refreshBundleModels = useCallback(async () => {
+    try {
+      const all = await modelsApi.list();
+      setBundleModels(all.filter((m) => m.tier === "bundle"));
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? t("onboarding.models.loadFailed", { error: err.message })
+          : t("onboarding.models.loadFailed", { error: String(err) }),
+      );
+    }
+  }, [modelsApi, t]);
+
+  const handleModelDownloadComplete = useCallback((downloadId: string) => {
+    setActiveDownloads((prev) => {
+      const next: Record<string, string> = {};
+      for (const [catalogueId, dId] of Object.entries(prev)) {
+        if (dId !== downloadId) next[catalogueId] = dId;
+        else modelCompletionResolvers.current[catalogueId]?.();
+      }
+      return next;
+    });
+  }, []);
+
+  const handleDownloadAll = async (): Promise<void> => {
+    if (downloadAllInFlight) return;
+    const missing = bundleModels.filter((m) => !m.installed);
+    if (missing.length === 0) return;
+    setDownloadAllInFlight(true);
+    try {
+      for (const model of missing) {
+        const { downloadId } = await modelsApi.download(model.id);
+        setActiveDownloads((prev) => ({ ...prev, [model.id]: downloadId }));
+        await new Promise<void>((resolve) => {
+          modelCompletionResolvers.current[model.id] = resolve;
+        });
+        delete modelCompletionResolvers.current[model.id];
+        await refreshBundleModels();
+      }
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? t("onboarding.models.downloadFailed", { error: err.message })
+          : t("onboarding.models.downloadFailed", { error: String(err) }),
+      );
+    } finally {
+      setDownloadAllInFlight(false);
+    }
+  };
   // Clamp against the step list here — the reducer has no idea of the
   // platform and thus can't bound the index on its own.
   const index = Math.max(0, Math.min(steps.length - 1, currentStepIndex));
@@ -107,6 +166,15 @@ const Onboarding: FC<OnboardingProps> = ({
   useEffect(() => {
     if (done && currentStepIndex >= steps.length - 1) return;
   }, [done, currentStepIndex, steps.length]);
+
+  // Task #12b — load Tier 1 status when the user lands on the models step.
+  useEffect(() => {
+    if (currentStep !== "models") return;
+    void refreshBundleModels();
+  }, [currentStep, refreshBundleModels]);
+
+  const missingBundleModels = bundleModels.filter((m) => !m.installed);
+  const modelsBlockingNext = currentStep === "models" && missingBundleModels.length > 0;
 
   const showSkip = !isRequiredStep(currentStep);
 
@@ -198,6 +266,61 @@ const Onboarding: FC<OnboardingProps> = ({
                 </Button>
               )}
 
+              {currentStep === "models" && (
+                <div data-testid="onboarding-models-list" style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {bundleModels.map((model) => (
+                    <div
+                      key={model.id}
+                      data-testid={`onboarding-models-item-${model.id}`}
+                      style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, fontSize: 14 }}
+                    >
+                      <span>
+                        <strong>{model.name}</strong>
+                        {" · "}
+                        {t("onboarding.models.sizeMb", { size: model.sizeMb })}
+                      </span>
+                      {model.installed ? (
+                        <span
+                          data-testid={`onboarding-models-installed-${model.id}`}
+                          style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "currentColor", opacity: 0.7 }}
+                        >
+                          <CheckCircle2 size={16} />
+                          {t("onboarding.models.installed")}
+                        </span>
+                      ) : (
+                        <span
+                          data-testid={`onboarding-models-missing-${model.id}`}
+                          style={{ opacity: 0.7 }}
+                        >
+                          {t("onboarding.models.missing")}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {Object.entries(activeDownloads).map(([catalogueId, downloadId]) => (
+                    <ModelDownloadProgress
+                      key={downloadId}
+                      downloadId={downloadId}
+                      label={bundleModels.find((m) => m.id === catalogueId)?.name ?? catalogueId}
+                      onComplete={handleModelDownloadComplete}
+                    />
+                  ))}
+                  {missingBundleModels.length > 0 && (
+                    <Button
+                      data-testid="onboarding-models-download-all"
+                      variant="primary"
+                      leftIcon={<Download size={16} />}
+                      disabled={downloadAllInFlight}
+                      onClick={() => void handleDownloadAll()}
+                    >
+                      {downloadAllInFlight
+                        ? t("onboarding.models.downloading")
+                        : t("onboarding.models.downloadAll")}
+                    </Button>
+                  )}
+                </div>
+              )}
+
               {currentStep === "llm" && (
                 <div
                   data-testid="onboarding-llm-health"
@@ -251,6 +374,7 @@ const Onboarding: FC<OnboardingProps> = ({
             variant="primary"
             rightIcon={done ? <Check size={16} /> : <ChevronRight size={16} />}
             onClick={next}
+            disabled={modelsBlockingNext}
           >
             {done ? t("common.apply") : t("common.next")}
           </Button>

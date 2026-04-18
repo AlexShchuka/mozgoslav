@@ -286,6 +286,17 @@
       "sampleImported": "Sample queued for processing",
       "sampleFailed": "Sample import failed: {{error}}"
     },
+    "models": {
+      "title": "Models",
+      "hint": "Download the bundled models — they are required for the app to work.",
+      "installed": "Installed",
+      "missing": "Missing",
+      "sizeMb": "{{size}} MB",
+      "downloadAll": "Download all",
+      "downloading": "Downloading…",
+      "downloadFailed": "Download failed: {{error}}",
+      "loadFailed": "Failed to load the catalogue: {{error}}"
+    },
     "llm": {
       "title": "LLM (optional)",
       "hint": "LLM polishes your notes. Install LM Studio or Ollama — or skip and configure later."

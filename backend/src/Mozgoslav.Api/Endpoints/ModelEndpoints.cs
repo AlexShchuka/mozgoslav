@@ -28,6 +28,9 @@ public static class ModelEndpoints
                 m.Url,
                 m.SizeMb,
                 kind = m.Kind.ToString().ToLowerInvariant(),
+                // Task #12b — Onboarding uses this to surface only Tier 1
+                // (bundled) models on the first-run "Скачать" card.
+                tier = m.Tier.ToString().ToLowerInvariant(),
                 m.IsDefault,
                 destinationPath = ResolveDestination(m),
                 installed = File.Exists(ResolveDestination(m))
