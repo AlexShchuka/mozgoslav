@@ -1,5 +1,11 @@
+using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -76,8 +82,6 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
     [TestMethod]
     public async Task EmbedAsync_WhenSidecarDown_FallsBackToInnerEmbedding()
     {
-        // No WireMock stub for /api/embed => 404 Not Found response (HttpRequestException path).
-        // Even a 404 is not a connection failure; stop WireMock to simulate a true network outage.
         _server.Stop();
 
         var sut = new PythonSidecarEmbeddingService(_http, _fallback, NullLogger<PythonSidecarEmbeddingService>.Instance);
@@ -144,15 +148,11 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
         sut.Dimensions.Should().Be(4);
 
         var v2 = await sut.EmbedAsync("second", CancellationToken.None);
-        // We still return what the sidecar gave us (caller decides), but
-        // Dimensions remains the first-call dimension to keep the index stable.
         v2.Should().BeEquivalentTo(drifted);
         sut.Dimensions.Should().Be(4);
         v1.Should().BeEquivalentTo(first);
     }
 
-    // ADR-007-shared §2.4 — sidecar single-text response shape is
-    // { embedding: number[], dim: int }.
     private static string BuildResponse(IReadOnlyList<float> embedding, int dim)
     {
         var embeddingJson = string.Join(",", embedding.Select(f => f.ToString(CultureInfo.InvariantCulture)));

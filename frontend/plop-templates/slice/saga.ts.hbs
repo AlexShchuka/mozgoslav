@@ -3,9 +3,8 @@ import type { SagaIterator } from "redux-saga";
 import { LOAD_{{constantCase name}} } from "./actions";
 
 export function* load{{pascalCase name}}Saga(): SagaIterator {
-  // TODO: call API, dispatch success / failure
 }
 
 export function* watch{{pascalCase name}}Sagas(): SagaIterator {
-  yield takeLatest(LOAD_{{constantCase name}}, load{{pascalCase name}}Saga);
+yield takeLatest(LOAD_{{constantCase name}}, load{{pascalCase name}}Saga);
 }

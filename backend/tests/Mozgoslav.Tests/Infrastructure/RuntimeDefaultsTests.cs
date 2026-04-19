@@ -1,3 +1,5 @@
+using System;
+
 using FluentAssertions;
 
 using Mozgoslav.Application.Interfaces;
@@ -8,7 +10,7 @@ namespace Mozgoslav.Tests.Infrastructure;
 
 /// <summary>
 /// Task #12 — first-run defaults for Whisper/VAD/Vault. Tests inject a stub
-/// <see cref="Func{T,TResult}"/> for <c>Directory.Exists</c> so they stay
+/// <see cref="Func{TResult}"/> for <c>Directory.Exists</c> so they stay
 /// hermetic and parallelisable — no filesystem side effects.
 /// </summary>
 [TestClass]

@@ -1,12 +1,11 @@
+using System;
+using System.Collections.Generic;
 using System.Text.Json;
 
 using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-// JsonElement.ArrayEnumerator is a struct enumerator that foreach disposes
-// correctly via its compile-time Dispose pattern. IDISP004 can't see through
-// the pattern-based dispatch, so we suppress it for the whole file.
 #pragma warning disable IDISP004
 
 /// <summary>

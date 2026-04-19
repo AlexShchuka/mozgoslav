@@ -1,5 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -58,8 +64,6 @@ public sealed class ModelDownloadServiceTests : IDisposable
         var factory = BuildFactory(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(payload) });
 
         var destination = Path.Combine(_tempDirectory, "model.bin");
-        // Synchronous IProgress — System.Progress<T> posts to the thread pool
-        // so the callback can race with the assertion below on a small payload.
         var progress = new SynchronousProgress<ModelDownloadService.Progress>();
 
         var service = new ModelDownloadService(factory, NullLogger<ModelDownloadService>.Instance);
@@ -116,8 +120,6 @@ public sealed class ModelDownloadServiceTests : IDisposable
         _handler = handler;
         _client = client;
         var factory = Substitute.For<IHttpClientFactory>();
-        // NSubstitute substitution — the returned HttpClient is owned by the
-        // test fixture (disposed via the TestCleanup hook), not by the stub.
 #pragma warning disable IDISP004 // Don't ignore created IDisposable
         factory.CreateClient(Arg.Any<string>()).Returns(client);
 #pragma warning restore IDISP004

@@ -1,5 +1,9 @@
+using System;
+using System.IO;
 using System.Net;
 using System.Net.Http.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -32,11 +36,11 @@ public sealed class DeviceChangeEndpointTests
 
         var payload = new AudioDeviceChangePayload(
             Kind: "connected",
-            Devices: new[]
-            {
+            Devices:
+            [
                 new AudioDeviceInfo("id-1", "Built-in Microphone", IsDefault: true),
-                new AudioDeviceInfo("id-2", "AirPods Pro", IsDefault: false),
-            },
+                new AudioDeviceInfo("id-2", "AirPods Pro", IsDefault: false)
+            ],
             ObservedAt: DateTime.UtcNow);
 
         using var response = await client.PostAsJsonAsync(

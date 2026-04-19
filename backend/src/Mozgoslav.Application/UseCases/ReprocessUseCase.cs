@@ -1,3 +1,9 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Domain.Entities;
@@ -91,7 +97,6 @@ public sealed class ReprocessUseCase
             }
             catch
             {
-                // Export failure shouldn't block creating the note — user can retry from the note viewer.
             }
         }
 

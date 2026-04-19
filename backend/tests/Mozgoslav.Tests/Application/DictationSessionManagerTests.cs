@@ -1,4 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -52,8 +59,6 @@ public sealed class DictationSessionManagerTests
 
         var chunk = new AudioChunk(new float[1600], 16_000, TimeSpan.Zero);
         await fixture.Manager.PushAudioAsync(session.Id, chunk, CancellationToken.None);
-        // The transcription loop consumes the audio channel asynchronously; wait for
-        // the sink before cancelling so the test doesn't race the background reader.
         await WaitForAsync(() => sink.Chunks.Count >= 1, TimeSpan.FromSeconds(2));
         await fixture.Manager.CancelAsync(session.Id, CancellationToken.None);
 
@@ -326,7 +331,6 @@ public sealed class DictationSessionManagerTests
         pcmPath.Should().Contain(session.Id.ToString());
         var bytes = await File.ReadAllBytesAsync(pcmPath);
         bytes.Length.Should().Be(samples.Length * sizeof(float));
-        // Spot-check the first float round-trips: 0.10f → 4 LE bytes.
         BitConverter.ToSingle(bytes.AsSpan(0, 4)).Should().BeApproximately(0.10f, 0.0001f);
 
         await fixture.Manager.CancelAsync(session.Id, CancellationToken.None);
@@ -354,7 +358,6 @@ public sealed class DictationSessionManagerTests
         fixture.Settings.DictationTempAudioPath.Returns(tempDir.Path);
         fixture.ArrangeEmptyStream();
         var session = fixture.Manager.Start();
-        // Give Start time to create the buffer file.
         await WaitForAsync(
             () => Directory.EnumerateFiles(tempDir.Path, "dictation-*.pcm").Any(),
             TimeSpan.FromSeconds(2));
@@ -371,8 +374,6 @@ public sealed class DictationSessionManagerTests
         fixture.ArrangeStreamWithPartial("живой текст");
         var session = fixture.Manager.Start();
 
-        // Start the subscriber *before* stopping so the session still exists when
-        // the enumerator subscribes to its partials channel.
         var enumerator = fixture.Manager
             .SubscribePartialsAsync(session.Id, CancellationToken.None)
             .GetAsyncEnumerator(TestContext.CancellationToken);
@@ -497,7 +498,6 @@ public sealed class DictationSessionManagerTests
             }
             catch (IOException)
             {
-                // Best-effort — OS may still hold a handle.
             }
         }
     }

@@ -1,7 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
@@ -83,7 +89,6 @@ public sealed class PythonSidecarClient : IPythonSidecarClient
             Dates: body.Dates);
     }
 
-    // ---- Internals --------------------------------------------------------
 
     private async Task<TResponse> PostAsync<TResponse>(string path, object payload, CancellationToken ct)
         where TResponse : class
@@ -123,13 +128,11 @@ public sealed class PythonSidecarClient : IPythonSidecarClient
                 hint: envelope.Hint ?? "Download the model via Settings → Models.");
         }
 
-        // Unexpected 503 — let EnsureSuccessStatusCode in the caller wrap it.
         _logger.LogWarning(
             "Sidecar returned 503 without the expected model_not_installed envelope: {@Envelope}",
             envelope);
     }
 
-    // ---- Wire DTOs --------------------------------------------------------
 
     private sealed record AudioPathDto(
         [property: JsonPropertyName("audio_path")] string AudioPath);

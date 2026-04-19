@@ -1,3 +1,5 @@
+using System.Linq;
+
 using FluentAssertions;
 
 using Mozgoslav.Application.Rag;
@@ -48,7 +50,6 @@ public sealed class NoteChunkerTests
     [TestMethod]
     public void Chunk_LongParagraph_SplitAtSentenceBoundary()
     {
-        // Build a paragraph longer than MaxChars with clear sentence markers.
         var sentences = Enumerable.Range(0, 20)
             .Select(i => $"Предложение номер {i} с какими-то словами про встречи и решения.");
         var longParagraph = string.Join(" ", sentences);

@@ -1,3 +1,6 @@
+using System.Threading;
+using System.Threading.Tasks;
+
 using FluentAssertions;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -25,22 +28,18 @@ public sealed class LlmProviderFactoryIntegrationTests
         var providerFactory = scope.ServiceProvider.GetRequiredService<ILlmProviderFactory>();
         var settings = scope.ServiceProvider.GetRequiredService<IAppSettings>();
 
-        // 1) Default — openai_compatible.
         await settings.SaveAsync(settings.Snapshot with { LlmProvider = "openai_compatible" }, CancellationToken.None);
         var def = await providerFactory.GetCurrentAsync(CancellationToken.None);
         def.Kind.Should().Be("openai_compatible");
 
-        // 2) Anthropic.
         await settings.SaveAsync(settings.Snapshot with { LlmProvider = "anthropic" }, CancellationToken.None);
         var anthropic = await providerFactory.GetCurrentAsync(CancellationToken.None);
         anthropic.Kind.Should().Be("anthropic");
 
-        // 3) Ollama.
         await settings.SaveAsync(settings.Snapshot with { LlmProvider = "ollama" }, CancellationToken.None);
         var ollama = await providerFactory.GetCurrentAsync(CancellationToken.None);
         ollama.Kind.Should().Be("ollama");
 
-        // 4) Unknown → falls back to default.
         await settings.SaveAsync(settings.Snapshot with { LlmProvider = "groq" }, CancellationToken.None);
         var fallback = await providerFactory.GetCurrentAsync(CancellationToken.None);
         fallback.Kind.Should().Be("openai_compatible");

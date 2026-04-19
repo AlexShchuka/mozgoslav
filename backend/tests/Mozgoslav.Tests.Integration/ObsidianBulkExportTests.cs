@@ -1,6 +1,9 @@
+using System;
+using System.IO;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -26,9 +29,6 @@ public sealed class ObsidianBulkExportTests
     [TestMethod]
     public async Task Post_ExportAll_NoVaultConfigured_ReturnsBadRequest()
     {
-        // When no vault is set, the export-all endpoint cannot do anything
-        // useful — surface a 400 so the frontend can prompt the user to
-        // configure the vault path instead of silently returning 0/0.
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
@@ -100,7 +100,6 @@ public sealed class ObsidianBulkExportTests
             payload.GetProperty("failures").ValueKind.Should().Be(JsonValueKind.Array);
             payload.GetProperty("failures").GetArrayLength().Should().Be(0);
 
-            // Running again should now skip (already exported) and not re-export.
             using var second = await client.PostAsync(
                 "/api/obsidian/export-all",
                 content: null,
@@ -143,7 +142,6 @@ public sealed class ObsidianBulkExportTests
             payload.GetProperty("createdFolders").GetInt32().Should().BeGreaterThanOrEqualTo(1);
             payload.GetProperty("movedNotes").GetInt32().Should().BeGreaterThanOrEqualTo(0);
 
-            // Idempotent: calling a second time creates 0 folders.
             using var second = await client.PostAsync(
                 "/api/obsidian/apply-layout",
                 content: null,

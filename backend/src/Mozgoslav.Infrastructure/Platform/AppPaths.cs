@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace Mozgoslav.Infrastructure.Platform;
@@ -47,19 +49,11 @@ public static class AppPaths
     public static string Logs => Path.Combine(Root, "logs");
     public static string Temp => Path.Combine(Root, "temp");
 
-    // ADR-003 D6: Syncthing-managed data roots. Created by SyncthingFolderInitializer
-    // on first boot and referenced by the generated Syncthing config.xml.
     public static string Data => Path.Combine(Root, "data");
     public static string Recordings => Path.Combine(Data, "recordings");
     public static string Notes => Path.Combine(Data, "notes");
     public static string SyncthingHome => Path.Combine(Root, "syncthing");
 
-    // Task #12 — first-run default points at the Tier 1 bundled Whisper Small
-    // (ADR-010 §Tier 1). Resolution: if MOZGOSLAV_BUNDLE_MODELS_DIR is set and
-    // the directory exists, serve the file from the DMG bundle; otherwise fall
-    // back to the user's Models dir where Onboarding's "Скачать" flow drops it.
-    // Previously pointed at ``ggml-model-q8_0.bin`` (Tier 2 antony66) which
-    // required a 1.5 GB download before the app could transcribe anything.
     public static string DefaultWhisperModelPath =>
         ResolveBundledOrUserModel("ggml-small-q8_0.bin", BundleModelsDir, Models);
 

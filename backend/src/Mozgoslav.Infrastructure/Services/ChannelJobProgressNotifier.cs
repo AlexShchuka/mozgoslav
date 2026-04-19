@@ -1,6 +1,10 @@
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Channels;
+using System.Threading.Tasks;
 
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Domain.Entities;
@@ -20,8 +24,6 @@ public sealed class ChannelJobProgressNotifier : IJobProgressNotifier, IDisposab
     {
         ArgumentNullException.ThrowIfNull(job);
 
-        // Snapshot a shallow clone so concurrent mutations in the worker don't
-        // leak unexpected state through the SSE stream.
         var snapshot = Clone(job);
 
         foreach (var channel in _subscribers.Values)
@@ -76,8 +78,6 @@ public sealed class ChannelJobProgressNotifier : IJobProgressNotifier, IDisposab
         CreatedAt = src.CreatedAt,
         StartedAt = src.StartedAt,
         FinishedAt = src.FinishedAt,
-        // ADR-015 — carry the cancel request flag across SSE so the UI can
-        // distinguish "cancel pressed, waiting for worker" from a plain active job.
         CancelRequested = src.CancelRequested
     };
 }

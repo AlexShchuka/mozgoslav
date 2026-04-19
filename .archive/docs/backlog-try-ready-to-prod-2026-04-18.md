@@ -24,7 +24,9 @@
 
 - **Status:** Active queue. Пункт выполнили → удалили из файла.
 - **Date:** 2026-04-18
-- **Scope:** only что-то реализуем прямо сейчас или в ближайшей итерации. Backlog (то, что отложено) — `ADR-014-unrealized-backlog.md`. Post-v1.0 production — `POSTRELEASE.md`. Новые архитектурные решения — `ADR-016`, `ADR-017`.
+- **Scope:** only что-то реализуем прямо сейчас или в ближайшей итерации. Backlog (то, что отложено) —
+  `ADR-014-unrealized-backlog.md`. Post-v1.0 production — `POSTRELEASE.md`. Новые архитектурные решения — `ADR-016`,
+  `ADR-017`.
 
 Очередь пуста на 2026-04-18; добавляйте новые пункты сюда.
 

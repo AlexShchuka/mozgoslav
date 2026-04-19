@@ -16,6 +16,7 @@ dotnet add package Whisper.net.Runtime.CoreML --version 1.9.0
 ```
 
 Заменить `Program.cs`:
+
 ```csharp
 using Whisper.net;
 
@@ -32,8 +33,6 @@ using var processor = WhisperProcessor.CreateBuilder()
     .WithBestOf(5)
     .Build();
 
-// Нужен любой WAV 16kHz — возьми из _inbox или конвертируй:
-// ffmpeg -i ~/Documents/Obsidian\ Vault/audio/любой.m4a -ar 16000 -ac 1 test.wav
 var wavPath = "test.wav";
 
 Console.WriteLine("Transcribing...");
@@ -54,12 +53,15 @@ dotnet run
 ```
 
 ### Что проверяем:
+
 - [ ] `dotnet run` НЕ падает с ошибкой загрузки нативной библиотеки
 - [ ] Выводит сегменты с русским текстом
 - [ ] Время работы: < 30 сек на 15-секундном аудио (CoreML ускорение)
 
 ### Если упало:
-- `DllNotFoundException` → CoreML runtime не подцепился. Попробовать без CoreML: убрать `Whisper.net.Runtime.CoreML`, добавить `Whisper.net.Runtime` (CPU).
+
+- `DllNotFoundException` → CoreML runtime не подцепился. Попробовать без CoreML: убрать `Whisper.net.Runtime.CoreML`,
+  добавить `Whisper.net.Runtime` (CPU).
 - Модель не найдена → проверить путь.
 
 ---
@@ -110,6 +112,7 @@ ls dist/*.dmg
 ```
 
 ### Что проверяем:
+
 - [ ] `dotnet publish` → single binary для osx-arm64
 - [ ] `npm run dev` → Electron окно открывается
 - [ ] C# backend стартует и отвечает на /api/health
@@ -117,6 +120,7 @@ ls dist/*.dmg
 - [ ] Двойной клик по .dmg → приложение ставится и запускается
 
 ### Если упало:
+
 - `electron-builder` ошибка → проверить electron-builder.yml, extraResources пути
 - Backend не стартует → проверить `ASPNETCORE_URLS`, порт
 - .dmg не открывается → code signing не нужен для dev, но может нужен `--mac --config.mac.identity=null`
@@ -165,6 +169,7 @@ curl -s http://localhost:1234/v1/chat/completions \
 ```
 
 ### Что проверяем:
+
 - [ ] Ответ — валидный JSON (python3 -m json.tool не падает)
 - [ ] `summary` содержит суть (релиз, распределение задач)
 - [ ] `participants` содержит ["Иван", "Ольга"]
@@ -173,6 +178,7 @@ curl -s http://localhost:1234/v1/chat/completions \
 - [ ] Повторить 3 раза — все 3 раза валидный JSON
 
 ### Если упало:
+
 - LM Studio не поддерживает `json_schema` → попробовать `"type": "json_object"` (без schema)
 - Модель генерирует markdown вокруг JSON → добавить в system prompt: "Верни ТОЛЬКО JSON, без markdown-обёртки"
 - JSON невалидный → добавить retry + JSON repair в BACKEND-SPEC
@@ -181,11 +187,11 @@ curl -s http://localhost:1234/v1/chat/completions \
 
 ## Итог
 
-| Spike | Прошёл? | Действие если нет |
-|---|---|---|
-| Whisper.net CoreML | ☐ | Fallback: Whisper.net CPU (без CoreML пакета) |
-| Electron + C# .dmg | ☐ | Попробовать Electron.NET вместо manual child process |
-| LM Studio JSON | ☐ | Добавить `"type": "json_object"` fallback + JSON repair |
+| Spike              | Прошёл? | Действие если нет                                       |
+|--------------------|---------|---------------------------------------------------------|
+| Whisper.net CoreML | ☐       | Fallback: Whisper.net CPU (без CoreML пакета)           |
+| Electron + C# .dmg | ☐       | Попробовать Electron.NET вместо manual child process    |
+| LM Studio JSON     | ☐       | Добавить `"type": "json_object"` fallback + JSON repair |
 
 **Все три прошли → Claude берёт спеки и пишет код.**
 **Один не прошёл → обновить соответствующую спеку, потом писать.**

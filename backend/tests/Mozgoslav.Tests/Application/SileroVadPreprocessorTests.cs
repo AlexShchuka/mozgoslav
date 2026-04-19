@@ -1,3 +1,5 @@
+using System;
+
 using FluentAssertions;
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -18,7 +20,6 @@ public sealed class SileroVadPreprocessorTests
     {
         var preprocessor = BuildPreprocessor();
 
-        // 1 second of true silence at 16 kHz.
         var chunk = new AudioChunk(new float[16_000], 16_000, TimeSpan.Zero);
 
         preprocessor.ContainsSpeech(chunk).Should().BeFalse();
@@ -32,7 +33,6 @@ public sealed class SileroVadPreprocessorTests
         var samples = new float[16_000];
         for (var i = 0; i < samples.Length; i++)
         {
-            // Amplitude 0.3 — well above the 0.005 RMS gate.
             samples[i] = 0.3f * MathF.Sin(2f * MathF.PI * 440f * i / 16_000f);
         }
         var chunk = new AudioChunk(samples, 16_000, TimeSpan.Zero);
@@ -45,7 +45,6 @@ public sealed class SileroVadPreprocessorTests
     {
         var preprocessor = BuildPreprocessor();
 
-        // Below the minimum-samples guard — classifier refuses to judge.
         var samples = new float[32];
         Array.Fill(samples, 0.5f);
         var chunk = new AudioChunk(samples, 16_000, TimeSpan.Zero);
@@ -61,7 +60,6 @@ public sealed class SileroVadPreprocessorTests
         var samples = new float[16_000];
         for (var i = 0; i < samples.Length; i++)
         {
-            // Low-amplitude dither (< 0.005 RMS) — below the speech gate.
             samples[i] = 0.001f * MathF.Sin(2f * MathF.PI * 60f * i / 16_000f);
         }
         var chunk = new AudioChunk(samples, 16_000, TimeSpan.Zero);

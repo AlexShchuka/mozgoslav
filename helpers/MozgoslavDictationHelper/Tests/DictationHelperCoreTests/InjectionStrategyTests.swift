@@ -56,9 +56,6 @@ final class InjectionStrategyTests: XCTestCase {
     }
 
     func testUnknownModeFallsBackToAutoSelection() {
-        // Defensive contract — JSON-RPC callers may send a typo or a future
-        // mode the helper version does not know about yet. Falling back to
-        // the app-aware auto path is safer than erroring out.
         let strategy = InjectionStrategySelector.strategy(
             forBundleId: "md.obsidian",
             mode: "totally-unknown-mode"
@@ -72,15 +69,7 @@ final class InjectionStrategyTests: XCTestCase {
         XCTAssertEqual(decoded, .clipboard)
     }
 
-    // MARK: - BC-007 fallback runner (ADR-007 Phase 2 §3.2)
-    //
-    // The four tests below follow the ADR-007-phase2-swift.md §3.2 contract
-    // verbatim. The struct under test is named `InjectionStrategyRunner`
-    // instead of the ADR's `InjectionStrategy` because the latter name is
-    // already taken by the enum above (used by `TextInjectionService` and
-    // `DictationHelper`, which are outside this agent's write scope).
 
-    // Spies
     final class SpyAx: AxInjector {
         var throwTimeoutCount = 0
         var calls: [(String, TimeInterval)] = []
@@ -120,9 +109,7 @@ final class InjectionStrategyTests: XCTestCase {
 
         XCTAssertEqual(ax.calls.count, 1)
         XCTAssertEqual(cg.pasteCalls, 1)
-        // Prior pasteboard content must be restored.
         XCTAssertEqual(pb.value, "prior content")
-        // "hello" was set, then restored.
         XCTAssertEqual(pb.writes, ["hello", "prior content"])
     }
 
@@ -175,7 +162,6 @@ final class InjectionStrategyTests: XCTestCase {
             }
         }
 
-        // Even on failure the prior pasteboard content must be restored.
         XCTAssertEqual(pb.value, "prior content")
     }
 }

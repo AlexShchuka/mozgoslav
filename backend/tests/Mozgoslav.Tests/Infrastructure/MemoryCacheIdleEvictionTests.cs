@@ -1,13 +1,12 @@
+using System;
+using System.Threading.Tasks;
+
 using FluentAssertions;
 
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Mozgoslav.Tests.Infrastructure;
 
-// The analyzers don't recognise that IMemoryCache takes ownership of entries
-// added via Set/GetOrCreate — every factory allocation below is released
-// deterministically by Remove (or cache Dispose), so IDISP001/CA2000 are
-// false positives for this pattern.
 #pragma warning disable IDISP001, CA2000
 
 /// <summary>
@@ -84,9 +83,6 @@ public sealed class MemoryCacheIdleEvictionTests
     [TestMethod]
     public async Task PostEvictionCallback_DisposesResource()
     {
-        // Production wiring: WhisperNetTranscriptionService registers a
-        // PostEvictionCallback that Dispose()s the evicted WhisperFactory.
-        // This test pins that pattern with a stand-in disposable.
         using var cache = new MemoryCache(new MemoryCacheOptions());
         var resource = new TrackedResource();
         var disposedSignal = new TaskCompletionSource();
@@ -112,9 +108,6 @@ public sealed class MemoryCacheIdleEvictionTests
     [TestMethod]
     public void SlidingExpiration_ReadResetsWindow_NotImmediateEviction()
     {
-        // Sanity check: a read inside the sliding window keeps the entry.
-        // (True wall-clock expiration is covered by IMemoryCache's own test suite;
-        // we only verify that the read path itself does not evict.)
         using var cache = new MemoryCache(new MemoryCacheOptions());
         var resource = new TrackedResource();
 

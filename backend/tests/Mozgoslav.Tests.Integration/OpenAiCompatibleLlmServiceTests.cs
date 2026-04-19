@@ -1,5 +1,8 @@
 using System.Net;
+using System.Net.Http;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -42,15 +45,10 @@ public sealed class OpenAiCompatibleLlmServiceTests
         _settings.LlmModel.Returns("test-model");
 
         _httpFactory = Substitute.For<IHttpClientFactory>();
-        // HttpClient instances are owned by the caller-created factory; their lifetime
-        // spans individual test methods, disposal is handled via Cleanup below.
 #pragma warning disable CA2000, IDISP004
         _httpFactory.CreateClient(Arg.Any<string>()).Returns(_ => new HttpClient());
 #pragma warning restore CA2000, IDISP004
 
-        // TODO-3 — OpenAiCompatibleLlmService now routes transport through the
-        // factory. Wire up a single-provider factory mock that always returns the
-        // real OpenAiCompatibleLlmProvider so WireMock keeps driving the contract.
         var openAiProvider = new OpenAiCompatibleLlmProvider(
             _settings, NullLogger<OpenAiCompatibleLlmProvider>.Instance);
         var providerFactory = Substitute.For<ILlmProviderFactory>();

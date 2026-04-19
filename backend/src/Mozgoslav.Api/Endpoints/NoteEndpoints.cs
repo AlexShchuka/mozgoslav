@@ -1,3 +1,10 @@
+using System;
+using System.Threading;
+
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.UseCases;
 using Mozgoslav.Domain.Entities;
@@ -26,10 +33,6 @@ public static class NoteEndpoints
             return Results.Ok(notes);
         });
 
-        // ADR-007-shared §2.6 — manual note creation. Unlike the transcription
-        // pipeline this endpoint never touches the queue: there is no audio
-        // to process, so we create the note synchronously, tag it as Manual,
-        // and return 201 with the fresh ProcessedNote body.
         endpoints.MapPost("/api/notes", async (
             ManualNoteRequest? request,
             IProcessedNoteRepository repository,
@@ -40,9 +43,6 @@ public static class NoteEndpoints
                 Source = NoteSource.Manual,
                 Title = request?.Title ?? string.Empty,
                 MarkdownContent = request?.Body ?? string.Empty,
-                // Summary / key-points / etc. stay at their defaults — the
-                // user will edit them in the note view. The LLM enrichment
-                // pipeline does NOT fire for manual notes.
             };
             await repository.AddAsync(note, ct);
             return Results.Created($"/api/notes/{note.Id}", note);

@@ -1,4 +1,7 @@
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Mozgoslav.Application.Interfaces;
 
@@ -18,8 +21,8 @@ public sealed class DisabledSyncthingClient : ISyncthingClient
 
     public Task<SyncStatusSnapshot> GetStatusAsync(CancellationToken ct) =>
         Task.FromResult(new SyncStatusSnapshot(
-            Folders: Array.Empty<SyncFolderStatus>(),
-            Devices: Array.Empty<SyncDeviceStatus>()));
+            Folders: [],
+            Devices: []));
 
     public Task<string> GetLocalDeviceIdAsync(CancellationToken ct) =>
         Task.FromResult(string.Empty);
@@ -27,7 +30,6 @@ public sealed class DisabledSyncthingClient : ISyncthingClient
     public async IAsyncEnumerable<SyncthingEvent> StreamEventsAsync(
         [EnumeratorCancellation] CancellationToken ct)
     {
-        // Complete immediately — nothing to stream when Syncthing is disabled.
         await Task.CompletedTask;
         yield break;
     }

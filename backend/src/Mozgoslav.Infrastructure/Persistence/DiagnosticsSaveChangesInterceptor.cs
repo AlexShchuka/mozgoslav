@@ -1,5 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -15,7 +21,7 @@ namespace Mozgoslav.Infrastructure.Persistence;
 /// default EF Core diagnostic log strips every application frame and gives no
 /// hint about which entity / which repository call triggered the save.
 /// <para>
-/// Cost: one <see cref="Environment.StackTrace"/> capture + one entries walk per
+/// Cost: one <see cref="StackTrace"/> capture + one entries walk per
 /// failing save. Happy path is untouched. Keep installed until the root cause
 /// is found and stable for a release; remove or gate behind
 /// <c>Mozgoslav:DbDiagnostics:Enabled</c> afterwards.

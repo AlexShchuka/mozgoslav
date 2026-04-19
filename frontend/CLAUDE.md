@@ -1,6 +1,7 @@
 # Frontend — guide for AI agents
 
-Electron + React 19 + TypeScript strict + Redux + Redux-Saga + styled-components. Feature-based structure follows the standard React + Redux-Saga pattern.
+Electron + React 19 + TypeScript strict + Redux + Redux-Saga + styled-components. Feature-based structure follows the
+standard React + Redux-Saga pattern.
 
 ```
 frontend/
@@ -31,9 +32,13 @@ frontend/
 
 ## Conventions (from the reference React project)
 
-- **Container + Presentational** — `Foo.tsx` receives props, `Foo.container.ts` uses `connect(mapStateToProps, mapDispatchToProps)`. The Dashboard / Queue / etc. pages use direct API calls today for pragmatism; migrate to saga when adding write-paths.
-- **Store slice pattern** — `actionCreator.ts` + `reducer.ts` + `mutations.ts` + `selectors.ts` + `saga/*.ts`. Use the `slices/recording` slice as the canonical reference.
-- **Styling** — styled-components only; no CSS modules, no Tailwind. Theme tokens in `src/styles/theme.ts`. Dark/light switch via `setThemeMode(...)` — also persisted in Settings.
+- **Container + Presentational** — `Foo.tsx` receives props, `Foo.container.ts` uses
+  `connect(mapStateToProps, mapDispatchToProps)`. The Dashboard / Queue / etc. pages use direct API calls today for
+  pragmatism; migrate to saga when adding write-paths.
+- **Store slice pattern** — `actionCreator.ts` + `reducer.ts` + `mutations.ts` + `selectors.ts` + `saga/*.ts`. Use the
+  `slices/recording` slice as the canonical reference.
+- **Styling** — styled-components only; no CSS modules, no Tailwind. Theme tokens in `src/styles/theme.ts`. Dark/light
+  switch via `setThemeMode(...)` — also persisted in Settings.
 - **i18n** — every user-facing string goes through `useTranslation`. Add keys to both `ru.json` and `en.json`.
 - **Default exports** for components, named exports for utilities/selectors/types.
 - **Sensitive inputs** (tokens, API keys) — `<Input sensitive />`. Eye-toggle reveals, never logged.
@@ -41,11 +46,13 @@ frontend/
 ## Electron bridge
 
 `window.mozgoslav` exposes:
+
 - `openAudioFiles()` → native multi-file picker for supported audio formats
 - `openFolder()` → pick a folder (Obsidian vault)
 - `openPath(path)` → reveal in Finder
 
-No other privileges are exposed. Add new bridge methods by editing both `preload.ts` (contextBridge) and `main.ts` (ipcMain.handle).
+No other privileges are exposed. Add new bridge methods by editing both `preload.ts` (contextBridge) and `main.ts` (
+ipcMain.handle).
 
 ## Testing
 

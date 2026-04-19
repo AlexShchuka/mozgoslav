@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <RootNamespace>Mozgoslav.Domain</RootNamespace>
-    <AssemblyName>Mozgoslav.Domain</AssemblyName>
-  </PropertyGroup>
+    <PropertyGroup>
+        <RootNamespace>Mozgoslav.Domain</RootNamespace>
+        <AssemblyName>Mozgoslav.Domain</AssemblyName>
+    </PropertyGroup>
 </Project>

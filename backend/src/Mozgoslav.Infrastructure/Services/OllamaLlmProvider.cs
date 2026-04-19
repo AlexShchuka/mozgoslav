@@ -1,6 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
@@ -40,7 +45,6 @@ public sealed class OllamaLlmProvider : ILlmProvider
     {
         try
         {
-            // ADR-011 step 3 — resilience lives on the named "llm" HttpClient.
             using var client = _httpClientFactory.CreateClient("llm");
 
             var endpoint = new Uri(new Uri(_settings.LlmEndpoint), "/api/chat");
@@ -69,13 +73,10 @@ public sealed class OllamaLlmProvider : ILlmProvider
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            // Caller cancelled — let the CancellationToken propagate upstream.
             throw;
         }
         catch (TaskCanceledException ex)
         {
-            // HttpClient timeout surfaces as TaskCanceledException WITHOUT the caller
-            // token being cancelled. Treat that as a transport failure, not a cancel.
             _logger.LogWarning(ex, "Ollama LLM call timed out");
             return string.Empty;
         }

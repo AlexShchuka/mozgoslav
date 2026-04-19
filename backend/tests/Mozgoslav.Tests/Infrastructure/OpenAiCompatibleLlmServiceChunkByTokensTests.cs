@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 using FluentAssertions;
@@ -40,7 +42,6 @@ public sealed class OpenAiCompatibleLlmServiceChunkByTokensTests
     [TestMethod]
     public void ChunkByTokens_OverBudget_SplitsIntoMultipleSlices()
     {
-        // ~ 2000 repeated Russian words guarantee we exceed the 50-token budget.
         var input = string.Concat(Enumerable.Repeat("Собеседник сказал что-то важное и мы это зафиксировали. ", 200));
         const int Budget = 50;
 

@@ -1,3 +1,7 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
+
 using FluentAssertions;
 
 using Microsoft.AspNetCore.Hosting;
@@ -57,9 +61,6 @@ public sealed class EmbeddingServiceConfigurationTests
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("IntegrationTest");
-            // UseSetting writes into the hosting config layer which is applied
-            // *before* Program.cs reads builder.Configuration, unlike
-            // ConfigureAppConfiguration which runs at Build() time.
             builder.UseSetting("Mozgoslav:DatabasePath", _databasePath);
             builder.UseSetting("Mozgoslav:PythonSidecar:BaseUrl", _sidecarBaseUrl ?? string.Empty);
         }

@@ -3,6 +3,7 @@
 ## Scope shipped
 
 ### Front 1 — ADR-003 Syncthing backend finish
+
 - `SyncthingEvent` + payload records in `Application/Interfaces/`.
 - `SyncthingSseEventParser` — pure static parser for the long-polled
   `/rest/events` envelope (NOT RFC SSE, named to match our downstream
@@ -21,6 +22,7 @@
   covering every REST endpoint we hit.
 
 ### Front 2 — ADR-004
+
 - **R4** `WhisperNetTranscriptionService` now holds its `WhisperFactory`
   via a generic `IdleResourceCache<T>`. After
   `DictationModelUnloadMinutes` of inactivity the factory is disposed
@@ -37,6 +39,7 @@
   pairing, folder invites, conflict resolution, discovery troubleshoot.
 
 ### Front 3 — ADR-005 local RAG
+
 - `Application/Rag/` ports: `IEmbeddingService`, `IVectorIndex`,
   `IRagService`, plus the `NoteChunk`/`NoteChunkHit`/`RagAnswer` value
   types and the static `NoteChunker`.
@@ -53,11 +56,13 @@
   two dozen sub-assertions exercising the pipeline with 5 seeded notes.
 
 ### Chore
+
 - `scripts/fetch-syncthing.{sh,ps1}` — idempotent fetcher for latest
   stable Syncthing binaries for every target platform, with sha256
   verification against the signed `sha256sums.txt`.
 
 ### Docs
+
 - Updated `backend/CLAUDE.md` with RAG stack + R4 idle-unload notes
   and the new `/api/rag/*` and `/api/sync/*` endpoint inventory.
 

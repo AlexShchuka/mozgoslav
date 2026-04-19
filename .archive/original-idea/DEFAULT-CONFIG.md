@@ -8,15 +8,17 @@
 ## 1. Дефолтные модели (русский язык)
 
 ### STT (Speech-to-Text)
-| Параметр | Значение | Почему |
-|---|---|---|
-| Модель | **ggml-large-v3-q8_0.bin** | Лучший баланс качество/размер для русского. Квантизация q8_0 ≈ без потерь. |
-| Размер | ~1.5 GB | |
-| Скачать | https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-q8_0.bin | |
-| Путь по умолчанию | `~/Library/Application Support/Mozgoslav/models/ggml-large-v3-q8_0.bin` | |
-| CoreML companion | Нужен `ggml-large-v3-q8_0-encoder.mlmodelc` рядом для GPU-ускорения | |
+
+| Параметр          | Значение                                                                         | Почему                                                                     |
+|-------------------|----------------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| Модель            | **ggml-large-v3-q8_0.bin**                                                       | Лучший баланс качество/размер для русского. Квантизация q8_0 ≈ без потерь. |
+| Размер            | ~1.5 GB                                                                          |                                                                            |
+| Скачать           | https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-q8_0.bin |                                                                            |
+| Путь по умолчанию | `~/Library/Application Support/Mozgoslav/models/ggml-large-v3-q8_0.bin`          |                                                                            |
+| CoreML companion  | Нужен `ggml-large-v3-q8_0-encoder.mlmodelc` рядом для GPU-ускорения              |                                                                            |
 
 ### STT Parameters (проверены в бою)
+
 ```
 language:         ru
 beam_size:        5
@@ -27,60 +29,67 @@ threads:          14      ← Apple Silicon M3/M4 (auto-detect в приложе
 ```
 
 ### STT Prompt (дефолт, пользователь может менять в Profile)
+
 ```
 Мысли вслух, встречи, диалоги, рассуждения.
 ```
 
 ### VAD (Voice Activity Detection)
-| Параметр | Значение |
-|---|---|
-| Модель | **Silero VAD v6.2.0** (ggml binary) |
-| Размер | ~4 MB |
-| Скачать | https://huggingface.co/ggml-org/whisper-vad/resolve/main/ggml-silero-v6.2.0.bin |
-| Путь | `~/Library/Application Support/Mozgoslav/models/ggml-silero-v6.2.0.bin` |
+
+| Параметр | Значение                                                                        |
+|----------|---------------------------------------------------------------------------------|
+| Модель   | **Silero VAD v6.2.0** (ggml binary)                                             |
+| Размер   | ~4 MB                                                                           |
+| Скачать  | https://huggingface.co/ggml-org/whisper-vad/resolve/main/ggml-silero-v6.2.0.bin |
+| Путь     | `~/Library/Application Support/Mozgoslav/models/ggml-silero-v6.2.0.bin`         |
 
 ### LLM (для суммаризации и semantic processing)
-| Параметр | Значение | Почему |
-|---|---|---|
-| Рекомендуемая модель | **Qwen2.5-14B-Instruct-Q4_K_M** | Лучший русский среди local 14B. На M3 36GB — быстро. |
-| Альтернатива (легче) | **Qwen2.5-7B-Instruct-Q4_K_M** | Если RAM не хватает |
-| Альтернатива (мощнее) | **Qwen3.5-27B-Q4_K_M** | Если RAM позволяет (нужно ~17 GB) |
-| Endpoint | `http://localhost:1234` (LM Studio) или `http://localhost:11434` (Ollama) |
-| API | OpenAI-compatible `/v1/chat/completions` |
-| Temperature | 0.1 |
-| Max tokens | 4096 |
-| Response format | `json_schema` (structured output) |
+
+| Параметр              | Значение                                                                  | Почему                                               |
+|-----------------------|---------------------------------------------------------------------------|------------------------------------------------------|
+| Рекомендуемая модель  | **Qwen2.5-14B-Instruct-Q4_K_M**                                           | Лучший русский среди local 14B. На M3 36GB — быстро. |
+| Альтернатива (легче)  | **Qwen2.5-7B-Instruct-Q4_K_M**                                            | Если RAM не хватает                                  |
+| Альтернатива (мощнее) | **Qwen3.5-27B-Q4_K_M**                                                    | Если RAM позволяет (нужно ~17 GB)                    |
+| Endpoint              | `http://localhost:1234` (LM Studio) или `http://localhost:11434` (Ollama) |
+| API                   | OpenAI-compatible `/v1/chat/completions`                                  |
+| Temperature           | 0.1                                                                       |
+| Max tokens            | 4096                                                                      |
+| Response format       | `json_schema` (structured output)                                         |
 
 ### Diarization (V3, не MVP)
-| Компонент | Модель |
-|---|---|
-| VAD | Silero VAD (pip `silero-vad>=5.1`) |
-| Embeddings | Resemblyzer (`pip resemblyzer>=0.1.4`, ~25 MB, bundled) |
+
+| Компонент  | Модель                                                                      |
+|------------|-----------------------------------------------------------------------------|
+| VAD        | Silero VAD (pip `silero-vad>=5.1`)                                          |
+| Embeddings | Resemblyzer (`pip resemblyzer>=0.1.4`, ~25 MB, bundled)                     |
 | Clustering | sklearn `AgglomerativeClustering(distance_threshold=0.75, metric='cosine')` |
 
 ### Gender (V3)
-| Параметр | Значение |
-|---|---|
-| Модель | `audeering/wav2vec2-large-robust-24-ft-age-gender` |
-| Размер | ~1.3 GB |
-| HF gated | **Нет** (public) |
+
+| Параметр | Значение                                           |
+|----------|----------------------------------------------------|
+| Модель   | `audeering/wav2vec2-large-robust-24-ft-age-gender` |
+| Размер   | ~1.3 GB                                            |
+| HF gated | **Нет** (public)                                   |
 
 ### Emotion (V3)
-| Параметр | Значение |
-|---|---|
-| Модель | `audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim` |
-| Размер | ~1.3 GB |
-| HF gated | **Нет** (public) |
+
+| Параметр       | Значение                                                                     |
+|----------------|------------------------------------------------------------------------------|
+| Модель         | `audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim`                      |
+| Размер         | ~1.3 GB                                                                      |
+| HF gated       | **Нет** (public)                                                             |
 | **Workaround** | `vocab_size=None` → patch через `_safe_cfg()` (см. PYTHON-SIDECAR-SPEC §7.2) |
-| **Workaround** | `Wav2Vec2Processor` → `AutoFeatureExtractor` (см. §7.3) |
+| **Workaround** | `Wav2Vec2Processor` → `AutoFeatureExtractor` (см. §7.3)                      |
 
 ### NER
-| Параметр | Значение |
-|---|---|
+
+| Параметр   | Значение                       |
+|------------|--------------------------------|
 | Библиотека | Natasha (`pip natasha>=1.6.0`) |
-| Размер | ~300 MB |
-| Языки | Русский (only) |
-| Entities | PER, ORG, LOC, DATE |
+| Размер     | ~300 MB                        |
+| Языки      | Русский (only)                 |
+| Entities   | PER, ORG, LOC, DATE            |
 
 ---
 
@@ -201,6 +210,7 @@ Python sidecar:  http://localhost:5060 (V3)
 ## 6. Дефолтные профили обработки (seed data)
 
 ### Рабочий (isDefault=true)
+
 ```json
 {
   "name": "Рабочий",
@@ -212,6 +222,7 @@ Python sidecar:  http://localhost:5060 (V3)
 ```
 
 ### Неформальный
+
 ```json
 {
   "name": "Неформальный",
@@ -223,6 +234,7 @@ Python sidecar:  http://localhost:5060 (V3)
 ```
 
 ### Полная заметка
+
 ```json
 {
   "name": "Полная заметка",

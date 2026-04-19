@@ -1,4 +1,9 @@
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -30,8 +35,6 @@ public sealed class StartupLogTests
 
         using var _ = factory.CreateClient();
 
-        // ADR-011 step 1 — DatabaseInitializer now logs "EF Core migrations applied"
-        // after running MigrateAsync (replaced the legacy "SQLite schema ensured" line).
         captured.Count(line => line.Contains("EF Core migrations applied", StringComparison.Ordinal))
             .Should().Be(1);
     }

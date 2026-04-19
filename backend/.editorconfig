@@ -2,6 +2,14 @@
 # Aligned with Microsoft .NET guidelines + StyleCop.
 # Inherits from the repository-root .editorconfig — do NOT set root = true here.
 
+[*.AssemblyAttributes.cs]
+generated_code = true
+dotnet_diagnostic.IDE0005.severity = none
+
+[*.AssemblyInfo.cs]
+generated_code = true
+dotnet_diagnostic.IDE0005.severity = none
+
 [*]
 charset = utf-8
 end_of_line = lf
@@ -90,7 +98,7 @@ csharp_indent_case_contents = true
 csharp_indent_switch_labels = true
 
 # File-scoped types
-dotnet_diagnostic.IDE0161.severity = warning  # file-scoped namespace
+dotnet_diagnostic.IDE0161.severity = warning # file-scoped namespace
 
 # Primary constructors: not preferred per team convention
 dotnet_diagnostic.IDE0290.severity = suggestion

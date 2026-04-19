@@ -1,4 +1,9 @@
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -201,10 +206,6 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_WhenHostStopping_RethrowsCancellation()
     {
-        // ADR-015 — host-stopping OCE (the ct handed to ProcessJobAsync is
-        // cancelled) must still propagate upward so Quartz can ack the trigger
-        // cleanly. The in-flight job does NOT transition to Cancelled in this
-        // path.
         var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
@@ -225,9 +226,6 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_WhenCancelRequestedBeforeTranscribe_MarksCancelled()
     {
-        // ADR-015 — cancel requested on a Queued job. Worker picks it up, sees
-        // CancelRequested=true at the top of ProcessJobAsync and exits
-        // immediately without running any pipeline stage.
         var fixture = new Fixture();
         var job = fixture.SeedJob();
         job.CancelRequested = true;
@@ -246,18 +244,10 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_WhenTokenCancelledDuringTranscribe_MarksCancelled()
     {
-        // ADR-015 — cooperative cancel during a pipeline stage. The per-job CT
-        // in the registry is triggered (NOT the host-stopping token). Worker
-        // catches OCE via `when (!ct.IsCancellationRequested)` and marks
-        // Cancelled instead of Failed.
         var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
 
-        // Simulate the cancel endpoint flipping the registry for this job right
-        // before the worker reaches Transcribe. Registry is singleton-scoped
-        // in the fixture so the act of registering the job inside the worker
-        // will return a CTS that is about to be cancelled here.
         fixture.CancellationRegistry.PreCancelOnRegister(job.Id);
 
         fixture.Transcription

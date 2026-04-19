@@ -1,3 +1,8 @@
+using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+
 using FluentAssertions;
 
 using Mozgoslav.Application.Interfaces;
@@ -35,9 +40,6 @@ public sealed class ImportRecordingUseCaseTests
     [TestMethod]
     public async Task ExecuteAsync_fills_Duration_from_metadata_probe_when_available()
     {
-        // Task #19 — if an IAudioMetadataProbe is wired in, ImportRecordingUseCase
-        // must populate Recording.Duration at import time so the UI shows the real
-        // length before transcription finishes.
         var path = Path.Combine(Path.GetTempPath(), $"mozgoslav-probe-{Guid.NewGuid():N}.wav");
         await File.WriteAllBytesAsync(path, [1, 2, 3, 4, 5], TestContext.CancellationToken);
 
@@ -78,9 +80,6 @@ public sealed class ImportRecordingUseCaseTests
     [TestMethod]
     public async Task ExecuteAsync_leaves_Duration_zero_when_probe_is_not_wired()
     {
-        // Task #19 — the probe is optional; existing tests / DI setups that
-        // don't register IAudioMetadataProbe must still work (Duration stays
-        // TimeSpan.Zero, the UI renders the "—" pending placeholder).
         var path = Path.Combine(Path.GetTempPath(), $"mozgoslav-noprobe-{Guid.NewGuid():N}.wav");
         await File.WriteAllBytesAsync(path, [1, 2, 3, 4, 5], TestContext.CancellationToken);
 
@@ -153,10 +152,6 @@ public sealed class ImportRecordingUseCaseTests
     [TestMethod]
     public async Task ExecuteAsync_DuplicateSha256_CreatesDistinctRowAndEnqueuesAgain()
     {
-        // Product decision 2026-04-19 — import is no longer idempotent on
-        // sha256. Re-importing the same audio content produces a new
-        // Recording row + a fresh ProcessingJob. This replaces the previous
-        // "deduplicate by sha256" behaviour.
         var path = Path.Combine(Path.GetTempPath(), $"mozgoslav-dup-{Guid.NewGuid():N}.wav");
         await File.WriteAllBytesAsync(path, [9, 9, 9], TestContext.CancellationToken);
 
@@ -185,7 +180,6 @@ public sealed class ImportRecordingUseCaseTests
 
             await recordings.Received(2).AddAsync(Arg.Any<Recording>(), Arg.Any<CancellationToken>());
             await jobs.Received(2).EnqueueAsync(Arg.Any<ProcessingJob>(), Arg.Any<CancellationToken>());
-            // Never consult the lookup — the use case doesn't short-circuit on sha anymore.
             await recordings.DidNotReceive().GetBySha256Async(Arg.Any<string>(), Arg.Any<CancellationToken>());
         }
         finally

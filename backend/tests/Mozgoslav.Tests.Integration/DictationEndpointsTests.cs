@@ -1,6 +1,8 @@
+using System;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -31,7 +33,6 @@ public sealed class DictationEndpointsTests
         body.Should().NotBeNull();
         body.SessionId.Should().NotBeEmpty();
 
-        // cleanup: otherwise Whisper.net would be invoked on stop (no model available).
         await client.PostAsync($"/api/dictation/cancel/{body.SessionId}", content: null, TestContext.CancellationToken);
     }
 

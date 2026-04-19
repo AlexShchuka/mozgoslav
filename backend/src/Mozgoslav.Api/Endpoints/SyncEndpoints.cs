@@ -1,7 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 
 using Mozgoslav.Application.Interfaces;
 
@@ -65,10 +73,6 @@ public static class SyncEndpoints
             return Results.Ok(new { healthy });
         });
 
-        // ADR-003 D5 — serve the payload the frontend encodes into a QR code.
-        // We do not render the QR image on the backend on purpose: the frontend
-        // already has `qrcode.react` for deterministic client-side rendering,
-        // which avoids shipping an extra image library.
         endpoints.MapGet("/api/sync/pairing-payload", async (
             ISyncthingClient client,
             IAppSettings settings,
@@ -87,7 +91,6 @@ public static class SyncEndpoints
                 {
                     deviceId,
                     folderIds,
-                    // The URI format documented in ADR-003 D5.
                     uri = $"mozgoslav://sync-pair?deviceId={Uri.EscapeDataString(deviceId)}"
                         + $"&folderId={string.Join(",", folderIds)}"
                         + $"&vaultEnabled={(string.IsNullOrWhiteSpace(settings.SyncthingObsidianVaultPath) ? "false" : "true")}",
@@ -137,8 +140,6 @@ public static class SyncEndpoints
             }
         });
 
-        // ADR-003 D5: long-lived SSE bridge that forwards parsed Syncthing
-        // events to the frontend (folder completion, pending devices, conflicts).
         endpoints.MapGet("/api/sync/events", async (
             HttpContext context,
             ISyncthingClient client,

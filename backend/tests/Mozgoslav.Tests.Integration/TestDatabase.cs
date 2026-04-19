@@ -1,3 +1,7 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
+
 using Microsoft.EntityFrameworkCore;
 
 using Mozgoslav.Infrastructure.Persistence;
@@ -18,8 +22,6 @@ internal sealed class TestDatabase : IAsyncDisposable, IDisposable
         Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"mozgoslav-int-{Guid.NewGuid():N}.db");
         ConnectionString = $"Data Source={Path}";
 
-        // ADR-011 step 1 — tests exercise the same EF Core migration pipeline
-        // production uses via DatabaseInitializer, so schema shape cannot drift.
         using var db = CreateContext();
         db.Database.Migrate();
     }
@@ -54,7 +56,6 @@ internal sealed class TestDatabase : IAsyncDisposable, IDisposable
         }
         catch
         {
-            // best effort
         }
     }
 

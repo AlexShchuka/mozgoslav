@@ -1,4 +1,4 @@
-import { BrowserWindow, globalShortcut } from "electron";
+import {BrowserWindow, globalShortcut} from "electron";
 
 /**
  * Global dictation shortcut helper. Electron's `globalShortcut` API
@@ -21,19 +21,18 @@ export const GLOBAL_HOTKEY_IPC_CHANNEL = "mozgoslav:global-hotkey-toggle";
 
 /** Payload that accompanies every IPC push for this hotkey. */
 export interface GlobalHotkeyPayload {
-  source: "global-hotkey";
+    source: "global-hotkey";
 }
 
 const notifyRenderer = (payload: GlobalHotkeyPayload): void => {
-  const windows = BrowserWindow.getAllWindows();
-  for (const win of windows) {
-    if (win.isDestroyed()) continue;
-    try {
-      win.webContents.send(GLOBAL_HOTKEY_IPC_CHANNEL, payload);
-    } catch {
-      // Swallow — a closing window can throw on send(); no user impact.
+    const windows = BrowserWindow.getAllWindows();
+    for (const win of windows) {
+        if (win.isDestroyed()) continue;
+        try {
+            win.webContents.send(GLOBAL_HOTKEY_IPC_CHANNEL, payload);
+        } catch {
+        }
     }
-  }
 };
 
 /**
@@ -48,12 +47,12 @@ const notifyRenderer = (payload: GlobalHotkeyPayload): void => {
  * Returns `true` if the registration succeeded.
  */
 export const registerGlobalDictationHotkey = (
-  accelerator: string = GLOBAL_HOTKEY_ACCELERATOR,
+    accelerator: string = GLOBAL_HOTKEY_ACCELERATOR,
 ): boolean => {
-  const effective = accelerator.trim() === "" ? GLOBAL_HOTKEY_ACCELERATOR : accelerator;
-  return globalShortcut.register(effective, () => {
-    notifyRenderer({ source: "global-hotkey" });
-  });
+    const effective = accelerator.trim() === "" ? GLOBAL_HOTKEY_ACCELERATOR : accelerator;
+    return globalShortcut.register(effective, () => {
+        notifyRenderer({source: "global-hotkey"});
+    });
 };
 
 /**
@@ -61,5 +60,5 @@ export const registerGlobalDictationHotkey = (
  * the accelerator is released. Calling this more than once is a noop.
  */
 export const unregisterGlobalDictationHotkey = (): void => {
-  globalShortcut.unregisterAll();
+    globalShortcut.unregisterAll();
 };

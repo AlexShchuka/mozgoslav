@@ -13,6 +13,7 @@ dotnet build backend/Mozgoslav.sln -c Release -maxcpucount:1
 ```
 
 Branch state differs from ADR-007-phase1-agent-A.md:
+
 - `FfmpegAudioRecorder.cs` absent (Step 1 is N/A).
 - `ModelDownloadService.cs` already present (Step 7 needed refinement, not creation).
 - `IdleResourceCache<T>` already present (Step 11 partial).
@@ -22,30 +23,49 @@ Branch state differs from ADR-007-phase1-agent-A.md:
 ## Step execution
 
 ### Step 2 — DB path consolidation
-Added `Log.Information("Using database at …")` and WARN on env override in `Program.cs`. Grep verified no other references to the DB path string existed.
+
+Added `Log.Information("Using database at …")` and WARN on env override in `Program.cs`. Grep verified no other
+references to the DB path string existed.
 
 ### Step 3 — Kestrel + host de-dup
-Removed the `ConfigureKestrel(…ListenLocalhost(5050))` block. Updated `appsettings.json` Urls to `http://127.0.0.1:5050`.
+
+Removed the `ConfigureKestrel(…ListenLocalhost(5050))` block. Updated `appsettings.json` Urls to
+`http://127.0.0.1:5050`.
 
 ### Step 4 — Startup log de-dup
-`DatabaseInitializer` now takes `IServiceScopeFactory` instead of scoped repos directly. Opens one scope, disposes it before `StartAsync` returns.
+
+`DatabaseInitializer` now takes `IServiceScopeFactory` instead of scoped repos directly. Opens one scope, disposes it
+before `StartAsync` returns.
 
 ### Step 5 — EF value-comparers
-Added `stringListComparer`, `actionItemListComparer`, `segmentListComparer` to `MozgoslavDbContext`. Attached via `.Metadata.SetValueComparer(…)` to all 8 listed properties.
+
+Added `stringListComparer`, `actionItemListComparer`, `segmentListComparer` to `MozgoslavDbContext`. Attached via
+`.Metadata.SetValueComparer(…)` to all 8 listed properties.
 
 ### Step 6 — LogsController
-Deleted `LogsEndpoints.cs`. Created `LogsController : ControllerBase` with `[Route("api/logs")]`. Wired `AddControllers()` + `MapControllers()` in Program.cs.
+
+Deleted `LogsEndpoints.cs`. Created `LogsController : ControllerBase` with `[Route("api/logs")]`. Wired
+`AddControllers()` + `MapControllers()` in Program.cs.
 
 ### Step 7 — Whisper default chain
-Aligned `AppPaths.DefaultWhisperModelPath` filename with catalogue default. Added `antony66-ggml` alias resolver. Created `IModelDownloadCoordinator` + `ModelDownloadCoordinator` with a per-download `Channel<ModelDownloadProgress>`. Rewrote `POST /api/models/download` to 202 Accepted + `{downloadId}`; added `GET /api/models/download/stream` SSE.
+
+Aligned `AppPaths.DefaultWhisperModelPath` filename with catalogue default. Added `antony66-ggml` alias resolver.
+Created `IModelDownloadCoordinator` + `ModelDownloadCoordinator` with a per-download `Channel<ModelDownloadProgress>`.
+Rewrote `POST /api/models/download` to 202 Accepted + `{downloadId}`; added `GET /api/models/download/stream` SSE.
 
 ### Step 8 — Syncthing probe guard
-Created `DisabledSyncthingClient`. Conditional registration in `Program.cs`. `SyncthingVersioningVerifier` short-circuits when client is disabled.
+
+Created `DisabledSyncthingClient`. Conditional registration in `Program.cs`. `SyncthingVersioningVerifier`
+short-circuits when client is disabled.
 
 ### Step 9 — Queue reconciliation
-Extracted static `QueueBackgroundService.ReconcileAsync(repo, ct)`. Invoked from `StartAsync` override. Flips 4 non-terminal statuses (Transcribing/Correcting/Summarizing/Exporting) to Queued, zeroes Progress, nulls StartedAt, sets ErrorMessage.
+
+Extracted static `QueueBackgroundService.ReconcileAsync(repo, ct)`. Invoked from `StartAsync` override. Flips 4
+non-terminal statuses (Transcribing/Correcting/Summarizing/Exporting) to Queued, zeroes Progress, nulls StartedAt, sets
+ErrorMessage.
 
 ### Step 11 — NotYetWired stubs
+
 Created only `NotYetWiredSyncthingLifecycleService` — the others would regress live services.
 
 ## Test additions
@@ -59,9 +79,14 @@ Passed!  - Failed: 0, Passed:  96, Skipped: 0, Total:  96  (Mozgoslav.Tests.Inte
 
 ## Hiccups / 2-strike analysis
 
-- **Hiccup 1:** `StartupLogTests` initial CA1307 (string.Contains overload). Fixed by adding `StringComparison.Ordinal`. 1 strike.
-- **Hiccup 2:** `QueueStartupReconciliationTests` raced with the running `ProcessQueueWorker` because the seeded jobs pointed at non-existent `RecordingId`s. Root-caused (systematic-debugging skill): the full host runs, processes the Queued jobs, fails them. Fix: extracted static `ReconcileAsync` seam and test against it directly, matching the superpowers:test-driven-development principle of "isolate the unit under test". 1 strike.
-- **Hiccup 3:** `ModelDownloadServiceTests` had IDISP analyzer noise. Fixed by pre-disposing old instances and suppressing one legitimate NSubstitute IDISP004 with an in-source pragma + documented reason. 1 strike.
+- **Hiccup 1:** `StartupLogTests` initial CA1307 (string.Contains overload). Fixed by adding `StringComparison.Ordinal`.
+  1 strike.
+- **Hiccup 2:** `QueueStartupReconciliationTests` raced with the running `ProcessQueueWorker` because the seeded jobs
+  pointed at non-existent `RecordingId`s. Root-caused (systematic-debugging skill): the full host runs, processes the
+  Queued jobs, fails them. Fix: extracted static `ReconcileAsync` seam and test against it directly, matching the
+  superpowers:test-driven-development principle of "isolate the unit under test". 1 strike.
+- **Hiccup 3:** `ModelDownloadServiceTests` had IDISP analyzer noise. Fixed by pre-disposing old instances and
+  suppressing one legitimate NSubstitute IDISP004 with an in-source pragma + documented reason. 1 strike.
 
 No 2-strike triggers hit.
 

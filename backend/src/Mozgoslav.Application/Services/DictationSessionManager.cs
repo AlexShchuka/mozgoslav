@@ -1,6 +1,12 @@
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Channels;
+using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
@@ -75,7 +81,6 @@ public sealed class DictationSessionManager : IDictationSessionManager
 
             var session = new DictationSession { Source = source };
             var audioBufferPath = TryPrepareAudioBufferPath(session.Id);
-            // Ownership is transferred to the _sessions dictionary; StopAsync/CancelAsync dispose it.
 #pragma warning disable IDISP001
             var runtime = new SessionRuntime(session, audioBufferPath);
 #pragma warning restore IDISP001
@@ -86,8 +91,6 @@ public sealed class DictationSessionManager : IDictationSessionManager
             }
 
             _activeSessionId = session.Id;
-            // The loop owns the runtime's CTS for the whole session; StopAsync/CancelAsync
-            // complete or cancel the task before the runtime is disposed.
 #pragma warning disable CA2025
             runtime.TranscriptionTask = RunTranscriptionLoopAsync(runtime);
 #pragma warning restore CA2025
@@ -109,9 +112,6 @@ public sealed class DictationSessionManager : IDictationSessionManager
                 $"Session {sessionId} is not recording (state={runtime.Session.State}).");
         }
 
-        // Spin the long-running ffmpeg decoder lazily on the first chunk: the
-        // Electron native path never hits PushRawChunkAsync, so a session that
-        // only uses PushAudioAsync (PCM) never pays the process-start cost.
         await EnsurePcmStreamAsync(runtime, ct).ConfigureAwait(false);
         await _pcmStream.WriteAsync(sessionId, encodedChunk, ct).ConfigureAwait(false);
     }
@@ -131,9 +131,6 @@ public sealed class DictationSessionManager : IDictationSessionManager
             }
             await _pcmStream.StartAsync(runtime.Session.Id, ct).ConfigureAwait(false);
             runtime.PcmStreamStarted = true;
-            // Fan-out task: wrap each float[] from ffmpeg into an AudioChunk and push
-            // into the existing audio channel so the transcription loop sees the same
-            // shape regardless of whether the source was PCM or WebM/Opus.
 #pragma warning disable CA2025
             runtime.PcmForwardTask = ForwardDecodedPcmAsync(runtime);
 #pragma warning restore CA2025
@@ -164,7 +161,6 @@ public sealed class DictationSessionManager : IDictationSessionManager
         }
         catch (OperationCanceledException)
         {
-            // expected on stop / cancel
         }
         catch (Exception ex)
         {
@@ -189,8 +185,6 @@ public sealed class DictationSessionManager : IDictationSessionManager
         Guid sessionId,
         CancellationToken ct)
     {
-        // Resolve the runtime synchronously so callers get KeyNotFoundException
-        // immediately rather than on the first MoveNextAsync (which is deferred).
         var runtime = GetRuntimeOrThrow(sessionId);
         return DrainPartialsAsync(runtime, ct);
     }
@@ -211,9 +205,6 @@ public sealed class DictationSessionManager : IDictationSessionManager
 
         runtime.Session.State = DictationState.Processing;
 
-        // Flush the long-running PCM decoder (if we ever started one) BEFORE
-        // completing the audio channel — we still want any remaining decoded
-        // samples to reach the transcription loop.
         if (runtime.PcmStreamStarted)
         {
             try
@@ -245,7 +236,6 @@ public sealed class DictationSessionManager : IDictationSessionManager
 
         runtime.AudioWriter.TryComplete();
 
-        // Wait for the transcription loop to drain and the final partial to settle.
         try
         {
             await runtime.TranscriptionTask.WaitAsync(ct);
@@ -351,9 +341,6 @@ public sealed class DictationSessionManager : IDictationSessionManager
             await foreach (var partial in _streaming.TranscribeStreamAsync(
                 teedAudio,
                 _settings.DictationLanguage,
-                // ADR-007 BC-030 / N3 — profile override wins over settings vocabulary.
-                // When the pipeline has no profile context (current single-profile runtime),
-                // the override is null and vocabulary is used as before.
                 initialPrompt: BuildInitialPrompt(runtime.Profile, _settings.DictationVocabulary),
                 runtime.Cts.Token))
             {
@@ -363,7 +350,6 @@ public sealed class DictationSessionManager : IDictationSessionManager
         }
         catch (OperationCanceledException)
         {
-            // expected on cancel
         }
         catch (Exception ex)
         {
@@ -581,7 +567,6 @@ public sealed class DictationSessionManager : IDictationSessionManager
             AudioBufferPath = audioBufferPath;
             if (audioBufferPath is not null)
             {
-                // Owned by the runtime — disposed in CloseAudioBuffer / Dispose.
 #pragma warning disable IDISP001
                 AudioBuffer = new FileStream(
                     audioBufferPath,

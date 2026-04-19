@@ -6,49 +6,69 @@
 
 ## Политика
 
-В shipped-коде нет своих реализаций того, что уже делают mainstream-библиотеки. Каждый пункт ниже — велосипед, который заменяется библиотекой.
+В shipped-коде нет своих реализаций того, что уже делают mainstream-библиотеки. Каждый пункт ниже — велосипед, который
+заменяется библиотекой.
 
 ## Замены
 
 ### 1. Очередь фоновых работ
-- **Велосипед:** `Infrastructure.Services/QueueBackgroundService` + `Application.Interfaces/IProcessingJobRepository` + `Application.UseCases/ProcessQueueWorker` + `ReconcileAsync_StuckInFlightJobs_FlipsToQueued`.
+
+- **Велосипед:** `Infrastructure.Services/QueueBackgroundService` + `Application.Interfaces/IProcessingJobRepository` +
+  `Application.UseCases/ProcessQueueWorker` + `ReconcileAsync_StuckInFlightJobs_FlipsToQueued`.
 - **Замена:** Quartz.NET + `Quartz.Extensions.Hosting` + AdoJobStore/SQLite.
-- **Что поправить:** JobDetail + Trigger вместо ручной таблицы `processing_jobs`, misfire-policy вместо `ReconcileAsync`, built-in recovery вместо `IJobProgressNotifier`-костылей.
+- **Что поправить:** JobDetail + Trigger вместо ручной таблицы `processing_jobs`, misfire-policy вместо
+  `ReconcileAsync`, built-in recovery вместо `IJobProgressNotifier`-костылей.
 
 ### 2. Idle-кэш ресурсов
+
 - **Велосипед:** `Infrastructure.Services/IdleResourceCache<T>` + `Application.Interfaces/IIdleResourceCache<T>`.
-- **Замена:** `Microsoft.Extensions.Caching.Memory.MemoryCache` с `MemoryCacheEntryOptions.SlidingExpiration` + `PostEvictionCallbacks` для `Dispose()`.
+- **Замена:** `Microsoft.Extensions.Caching.Memory.MemoryCache` с `MemoryCacheEntryOptions.SlidingExpiration` +
+  `PostEvictionCallbacks` для `Dispose()`.
 - **Что поправить:** удалить обёртку, звать `IMemoryCache` напрямую в `WhisperNetTranscriptionService`.
 
 ### 3. HTTP-клиенты
-- **Велосипед:** raw `HttpClient` в `AnthropicLlmProvider`, `OllamaLlmProvider`, `OpenAiCompatibleLlmProvider`, `PythonSidecarClient`, `ObsidianRestApiClient` — без retry/timeout/circuit-breaker.
+
+- **Велосипед:** raw `HttpClient` в `AnthropicLlmProvider`, `OllamaLlmProvider`, `OpenAiCompatibleLlmProvider`,
+  `PythonSidecarClient`, `ObsidianRestApiClient` — без retry/timeout/circuit-breaker.
 - **Замена:** `Microsoft.Extensions.Http.Resilience` (пакет из .NET 10) через `AddStandardResilienceHandler()`.
-- **Что поправить:** `Program.cs` DI — обернуть каждый `AddHttpClient(...)` в `.AddStandardResilienceHandler()` с настройками (timeout 30s, retry 3 с экспонентой, circuit-breaker 5/30s).
+- **Что поправить:** `Program.cs` DI — обернуть каждый `AddHttpClient(...)` в `.AddStandardResilienceHandler()` с
+  настройками (timeout 30s, retry 3 с экспонентой, circuit-breaker 5/30s).
 
 ### 4. Миграции БД
+
 - **Велосипед:** кастомные `Infrastructure.Persistence.Migrations/0001_*.cs..0013_*.cs` с собственным runner'ом.
 - **Замена:** EF Core Migrations (`dotnet ef migrations add`). EF Core уже в проекте — DbContext есть.
-- **Что поправить:** baseline-миграция с текущего состояния, удалить свой runner, перевести `DatabaseInitializer` на `DbContext.Database.MigrateAsync()`.
+- **Что поправить:** baseline-миграция с текущего состояния, удалить свой runner, перевести `DatabaseInitializer` на
+  `DbContext.Database.MigrateAsync()`.
 
 ### 5. Токенизация + чанкинг LLM-контекста
-- **Велосипед:** `Infrastructure.Services/OpenAiCompatibleLlmService.Chunk/Merge` (символьная эвристика) + `LlmCorrectionChunker` (overlapping windows вручную).
+
+- **Велосипед:** `Infrastructure.Services/OpenAiCompatibleLlmService.Chunk/Merge` (символьная эвристика) +
+  `LlmCorrectionChunker` (overlapping windows вручную).
 - **Замена:** `Microsoft.ML.Tokenizers` (официальный .NET, поддерживает tiktoken/BPE для GPT/Claude-семейств).
-- **Что поправить:** `Chunk` — через `Tokenizer.EncodeToIds` по токенам, не по символам. Overlap и merge — через tokenizer-aware splitter.
+- **Что поправить:** `Chunk` — через `Tokenizer.EncodeToIds` по токенам, не по символам. Overlap и merge — через
+  tokenizer-aware splitter.
 
 ### 6. Background-lifecycle
-- **Велосипед:** `IHostedService` ручки (`DatabaseInitializer`, `QueueBackgroundService`, `ModelDownloadCoordinator`) без унификации.
-- **Замена:** `BackgroundService` (от Microsoft.Extensions.Hosting) для всех трёх, либо Quartz Jobs где уместен scheduling.
+
+- **Велосипед:** `IHostedService` ручки (`DatabaseInitializer`, `QueueBackgroundService`, `ModelDownloadCoordinator`)
+  без унификации.
+- **Замена:** `BackgroundService` (от Microsoft.Extensions.Hosting) для всех трёх, либо Quartz Jobs где уместен
+  scheduling.
 
 ### 7. SSE-протокол
+
 - **Велосипед:** `ChannelJobProgressNotifier` + `SseEndpoints.cs` вручную пишут `data: ...\n\n` в response stream.
 - **Замена:** `Microsoft.AspNetCore.Components.Server` SSE helpers или `System.ServerSentEvents` (nuget).
 - **Что поправить:** endpoint возвращает `IAsyncEnumerable<SseEvent>`, фреймворк сам форматит.
 
 ### 8. Process spawning для ffmpeg
+
 - **Велосипед:** `FfmpegAudioConverter` / `FfmpegPcmDecoder` — `Process.Start` + ручной stderr парсинг.
 - **Замена:** `CliWrap` nuget — typed process API, async stdout/stderr streams, timeout + cancellation.
 
 ### 9. Retry/Polly в model download
+
 - **Велосипед:** `ModelDownloadService` имеет свою логику попыток скачивания.
 - **Замена:** та же `Microsoft.Extensions.Http.Resilience` — скачивание уходит в HttpClient, resilience сверху.
 
@@ -90,5 +110,5 @@ per-item рекомендацию выше): `shuka/adr-011-libraries-over-homeb
   `"models"`, `Mozgoslav.PythonSidecar`) — с resilience.
 - §6 (Background lifecycle): `DatabaseInitializer` остаётся на `IHostedService`
   (должен блокировать приём запросов до применения миграций). `BackgroundService`
-  для `QueueBackgroundService` — moot (сервис удалён, заменён Quartz). 
+  для `QueueBackgroundService` — moot (сервис удалён, заменён Quartz).
   `ModelDownloadCoordinator` — не хостед-сервис, запуск on-demand.

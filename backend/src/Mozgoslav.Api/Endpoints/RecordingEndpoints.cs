@@ -1,4 +1,14 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Logging;
 
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.UseCases;
@@ -88,8 +98,6 @@ public static class RecordingEndpoints
             return await ExecuteImportAsync(useCase, savedPaths, profileId, ct);
         }).DisableAntiforgery();
 
-        // ADR-009 §2.1 row 1 — native audio capture contract. Frontend
-        // queries capabilities to decide whether to render the Record button.
         endpoints.MapGet("/api/audio/capabilities", (IAudioRecorder recorder) =>
         {
             return Results.Ok(new

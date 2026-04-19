@@ -1,4 +1,11 @@
+using System;
+using System.Linq;
+using System.Threading;
+
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Rag;
@@ -38,9 +45,6 @@ public static class RagEndpoints
             {
                 await rag.IndexAsync(note, ct);
             }
-            // ADR-007-shared §2.4 — reindex response is {embeddedNotes, chunks}.
-            // embeddedNotes = how many notes we processed this round;
-            // chunks = total chunks now resident in the vector index.
             return Results.Ok(new
             {
                 embeddedNotes = allNotes.Count,
@@ -62,8 +66,6 @@ public static class RagEndpoints
             return Results.Ok(new
             {
                 answer = answer.Answer,
-                // ADR-007-shared §2.4 — citations[] shape is the binding
-                // contract. Frontend reads noteId / segmentId / text / snippet.
                 citations = answer.Citations.Select(h => new
                 {
                     noteId = h.Chunk.NoteId,
@@ -71,8 +73,6 @@ public static class RagEndpoints
                     text = h.Chunk.Text,
                     snippet = BuildSnippet(h.Chunk.Text),
                 }),
-                // Kept out of the §2.4 contract but preserved for backend
-                // diagnostics — frontend does not depend on it.
                 llmAvailable = answer.LlmAvailable,
             });
         });

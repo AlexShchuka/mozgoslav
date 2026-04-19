@@ -34,11 +34,6 @@ public final class AudioCaptureService {
     public func start(deviceId: String?, sampleRate: Int) throws {
         #if canImport(AVFoundation)
         guard !isRunning else { return }
-        // D1 / P1 — single-tap guarantee. inputNode supports exactly one tap
-        // on bus 0; if file-capture is already running, streaming would
-        // silently replace its callback and file writes would stop. Reject
-        // with a clear error so the caller can surface it instead of debugging
-        // an empty file hours later.
         guard fileSessions.isEmpty else {
             throw HelperError(
                 code: -32022,
@@ -87,21 +82,11 @@ public final class AudioCaptureService {
         #endif
     }
 
-    // ----- File-capture mode (plan/v0.8/03-mac-native-recorder.md §2.4) -----
-    //
-    // Distinct from the streaming path above: the callback writes directly to
-    // a wav file on disk and we do not emit per-chunk events. Each sessionId
-    // owns one AVAudioFile. Stop closes the file and returns (path, durationMs).
 
     #if canImport(AVFoundation)
     private final class FileSession {
         let sessionId: String
         let outputPath: String
-        // D1 / P2 — mutable so stopFileCapture can explicitly release the
-        // AVAudioFile before returning. Releasing the only strong reference
-        // closes the file handle and flushes the WAV header, preventing the
-        // ImportRecordingUseCase race where the file was still zero-length
-        // when the backend tried to read it.
         var file: AVAudioFile?
         let startedAt: Date
         var stopped = false
@@ -119,8 +104,6 @@ public final class AudioCaptureService {
 
     public func startFileCapture(sessionId: String, outputPath: String, sampleRate: Int) throws {
         #if canImport(AVFoundation)
-        // D1 / P1 — mirror of the streaming guard above. inputNode only has
-        // one tap; a streaming session would starve the file session of audio.
         guard !isRunning else {
             throw HelperError(
                 code: -32023,
@@ -184,19 +167,11 @@ public final class AudioCaptureService {
         session.stopped = true
         let durationMs = Int(Date().timeIntervalSince(session.startedAt) * 1000)
 
-        // Stop engine only if no streaming + no other file sessions remain.
         if fileSessions.isEmpty && !isRunning {
             engine.inputNode.removeTap(onBus: 0)
             engine.stop()
         }
 
-        // D1 / P2 — drop the only strong reference to the AVAudioFile so the
-        // underlying file handle closes synchronously before we hand the path
-        // back to the caller. Without this the file sat open via ARC until the
-        // helper scope unwound, and ImportRecordingUseCase occasionally saw a
-        // 0-byte file. Sync-safety: the tap callback drops a buffer for any
-        // `session.stopped == true`, and stopFileCapture runs serial on the
-        // JSON-RPC dispatch queue, so there is no writer racing us here.
         session.file = nil
 
         let size = (try? FileManager.default

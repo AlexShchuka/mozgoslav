@@ -1,3 +1,8 @@
+using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+
 using FluentAssertions;
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -47,10 +52,6 @@ public sealed class FfmpegAudioConverterTests
         try
         {
             var act = async () => await sut.ConvertToWavAsync(tempInput, cts.Token);
-            // Either an OCE (ffmpeg present + cancelled early) or an
-            // InvalidOperationException (ffmpeg not installed in this sandbox)
-            // is acceptable — what we are pinning is that the call does NOT
-            // hang when cancellation fires before the process starts.
             await act.Should().ThrowAsync<Exception>();
         }
         finally

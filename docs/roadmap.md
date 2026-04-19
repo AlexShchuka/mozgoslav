@@ -6,25 +6,35 @@ Drop-zone для фич, которые обсуждались, но не тре
 
 ### 🎯 Дешёвые и сильно полезные
 
-- **Full-text search (SQLite FTS5)** — по транскриптам + заметкам. `virtual table` over `ProcessedNotes` и `Transcripts.Segments`. Endpoint `GET /api/search?q=…` → list hits со snippet'ами.
-- **Action items extraction** — prompt-расширение существующего `CorrectionService`. Вытаскивает «кто / что / к какой дате» → хранится в `ProcessedNote.ActionItems`. Уже есть value-object `ActionItem`, `MarkdownGenerator` умеет рендерить. Просто доделать LLM-промпт.
-- **Daily note auto-append** — в Obsidian vault файл `YYYY-MM-DD.md` (создаётся если нет), добавляется секция `## Conversations` с линками на сегодняшние ProcessedNote. Через `ObsidianSetupService` + новый `DailyNoteAppender` service.
-- **Chunking длинных записей по темам через LLM** — в `OpenAiCompatibleLlmService` уже есть chunk+merge; дополнительно LLM определяет topic-boundaries, markdown получает `## Topic 1 / ## Topic 2`.
-- **Diarization в python-sidecar (pyannote)** — активация существующего stub'а. При успехе `ProcessedNote.Speakers: string[]` + per-segment speaker label.
-- **Command palette (Cmd+K)** — `kbar` уже в deps. Quick-actions: `Open Settings`, `Import Recording`, `Show pairing QR`, `Ask your notes` (когда будет RAG).
+- **Full-text search (SQLite FTS5)** — по транскриптам + заметкам. `virtual table` over `ProcessedNotes` и
+  `Transcripts.Segments`. Endpoint `GET /api/search?q=…` → list hits со snippet'ами.
+- **Action items extraction** — prompt-расширение существующего `CorrectionService`. Вытаскивает «кто / что / к какой
+  дате» → хранится в `ProcessedNote.ActionItems`. Уже есть value-object `ActionItem`, `MarkdownGenerator` умеет
+  рендерить. Просто доделать LLM-промпт.
+- **Daily note auto-append** — в Obsidian vault файл `YYYY-MM-DD.md` (создаётся если нет), добавляется секция
+  `## Conversations` с линками на сегодняшние ProcessedNote. Через `ObsidianSetupService` + новый `DailyNoteAppender`
+  service.
+- **Chunking длинных записей по темам через LLM** — в `OpenAiCompatibleLlmService` уже есть chunk+merge; дополнительно
+  LLM определяет topic-boundaries, markdown получает `## Topic 1 / ## Topic 2`.
+- **Diarization в python-sidecar (pyannote)** — активация существующего stub'а. При успехе
+  `ProcessedNote.Speakers: string[]` + per-segment speaker label.
+- **Command palette (Cmd+K)** — `kbar` уже в deps. Quick-actions: `Open Settings`, `Import Recording`,
+  `Show pairing QR`, `Ask your notes` (когда будет RAG).
 
 ### 📦 Infrastructure / dev-experience
 
 - **`electron-builder --mac`** — сборка `.app` + `.dmg` с code-signing. CI job для release на macos-latest.
-- **Auto-update (electron-updater)** — после того как появится публичный release-флоу. Приватный — через GitHub Releases и signed DMG.
-- **Localization coverage** — пройтись по всем компонентам, добить ключи `ru`/`en`. 
+- **Auto-update (electron-updater)** — после того как появится публичный release-флоу. Приватный — через GitHub Releases
+  и signed DMG.
+- **Localization coverage** — пройтись по всем компонентам, добить ключи `ru`/`en`.
 - **Better error UX** — toast-нотификации для API failures + retry button.
 
 ## Средний горизонт
 
 ### 🎯 Серьёзные фичи (может потребовать ADR)
 
-- **Periodic review / spaced-repetition** — старые заметки всплывают через `Daily note` / command palette. Нужен алгоритм SRS.
+- **Periodic review / spaced-repetition** — старые заметки всплывают через `Daily note` / command palette. Нужен
+  алгоритм SRS.
 - **Vector-search поверх FTS** (когда есть embeddings из ADR-005 RAG) — гибридный search.
 - **Encrypted folders в Syncthing** — если появится untrusted-peer use case.
 - **Selective sync** — пользователь выбирает какие под-папки vault'а синкать.
@@ -34,7 +44,8 @@ Drop-zone для фич, которые обсуждались, но не тре
 
 ### 🛠 Tooling
 
-- **Onboarding telemetry (opt-in, local-only)** — считать какие permissions granted, ускорить диагностику. НЕ слать наружу.
+- **Onboarding telemetry (opt-in, local-only)** — считать какие permissions granted, ускорить диагностику. НЕ слать
+  наружу.
 - **Full lefthook coverage** — pre-push с быстрыми тестами для изменённых проектов.
 - **Renovate / dependabot** — автообновления depend'ов в public repo.
 

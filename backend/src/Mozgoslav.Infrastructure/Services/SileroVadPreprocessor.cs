@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+
 using Microsoft.Extensions.Logging;
 
 using Mozgoslav.Application.Interfaces;
@@ -15,8 +18,6 @@ namespace Mozgoslav.Infrastructure.Services;
 /// </summary>
 public sealed class SileroVadPreprocessor : IVadPreprocessor
 {
-    // Empirically chosen so built-in mic silence sits well below, quiet speech well above.
-    // Values are normalized [-1..1], so 0.005 RMS ≈ -46 dBFS.
     private const float RmsThreshold = 0.005f;
     private const int MinSamples = 160; // 10 ms at 16 kHz — ignore micro-chunks
 
@@ -40,16 +41,14 @@ public sealed class SileroVadPreprocessor : IVadPreprocessor
         var rms = ComputeRms(chunk.Samples);
         var isSpeech = rms >= RmsThreshold;
 
-        if (!isSpeech)
+        if (isSpeech)
         {
-            // Noisy-silence detection benefits from the Silero model; log the fact
-            // it is missing so a future upgrade can wire it in without changing
-            // callers. The energy gate already keeps Whisper away from pure silence.
-            var modelPath = _settings.VadModelPath;
-            if (!string.IsNullOrEmpty(modelPath) && !File.Exists(modelPath))
-            {
-                _logger.LogDebug("Silero VAD model missing at {Path}, using energy gate only", modelPath);
-            }
+            return isSpeech;
+        }
+        var modelPath = _settings.VadModelPath;
+        if (!string.IsNullOrEmpty(modelPath) && !File.Exists(modelPath))
+        {
+            _logger.LogDebug("Silero VAD model missing at {Path}, using energy gate only", modelPath);
         }
 
         return isSpeech;

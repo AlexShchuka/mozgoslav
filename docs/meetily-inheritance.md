@@ -1,15 +1,16 @@
 # Meetily → mozgoslav — что унаследовано и что решено иначе
 
-Краткая сводка архитектурных решений, где mozgoslav сознательно расходится с референсным meetily, и где meetily остаётся полезным референсом при будущих доработках.
+Краткая сводка архитектурных решений, где mozgoslav сознательно расходится с референсным meetily, и где meetily остаётся
+полезным референсом при будущих доработках.
 
 ## Осознанно иначе
 
-| Слой | Meetily | mozgoslav | Почему |
-|---|---|---|---|
-| Desktop shell | Tauri + Next.js | Electron + React + Redux-Saga | Знакомый стек. |
-| Backend | Python FastAPI | C# .NET 10 + EF Core | Знакомый стек / архитектурные паттерны. |
-| STT | Whisper.cpp subprocess | Whisper.net native | Без subprocess wrap, «на века». |
-| LLM | Ollama + Claude + Groq + OpenRouter | OpenAI-compatible (LM Studio / Ollama) | Минимум; расширим, если понадобится. |
+| Слой          | Meetily                             | mozgoslav                              | Почему                                  |
+|---------------|-------------------------------------|----------------------------------------|-----------------------------------------|
+| Desktop shell | Tauri + Next.js                     | Electron + React + Redux-Saga          | Знакомый стек.                          |
+| Backend       | Python FastAPI                      | C# .NET 10 + EF Core                   | Знакомый стек / архитектурные паттерны. |
+| STT           | Whisper.cpp subprocess              | Whisper.net native                     | Без subprocess wrap, «на века».         |
+| LLM           | Ollama + Claude + Groq + OpenRouter | OpenAI-compatible (LM Studio / Ollama) | Минимум; расширим, если понадобится.    |
 
 ## На будущее: брать референс из meetily при реализации
 

@@ -8,7 +8,6 @@ landing.
 ## What we do today
 
 ```csharp
-// OpenAiCompatibleLlmService.Chunk
 private static IEnumerable<string> Chunk(string text, int maxChars)
 {
     if (text.Length <= maxChars) { yield return text; yield break; }

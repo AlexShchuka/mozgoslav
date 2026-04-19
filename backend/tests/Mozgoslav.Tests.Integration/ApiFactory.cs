@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -34,18 +38,8 @@ internal sealed class ApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("IntegrationTest");
-        // UseSetting writes into the hosting config layer which is applied
-        // before Program.cs reads builder.Configuration (ConfigureAppConfiguration
-        // runs at Build() time, which is too late for eager reads).
         builder.UseSetting("Mozgoslav:DatabasePath", DatabasePath);
-        // G2 added a sensible default sidecar URL in appsettings.json so the
-        // production build picks up sentence-transformer embeddings. The
-        // integration test sandbox has no sidecar — explicitly disable it so
-        // the BoW fallback path is used and the circuit-breaker never trips.
         builder.UseSetting("Mozgoslav:PythonSidecar:BaseUrl", string.Empty);
-        // Kept as a belt-and-braces signal for any code that DOES read config late
-        // (e.g. services that resolve IConfiguration after build). The DbContext
-        // itself is overridden in ConfigureTestServices below.
         builder.ConfigureAppConfiguration((_, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
@@ -63,10 +57,6 @@ internal sealed class ApiFactory : WebApplicationFactory<Program>
     {
         var connectionString = $"Data Source={databasePath}";
 
-        // EF Core registers ~a dozen internal services via AddDbContextFactory /
-        // AddDbContext. We cannot enumerate them all reliably here, so strip
-        // everything scoped to the Microsoft.EntityFrameworkCore namespace and
-        // then re-add our own registrations cleanly.
         for (var i = services.Count - 1; i >= 0; i--)
         {
             var ns = services[i].ServiceType.Namespace;
@@ -108,11 +98,9 @@ internal sealed class ApiFactory : WebApplicationFactory<Program>
             }
             catch (IOException)
             {
-                // best effort
             }
             catch (UnauthorizedAccessException)
             {
-                // best effort
             }
         }
     }

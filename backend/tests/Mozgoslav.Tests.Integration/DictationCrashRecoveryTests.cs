@@ -1,5 +1,11 @@
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -54,7 +60,6 @@ public sealed class DictationCrashRecoveryTests
 
             try
             {
-                // Push a handful of chunks — the tee writes each to the .pcm file.
                 var samples = new[] { 0.10f, 0.20f, 0.30f, 0.40f };
                 await manager.PushAudioAsync(
                     session.Id,
@@ -63,22 +68,16 @@ public sealed class DictationCrashRecoveryTests
 
                 var expectedBytes = samples.Length * sizeof(float);
 
-                // Wait until the tee has flushed at least the pushed samples to disk.
-                // The pcm file is opened at Start() (0 bytes) and grows as chunks are tee'd.
                 await WaitForAsync(
                     () => Directory.EnumerateFiles(tempDir, "dictation-*.pcm")
                         .Any(p => SafeFileLength(p) >= expectedBytes),
                     TimeSpan.FromSeconds(5));
 
-                // Simulate crash: leak the runtime — neither StopAsync nor CancelAsync runs
-                // during the assertion window. We peek at the file to verify the tee wrote
-                // what it promised.
                 var pcmPath = Directory.EnumerateFiles(tempDir, "dictation-*.pcm").Single();
                 pcmPath.Should().Contain(session.Id.ToString());
                 File.Exists(pcmPath).Should().BeTrue(
                     "chunks are tee'd to disk so the user can recover audio after an unclean shutdown");
 
-                // Read via a shared-read stream since the session still holds the write handle.
                 await using var readStream = new FileStream(
                     pcmPath,
                     FileMode.Open,
@@ -89,7 +88,6 @@ public sealed class DictationCrashRecoveryTests
             }
             finally
             {
-                // Clean up so the test doesn't leak a session-process pair.
                 await manager.CancelAsync(session.Id, TestContext.CancellationToken);
             }
         }
@@ -107,7 +105,6 @@ public sealed class DictationCrashRecoveryTests
             $"mozgoslav-orphan-{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempDir);
 
-        // Drop an orphan BEFORE starting the manager.
         var orphanPath = Path.Combine(tempDir, $"dictation-{Guid.NewGuid():D}.pcm");
         await File.WriteAllBytesAsync(orphanPath, [1, 2, 3, 4], TestContext.CancellationToken);
 
@@ -125,7 +122,6 @@ public sealed class DictationCrashRecoveryTests
                 settings.Snapshot with { DictationTempAudioPath = tempDir },
                 TestContext.CancellationToken);
 
-            // The orphan scan happens inside Start().
             var manager = factory.Services.GetRequiredService<IDictationSessionManager>();
             var session = manager.Start();
             await manager.CancelAsync(session.Id, TestContext.CancellationToken);
@@ -208,7 +204,6 @@ public sealed class DictationCrashRecoveryTests
             });
             builder.ConfigureTestServices(services =>
             {
-                // DB isolation.
                 var connectionString = $"Data Source={_databasePath}";
                 for (var i = services.Count - 1; i >= 0; i--)
                 {
@@ -231,14 +226,9 @@ public sealed class DictationCrashRecoveryTests
                     contextLifetime: ServiceLifetime.Scoped,
                     optionsLifetime: ServiceLifetime.Singleton);
 
-                // Capture logs from the session manager for the orphan-warning assertion.
                 services.AddSingleton<ILogger<DictationSessionManager>>(_ =>
                     new CapturingLogger<DictationSessionManager>(_captured));
 
-                // Replace the real Whisper-backed streaming service — the pod has no
-                // model on disk so the real one throws before the tee has a chance
-                // to write. The fake just drains the input stream, which is enough
-                // to let TeeAudioToBufferAsync flush chunks to the PCM buffer file.
                 for (var i = services.Count - 1; i >= 0; i--)
                 {
                     if (services[i].ServiceType == typeof(IStreamingTranscriptionService))
@@ -278,7 +268,6 @@ public sealed class DictationCrashRecoveryTests
         {
             await foreach (var _ in chunks.WithCancellation(ct))
             {
-                // discard — the tee upstream already wrote the chunk to disk.
             }
             yield break;
         }

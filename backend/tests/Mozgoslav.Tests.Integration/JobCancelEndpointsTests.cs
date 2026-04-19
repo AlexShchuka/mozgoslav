@@ -1,6 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -55,15 +59,10 @@ public sealed class JobCancelEndpointsTests
 
         response.StatusCode.Should().Be(HttpStatusCode.Accepted);
 
-        // The worker is not actually running in the test host (no recording /
-        // audio file to process); we assert the persisted side-effect of the
-        // endpoint: CancelRequested=true + optional TryCancel registry hit
-        // (registry is empty in tests because no job has been registered).
         using var scope = factory.Services.CreateScope();
         var repo = scope.ServiceProvider.GetRequiredService<IProcessingJobRepository>();
         var reloaded = (await repo.GetAllAsync(TestContext.CancellationToken)).Single(j => j.Id == jobId);
         reloaded.CancelRequested.Should().BeTrue();
-        // Status stays in-flight — worker is the one that writes Cancelled.
         reloaded.Status.Should().Be(JobStatus.Transcribing);
     }
 

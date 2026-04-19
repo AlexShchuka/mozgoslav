@@ -1,3 +1,12 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading;
+
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Infrastructure.Services;
 
@@ -38,9 +47,6 @@ public static class ObsidianEndpoints
             }
         });
 
-        // ADR-007-shared §2.6 BC-025 — bulk export every not-yet-exported
-        // ProcessedNote. Responds 400 when no vault is configured so the UI
-        // can surface the config gap instead of silently reporting "0/0".
         endpoints.MapPost("/api/obsidian/export-all", async (
             IObsidianExportService service,
             CancellationToken ct) =>
@@ -56,9 +62,6 @@ public static class ObsidianEndpoints
             }
         });
 
-        // ADR-007-shared §2.6 BC-025 — create the PARA scaffolding under the
-        // vault and (future work) move already-exported notes into the
-        // correct bucket. Idempotent: second call reports createdFolders = 0.
         endpoints.MapPost("/api/obsidian/apply-layout", async (
             IObsidianLayoutService service,
             CancellationToken ct) =>
@@ -74,8 +77,6 @@ public static class ObsidianEndpoints
             }
         });
 
-        // Plan v0.8 Block 6 — REST health probe so Settings → Obsidian can
-        // surface "Connected (v1.2.3)" / "Unreachable — using file-I/O".
         endpoints.MapGet("/api/obsidian/rest-health", async (
             IObsidianRestClient client,
             IAppSettings settings,
@@ -112,9 +113,6 @@ public static class ObsidianEndpoints
             }
         });
 
-        // Plan v0.8 Block 6 — open-note. Tries REST first; falls back to file-I/O
-        // via the IAppSettings.VaultPath so the UX works even when the plugin
-        // is not installed.
         endpoints.MapPost("/api/obsidian/open", async (
             OpenNoteRequest request,
             IObsidianRestClient client,
@@ -134,7 +132,6 @@ public static class ObsidianEndpoints
                 }
                 catch (Exception)
                 {
-                    // fall through to file-I/O
                 }
             }
             var vault = settings.VaultPath;
@@ -150,7 +147,6 @@ public static class ObsidianEndpoints
             return Results.Ok(new { opened = true, via = "file", path = absolute });
         });
 
-        // Plan v0.8 Block 4 — vault autodetect for the Onboarding wizard.
         endpoints.MapGet("/api/obsidian/detect", () =>
         {
             var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);

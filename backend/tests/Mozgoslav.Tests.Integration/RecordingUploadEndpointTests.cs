@@ -1,5 +1,8 @@
+using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -32,8 +35,6 @@ public sealed class RecordingUploadEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
         body.Should().NotBeNullOrWhiteSpace();
-        // The response shape is Recording[]; we assert minimally that the array
-        // is non-empty so U1's follow-up navigation (→ /queue) has a target.
         body.Should().Contain("\"id\":",
             "uploading a valid WAV creates at least one Recording entity");
     }

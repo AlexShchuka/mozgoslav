@@ -1,3 +1,7 @@
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace Mozgoslav.Application.Interfaces;
 
 /// <summary>
@@ -8,7 +12,6 @@ namespace Mozgoslav.Application.Interfaces;
 public interface IAppSettings
 {
     string VaultPath { get; }
-    // BC-036 active LLM provider discriminator; see AppSettingsDto.LlmProvider.
     string LlmProvider { get; }
     string LlmEndpoint { get; }
     string LlmModel { get; }

@@ -6,7 +6,8 @@
 
 ## 1. Роль в архитектуре
 
-Python sidecar — отдельный HTTP-сервер, запускаемый C# backend при старте приложения. Отвечает за ML-задачи, которых нет в .NET экосистеме.
+Python sidecar — отдельный HTTP-сервер, запускаемый C# backend при старте приложения. Отвечает за ML-задачи, которых нет
+в .NET экосистеме.
 
 ```
 Electron → C# Backend (localhost:5050) → Python Sidecar (localhost:5060)
@@ -19,13 +20,13 @@ Electron → C# Backend (localhost:5050) → Python Sidecar (localhost:5060)
 
 ## 2. Что делает
 
-| Задача | Модель | Вход | Выход |
-|---|---|---|---|
-| Diarization | Silero VAD + Resemblyzer + sklearn | WAV 16kHz | `[{start, end, speaker_id}]` |
-| Gender | audeering/wav2vec2-large-robust-24-ft-age-gender | WAV 16kHz + speaker segments | `{speaker_id: "М"/"Ж"}` |
-| Emotion | audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim | WAV 16kHz (speech only) | `"нейтральный"/"радостный"/...` |
-| NER | Natasha | текст (string) | `{people[], orgs[], locs[], dates[]}` |
-| Filler cleanup | regex | текст (string) | очищенный текст |
+| Задача         | Модель                                                | Вход                         | Выход                                 |
+|----------------|-------------------------------------------------------|------------------------------|---------------------------------------|
+| Diarization    | Silero VAD + Resemblyzer + sklearn                    | WAV 16kHz                    | `[{start, end, speaker_id}]`          |
+| Gender         | audeering/wav2vec2-large-robust-24-ft-age-gender      | WAV 16kHz + speaker segments | `{speaker_id: "М"/"Ж"}`               |
+| Emotion        | audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim | WAV 16kHz (speech only)      | `"нейтральный"/"радостный"/...`       |
+| NER            | Natasha                                               | текст (string)               | `{people[], orgs[], locs[], dates[]}` |
+| Filler cleanup | regex                                                 | текст (string)               | очищенный текст                       |
 
 ---
 
@@ -388,15 +389,19 @@ def get_ner():
 
 ### 7.1 transformers + stdin → FileNotFoundError
 
-**Проблема:** `transformers >=4.50` делает `inspect.getsource()` кастомных классов моделей. Если Python запущен через `python3 - <<HEREDOC`, исходник = `<stdin>`, файл не найден → crash.
+**Проблема:** `transformers >=4.50` делает `inspect.getsource()` кастомных классов моделей. Если Python запущен через
+`python3 - <<HEREDOC`, исходник = `<stdin>`, файл не найден → crash.
 
-**Решение:** всегда записывать Python-код в **временный .py файл** и запускать его, не через stdin. В sidecar-сервере проблемы нет (FastAPI = обычный .py файл).
+**Решение:** всегда записывать Python-код в **временный .py файл** и запускать его, не через stdin. В sidecar-сервере
+проблемы нет (FastAPI = обычный .py файл).
 
 ### 7.2 audeering emotion: vocab_size=None
 
-**Проблема:** `audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim` имеет `vocab_size=None` в config.json. Новый `huggingface_hub` (strict dataclass validation) падает на `setattr`.
+**Проблема:** `audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim` имеет `vocab_size=None` в config.json. Новый
+`huggingface_hub` (strict dataclass validation) падает на `setattr`.
 
 **Решение:**
+
 ```python
 # app/ml/patches.py
 from huggingface_hub import hf_hub_download
@@ -421,7 +426,8 @@ def _safe_cfg(model_id: str) -> Wav2Vec2Config:
 
 **Проблема:** `VoiceEncoder.embed_utterance()` даёт мусорные embeddings на сегментах < 0.7 сек.
 
-**Решение:** сегменты < 0.7 сек пропускаются, потом приклеиваются к ближайшему по времени спикеру (majority vote по temporal proximity).
+**Решение:** сегменты < 0.7 сек пропускаются, потом приклеиваются к ближайшему по времени спикеру (majority vote по
+temporal proximity).
 
 ---
 
@@ -462,6 +468,7 @@ natasha>=1.6.0
 ## 9. Запуск
 
 ### Dev
+
 ```bash
 cd python-sidecar
 python -m venv venv && source venv/bin/activate
@@ -470,7 +477,9 @@ uvicorn app.main:app --host 127.0.0.1 --port 5060 --reload
 ```
 
 ### Production (через C# backend)
+
 C# `BackendProcess` при старте Electron:
+
 ```csharp
 var pythonPath = Path.Combine(resourcesPath, "python-sidecar", "venv", "bin", "python3");
 var mainPy = Path.Combine(resourcesPath, "python-sidecar", "app", "main.py");
@@ -478,18 +487,19 @@ Process.Start(pythonPath, $"-m uvicorn app.main:app --host 127.0.0.1 --port 5060
 ```
 
 ### Health check
+
 ```
 GET http://localhost:5060/health → {"status": "ok"}
 ```
 
-C# backend перед вызовом проверяет health. Если Python не запущен → graceful skip (diarize/gender/emotion/NER не выполняются, возвращается только whisper transcript).
+C# backend перед вызовом проверяет health. Если Python не запущен → graceful skip (diarize/gender/emotion/NER не
+выполняются, возвращается только whisper transcript).
 
 ---
 
 ## 10. C# → Python Communication
 
 ```csharp
-// Mozgoslav.Infrastructure/Services/PythonSidecarClient.cs
 public class PythonSidecarClient
 {
     private readonly HttpClient _http;
@@ -517,7 +527,6 @@ public class PythonSidecarClient
         return await response.Content.ReadFromJsonAsync<NerResult>(ct);
     }
 
-    // аналогично для gender, emotion, cleanup, process-all
 }
 ```
 

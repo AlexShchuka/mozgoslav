@@ -1,6 +1,8 @@
+using System;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -87,9 +89,6 @@ public sealed class RagEndpointsContractTests
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        // No explicit topK — contract says "topK? = 5".  The assertion is
-        // behavioural: the call succeeds and returns a well-formed payload
-        // whose citations array never exceeds 5 entries.
         using var response = await client.PostAsJsonAsync(
             "/api/rag/query",
             new { question = "ping" },
@@ -103,8 +102,6 @@ public sealed class RagEndpointsContractTests
     [TestMethod]
     public async Task Query_WithSeededNote_ReturnsCitationShape_NoteId_SegmentId_Text_Snippet()
     {
-        // Arrange — one processed note with non-trivial markdown so the index
-        // holds at least one chunk to return in citations.
         await using var factory = new ApiFactory();
         Guid seededNoteId;
         using (var scope = factory.Services.CreateScope())
@@ -145,19 +142,16 @@ public sealed class RagEndpointsContractTests
         }
 
         using var client = factory.CreateClient();
-        // Reindex first so the vector index has the seeded note's chunks.
         using (var r = await client.PostAsync("/api/rag/reindex", content: null, TestContext.CancellationToken))
         {
             r.StatusCode.Should().Be(HttpStatusCode.OK);
         }
 
-        // Act
         using var response = await client.PostAsJsonAsync(
             "/api/rag/query",
             new { question = "Syncthing QR", topK = 3 },
             cancellationToken: TestContext.CancellationToken);
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var payload = await response.Content.ReadFromJsonAsync<JsonElement>(Json, TestContext.CancellationToken);
 
@@ -177,17 +171,12 @@ public sealed class RagEndpointsContractTests
         textProp.GetString().Should().NotBeNullOrEmpty();
         snippetProp.GetString().Should().NotBeNullOrEmpty();
 
-        // noteId must match a real processed note id (guid format).
         Guid.Parse(noteIdProp.GetString()!).Should().Be(seededNoteId);
     }
 
     [TestMethod]
     public async Task Reindex_AfterSeedingNotes_CountsMatchContractFields()
     {
-        // Arrange a note via the existing Recording/Note pipeline would spin
-        // the Whisper loop. Instead we go straight through the repository,
-        // because the RAG contract is over ProcessedNote count + chunk count,
-        // neither of which requires a transcript pipeline to materialise.
         await using var factory = new ApiFactory();
         using (var scope = factory.Services.CreateScope())
         {

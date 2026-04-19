@@ -1,52 +1,49 @@
 import BaseApi from "./BaseApi";
-import { API_ENDPOINTS } from "../constants/api";
+import {API_ENDPOINTS} from "../constants/api";
 
 export interface StartDictationPayload {
-  readonly source: string;
+    readonly source: string;
 }
 
 export interface StartDictationResult {
-  readonly sessionId: string;
+    readonly sessionId: string;
 }
 
 export interface StopDictationResult {
-  readonly transcript: string;
+    readonly transcript: string;
 }
 
 export interface AudioCapabilities {
-  readonly isSupported: boolean;
-  readonly detectedPlatform: string;
-  readonly permissionsRequired: string[];
+    readonly isSupported: boolean;
+    readonly detectedPlatform: string;
+    readonly permissionsRequired: string[];
 }
 
-// BC-004 — lifecycle triplet. Browser pushes Opus-in-WebM chunks every
-// 250 ms; backend /api/dictation/{id}/push accepts octet-stream bodies
-// and decodes via ffmpeg.
 export class DictationApi extends BaseApi {
-  public async start(payload: StartDictationPayload): Promise<StartDictationResult> {
-    const response = await this.post<StartDictationResult, StartDictationPayload>(
-      API_ENDPOINTS.dictationStart,
-      payload,
-    );
-    return response.data;
-  }
+    public async start(payload: StartDictationPayload): Promise<StartDictationResult> {
+        const response = await this.post<StartDictationResult, StartDictationPayload>(
+            API_ENDPOINTS.dictationStart,
+            payload,
+        );
+        return response.data;
+    }
 
-  public async push(sessionId: string, audioBuffer: ArrayBuffer): Promise<void> {
-    await this.post(API_ENDPOINTS.dictationPush(sessionId), audioBuffer, {
-      headers: { "Content-Type": "application/octet-stream" },
-      transformRequest: [(body: unknown) => body],
-    });
-  }
+    public async push(sessionId: string, audioBuffer: ArrayBuffer): Promise<void> {
+        await this.post(API_ENDPOINTS.dictationPush(sessionId), audioBuffer, {
+            headers: {"Content-Type": "application/octet-stream"},
+            transformRequest: [(body: unknown) => body],
+        });
+    }
 
-  public async stop(sessionId: string): Promise<StopDictationResult> {
-    const response = await this.post<StopDictationResult>(
-      API_ENDPOINTS.dictationStop(sessionId),
-    );
-    return response.data;
-  }
+    public async stop(sessionId: string): Promise<StopDictationResult> {
+        const response = await this.post<StopDictationResult>(
+            API_ENDPOINTS.dictationStop(sessionId),
+        );
+        return response.data;
+    }
 
-  public async audioCapabilities(): Promise<AudioCapabilities> {
-    const response = await this.get<AudioCapabilities>("/api/audio/capabilities");
-    return response.data;
-  }
+    public async audioCapabilities(): Promise<AudioCapabilities> {
+        const response = await this.get<AudioCapabilities>("/api/audio/capabilities");
+        return response.data;
+    }
 }

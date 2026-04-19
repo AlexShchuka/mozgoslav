@@ -1,3 +1,7 @@
+using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+
 using FluentAssertions;
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -53,7 +57,6 @@ public sealed class AVFoundationAudioRecorderTests : IDisposable
     [TestMethod]
     public void IsSupported_WhenNotMacOS_ReturnsFalse()
     {
-        // AVFoundation is macOS-only; on Linux sandbox IsSupported must be false.
         if (OperatingSystem.IsMacOS())
         {
             Assert.Inconclusive("Skipping on macOS — different code path covered in Mac validation.");
@@ -67,8 +70,6 @@ public sealed class AVFoundationAudioRecorderTests : IDisposable
     {
         if (!OperatingSystem.IsMacOS())
         {
-            // StartAsync on non-mac throws PlatformNotSupportedException; that is
-            // the honest gate. We still assert the contract exists.
             var nonMacAct = () => _recorder.StartAsync("/tmp/out.wav", TestContext.CancellationToken);
             await nonMacAct.Should().ThrowAsync<PlatformNotSupportedException>();
             return;
@@ -96,10 +97,6 @@ public sealed class AVFoundationAudioRecorderTests : IDisposable
     {
         if (!OperatingSystem.IsMacOS())
         {
-            // We still verify the non-mac log path throws; handoff logging on
-            // macOS is asserted in the combined StartAsync + StopAsync test
-            // below (when implemented). Mac-side validation is out of scope
-            // for the Linux sandbox.
             return;
         }
 

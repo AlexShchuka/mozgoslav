@@ -164,8 +164,6 @@ public static class FillerCleaner
     public static string Clean(string text, CleanupLevel level)
     {
         if (level == CleanupLevel.None) return text;
-        // regex: удаление filler-слов, дублей, нормализация пробелов
-        // level == Aggressive: также удаляет "ну вот", "ну это", "ну типа"
     }
 }
 
@@ -176,7 +174,6 @@ public static class AudioFormatDetector
         ".mp3" => AudioFormat.Mp3,
         ".m4a" => AudioFormat.M4a,
         ".wav" => AudioFormat.Wav,
-        // ...
         _ => throw new ArgumentException($"Unsupported format: {extension}")
     };
 }
@@ -196,7 +193,6 @@ public static class HashCalculator
 ```csharp
 namespace Mozgoslav.Application.Interfaces;
 
-// --- STT ---
 public interface ITranscriptionService
 {
     Task<IReadOnlyList<TranscriptSegment>> TranscribeAsync(
@@ -207,7 +203,6 @@ public interface ITranscriptionService
         CancellationToken ct);
 }
 
-// --- LLM ---
 public interface ILlmService
 {
     Task<LlmProcessingResult> ProcessAsync(
@@ -229,11 +224,9 @@ public record LlmProcessingResult(
     ConversationType ConversationType,
     List<string> Tags);
 
-// --- Audio ---
 public interface IAudioConverter
 {
     Task<string> ConvertToWavAsync(string inputPath, CancellationToken ct);
-    // Returns path to temp WAV 16kHz mono
 }
 
 public interface IAudioRecorder
@@ -244,14 +237,11 @@ public interface IAudioRecorder
     TimeSpan CurrentDuration { get; }
 }
 
-// --- Export ---
 public interface IMarkdownExporter
 {
     Task<string> ExportAsync(ProcessedNote note, Profile profile, string vaultPath, CancellationToken ct);
-    // Returns: full path to written .md file
 }
 
-// --- Repositories ---
 public interface IRecordingRepository
 {
     Task<Recording> AddAsync(Recording recording, CancellationToken ct);
@@ -294,7 +284,6 @@ public interface IProcessingJobRepository
     Task<IReadOnlyList<ProcessingJob>> GetActiveAsync(CancellationToken ct);
 }
 
-// --- Settings ---
 public interface IAppSettings
 {
     string VaultPath { get; }
@@ -312,7 +301,6 @@ public interface IAppSettings
 ```csharp
 namespace Mozgoslav.Application.UseCases;
 
-// --- Import ---
 public class ImportRecordingUseCase(
     IRecordingRepository recordings,
     IProcessingJobRepository jobs,
@@ -354,7 +342,6 @@ public class ImportRecordingUseCase(
     }
 }
 
-// --- Process Queue (background worker) ---
 public class ProcessQueueWorker(
     IProcessingJobRepository jobs,
     IRecordingRepository recordings,
@@ -383,10 +370,8 @@ public class ProcessQueueWorker(
             var recording = await recordings.GetByIdAsync(job.RecordingId, ct);
             var profile = await profiles.GetByIdAsync(job.ProfileId, ct);
 
-            // Step 1: Convert audio
             var wavPath = await audioConverter.ConvertToWavAsync(recording!.FilePath, ct);
 
-            // Step 2: Transcribe
             var segments = await transcriptionService.TranscribeAsync(
                 wavPath, settings.Language, profile!.SystemPrompt,
                 new Progress<int>(p => { job.Progress = p / 3; _ = progressNotifier.NotifyAsync(job); }),
@@ -402,14 +387,12 @@ public class ProcessQueueWorker(
             };
             await transcripts.AddAsync(transcript, ct);
 
-            // Step 3: Cleanup
             job.Status = JobStatus.Correcting; job.Progress = 33;
             await jobs.UpdateAsync(job, ct);
             await progressNotifier.NotifyAsync(job);
 
             var cleanText = FillerCleaner.Clean(transcript.RawText, profile.CleanupLevel);
 
-            // Step 4: LLM Summarize
             job.Status = JobStatus.Summarizing; job.Progress = 50;
             await jobs.UpdateAsync(job, ct);
             await progressNotifier.NotifyAsync(job);
@@ -420,7 +403,6 @@ public class ProcessQueueWorker(
                 llmResult = await llmService.ProcessAsync(cleanText, profile.SystemPrompt, ct);
             }
 
-            // Step 5: Create ProcessedNote
             var note = new ProcessedNote
             {
                 TranscriptId = transcript.Id,
@@ -438,10 +420,8 @@ public class ProcessQueueWorker(
                 Tags = llmResult?.Tags ?? new(),
             };
 
-            // Step 6: Generate markdown
             note.MarkdownContent = MarkdownGenerator.Generate(note, profile, recording);
 
-            // Step 7: Export
             job.Status = JobStatus.Exporting; job.Progress = 85;
             await jobs.UpdateAsync(job, ct);
             await progressNotifier.NotifyAsync(job);
@@ -474,7 +454,6 @@ public class ProcessQueueWorker(
     }
 }
 
-// --- Reprocess ---
 public class ReprocessUseCase(
     ITranscriptRepository transcripts,
     IProcessedNoteRepository notes,
@@ -485,12 +464,9 @@ public class ReprocessUseCase(
 {
     public async Task<ProcessedNote> ExecuteAsync(Guid recordingId, Guid profileId, CancellationToken ct)
     {
-        // Берёт существующий transcript, прогоняет через новый profile
-        // version = max + 1
     }
 }
 
-// --- Progress Notifier (SSE → frontend) ---
 public interface IJobProgressNotifier
 {
     Task NotifyAsync(ProcessingJob job);
@@ -509,7 +485,6 @@ public static class MarkdownGenerator
     {
         var sb = new StringBuilder();
 
-        // Frontmatter
         sb.AppendLine("---");
         sb.AppendLine($"type: conversation");
         sb.AppendLine($"profile: {profile.Name.ToLower()}");
@@ -526,7 +501,6 @@ public static class MarkdownGenerator
         sb.AppendLine("---");
         sb.AppendLine();
 
-        // Body sections
         if (!string.IsNullOrEmpty(note.Summary))
         {
             sb.AppendLine("## Summary");
@@ -538,8 +512,6 @@ public static class MarkdownGenerator
         if (note.ActionItems.Any()) { /* ## Action Items */ }
         if (note.UnresolvedQuestions.Any()) { /* ## Вопросы без ответа */ }
         if (note.Participants.Any()) { /* ## Участники — wiki-links [[Name]] */ }
-        // ## Clean Transcript
-        // ## Full Transcript
 
         return sb.ToString();
     }
@@ -570,17 +542,7 @@ public class WhisperNetTranscriptionService : ITranscriptionService
 {
     private readonly string _modelPath;
 
-    // Параметры (проверены в бою, из ADR):
-    // beam_size = 5
-    // best_of = 5
-    // max_context = 0  (против галлюцинаций)
-    // suppress_nst = true
-    // language = "ru"
-    // threads = 14 (Apple Silicon M3/M4)
-    // VAD: Silero v6.2.0 (ggml binary рядом с whisper моделью)
 
-    // Initial prompt (зашит, пользователь может перекрыть в Profile):
-    // "Мысли вслух, встречи, диалоги, рассуждения."
 
     public async Task<IReadOnlyList<TranscriptSegment>> TranscribeAsync(
         string audioPath, string language, string? initialPrompt,
@@ -614,23 +576,14 @@ namespace Mozgoslav.Infrastructure.Services;
 public class OpenAiCompatibleLlmService : ILlmService
 {
     private readonly OpenAIClient _client;
-    // BaseUrl: http://localhost:1234 (LM Studio, настраивается в Settings)
-    // Model: "default" (LM Studio подставляет загруженную)
-    // Temperature: 0.1 (для структурированного output)
-    // Response format: JSON
 
     public async Task<LlmProcessingResult> ProcessAsync(
         string transcript, string systemPrompt, CancellationToken ct)
     {
-        // 1. Если transcript > 30K символов → chunk + MapReduce
-        // 2. System prompt из Profile
-        // 3. Parse JSON response
-        // 4. Если JSON невалидный → retry 1 раз → fallback: plain text summary
     }
 
     public async Task<bool> IsAvailableAsync(CancellationToken ct)
     {
-        // GET /v1/models → true если LM Studio отвечает
     }
 }
 ```
@@ -784,34 +737,27 @@ public static class BuiltInProfiles
 ### 6.1 Endpoints
 
 ```csharp
-// Program.cs — Minimal API
 
-// Recordings
 app.MapPost("/api/recordings/import", ImportRecordingsEndpoint);      // multipart/form-data
 app.MapGet("/api/recordings", GetAllRecordingsEndpoint);
 app.MapGet("/api/recordings/{id:guid}", GetRecordingEndpoint);
 
-// Jobs
 app.MapPost("/api/jobs", CreateJobEndpoint);                          // {recordingId, profileId}
 app.MapGet("/api/jobs", GetJobsEndpoint);
 app.MapGet("/api/jobs/stream", StreamJobProgressEndpoint);            // SSE
 
-// Notes
 app.MapGet("/api/notes", GetNotesEndpoint);
 app.MapGet("/api/notes/{id:guid}", GetNoteEndpoint);
 app.MapPost("/api/notes/{id:guid}/reprocess", ReprocessNoteEndpoint); // {profileId}
 app.MapPost("/api/notes/{id:guid}/export", ExportNoteEndpoint);
 
-// Profiles
 app.MapGet("/api/profiles", GetProfilesEndpoint);
 app.MapPost("/api/profiles", CreateProfileEndpoint);
 app.MapPut("/api/profiles/{id:guid}", UpdateProfileEndpoint);
 
-// Settings
 app.MapGet("/api/settings", GetSettingsEndpoint);
 app.MapPut("/api/settings", UpdateSettingsEndpoint);
 
-// Health
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 app.MapGet("/api/health/llm", CheckLlmHealthEndpoint);
 ```
@@ -839,7 +785,6 @@ app.MapGet("/api/jobs/stream", async (IJobProgressNotifier notifier, Cancellatio
 ### 6.3 DI Registration
 
 ```csharp
-// Program.cs
 builder.Services.AddSingleton<IAppSettings, SqliteAppSettings>();
 builder.Services.AddSingleton<ITranscriptionService, WhisperNetTranscriptionService>();
 builder.Services.AddSingleton<ILlmService, OpenAiCompatibleLlmService>();
@@ -863,16 +808,19 @@ builder.Services.AddHostedService<QueueBackgroundService>(); // wraps ProcessQue
 ## 7. Testing Strategy
 
 ### Unit Tests (xUnit + NSubstitute)
+
 - **Domain:** FillerCleaner, HashCalculator, AudioFormatDetector, MarkdownGenerator
 - **Application:** ImportRecordingUseCase, ProcessQueueWorker, ReprocessUseCase — с mocked repositories и services
 - **Naming:** `MethodName_Scenario_ExpectedResult`
 
 ### Integration Tests
+
 - **SQLite:** repositories с in-memory SQLite
 - **Whisper.net:** smoke test с коротким аудио (fixtures)
 - **LLM:** mock HTTP server (WireMock)
 
 ### Не тестируем в unit tests
+
 - Electron/React (отдельно)
 - ffmpeg subprocess (integration only)
 - Реальный LM Studio (manual)

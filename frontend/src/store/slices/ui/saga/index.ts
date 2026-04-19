@@ -1,4 +1,4 @@
-import type { SagaIterator } from "redux-saga";
+import type {SagaIterator} from "redux-saga";
 
 /**
  * The UI slice currently has no async side-effects — theme changes and
@@ -8,5 +8,4 @@ import type { SagaIterator } from "redux-saga";
  * in without extra wiring.
  */
 export function* watchUiSagas(): SagaIterator {
-  // No watchers yet. Deliberately empty.
 }

@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <RootNamespace>Mozgoslav.Application</RootNamespace>
-    <AssemblyName>Mozgoslav.Application</AssemblyName>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Mozgoslav.Domain\Mozgoslav.Domain.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-  </ItemGroup>
+    <PropertyGroup>
+        <RootNamespace>Mozgoslav.Application</RootNamespace>
+        <AssemblyName>Mozgoslav.Application</AssemblyName>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Mozgoslav.Domain\Mozgoslav.Domain.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions"/>
+    </ItemGroup>
 </Project>

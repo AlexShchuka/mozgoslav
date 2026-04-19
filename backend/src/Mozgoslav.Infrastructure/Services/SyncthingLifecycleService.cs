@@ -1,8 +1,13 @@
+using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -117,10 +122,6 @@ public sealed class SyncthingLifecycleService : IHostedService, IAsyncDisposable
             return;
         }
 
-        // Best-effort: persist the base URL + API key so SyncthingHttpClient
-        // (if wired via Mozgoslav:SyncthingBaseUrl at next boot) has the
-        // right coordinates. We do not block on /rest/system/status here —
-        // the versioning verifier already polls for readiness.
         _logger.LogInformation(
             "Syncthing process spawned (PID={Pid}); ready probe delegated to SyncthingVersioningVerifier",
             _process.Id);
@@ -136,9 +137,6 @@ public sealed class SyncthingLifecycleService : IHostedService, IAsyncDisposable
 
         _logger.LogInformation("Stopping Syncthing (PID={Pid})", _process.Id);
 
-        // Graceful path — POST /rest/system/shutdown against the local REST
-        // endpoint with the API key we generated. A dedicated short-lived
-        // HttpClient avoids tangling with the request-scoped one.
         try
         {
             using var http = new HttpClient { Timeout = GracefulShutdownTimeout };
@@ -147,7 +145,6 @@ public sealed class SyncthingLifecycleService : IHostedService, IAsyncDisposable
                 $"http://127.0.0.1:{_port}/rest/system/shutdown",
                 content: null,
                 cancellationToken);
-            // 200 OK or 204 — either is acceptable.
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
@@ -173,7 +170,6 @@ public sealed class SyncthingLifecycleService : IHostedService, IAsyncDisposable
         }
         catch (InvalidOperationException)
         {
-            // Process already exited between the check and the kill — fine.
         }
     }
 
@@ -196,8 +192,6 @@ public sealed class SyncthingLifecycleService : IHostedService, IAsyncDisposable
 
     private static string? ResolveSyncthingBinary()
     {
-        // Env-var override takes precedence so operators and the Electron
-        // wrapper can pin the bundled path without touching code or settings.
         var envVar = Environment.GetEnvironmentVariable("MOZGOSLAV_SYNCTHING_BINARY");
         if (!string.IsNullOrWhiteSpace(envVar) && File.Exists(envVar))
         {
@@ -234,8 +228,6 @@ public sealed class SyncthingLifecycleService : IHostedService, IAsyncDisposable
 
     private static int FindFreeLoopbackPort()
     {
-        // TcpListener implements IDisposable via its Dispose method in modern
-        // .NET; wrap in `using` so CA2000 / IDISP001 are happy.
         using var listener = new TcpListener(IPAddress.Loopback, port: 0);
         listener.Start();
         try
@@ -248,8 +240,6 @@ public sealed class SyncthingLifecycleService : IHostedService, IAsyncDisposable
         }
     }
 
-    // 32 bytes of cryptographically random hex ⇒ 64-char API key,
-    // matching the ADR-007 §2.3 requirement.
     private static string GenerateApiKey() =>
         Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
 }

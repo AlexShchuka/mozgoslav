@@ -1,4 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.IO.Compression;
+using System.Threading;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -20,8 +25,6 @@ namespace Mozgoslav.Tests.Infrastructure;
 /// and <see cref="AppPaths.Models"/> so repeated runs stay deterministic.
 /// </para>
 /// </summary>
-// Tests mutate shared AppPaths.Root state (backups dir, models dir). Parallel
-// execution causes file-collisions on the timestamped backup filename.
 [TestClass]
 [DoNotParallelize]
 public sealed class BackupServiceTests
@@ -67,8 +70,6 @@ public sealed class BackupServiceTests
     public async Task CreateAsync_IncludesSqliteSnapshot()
     {
         AppPaths.EnsureExist();
-        // AppPaths.Database may or may not exist at test-run time — seed a stub so
-        // the assertion is deterministic.
         var dbAlreadyExisted = File.Exists(AppPaths.Database);
         if (!dbAlreadyExisted)
         {
@@ -90,7 +91,6 @@ public sealed class BackupServiceTests
     {
         AppPaths.EnsureExist();
 
-        // Seed a few files under AppPaths.Models so the enumerator has work to cancel through.
         var scratchDir = Path.Combine(AppPaths.Models, "backup-cancel-probe-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(scratchDir);
         _seededDirs.Add(scratchDir);
@@ -118,11 +118,9 @@ public sealed class BackupServiceTests
         }
         catch (IOException)
         {
-            // best effort
         }
         catch (UnauthorizedAccessException)
         {
-            // best effort
         }
     }
 
@@ -137,11 +135,9 @@ public sealed class BackupServiceTests
         }
         catch (IOException)
         {
-            // best effort
         }
         catch (UnauthorizedAccessException)
         {
-            // best effort
         }
     }
 }

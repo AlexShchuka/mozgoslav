@@ -1,9 +1,4 @@
-import type {
-  SyncEvent,
-  SyncPairingPayload,
-  SyncPendingDevice,
-  SyncStatusSnapshot,
-} from "./types";
+import type {SyncEvent, SyncPairingPayload, SyncPendingDevice, SyncStatusSnapshot,} from "./types";
 
 export const LOAD_STATUS = "sync/LOAD_STATUS";
 export const LOAD_STATUS_SUCCESS = "sync/LOAD_STATUS_SUCCESS";
@@ -24,114 +19,127 @@ export const EVENT_STREAM_DISCONNECTED = "sync/EVENT_STREAM_DISCONNECTED";
 export const EVENT_RECEIVED = "sync/EVENT_RECEIVED";
 
 export interface LoadStatusAction {
-  type: typeof LOAD_STATUS;
+    type: typeof LOAD_STATUS;
 }
+
 export interface LoadStatusSuccessAction {
-  type: typeof LOAD_STATUS_SUCCESS;
-  payload: SyncStatusSnapshot;
+    type: typeof LOAD_STATUS_SUCCESS;
+    payload: SyncStatusSnapshot;
 }
+
 export interface LoadStatusFailureAction {
-  type: typeof LOAD_STATUS_FAILURE;
-  payload: string;
+    type: typeof LOAD_STATUS_FAILURE;
+    payload: string;
 }
+
 export interface LoadPairingAction {
-  type: typeof LOAD_PAIRING;
+    type: typeof LOAD_PAIRING;
 }
+
 export interface LoadPairingSuccessAction {
-  type: typeof LOAD_PAIRING_SUCCESS;
-  payload: SyncPairingPayload;
+    type: typeof LOAD_PAIRING_SUCCESS;
+    payload: SyncPairingPayload;
 }
+
 export interface LoadPairingFailureAction {
-  type: typeof LOAD_PAIRING_FAILURE;
-  payload: string;
+    type: typeof LOAD_PAIRING_FAILURE;
+    payload: string;
 }
+
 export interface AcceptDeviceAction {
-  type: typeof ACCEPT_DEVICE;
-  payload: { deviceId: string; name: string };
+    type: typeof ACCEPT_DEVICE;
+    payload: { deviceId: string; name: string };
 }
+
 export interface AcceptDeviceSuccessAction {
-  type: typeof ACCEPT_DEVICE_SUCCESS;
-  payload: { deviceId: string };
+    type: typeof ACCEPT_DEVICE_SUCCESS;
+    payload: { deviceId: string };
 }
+
 export interface AcceptDeviceFailureAction {
-  type: typeof ACCEPT_DEVICE_FAILURE;
-  payload: { deviceId: string; error: string };
+    type: typeof ACCEPT_DEVICE_FAILURE;
+    payload: { deviceId: string; error: string };
 }
+
 export interface StartEventStreamAction {
-  type: typeof START_EVENT_STREAM;
+    type: typeof START_EVENT_STREAM;
 }
+
 export interface StopEventStreamAction {
-  type: typeof STOP_EVENT_STREAM;
+    type: typeof STOP_EVENT_STREAM;
 }
+
 export interface EventStreamConnectedAction {
-  type: typeof EVENT_STREAM_CONNECTED;
+    type: typeof EVENT_STREAM_CONNECTED;
 }
+
 export interface EventStreamDisconnectedAction {
-  type: typeof EVENT_STREAM_DISCONNECTED;
+    type: typeof EVENT_STREAM_DISCONNECTED;
 }
+
 export interface EventReceivedAction {
-  type: typeof EVENT_RECEIVED;
-  payload: SyncEvent;
+    type: typeof EVENT_RECEIVED;
+    payload: SyncEvent;
 }
 
 export type SyncAction =
-  | LoadStatusAction
-  | LoadStatusSuccessAction
-  | LoadStatusFailureAction
-  | LoadPairingAction
-  | LoadPairingSuccessAction
-  | LoadPairingFailureAction
-  | AcceptDeviceAction
-  | AcceptDeviceSuccessAction
-  | AcceptDeviceFailureAction
-  | StartEventStreamAction
-  | StopEventStreamAction
-  | EventStreamConnectedAction
-  | EventStreamDisconnectedAction
-  | EventReceivedAction;
+    | LoadStatusAction
+    | LoadStatusSuccessAction
+    | LoadStatusFailureAction
+    | LoadPairingAction
+    | LoadPairingSuccessAction
+    | LoadPairingFailureAction
+    | AcceptDeviceAction
+    | AcceptDeviceSuccessAction
+    | AcceptDeviceFailureAction
+    | StartEventStreamAction
+    | StopEventStreamAction
+    | EventStreamConnectedAction
+    | EventStreamDisconnectedAction
+    | EventReceivedAction;
 
-export const loadSyncStatus = (): LoadStatusAction => ({ type: LOAD_STATUS });
+export const loadSyncStatus = (): LoadStatusAction => ({type: LOAD_STATUS});
 export const loadSyncStatusSuccess = (snapshot: SyncStatusSnapshot): LoadStatusSuccessAction => ({
-  type: LOAD_STATUS_SUCCESS,
-  payload: snapshot,
+    type: LOAD_STATUS_SUCCESS,
+    payload: snapshot,
 });
 export const loadSyncStatusFailure = (message: string): LoadStatusFailureAction => ({
-  type: LOAD_STATUS_FAILURE,
-  payload: message,
+    type: LOAD_STATUS_FAILURE,
+    payload: message,
 });
 
-export const loadPairingPayload = (): LoadPairingAction => ({ type: LOAD_PAIRING });
+export const loadPairingPayload = (): LoadPairingAction => ({type: LOAD_PAIRING});
 export const loadPairingSuccess = (payload: SyncPairingPayload): LoadPairingSuccessAction => ({
-  type: LOAD_PAIRING_SUCCESS,
-  payload,
+    type: LOAD_PAIRING_SUCCESS,
+    payload,
 });
 export const loadPairingFailure = (message: string): LoadPairingFailureAction => ({
-  type: LOAD_PAIRING_FAILURE,
-  payload: message,
+    type: LOAD_PAIRING_FAILURE,
+    payload: message,
 });
 
 export const acceptDevice = (device: SyncPendingDevice): AcceptDeviceAction => ({
-  type: ACCEPT_DEVICE,
-  payload: { deviceId: device.deviceId, name: device.name },
+    type: ACCEPT_DEVICE,
+    payload: {deviceId: device.deviceId, name: device.name},
 });
 export const acceptDeviceSuccess = (deviceId: string): AcceptDeviceSuccessAction => ({
-  type: ACCEPT_DEVICE_SUCCESS,
-  payload: { deviceId },
+    type: ACCEPT_DEVICE_SUCCESS,
+    payload: {deviceId},
 });
 export const acceptDeviceFailure = (deviceId: string, error: string): AcceptDeviceFailureAction => ({
-  type: ACCEPT_DEVICE_FAILURE,
-  payload: { deviceId, error },
+    type: ACCEPT_DEVICE_FAILURE,
+    payload: {deviceId, error},
 });
 
-export const startSyncEventStream = (): StartEventStreamAction => ({ type: START_EVENT_STREAM });
-export const stopSyncEventStream = (): StopEventStreamAction => ({ type: STOP_EVENT_STREAM });
+export const startSyncEventStream = (): StartEventStreamAction => ({type: START_EVENT_STREAM});
+export const stopSyncEventStream = (): StopEventStreamAction => ({type: STOP_EVENT_STREAM});
 export const syncEventStreamConnected = (): EventStreamConnectedAction => ({
-  type: EVENT_STREAM_CONNECTED,
+    type: EVENT_STREAM_CONNECTED,
 });
 export const syncEventStreamDisconnected = (): EventStreamDisconnectedAction => ({
-  type: EVENT_STREAM_DISCONNECTED,
+    type: EVENT_STREAM_DISCONNECTED,
 });
 export const syncEventReceived = (event: SyncEvent): EventReceivedAction => ({
-  type: EVENT_RECEIVED,
-  payload: event,
+    type: EVENT_RECEIVED,
+    payload: event,
 });

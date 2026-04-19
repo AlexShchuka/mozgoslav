@@ -1,3 +1,6 @@
+using System;
+using System.Threading.Tasks;
+
 using FluentAssertions;
 
 using Microsoft.EntityFrameworkCore;
@@ -37,7 +40,6 @@ public sealed class DbContextValueComparerTests
             await ctx.SaveChangesAsync(TestContext.CancellationToken);
         }
 
-        // Load, mutate in place (no reassignment), save.
         await using (var ctx = db.CreateContext())
         {
             var loaded = await ctx.ProcessedNotes.FirstAsync(n => n.Id == note.Id, TestContext.CancellationToken);
@@ -45,7 +47,6 @@ public sealed class DbContextValueComparerTests
             await ctx.SaveChangesAsync(TestContext.CancellationToken);
         }
 
-        // Reload and verify the in-place mutation was detected and persisted.
         await using (var ctx = db.CreateContext())
         {
             var reloaded = await ctx.ProcessedNotes.FirstAsync(n => n.Id == note.Id, TestContext.CancellationToken);

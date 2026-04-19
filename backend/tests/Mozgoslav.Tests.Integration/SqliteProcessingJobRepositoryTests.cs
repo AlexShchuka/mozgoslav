@@ -1,3 +1,8 @@
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
 using FluentAssertions;
 
 using Mozgoslav.Domain.Entities;
@@ -64,8 +69,6 @@ public sealed class EfProcessingJobRepositoryTests
     [TestMethod]
     public async Task GetActiveAsync_ExcludesCancelledJobs()
     {
-        // ADR-015 — Cancelled is a terminal state; active queue must not
-        // surface it.
         await using var db = new TestDatabase();
         await using var ctx = db.CreateContext();
         var repo = new EfProcessingJobRepository(ctx);

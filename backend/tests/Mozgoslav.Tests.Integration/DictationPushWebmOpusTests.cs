@@ -1,8 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -185,8 +192,6 @@ public sealed class DictationPushWebmOpusTests
                     contextLifetime: ServiceLifetime.Scoped,
                     optionsLifetime: ServiceLifetime.Singleton);
 
-                // Replace IStreamingTranscriptionService with the capturing fake so we
-                // can assert on the decoded PCM without needing Whisper on disk.
                 for (var i = services.Count - 1; i >= 0; i--)
                 {
                     if (services[i].ServiceType == typeof(IStreamingTranscriptionService))

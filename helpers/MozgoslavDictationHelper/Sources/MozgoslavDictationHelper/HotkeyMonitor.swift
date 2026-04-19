@@ -55,14 +55,6 @@ public final class HotkeyMonitor {
         self.parsed = parsed
 
         #if canImport(AppKit) && os(macOS)
-        // Accessibility is a **parent-process** concern: macOS TCC tracks
-        // trust per app bundle. This helper is an unbundled CLI binary, so
-        // calling `AXIsProcessTrustedWithOptions(prompt:)` from here does
-        // nothing useful — the prompt never appears and no entry is created
-        // in System Settings. Trust comes from the Electron parent (which
-        // has a bundle identity); spawned children inherit its TCC on
-        // macOS 13+. We log current state for diagnostics, nothing else.
-        // See Electron main — `systemPreferences.isTrustedAccessibilityClient`.
         let accessibilityGranted = PermissionProbe.accessibilityStatus() == "granted"
         if !accessibilityGranted {
             FileLog.shared.warn(
@@ -78,10 +70,6 @@ public final class HotkeyMonitor {
             self?.handleKey(event: event, kind: "release")
         }
         flagsMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
-            // When the hotkey is a pure-modifier combo (unlikely) .keyDown
-            // doesn't fire — .flagsChanged is our only signal. Left for a
-            // future enhancement; for now we log so maintainers can spot
-            // the case.
             _ = event
             _ = self
         }
@@ -118,7 +106,6 @@ public final class HotkeyMonitor {
         guard let parsed else { return }
         guard matches(event: event, against: parsed) else { return }
 
-        // Guard against duplicate "press" events from auto-repeat.
         if kind == "press" {
             if holding { return }
             holding = true
@@ -150,7 +137,6 @@ public final class HotkeyMonitor {
     }
     #endif
 
-    // ---------------- Accelerator parsing (mirrors Electron's format) ----------------
 
     private struct ParsedAccelerator {
         let accelerator: String

@@ -68,16 +68,6 @@ public enum InjectionStrategySelector {
     }
 }
 
-// MARK: - BC-007 injection fallback strategy (ADR-007 Phase 2 §3.1)
-//
-// Below: the ADR-007-phase2-swift.md §3.1 contract for the testable
-// AX→clipboard fallback injector. The ADR spec asks for a struct named
-// `InjectionStrategy`, which collides with the enum above that is already
-// used by `TextInjectionService` and `DictationHelper`. To avoid breaking
-// those (outside this agent's write scope) the struct is renamed to
-// `InjectionStrategyRunner` here; behaviour matches the ADR verbatim.
-// Surface: `phase2-swift-report.md` — user decides whether to fold the
-// existing enum/selector into this runner during a future cleanup pass.
 
 /// How the runner decides which backend to use for a single injection call.
 public enum InjectionMode: String, Sendable {

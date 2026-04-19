@@ -1,5 +1,11 @@
+using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.IO.Compression;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
@@ -47,9 +53,6 @@ public sealed class BackupService
             File.Delete(destination);
         }
 
-        // Off-threadpool IO — the ZipFile API is synchronous and .NET 10 has no
-        // ZipFile.OpenAsync. Task.Run keeps the request thread free; the token
-        // is observed on every file so a cancel short-circuits the archive.
         await Task.Run(() =>
         {
             using var archive = ZipFile.Open(destination, ZipArchiveMode.Create);
