@@ -445,10 +445,14 @@ const walkForConflicts = async (
   return results;
 };
 
+// Closing the main window tears down the whole app, including the ASP.NET
+// backend and the Swift dictation helper. Per-user preference: a Mozgoslav
+// without a window is not useful, and leaving orphaned `dotnet` / helper
+// processes running in the background is the top paper-cut on macOS. We
+// diverge from the default AppKit semantics (where the app stays resident)
+// on purpose — `before-quit` handles the actual cleanup.
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
+  app.quit();
 });
 
 app.on("before-quit", () => {
