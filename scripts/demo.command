@@ -112,7 +112,7 @@ done
 
 # Python sidecar
 echo "→ starting python-sidecar..."
-(cd python-sidecar && source .venv/bin/activate && uvicorn app.main:app --host 127.0.0.1 --port 5051) &
+(cd python-sidecar && source .venv/bin/activate && uvicorn app.main:app --host 127.0.0.1 --port 5060) &
 SIDECAR_PID=$!
 
 # Frontend (foreground — window blocks until user quits)
