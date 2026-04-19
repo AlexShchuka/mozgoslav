@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -28,9 +32,11 @@ public sealed class DictationRawChunkPipelineTests
         var session = fixture.Manager.Start();
 
         await fixture.Manager.PushRawChunkAsync(
-            session.Id, new byte[] { 1, 2, 3, 4 }, CancellationToken.None);
+            session.Id,
+            [1, 2, 3, 4], CancellationToken.None);
         await fixture.Manager.PushRawChunkAsync(
-            session.Id, new byte[] { 5, 6, 7, 8 }, CancellationToken.None);
+            session.Id,
+            [5, 6, 7, 8], CancellationToken.None);
 
         await WaitForAsync(() => fixture.Streaming.Chunks.Count >= 2, TimeSpan.FromSeconds(2));
         await fixture.Manager.CancelAsync(session.Id, CancellationToken.None);
@@ -49,7 +55,8 @@ public sealed class DictationRawChunkPipelineTests
         var fixture = CreateFixture();
 
         var act = async () => await fixture.Manager.PushRawChunkAsync(
-            Guid.NewGuid(), new byte[] { 1 }, CancellationToken.None);
+            Guid.NewGuid(),
+            [1], CancellationToken.None);
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
@@ -61,7 +68,8 @@ public sealed class DictationRawChunkPipelineTests
         var session = fixture.Manager.Start();
 
         await fixture.Manager.PushRawChunkAsync(
-            session.Id, new byte[] { 10, 20, 30 }, CancellationToken.None);
+            session.Id,
+            [10, 20, 30], CancellationToken.None);
 
         await fixture.Manager.StopAsync(session.Id, CancellationToken.None);
 

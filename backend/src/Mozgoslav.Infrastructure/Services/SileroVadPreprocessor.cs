@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+
 using Microsoft.Extensions.Logging;
 
 using Mozgoslav.Application.Interfaces;
@@ -38,13 +41,14 @@ public sealed class SileroVadPreprocessor : IVadPreprocessor
         var rms = ComputeRms(chunk.Samples);
         var isSpeech = rms >= RmsThreshold;
 
-        if (!isSpeech)
+        if (isSpeech)
         {
-            var modelPath = _settings.VadModelPath;
-            if (!string.IsNullOrEmpty(modelPath) && !File.Exists(modelPath))
-            {
-                _logger.LogDebug("Silero VAD model missing at {Path}, using energy gate only", modelPath);
-            }
+            return isSpeech;
+        }
+        var modelPath = _settings.VadModelPath;
+        if (!string.IsNullOrEmpty(modelPath) && !File.Exists(modelPath))
+        {
+            _logger.LogDebug("Silero VAD model missing at {Path}, using energy gate only", modelPath);
         }
 
         return isSpeech;

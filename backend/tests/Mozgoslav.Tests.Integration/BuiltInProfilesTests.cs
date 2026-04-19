@@ -1,3 +1,5 @@
+using System.Linq;
+
 using FluentAssertions;
 
 using Mozgoslav.Infrastructure.Seed;

@@ -1,5 +1,9 @@
+using System;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
@@ -57,7 +61,7 @@ public sealed class PythonSidecarEmbeddingService : IEmbeddingService
     {
         try
         {
-            var request = new EmbedRequest(text ?? string.Empty);
+            var request = new EmbedRequest(text);
             using var response = await _httpClient.PostAsJsonAsync("/api/embed", request, ct);
             response.EnsureSuccessStatusCode();
 
@@ -69,20 +73,21 @@ public sealed class PythonSidecarEmbeddingService : IEmbeddingService
                 throw new InvalidOperationException("Sidecar returned empty vector");
             }
 
-            if (Dimensions != body.Dim)
+            if (Dimensions == body.Dim)
             {
-                if (Dimensions != _fallback.Dimensions)
-                {
-                    _logger.LogWarning(
-                        "Python sidecar dimension drift detected: was {Old}, now {New}. "
-                        + "Keeping the original dimension until restart to avoid index corruption.",
-                        Dimensions,
-                        body.Dim);
-                }
-                else
-                {
-                    Dimensions = body.Dim;
-                }
+                return body.Embedding;
+            }
+            if (Dimensions != _fallback.Dimensions)
+            {
+                _logger.LogWarning(
+                    "Python sidecar dimension drift detected: was {Old}, now {New}. "
+                    + "Keeping the original dimension until restart to avoid index corruption.",
+                    Dimensions,
+                    body.Dim);
+            }
+            else
+            {
+                Dimensions = body.Dim;
             }
 
             return body.Embedding;

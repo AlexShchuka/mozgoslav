@@ -1,3 +1,5 @@
+using System.IO;
+
 using FluentAssertions;
 
 using Mozgoslav.Infrastructure.Platform;

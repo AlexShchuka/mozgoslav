@@ -1,3 +1,5 @@
+using System;
+
 using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Domain.Entities;

@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics.Metrics;
 
 namespace Mozgoslav.Infrastructure.Observability;

@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Domain.Entities;

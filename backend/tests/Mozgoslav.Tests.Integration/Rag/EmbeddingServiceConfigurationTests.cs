@@ -1,3 +1,7 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
+
 using FluentAssertions;
 
 using Microsoft.AspNetCore.Hosting;

@@ -1,3 +1,5 @@
+using System;
+
 using FluentAssertions;
 
 using Microsoft.Extensions.Logging.Abstractions;

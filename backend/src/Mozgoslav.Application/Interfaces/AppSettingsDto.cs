@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Mozgoslav.Application.Interfaces;
 
 /// <summary>

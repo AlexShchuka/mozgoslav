@@ -1,3 +1,5 @@
+using System;
+
 namespace Mozgoslav.Domain.Entities;
 
 /// <summary>
