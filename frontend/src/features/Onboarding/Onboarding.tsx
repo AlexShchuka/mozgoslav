@@ -183,7 +183,10 @@ const Onboarding: FC<OnboardingProps> = ({
 
   const openSystemPreferences = () => {
     if (!systemPreferencesUrl) return;
-    void window.open(systemPreferencesUrl, "_blank");
+    // `window.open` is silently blocked by the main-process
+    // `setWindowOpenHandler`, which only forwards http(s) URLs. Route
+    // `x-apple.systempreferences:…` through the explicit bridge instead.
+    void window.mozgoslav.openExternal(systemPreferencesUrl);
   };
 
   const tryOnSample = async (): Promise<void> => {

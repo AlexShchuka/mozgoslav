@@ -9,6 +9,17 @@ export interface MozgoslavBridge {
   openAudioFiles: () => Promise<{ canceled: boolean; filePaths: string[] }>;
   openFolder: () => Promise<{ canceled: boolean; filePaths: string[] }>;
   openPath: (path: string) => Promise<string | undefined>;
+  /**
+   * Opens a URL in the user's default handler via Electron's `shell.openExternal`.
+   * Only a fixed set of schemes is forwarded by the main-process handler
+   * (http, https, mailto, x-apple.systempreferences); anything else is refused
+   * so renderer-originating URLs cannot reach arbitrary OS handlers.
+   *
+   * Primary use: the Onboarding permissions cards need to deeplink into
+   * System Settings; `window.open("x-apple.systempreferences:…")` is silently
+   * blocked by the hardened `setWindowOpenHandler` that only allows http(s).
+   */
+  openExternal: (url: string) => Promise<boolean>;
   openModelFile: () => Promise<{ canceled: boolean; filePaths: string[] }>;
   openModelFolder: () => Promise<{ canceled: boolean; filePaths: string[] }>;
   listSyncConflicts: (
@@ -49,6 +60,7 @@ const bridge: MozgoslavBridge = {
   openAudioFiles: () => ipcRenderer.invoke("dialog:openAudioFiles"),
   openFolder: () => ipcRenderer.invoke("dialog:openFolder"),
   openPath: (path) => ipcRenderer.invoke("shell:openPath", path),
+  openExternal: (url) => ipcRenderer.invoke("shell:openExternal", url),
   openModelFile: () => ipcRenderer.invoke("dialog:openModelFile"),
   openModelFolder: () => ipcRenderer.invoke("dialog:openModelFolder"),
   listSyncConflicts: (folderPath) =>

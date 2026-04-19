@@ -12,6 +12,11 @@ public final class DictationHelper {
     private let textInjector: TextInjectionService
     private let focusDetector: FocusedAppDetector
     private let hotkeyMonitor: HotkeyMonitor
+    // Serial queue for every stdout write. The JSON-RPC loop runs on a
+    // background thread (see main.swift) while HotkeyMonitor emits events
+    // from AppKit's main thread — without serialisation the two can
+    // interleave mid-line and corrupt the protocol.
+    private let writeQueue = DispatchQueue(label: "mozgoslav.helper.stdout")
 
     public init(
         stdin: FileHandle = .standardInput,
@@ -196,14 +201,16 @@ public final class DictationHelper {
     }
 
     private func respond(_ response: JsonRpcResponse) {
-        do {
-            let line = try JsonRpcCodec.encode(response) + "\n"
-            if let data = line.data(using: .utf8) {
-                stdout.write(data)
+        writeQueue.async { [self] in
+            do {
+                let line = try JsonRpcCodec.encode(response) + "\n"
+                if let data = line.data(using: .utf8) {
+                    stdout.write(data)
+                }
+            } catch {
+                // Best effort — if encoding fails we cannot signal the error
+                // back via the same channel; swallow and keep the loop alive.
             }
-        } catch {
-            // Best effort — if encoding fails we cannot signal the error
-            // back via the same channel; swallow and keep the loop alive.
         }
     }
 
