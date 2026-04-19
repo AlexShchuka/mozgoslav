@@ -41,8 +41,21 @@ public sealed class ChannelHotkeyEventNotifier : IHotkeyEventNotifier, IDisposab
         _subscribers[id] = channel;
         try
         {
-            await foreach (var evt in channel.Reader.ReadAllAsync(ct))
+            while (true)
             {
+                HotkeyEvent evt;
+                try
+                {
+                    evt = await channel.Reader.ReadAsync(ct);
+                }
+                catch (OperationCanceledException)
+                {
+                    yield break;
+                }
+                catch (ChannelClosedException)
+                {
+                    yield break;
+                }
                 yield return evt;
             }
         }

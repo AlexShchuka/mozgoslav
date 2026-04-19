@@ -325,26 +325,34 @@ const applyCustomHotkeyFromSettings = async (): Promise<void> => {
             };
             const custom = settings.dictationKeyboardHotkey?.trim() ?? "";
             const pushToTalk = settings.dictationPushToTalk === true;
+            console.info("=".repeat(70));
             console.info(
-                `[hotkey] applyCustomHotkeyFromSettings: custom='${custom}' pushToTalk=${pushToTalk} orchestratorReady=${dictationOrchestrator !== null}`,
+                `[hotkey] CHECKPOINT settings.custom='${custom}' settings.pushToTalk=${pushToTalk} orchestratorReady=${dictationOrchestrator !== null}`,
             );
 
             if (pushToTalk && dictationOrchestrator && custom) {
+                console.info("[hotkey] PATH -> Swift helper push-to-talk (cursor injection enabled)");
                 unregisterGlobalDictationHotkey();
+                console.info("[hotkey]   unregistered Electron globalShortcut");
                 try {
                     dictationOrchestrator.onKeyboardHotkeyEvent((payload) => {
                         void forwardHotkeyToBackend(payload);
                     });
                     await dictationOrchestrator.startKeyboardHotkey(custom);
-                    console.log(`[hotkey] push-to-talk monitor started for '${custom}'.`);
+                    console.info(`[hotkey]   Swift helper monitor started for '${custom}' — check stderr for 'H1 HotkeyMonitor' lines`);
                 } catch (err) {
-                    console.warn("[hotkey] failed to start native monitor; falling back to globalShortcut toggle:", err);
+                    console.warn("[hotkey] Swift helper FAILED to start monitor:", err);
+                    console.warn("[hotkey] FALLBACK -> Electron globalShortcut toggle (NO cursor injection)");
                     registerGlobalDictationHotkey(custom);
                 }
                 return;
             }
 
-            if (!custom) return; // user hasn't set anything — keep default toggle.
+            if (!custom) {
+                console.info("[hotkey] PATH -> default Electron globalShortcut (no custom, toggle mode, no cursor injection)");
+                return;
+            }
+            console.info("[hotkey] PATH -> custom Electron globalShortcut (toggle mode, NO cursor injection)");
             unregisterGlobalDictationHotkey();
             const ok = registerGlobalDictationHotkey(custom);
             if (!ok) {

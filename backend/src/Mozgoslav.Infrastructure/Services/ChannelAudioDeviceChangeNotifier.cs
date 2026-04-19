@@ -40,8 +40,21 @@ public sealed class ChannelAudioDeviceChangeNotifier : IAudioDeviceChangeNotifie
         _subscribers[id] = channel;
         try
         {
-            await foreach (var evt in channel.Reader.ReadAllAsync(ct))
+            while (true)
             {
+                AudioDeviceChangePayload evt;
+                try
+                {
+                    evt = await channel.Reader.ReadAsync(ct);
+                }
+                catch (OperationCanceledException)
+                {
+                    yield break;
+                }
+                catch (ChannelClosedException)
+                {
+                    yield break;
+                }
                 yield return evt;
             }
         }
