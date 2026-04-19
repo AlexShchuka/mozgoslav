@@ -8,6 +8,10 @@ import AVFoundation
 import ApplicationServices
 #endif
 
+#if canImport(AppKit) && os(macOS)
+import AppKit
+#endif
+
 /// macOS permission probes for the Onboarding wizard (plan/v0.8/04-onboarding-slim.md §3).
 /// Returns one of "granted" / "denied" / "undetermined" so the UI can branch
 /// without re-implementing the Apple API surface.
@@ -35,13 +39,9 @@ public enum PermissionProbe {
     }
 
     public static func inputMonitoringStatus() -> String {
-        // Apple does not expose a public authorization API for input
-        // monitoring — we probe CGEventSourceSecondaryKeyboardType to infer
-        // whether the process can observe input events.
-        // This is the same approach used by popular utilities (e.g.
-        // Monitor Control, Alfred).
         #if canImport(ApplicationServices)
-        let trusted = IOHIDCheckAccess?(kIOHIDRequestTypeListenEvent)
+        guard let fn = IOHIDCheckAccess else { return "undetermined" }
+        let trusted = fn(kIOHIDRequestTypeListenEvent)
         switch trusted {
         case kIOHIDAccessTypeGranted: return "granted"
         case kIOHIDAccessTypeDenied: return "denied"
@@ -52,18 +52,85 @@ public enum PermissionProbe {
         return "undetermined"
         #endif
     }
+
+    /// Triggers the native macOS Accessibility prompt via
+    /// `AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt: true])`.
+    /// Returns the post-call trust state. If the user already denied once,
+    /// macOS suppresses further prompts — callers should follow up with
+    /// `openAccessibilitySettings()`.
+    public static func requestAccessibility() -> Bool {
+        #if canImport(ApplicationServices)
+        let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+        let options: CFDictionary = [promptKey: true] as CFDictionary
+        return AXIsProcessTrustedWithOptions(options)
+        #else
+        return false
+        #endif
+    }
+
+    /// Invokes `IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)` to show the
+    /// native Input Monitoring prompt. Resolved dynamically — same reason as
+    /// `IOHIDCheckAccess`: stay compatible with SDKs that don't surface the
+    /// symbol at build time. Falls back to `false` when unavailable.
+    public static func requestInputMonitoring() -> Bool {
+        #if canImport(ApplicationServices)
+        guard let fn = IOHIDRequestAccess else { return false }
+        return fn(kIOHIDRequestTypeListenEvent)
+        #else
+        return false
+        #endif
+    }
+
+    /// Escape hatch for the re-prompt-suppressed case — deeplinks the user
+    /// straight into System Settings → Privacy → Accessibility.
+    public static func openAccessibilitySettings() {
+        #if canImport(AppKit) && os(macOS)
+        guard let url = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+        ) else { return }
+        NSWorkspace.shared.open(url)
+        #endif
+    }
+
+    /// Same escape hatch for Input Monitoring.
+    public static func openInputMonitoringSettings() {
+        #if canImport(AppKit) && os(macOS)
+        guard let url = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
+        ) else { return }
+        NSWorkspace.shared.open(url)
+        #endif
+    }
 }
 
-// Dynamic lookup so we compile on older SDKs that do not expose IOHIDCheckAccess
-// at build time (only macOS 10.15+). A forward-declared optional binding is all
-// we need — runtime resolution falls back to "undetermined" when missing.
+// Dynamic lookup of IOKit HID authorisation APIs. We keep this pattern so the
+// file compiles against older SDKs that did not export the symbols at build
+// time — runtime resolution simply yields `nil` / "undetermined" in that case.
 #if canImport(ApplicationServices)
+private typealias IOHIDAccessCheckFn = @convention(c) (Int) -> Int
+private typealias IOHIDAccessRequestFn = @convention(c) (Int) -> Bool
+
+private let ioKitHandle: UnsafeMutableRawPointer? = dlopen(
+    "/System/Library/Frameworks/IOKit.framework/IOKit",
+    RTLD_LAZY
+)
+
 private let IOHIDCheckAccess: ((Int) -> Int)? = {
-    // Return nil so we always fall through to "undetermined" — the Onboarding
-    // wizard treats undetermined as "request permission via deep link", which
-    // is the correct behaviour for every macOS version.
-    return nil
+    guard let handle = ioKitHandle, let sym = dlsym(handle, "IOHIDCheckAccess") else {
+        return nil
+    }
+    let fn = unsafeBitCast(sym, to: IOHIDAccessCheckFn.self)
+    return { type in fn(type) }
 }()
+
+private let IOHIDRequestAccess: ((Int) -> Bool)? = {
+    guard let handle = ioKitHandle, let sym = dlsym(handle, "IOHIDRequestAccess") else {
+        return nil
+    }
+    let fn = unsafeBitCast(sym, to: IOHIDAccessRequestFn.self)
+    return { type in fn(type) }
+}()
+
 private let kIOHIDRequestTypeListenEvent = 1
 private let kIOHIDAccessTypeGranted = 0
 private let kIOHIDAccessTypeDenied = 1

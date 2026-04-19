@@ -29,6 +29,7 @@ public final class HotkeyMonitor {
     private let isoFormatter: ISO8601DateFormatter
     private var parsed: ParsedAccelerator?
     private var holding: Bool = false
+    private var didRequestPermissionsOnce: Bool = false
 
     #if canImport(AppKit) && os(macOS)
     private var keyDownMonitor: Any?
@@ -55,6 +56,26 @@ public final class HotkeyMonitor {
         self.parsed = parsed
 
         #if canImport(AppKit) && os(macOS)
+        // `NSEvent.addGlobalMonitorForEvents` silently returns a no-op
+        // observer when the helper process lacks Accessibility (and often
+        // Input Monitoring). On the first `start` per process we trigger
+        // the native macOS prompts — that educates first-run users and
+        // makes the underlying failure mode visible in the FileLog.
+        // Subsequent starts re-check without re-opening Settings, so we
+        // don't nag after every settings save.
+        let accessibilityGranted = PermissionProbe.accessibilityStatus() == "granted"
+        if !didRequestPermissionsOnce {
+            didRequestPermissionsOnce = true
+            _ = PermissionProbe.requestAccessibility()
+            _ = PermissionProbe.requestInputMonitoring()
+            if !accessibilityGranted {
+                FileLog.shared.warn(
+                    "H1 HotkeyMonitor: Accessibility not granted — opening System Settings"
+                )
+                PermissionProbe.openAccessibilitySettings()
+            }
+        }
+
         keyDownMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
             self?.handleKey(event: event, kind: "press")
         }
@@ -70,7 +91,7 @@ public final class HotkeyMonitor {
             _ = self
         }
         FileLog.shared.info(
-            "H1 HotkeyMonitor started for accelerator='\(trimmed)'"
+            "H1 HotkeyMonitor started for accelerator='\(trimmed)' accessibilityGranted=\(accessibilityGranted)"
         )
         #else
         _ = parsed
