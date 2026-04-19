@@ -33,14 +33,33 @@ VENV_DIR="$SIDECAR_DIR/.venv"
 REQ_FILE="$SIDECAR_DIR/requirements.txt"
 REQ_HASH_FILE="$VENV_DIR/.requirements.sha256"
 
-PY_BIN="$(command -v python3.11 || command -v python3 || true)"
+py_at_least_311() {
+  "$1" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null
+}
+
+PY_BIN=""
+for candidate in python3.11 python3.12 python3.13 python3; do
+  bin="$(command -v "$candidate" 2>/dev/null || true)"
+  if [ -n "$bin" ] && py_at_least_311 "$bin"; then
+    PY_BIN="$bin"
+    break
+  fi
+done
 if [ -z "$PY_BIN" ]; then
-  echo "✗ python3.11 / python3 not found in PATH" >&2
+  echo "✗ Python ≥3.11 not found in PATH (python-sidecar requires it; numpy>=2.2.0)" >&2
+  echo "  install: brew install python@3.11" >&2
+  echo "  or: pyenv install 3.11" >&2
   exit 1
 fi
 
+# Stale venv built by older python — recreate
+if [ -f "$VENV_DIR/bin/python" ] && ! py_at_least_311 "$VENV_DIR/bin/python"; then
+  echo "→ existing $VENV_DIR uses Python <3.11, recreating..."
+  rm -rf "$VENV_DIR"
+fi
+
 if [ ! -f "$VENV_DIR/bin/activate" ]; then
-  echo "→ creating python-sidecar venv ($PY_BIN)..."
+  echo "→ creating python-sidecar venv (using $PY_BIN)..."
   "$PY_BIN" -m venv "$VENV_DIR"
 fi
 
