@@ -58,14 +58,45 @@ public final class DictationHelper {
         let im = PermissionProbe.inputMonitoringStatus()
         FileLog.shared.info("DictationHelper startup: mic=\(mic) accessibility=\(ax) inputMonitoring=\(im)")
 
+        let markerPath = (NSHomeDirectory() as NSString)
+            .appendingPathComponent("Library/Application Support/Mozgoslav/.helper-permissions-probed")
+        let isFirstLaunch = !FileManager.default.fileExists(atPath: markerPath)
+
         if ax != "granted" {
             let granted = PermissionProbe.requestAccessibility()
-            FileLog.shared.info("DictationHelper startup: requestAccessibility returned \(granted)")
+            FileLog.shared.info(
+                "DictationHelper startup: requestAccessibility returned \(granted) firstLaunch=\(isFirstLaunch)"
+            )
+            if !granted && !isFirstLaunch {
+                DispatchQueue.main.async {
+                    PermissionProbe.openAccessibilitySettings()
+                }
+                FileLog.shared.info(
+                    "DictationHelper startup: opened Accessibility settings (TCC prompt likely suppressed)"
+                )
+            }
         }
         if im != "granted" {
             let granted = PermissionProbe.requestInputMonitoring()
-            FileLog.shared.info("DictationHelper startup: requestInputMonitoring returned \(granted)")
+            FileLog.shared.info(
+                "DictationHelper startup: requestInputMonitoring returned \(granted) firstLaunch=\(isFirstLaunch)"
+            )
+            if !granted && !isFirstLaunch {
+                DispatchQueue.main.async {
+                    PermissionProbe.openInputMonitoringSettings()
+                }
+                FileLog.shared.info(
+                    "DictationHelper startup: opened Input Monitoring settings (TCC prompt likely suppressed)"
+                )
+            }
         }
+
+        let markerDir = (markerPath as NSString).deletingLastPathComponent
+        try? FileManager.default.createDirectory(
+            atPath: markerDir,
+            withIntermediateDirectories: true
+        )
+        FileManager.default.createFile(atPath: markerPath, contents: Data())
     }
 
     private func handle(line: String) {
@@ -149,14 +180,20 @@ public final class DictationHelper {
             let accessibility = PermissionProbe.requestAccessibility()
             let inputMonitoring = PermissionProbe.requestInputMonitoring()
             var openedAccessibility = false
+            var openedInputMonitoring = false
             if !accessibility {
                 PermissionProbe.openAccessibilitySettings()
                 openedAccessibility = true
+            }
+            if !inputMonitoring {
+                PermissionProbe.openInputMonitoringSettings()
+                openedInputMonitoring = true
             }
             return JsonRpcResponse(id: request.id, result: .object([
                 "accessibility": .bool(accessibility),
                 "inputMonitoring": .bool(inputMonitoring),
                 "openedAccessibilitySettings": .bool(openedAccessibility),
+                "openedInputMonitoringSettings": .bool(openedInputMonitoring),
             ]))
 
         case "inject.text":
