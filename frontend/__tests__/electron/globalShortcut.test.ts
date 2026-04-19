@@ -1,10 +1,4 @@
 import {EventEmitter} from "node:events";
-import {
-    GLOBAL_HOTKEY_ACCELERATOR,
-    GLOBAL_HOTKEY_IPC_CHANNEL,
-    registerGlobalDictationHotkey,
-    unregisterGlobalDictationHotkey,
-} from "../../electron/dictation/globalHotkey";
 
 const registerMock = jest.fn();
 const unregisterAllMock = jest.fn();
@@ -37,6 +31,13 @@ jest.mock(
     },
     {virtual: true},
 );
+
+import {
+    GLOBAL_HOTKEY_ACCELERATOR,
+    GLOBAL_HOTKEY_IPC_CHANNEL,
+    registerGlobalDictationHotkey,
+    unregisterGlobalDictationHotkey,
+} from "../../electron/dictation/globalHotkey";
 
 describe("globalHotkey — electron main process (TODO-1)", () => {
     beforeEach(() => {

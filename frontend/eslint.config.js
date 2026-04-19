@@ -81,6 +81,8 @@ module.exports = [
             "react/prop-types": "off",
             "@typescript-eslint/no-explicit-any": "warn",
             "@typescript-eslint/no-unused-vars": ["warn", {argsIgnorePattern: "^_"}],
+            "@typescript-eslint/no-empty-object-type": ["error", {allowInterfaces: "with-single-extends"}],
+            "no-empty": ["error", {allowEmptyCatch: true}],
             "no-unused-vars": "off",
             "no-undef": "off",
         },
