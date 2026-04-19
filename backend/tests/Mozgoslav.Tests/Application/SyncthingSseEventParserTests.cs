@@ -157,7 +157,6 @@ public sealed class SyncthingSseEventParserTests
     [TestMethod]
     public void ParseBatch_MalformedEntry_IsSilentlySkipped()
     {
-        // Missing the upstream-required "id" → entry dropped, rest preserved.
         const string json = """
             [
               {"type":"NoId"},

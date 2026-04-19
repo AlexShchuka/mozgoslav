@@ -33,12 +33,6 @@ public sealed class AVFoundationAudioRecorder : IAudioRecorder
     private string? _activeSessionId;
     private DateTime _startedAtUtc;
 
-    // Typed HttpClient factory needs a single unambiguous ctor accepting
-    // HttpClient; the test-only overload below had the same argument shape
-    // and made `ActivatorUtilities.CreateFactory` throw
-    // `Multiple constructors accepting all given argument types have been
-    // found` on every `/api/audio/capabilities` call. `ActivatorUtilitiesConstructor`
-    // disambiguates for both the TypedHttpClientFactory and plain DI paths.
     [ActivatorUtilitiesConstructor]
     public AVFoundationAudioRecorder(
         HttpClient http,

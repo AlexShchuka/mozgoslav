@@ -39,8 +39,6 @@ public sealed class WhisperNetTranscriptionService
     private const int StreamSampleRate = 16_000;
     private const int StreamWindowMs = 500;
     private const int StreamMaxBufferSeconds = 120;
-    // Lower bound on the sliding expiration — protects against DictationModelUnloadMinutes=0
-    // dropping the factory between transcription windows inside a single stream.
     private static readonly TimeSpan MinSlidingExpiration = TimeSpan.FromMinutes(1);
 
     private readonly IVadPreprocessor _vad;
@@ -75,8 +73,6 @@ public sealed class WhisperNetTranscriptionService
 
         _logger.LogInformation("Transcribing {AudioPath}", audioPath);
 
-        // Borrowed reference — the cache owns the WhisperFactory lifetime;
-        // disposal is handled by the PostEvictionCallback.
 #pragma warning disable IDISP001
         var whisperFactory = GetOrCreateFactory();
 #pragma warning restore IDISP001
@@ -105,7 +101,6 @@ public sealed class WhisperNetTranscriptionService
 
         _logger.LogInformation("Starting streaming transcription");
 
-        // Borrowed reference — see TranscribeAsync comment above.
 #pragma warning disable IDISP001
         var whisperFactory = GetOrCreateFactory();
 #pragma warning restore IDISP001
@@ -130,7 +125,6 @@ public sealed class WhisperNetTranscriptionService
             buffer.AddRange(chunk.Samples);
             samplesSinceLastEmit += chunk.Samples.Length;
 
-            // Cap runaway sessions — after two minutes we keep the tail only.
             if (buffer.Count > maxBufferSamples)
             {
                 var overflow = buffer.Count - maxBufferSamples;
@@ -140,7 +134,6 @@ public sealed class WhisperNetTranscriptionService
             if (samplesSinceLastEmit >= windowSamples)
             {
                 samplesSinceLastEmit = 0;
-                // Touch the cache so the sliding window does not elapse mid-stream.
                 _ = _cache.TryGetValue(CacheKey, out _);
                 var snapshot = buffer.ToArray();
                 var text = await TranscribeBufferAsync(whisperFactory, snapshot, language, initialPrompt, ct);
@@ -153,7 +146,6 @@ public sealed class WhisperNetTranscriptionService
             }
         }
 
-        // Final flush when the upstream completes cleanly.
         if (buffer.Count > 0)
         {
             var tail = buffer.ToArray();
@@ -169,9 +161,6 @@ public sealed class WhisperNetTranscriptionService
 
     private WhisperFactory GetOrCreateFactory()
     {
-        // IDISP001/IDISP007 — the WhisperFactory lifetime is owned by the
-        // IMemoryCache, not the caller. The PostEvictionCallback disposes it
-        // when the sliding window elapses.
 #pragma warning disable IDISP001, IDISP007
         var factory = _cache.GetOrCreate(CacheKey, entry =>
         {
@@ -198,8 +187,6 @@ public sealed class WhisperNetTranscriptionService
 
     private static void DisposeOnEviction(object key, object? value, EvictionReason reason, object? state)
     {
-        // IDISP007 — the cached resource's lifetime IS the cache's; disposing
-        // it here IS the cache's eviction mechanism, not a foreign dispose.
 #pragma warning disable IDISP007
         if (value is IDisposable disposable)
         {

@@ -14,12 +14,16 @@
 Не диктофон. Не транскрибатор. Инструмент, который **превращает аудио в знания**.
 
 **Pipeline:**
+
 ```
 аудио → очистка → транскрибация → коррекция → суммаризация → structured markdown → Obsidian → поиск и повторное использование
 ```
 
 **Суть в одном абзаце:**
-Локально записывает или принимает разговоры, прогоняет через очистку, транскрибацию, контекстную коррекцию и суммаризацию, превращает результат в структурированные заметки и складывает в Obsidian так, чтобы история созвонов стала searchable second brain. Базовый консольный pipeline уже есть. Задача — собрать поверх него удобный UI, стабильный MVP и определить, что переписывать, а что обернуть.
+Локально записывает или принимает разговоры, прогоняет через очистку, транскрибацию, контекстную коррекцию и
+суммаризацию, превращает результат в структурированные заметки и складывает в Obsidian так, чтобы история созвонов стала
+searchable second brain. Базовый консольный pipeline уже есть. Задача — собрать поверх него удобный UI, стабильный MVP и
+определить, что переписывать, а что обернуть.
 
 ---
 
@@ -70,22 +74,24 @@ Recording (source, immutable)
   └── [Profile: кастомный]     → Processed Note D (по пользовательскому промпту)
 ```
 
-Пример: запись 1:1 с коллегой. Сначала прогнали как рабочий протокол. Через неделю — как дружеский разговор. Source один, outputs — несколько. Каждый со своим summary, action items, тегами.
+Пример: запись 1:1 с коллегой. Сначала прогнали как рабочий протокол. Через неделю — как дружеский разговор. Source
+один, outputs — несколько. Каждый со своим summary, action items, тегами.
 
 ---
 
 ## 5. Профили / режимы обработки
 
-| Профиль | Что делает | Что выкидывает |
-|---|---|---|
-| **Рабочий** | Задачи, решения, участники, зависимости, дедлайны | Small talk, шутки, болтовню |
-| **Неформальный** | Общий смысл, контекст, шутки как шутки | Ничего — сохраняет всё, но не делает сухой протокол |
-| **1:1** | Личные договорённости, feedback, карьерные вопросы | Общие темы команды |
-| **Свободная заметка** | Ключевые мысли, идеи, инсайты | Структурирование минимальное |
-| **Полная заметка** | Всё: full transcript + summary + entities | Ничего |
-| **Кастомный** | Пользовательский prompt / шаблон | Определяется промптом |
+| Профиль               | Что делает                                         | Что выкидывает                                      |
+|-----------------------|----------------------------------------------------|-----------------------------------------------------|
+| **Рабочий**           | Задачи, решения, участники, зависимости, дедлайны  | Small talk, шутки, болтовню                         |
+| **Неформальный**      | Общий смысл, контекст, шутки как шутки             | Ничего — сохраняет всё, но не делает сухой протокол |
+| **1:1**               | Личные договорённости, feedback, карьерные вопросы | Общие темы команды                                  |
+| **Свободная заметка** | Ключевые мысли, идеи, инсайты                      | Структурирование минимальное                        |
+| **Полная заметка**    | Всё: full transcript + summary + entities          | Ничего                                              |
+| **Кастомный**         | Пользовательский prompt / шаблон                   | Определяется промптом                               |
 
 Каждый профиль = набор:
+
 - system prompt для LLM (что извлекать, что игнорировать)
 - output template (структура .md)
 - cleanup rules (filler removal level)
@@ -96,6 +102,7 @@ Recording (source, immutable)
 ## 6. Что приложение должно уметь (функциональные требования)
 
 ### Запись и импорт
+
 - [ ] Запись аудио по кнопке start/stop
 - [ ] Индикация записи, длительности
 - [ ] Импорт mp3 / m4a / wav / mp4 / ogg / flac
@@ -103,6 +110,7 @@ Recording (source, immutable)
 - [ ] Пакетная загрузка (выбрать папку)
 
 ### Обработка
+
 - [ ] Очередь обработки (queue) с UI: статус каждого файла
 - [ ] Выбор модели транскрибации (whisper large-v3, turbo, etc.)
 - [ ] Выбор модели LLM (Ollama, LM Studio, local)
@@ -113,6 +121,7 @@ Recording (source, immutable)
 - [ ] Настраиваемые профили обработки
 
 ### Экспорт
+
 - [ ] Экспорт в Obsidian (markdown + frontmatter)
 - [ ] Настройка пути к vault
 - [ ] Настройка папки экспорта
@@ -121,6 +130,7 @@ Recording (source, immutable)
 - [ ] Настраиваемый формат frontmatter, теги, links
 
 ### Настройки
+
 - [ ] Пути к моделям
 - [ ] Пути к Obsidian vault
 - [ ] Профили обработки (CRUD)
@@ -182,6 +192,7 @@ processing_version: 1
 ```
 
 ### Агрегированные заметки (V2-V3):
+
 - **По людям:** `[[Иван]].md` — все разговоры, решения, action items
 - **По темам:** `[[Q2 Planning]].md` — все обсуждения темы
 - **По проектам:** `[[Автоматизация отчётности]].md` — контекст проекта из разговоров
@@ -339,7 +350,8 @@ FolderMapping
 
 ### Решение: Wrap vs Rewrite
 
-**Для MVP — wrap.** Существующий консольный pipeline (process.command + Python) уже работает. Не переписываем его, а оборачиваем:
+**Для MVP — wrap.** Существующий консольный pipeline (process.command + Python) уже работает. Не переписываем его, а
+оборачиваем:
 
 ```
 C# Backend
@@ -349,15 +361,18 @@ C# Backend
   └── ExportService     → пишет .md файлы напрямую
 ```
 
-**Для V2+ — постепенный rewrite:** горячие пути (whisper, correction) переезжают на Whisper.net / нативный C#. Python sidecar остаётся для ML-тяжёлых задач.
+**Для V2+ — постепенный rewrite:** горячие пути (whisper, correction) переезжают на Whisper.net / нативный C#. Python
+sidecar остаётся для ML-тяжёлых задач.
 
-**Обоснование:** главный риск — «Claude всё перепишет, потом ничего не стартует, и начнётся долгий дебаг». Wrap-подход минимизирует этот риск: ядро не трогаем, UI строим поверх. Rewrite — только когда понятно зачем и есть тесты.
+**Обоснование:** главный риск — «Claude всё перепишет, потом ничего не стартует, и начнётся долгий дебаг». Wrap-подход
+минимизирует этот риск: ядро не трогаем, UI строим поверх. Rewrite — только когда понятно зачем и есть тесты.
 
 ---
 
 ## 10. Pipeline обработки (детально)
 
 ### Этап 1: Audio Input
+
 ```
 C# AudioService:
   - Запись через системный mic API (NAudio / PortAudio binding)
@@ -368,6 +383,7 @@ C# AudioService:
 ```
 
 ### Этап 2: Transcription
+
 ```
 C# WhisperService:
   MVP: subprocess → whisper-cli с параметрами
@@ -381,6 +397,7 @@ C# WhisperService:
 ```
 
 ### Этап 3: Correction
+
 ```
 C# CorrectionService:
   1. Filler cleanup (regex): "ну", "типа", "эээ", дубликаты
@@ -393,6 +410,7 @@ C# CorrectionService:
 ```
 
 ### Этап 4: Semantic Processing (LLM)
+
 ```
 C# LLMClient → HTTP к Ollama (localhost:11434) или LM Studio (localhost:1234):
 
@@ -420,6 +438,7 @@ C# LLMClient → HTTP к Ollama (localhost:11434) или LM Studio (localhost:12
 ```
 
 ### Этап 5: Markdown Generation
+
 ```
 C# ExportService:
   Вход: ProcessedNote + Profile.output_template
@@ -435,6 +454,7 @@ C# ExportService:
 ```
 
 ### Этап 6: Obsidian Export
+
 ```
 C# ObsidianService:
   Вариант A (MVP): прямая запись .md файла в папку vault
@@ -456,8 +476,10 @@ C# ObsidianService:
 Whisper работает окнами по 30 секунд. Запись на 2 часа = ~240 окон.
 
 **Стратегия:**
+
 1. Whisper обрабатывает как обычно (streaming по окнам) → ~5-15 мин на час аудио (Apple Silicon)
-2. LLM-суммаризация: если transcript > context window LLM (8K-32K токенов) → chunk by segments, summarize chunks, merge summaries
+2. LLM-суммаризация: если transcript > context window LLM (8K-32K токенов) → chunk by segments, summarize chunks, merge
+   summaries
 3. UI показывает прогресс по этапам: transcription 45% → correction → summarization 20%
 4. Промежуточные результаты сохраняются в SQLite (crash-safe: если упадёт, не начинаем с нуля)
 
@@ -465,42 +487,44 @@ Whisper работает окнами по 30 секунд. Запись на 2 
 
 ## 12. Технологический стек
 
-| Компонент | Технология | Почему |
-|---|---|---|
-| Desktop shell | **Electron** | Команда знает TypeScript; зрелая экосистема |
-| UI | **React + TypeScript + Vite** | Знакомый стек; компоненты Meetily как референс |
-| Backend | **C# / ASP.NET Minimal API** | Основной язык команды |
-| STT | **whisper-cli** (MVP) → **Whisper.net** (V2+) | CLI wrap для скорости, нативный C# потом |
-| LLM | **Ollama** / **LM Studio** (HTTP API) | Уже работает; OpenAI-compatible; пользователь выбирает модель |
-| Audio | **ffmpeg** (subprocess) | Универсальный конвертер |
-| Storage | **SQLite** (Microsoft.Data.Sqlite) | Как в Meetily; лёгкий; один файл |
-| ML (V3) | **Python sidecar** (diarize, NER, emotion) | Модели доступны только на Python |
-| Export | **File I/O** (MVP) → **Obsidian REST API** (V2) | Просто; надёжно |
-| Build | **electron-builder** → .dmg | Стандарт |
+| Компонент     | Технология                                      | Почему                                                        |
+|---------------|-------------------------------------------------|---------------------------------------------------------------|
+| Desktop shell | **Electron**                                    | Команда знает TypeScript; зрелая экосистема                   |
+| UI            | **React + TypeScript + Vite**                   | Знакомый стек; компоненты Meetily как референс                |
+| Backend       | **C# / ASP.NET Minimal API**                    | Основной язык команды                                         |
+| STT           | **whisper-cli** (MVP) → **Whisper.net** (V2+)   | CLI wrap для скорости, нативный C# потом                      |
+| LLM           | **Ollama** / **LM Studio** (HTTP API)           | Уже работает; OpenAI-compatible; пользователь выбирает модель |
+| Audio         | **ffmpeg** (subprocess)                         | Универсальный конвертер                                       |
+| Storage       | **SQLite** (Microsoft.Data.Sqlite)              | Как в Meetily; лёгкий; один файл                              |
+| ML (V3)       | **Python sidecar** (diarize, NER, emotion)      | Модели доступны только на Python                              |
+| Export        | **File I/O** (MVP) → **Obsidian REST API** (V2) | Просто; надёжно                                               |
+| Build         | **electron-builder** → .dmg                     | Стандарт                                                      |
 
 ### Модели (RAM бюджет ~10-15 GB)
 
-| Модель | Назначение | Размер | Когда |
-|---|---|---|---|
-| ggml-large-v3-q8_0 | STT | ~1.5 GB | MVP |
-| Silero VAD v6.2.0 | VAD | ~4 MB | MVP |
-| Qwen2.5-14B-Q4 | LLM (correction + summary) | ~9 GB | MVP |
-| Resemblyzer | Diarization embeddings | ~25 MB | V3 |
-| audeering age-gender | Пол спикера | ~1.3 GB | V3 |
-| audeering emotion-dim | Эмоция | ~1.3 GB | V3 |
-| Natasha | NER русский | ~300 MB | V3 |
+| Модель                | Назначение                 | Размер  | Когда |
+|-----------------------|----------------------------|---------|-------|
+| ggml-large-v3-q8_0    | STT                        | ~1.5 GB | MVP   |
+| Silero VAD v6.2.0     | VAD                        | ~4 MB   | MVP   |
+| Qwen2.5-14B-Q4        | LLM (correction + summary) | ~9 GB   | MVP   |
+| Resemblyzer           | Diarization embeddings     | ~25 MB  | V3    |
+| audeering age-gender  | Пол спикера                | ~1.3 GB | V3    |
+| audeering emotion-dim | Эмоция                     | ~1.3 GB | V3    |
+| Natasha               | NER русский                | ~300 MB | V3    |
 
 ---
 
 ## 13. Что берём из Meetily / существующего pipeline
 
 ### Из Meetily (референс)
+
 - UI компоненты и UX паттерны (React)
 - SQLite-схема встреч (совместимость)
 - Идея audio pipeline (6-stage preprocessing)
 - Модель whisper (ggml-large-v3-q8_0.bin) — тот же файл
 
 ### Из консольного MVP (bash + Python)
+
 - **Whisper параметры** (beam_size=5, best_of=5, max_context=0, suppress_nst, VAD, prompt) — проверены в бою
 - **Filler cleanup** (regex + словарь) — работает
 - **Diarization pipeline** (Silero VAD + Resemblyzer + sklearn) — V3
@@ -514,16 +538,16 @@ Whisper работает окнами по 30 секунд. Запись на 2 
 
 ## 14. Что НЕ делаем
 
-| Что | Почему |
-|---|---|
-| Облачные API | Всё локально, privacy-first |
-| Rust backend | Команда не знает Rust |
-| Tauri | Зависимость от Rust |
-| Live transcription (MVP) | Сложно; batch-first |
-| Идеальный UX (MVP) | Функциональность > полировка |
-| Автоматизация всего (MVP) | Ручной контроль > магия |
-| Многопользовательность | Однопользовательский desktop app |
-| Diarization (MVP) | V3 — сложная ML-задача |
+| Что                       | Почему                           |
+|---------------------------|----------------------------------|
+| Облачные API              | Всё локально, privacy-first      |
+| Rust backend              | Команда не знает Rust            |
+| Tauri                     | Зависимость от Rust              |
+| Live transcription (MVP)  | Сложно; batch-first              |
+| Идеальный UX (MVP)        | Функциональность > полировка     |
+| Автоматизация всего (MVP) | Ручной контроль > магия          |
+| Многопользовательность    | Однопользовательский desktop app |
+| Diarization (MVP)         | V3 — сложная ML-задача           |
 
 ---
 
@@ -579,37 +603,45 @@ Whisper работает окнами по 30 секунд. Запись на 2 
 
 ## 16. Риски
 
-| Риск | Вероятность | Влияние | Митигация |
-|---|---|---|---|
-| **Переписывание Rust→C# через LLM → дебаг мелких ошибок** | Высокая | Высокое | **Wrap, не rewrite.** MVP использует subprocess'ы. Нативный C# — только по необходимости, с тестами. |
-| **Интеграции, зависимости, async, edge cases** | Высокая | Среднее | Поэтапный подход. Каждый этап pipeline — отдельный сервис, тестируемый изолированно. |
-| **Python sidecar тяжёлый (2-3 GB)** | Средняя | Среднее | В MVP Python не нужен (diarization = V3). Потом — embedded Python или отдельная установка. |
-| **LLM-суммаризация нестабильна (JSON parsing fails)** | Средняя | Среднее | Structured output (JSON mode); retry; fallback на plain text. |
-| **Длинные записи не влезают в context window LLM** | Средняя | Среднее | Chunk → summarize → merge. MapReduce pattern. |
-| **Структура Obsidian vault неясна** | Средняя | Низкое | MVP: простой file export. PARA routing — V2. |
-| **Несколько интерпретаций одной записи — как хранить** | Средняя | Среднее | ProcessedNote с version + profile_id. Отдельные .md файлы: `{date}-{topic}-{profile}.md` |
-| **Whisper.net CoreML на Apple Silicon** | Низкая | Высокое | Fallback на whisper-cli subprocess (уже работает). |
-| **Electron тяжёлый** | Низкая | Низкое | Для pet-project приемлемо. |
+| Риск                                                      | Вероятность | Влияние | Митигация                                                                                            |
+|-----------------------------------------------------------|-------------|---------|------------------------------------------------------------------------------------------------------|
+| **Переписывание Rust→C# через LLM → дебаг мелких ошибок** | Высокая     | Высокое | **Wrap, не rewrite.** MVP использует subprocess'ы. Нативный C# — только по необходимости, с тестами. |
+| **Интеграции, зависимости, async, edge cases**            | Высокая     | Среднее | Поэтапный подход. Каждый этап pipeline — отдельный сервис, тестируемый изолированно.                 |
+| **Python sidecar тяжёлый (2-3 GB)**                       | Средняя     | Среднее | В MVP Python не нужен (diarization = V3). Потом — embedded Python или отдельная установка.           |
+| **LLM-суммаризация нестабильна (JSON parsing fails)**     | Средняя     | Среднее | Structured output (JSON mode); retry; fallback на plain text.                                        |
+| **Длинные записи не влезают в context window LLM**        | Средняя     | Среднее | Chunk → summarize → merge. MapReduce pattern.                                                        |
+| **Структура Obsidian vault неясна**                       | Средняя     | Низкое  | MVP: простой file export. PARA routing — V2.                                                         |
+| **Несколько интерпретаций одной записи — как хранить**    | Средняя     | Среднее | ProcessedNote с version + profile_id. Отдельные .md файлы: `{date}-{topic}-{profile}.md`             |
+| **Whisper.net CoreML на Apple Silicon**                   | Низкая      | Высокое | Fallback на whisper-cli subprocess (уже работает).                                                   |
+| **Electron тяжёлый**                                      | Низкая      | Низкое  | Для pet-project приемлемо.                                                                           |
 
 ---
 
 ## 17. Открытые вопросы
 
-1. **Wrap vs Rewrite граница:** конкретно что оставить как subprocess, а что переписать на C# в MVP? Текущее решение: всё subprocess, rewrite по необходимости.
+1. **Wrap vs Rewrite граница:** конкретно что оставить как subprocess, а что переписать на C# в MVP? Текущее решение:
+   всё subprocess, rewrite по необходимости.
 
-2. **LLM выбор:** Ollama (standalone daemon) или LM Studio (GUI + API)? Или поддержать оба? Текущее решение: OpenAI-compatible HTTP API — работает с обоими.
+2. **LLM выбор:** Ollama (standalone daemon) или LM Studio (GUI + API)? Или поддержать оба? Текущее решение:
+   OpenAI-compatible HTTP API — работает с обоими.
 
-3. **Минимальный контракт UI ↔ Backend:** REST API? gRPC? SignalR для real-time прогресса? Текущее решение: REST + SSE (Server-Sent Events) для прогресса.
+3. **Минимальный контракт UI ↔ Backend:** REST API? gRPC? SignalR для real-time прогресса? Текущее решение: REST + SSE (
+   Server-Sent Events) для прогресса.
 
-4. **Obsidian: файловый экспорт vs REST API vs plugin:** MVP = файловый экспорт (просто, надёжно). V2 = REST API. Templater = опционально.
+4. **Obsidian: файловый экспорт vs REST API vs plugin:** MVP = файловый экспорт (просто, надёжно). V2 = REST API.
+   Templater = опционально.
 
-5. **Несколько интерпретаций одной записи:** разные файлы (`meeting-work.md`, `meeting-personal.md`)? Или один файл с секциями? Текущее решение: разные файлы, связанные через frontmatter `source_audio`.
+5. **Несколько интерпретаций одной записи:** разные файлы (`meeting-work.md`, `meeting-personal.md`)? Или один файл с
+   секциями? Текущее решение: разные файлы, связанные через frontmatter `source_audio`.
 
-6. **Как хранить модели:** в Application Support? Скачивать при первом запуске? Предлагать выбор? Текущее решение: Application Support + UI для скачивания.
+6. **Как хранить модели:** в Application Support? Скачивать при первом запуске? Предлагать выбор? Текущее решение:
+   Application Support + UI для скачивания.
 
-7. **Очередь и массовая обработка:** in-memory queue? Persistent queue (SQLite)? Текущее решение: SQLite (ProcessingJob table) — crash-safe.
+7. **Очередь и массовая обработка:** in-memory queue? Persistent queue (SQLite)? Текущее решение: SQLite (ProcessingJob
+   table) — crash-safe.
 
-8. **Граница приложение ↔ Obsidian:** что делает приложение, а что делает Templater/Obsidian Copilot? Текущее решение: приложение делает всё до .md файла; Obsidian делает routing/linking/search потом.
+8. **Граница приложение ↔ Obsidian:** что делает приложение, а что делает Templater/Obsidian Copilot? Текущее решение:
+   приложение делает всё до .md файла; Obsidian делает routing/linking/search потом.
 
 ---
 
@@ -619,6 +651,9 @@ Whisper работает окнами по 30 секунд. Запись на 2 
 2. **Каждый pipeline-этап — изолированный сервис.** Тестируемый отдельно. Заменяемый.
 3. **SQLite как single source of truth.** Один файл, portable, debuggable.
 4. **Profiles — first-class citizen.** Вся обработка параметризована профилем.
-5. **Graceful degradation.** Если Ollama не запущен — skip summarization, дать raw transcript. Если Obsidian недоступен — сохранить .md локально.
-6. **Идемпотентность.** Повторный прогон того же файла с тем же профилем — тот же результат. Перепрогон с другим профилем — новый ProcessedNote.
-7. **Понятный код.** C# + TypeScript — весь код читаем всей команде. Claude помогает, но код должен быть понятен без Claude.
+5. **Graceful degradation.** Если Ollama не запущен — skip summarization, дать raw transcript. Если Obsidian
+   недоступен — сохранить .md локально.
+6. **Идемпотентность.** Повторный прогон того же файла с тем же профилем — тот же результат. Перепрогон с другим
+   профилем — новый ProcessedNote.
+7. **Понятный код.** C# + TypeScript — весь код читаем всей команде. Claude помогает, но код должен быть понятен без
+   Claude.

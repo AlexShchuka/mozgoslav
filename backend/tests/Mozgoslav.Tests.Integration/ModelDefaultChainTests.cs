@@ -23,10 +23,6 @@ public sealed class ModelDefaultChainTests
     [TestMethod]
     public void AppPathsDefault_MatchesTier1BundleFilename()
     {
-        // Task #12a — first-run default now points at the Tier 1 bundled STT
-        // (Whisper Small RU), not the Tier 2 antony66 IsDefault entry. Keeps
-        // the first-run path and the bundled/downloadable filename in sync
-        // (original BC-034 / bug 2 invariant still holds, just against Tier 1).
         var tier1Stt = ModelCatalog.All.First(e => e.Kind == ModelKind.Stt && e.Tier == ModelTier.Bundle);
         var catalogueFileName = Path.GetFileName(new Uri(tier1Stt.Url).AbsolutePath);
         var defaultPathFileName = Path.GetFileName(AppPaths.DefaultWhisperModelPath);

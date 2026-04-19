@@ -44,12 +44,6 @@ public sealed class MozgoslavDbContext : DbContext
             v => JsonSerializer.Serialize(v ?? new List<TranscriptSegment>(), (JsonSerializerOptions?)null),
             v => JsonSerializer.Deserialize<List<TranscriptSegment>>(v, (JsonSerializerOptions?)null) ?? new List<TranscriptSegment>());
 
-        // ADR-007 BC-051 / bug 7 — EF Core emits a warning whenever a mutable
-        // reference-typed property is mapped without a ValueComparer because
-        // the change tracker cannot detect in-place mutations (Add / Remove on
-        // a list instead of reassigning the property). The comparers below do
-        // a structural SequenceEqual, hash the combined element hashes, and
-        // snapshot via ToList so EF sees edits.
         var stringListComparer = new ValueComparer<List<string>>(
             (l, r) => (l ?? new List<string>()).SequenceEqual(r ?? new List<string>()),
             v => v == null ? 0 : v.Aggregate(0, (acc, s) => HashCode.Combine(acc, s == null ? 0 : s.GetHashCode(StringComparison.Ordinal))),
@@ -79,10 +73,6 @@ public sealed class MozgoslavDbContext : DbContext
             e.Property(x => x.SourceType).HasColumnName("source_type").HasConversion<string>().IsRequired();
             e.Property(x => x.Status).HasColumnName("status").HasConversion<string>().IsRequired();
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
-            // Non-unique index. Idempotency on import was removed per product
-            // decision (2026-04-19) — the same audio file may now be imported
-            // multiple times, producing distinct Recording rows. Vault-export
-            // idempotency remains enforced at the note level, not here.
             e.HasIndex(x => x.Sha256);
             e.HasIndex(x => x.CreatedAt);
         });
@@ -112,7 +102,6 @@ public sealed class MozgoslavDbContext : DbContext
             e.Property(x => x.TranscriptId).HasColumnName("transcript_id");
             e.Property(x => x.ProfileId).HasColumnName("profile_id");
             e.Property(x => x.Version).HasColumnName("version");
-            // BC-022 — Source distinguishes Processed vs Manual notes.
             e.Property(x => x.Source).HasColumnName("source").HasConversion<string>().IsRequired();
             e.Property(x => x.Title).HasColumnName("title");
             e.Property(x => x.Summary).HasColumnName("summary");
@@ -154,7 +143,6 @@ public sealed class MozgoslavDbContext : DbContext
             autoTagsProperty.Metadata.SetValueComparer(stringListComparer);
             e.Property(x => x.IsDefault).HasColumnName("is_default");
             e.Property(x => x.IsBuiltIn).HasColumnName("is_built_in");
-            // Plan v0.8 Block 5 — glossary + LLM correction opt-in.
             var glossaryProperty = e.Property(x => x.Glossary).HasColumnName("glossary_json").HasConversion(stringListConverter);
             glossaryProperty.Metadata.SetValueComparer(stringListComparer);
             e.Property(x => x.LlmCorrectionEnabled).HasColumnName("llm_correction_enabled");
@@ -175,9 +163,6 @@ public sealed class MozgoslavDbContext : DbContext
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
             e.Property(x => x.StartedAt).HasColumnName("started_at");
             e.Property(x => x.FinishedAt).HasColumnName("finished_at");
-            // ADR-015 — cooperative cancel flag. Defaults to false so existing
-            // rows materialised via EnsureCreated / Migration 0014 see a
-            // byte-identical state.
             e.Property(x => x.CancelRequested).HasColumnName("cancel_requested").HasDefaultValue(false);
             e.HasIndex(x => x.Status);
             e.HasIndex(x => x.RecordingId);

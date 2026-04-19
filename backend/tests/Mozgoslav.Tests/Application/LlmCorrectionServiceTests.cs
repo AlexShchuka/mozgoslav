@@ -33,8 +33,6 @@ public sealed class LlmCorrectionServiceTests
         var profile = new Profile { Glossary = { "Марина" } };
         var result = await service.CorrectAsync("иван встретился с мариной в москве.", profile, CancellationToken.None);
 
-        // The provider echoes the corrected string; we only assert the
-        // scripted output flows through and the glossary term is preserved.
         result.Should().Contain("Мариной");
         result.Should().Contain("Иван");
     }
@@ -116,7 +114,6 @@ public sealed class LlmCorrectionServiceTests
         var first = "aaaaaaaaaaBBBBB"; // 15 chars total, 5 trailing to drop
         var second = "CCCCCDDDDDDDDDD";
         var merged = LlmCorrectionService.MergeChunks([first, second], 5);
-        // Last 5 of first are dropped → "aaaaaaaaaa" + "CCCCCDDDDDDDDDD".
         merged.Should().Be("aaaaaaaaaaCCCCCDDDDDDDDDD");
     }
 }

@@ -77,8 +77,6 @@ public sealed class SidecarContainerTests
         }
         catch (Exception ex)
         {
-            // DockerAPIException, DockerNotFoundException, image-build
-            // failures, etc. — all mean we can't run these tests here.
             _dockerFailure = ex;
             _dockerAvailable = false;
         }
@@ -141,8 +139,6 @@ public sealed class SidecarContainerTests
     [TestMethod]
     public async Task Health_RealSidecar_ReturnsServiceBanner()
     {
-        // Sanity — the container is up and answering. If this fails in
-        // CI, the other tests never got a chance either.
         using var response = await _httpClient!.GetAsync("/health", TestContext.CancellationToken);
         response.EnsureSuccessStatusCode();
 
@@ -153,8 +149,6 @@ public sealed class SidecarContainerTests
 
     private static string LocateRepoRoot()
     {
-        // Tests run from the bin output folder — walk up until we find
-        // the repository root (contains ``python-sidecar/`` directory).
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null)
         {

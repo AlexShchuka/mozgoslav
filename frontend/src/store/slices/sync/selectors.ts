@@ -1,5 +1,5 @@
-import type { GlobalState } from "../../rootReducer";
-import type { SyncState } from "./types";
+import type {GlobalState} from "../../rootReducer";
+import type {SyncState} from "./types";
 
 const root = (state: GlobalState): SyncState => state.sync;
 

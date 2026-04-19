@@ -10,11 +10,11 @@ ever see the files. Bytes are encrypted in transit.
 
 Three folders are shared:
 
-| Folder ID                      | Purpose                                                      |
-| ------------------------------ | ------------------------------------------------------------ |
-| `mozgoslav-recordings`         | Voice memos captured on the phone, imported into the desktop |
-| `mozgoslav-notes`              | Markdown notes exported by Mozgoslav                         |
-| `mozgoslav-obsidian-vault`     | Your full Obsidian vault (optional — only if enabled in Settings) |
+| Folder ID                  | Purpose                                                           |
+|----------------------------|-------------------------------------------------------------------|
+| `mozgoslav-recordings`     | Voice memos captured on the phone, imported into the desktop      |
+| `mozgoslav-notes`          | Markdown notes exported by Mozgoslav                              |
+| `mozgoslav-obsidian-vault` | Your full Obsidian vault (optional — only if enabled in Settings) |
 
 ## 1. Desktop — open the pairing screen
 

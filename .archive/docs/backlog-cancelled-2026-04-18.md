@@ -1,6 +1,8 @@
 # Backlog — Cancelled items (snapshot 2026-04-18)
 
-Сюда уходят пункты, которые сознательно сняты с бэклога по итогам разбора `docs/adr/ADR-014-unrealized-backlog.md`. Это исторический след: видно ЧТО и ПОЧЕМУ мы решили не делать. Обновлять и дополнять этот файл не нужно — он фиксирует состояние на указанную дату.
+Сюда уходят пункты, которые сознательно сняты с бэклога по итогам разбора `docs/adr/ADR-014-unrealized-backlog.md`. Это
+исторический след: видно ЧТО и ПОЧЕМУ мы решили не делать. Обновлять и дополнять этот файл не нужно — он фиксирует
+состояние на указанную дату.
 
 ## R1 — Apple Developer ID signing + notarization
 
@@ -12,11 +14,13 @@
 
 ## C1 — Calendar autostart
 
-**Было:** исторический ADR-006, идея — подписаться на macOS Calendar через EventKit, авто-запускать запись когда встреча начинается.
+**Было:** исторический ADR-006, идея — подписаться на macOS Calendar через EventKit, авто-запускать запись когда встреча
+начинается.
 
 **Статус:** не делаем.
 
-**Почему:** owner — «пока не надо». Phase-1 (ручной старт записи) покрывает use-case. Если появится внешний запрос — разморозим с отдельным ADR.
+**Почему:** owner — «пока не надо». Phase-1 (ручной старт записи) покрывает use-case. Если появится внешний запрос —
+разморозим с отдельным ADR.
 
 ## L1 — Light-mode visual review
 
@@ -24,12 +28,16 @@
 
 **Статус:** не делаем.
 
-**Почему:** UX всё равно будет переделываться в следующей итерации дизайна. Полировка текущего light-mode — sunk cost перед переработкой.
+**Почему:** UX всё равно будет переделываться в следующей итерации дизайна. Полировка текущего light-mode — sunk cost
+перед переработкой.
 
 ## M2 — Multipart audio upload вариант endpoint'ов
 
-**Было:** sidecar'овые endpoint'ы сейчас принимают `{audio_path: "..."}` — single-machine assumption. Если sidecar контейнеризуется и теряет доступ к host-FS, нужен multipart upload (bytes через body).
+**Было:** sidecar'овые endpoint'ы сейчас принимают `{audio_path: "..."}` — single-machine assumption. Если sidecar
+контейнеризуется и теряет доступ к host-FS, нужен multipart upload (bytes через body).
 
 **Статус:** не делаем.
 
-**Почему:** owner-decision — контейнеризацию sidecar на desktop не делаем. Product positioning (local-first, macOS-first, bundled DMG, privacy zero-network) не совместим с требованием Docker Desktop у юзера. Если когда-нибудь появится cloud-sidecar — это будет отдельное ADR, и multipart добавится там.
+**Почему:** owner-decision — контейнеризацию sidecar на desktop не делаем. Product positioning (local-first,
+macOS-first, bundled DMG, privacy zero-network) не совместим с требованием Docker Desktop у юзера. Если когда-нибудь
+появится cloud-sidecar — это будет отдельное ADR, и multipart добавится там.

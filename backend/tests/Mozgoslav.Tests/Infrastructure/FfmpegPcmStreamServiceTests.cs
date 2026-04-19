@@ -115,7 +115,6 @@ public sealed class FfmpegPcmStreamServiceTests
 
         await service.StartAsync(sessionId, CancellationToken.None);
 
-        // Not a valid WebM stream — ffmpeg will fail EBML parsing and exit non-zero.
         var rubbish = new byte[512];
         System.Security.Cryptography.RandomNumberGenerator.Fill(rubbish);
         try
@@ -124,22 +123,18 @@ public sealed class FfmpegPcmStreamServiceTests
         }
         catch (InvalidOperationException)
         {
-            // ffmpeg may close stdin before our write completes — either is acceptable.
         }
 
         var act = async () => await service.StopAsync(sessionId, CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
 
-        // After the stop path completes the session is removed; a follow-up
-        // cancel is a no-op (no zombie process left around).
         var cancelAct = async () => await service.CancelAsync(sessionId, CancellationToken.None);
         await cancelAct.Should().NotThrowAsync();
     }
 
     private static string LocateFixtureDirectory()
     {
-        // Content items copied to the test bin directory under Fixtures/.
         var root = Path.Combine(AppContext.BaseDirectory, "Fixtures", "dictation-webm-chunks");
         return Directory.Exists(root) ? root : root; // Tests surface FileNotFound when absent.
     }

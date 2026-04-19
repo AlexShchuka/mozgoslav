@@ -12,10 +12,6 @@ public final class DictationHelper {
     private let textInjector: TextInjectionService
     private let focusDetector: FocusedAppDetector
     private let hotkeyMonitor: HotkeyMonitor
-    // Serial queue for every stdout write. The JSON-RPC loop runs on a
-    // background thread (see main.swift) while HotkeyMonitor emits events
-    // from AppKit's main thread — without serialisation the two can
-    // interleave mid-line and corrupt the protocol.
     private let writeQueue = DispatchQueue(label: "mozgoslav.helper.stdout")
 
     public init(
@@ -39,9 +35,6 @@ public final class DictationHelper {
             ]))
         }
 
-        // NEXT H1 — emit press / release events for the configured dictation
-        // hotkey. Electron main POSTs them to /_internal/hotkey/event so the
-        // renderer (SSE subscriber) can drive true push-to-talk lifecycle.
         hotkeyMonitor.onEvent = { [weak self] payload in
             self?.emit(event: "hotkey", params: .object([
                 "kind": .string(payload.kind),
@@ -134,11 +127,6 @@ public final class DictationHelper {
             ]))
 
         case "permission.request":
-            // NEXT H1 fix — expose the native Accessibility / Input Monitoring
-            // prompts to the renderer so the Onboarding wizard can trigger
-            // them from a button click. `opened*` is true when we had to fall
-            // back to the System Settings deeplink because the OS suppressed
-            // the automatic prompt (user already denied once).
             let accessibility = PermissionProbe.requestAccessibility()
             let inputMonitoring = PermissionProbe.requestInputMonitoring()
             var openedAccessibility = false
@@ -162,8 +150,6 @@ public final class DictationHelper {
             return JsonRpcResponse(id: request.id, result: .object([
                 "injected": .int(text.count),
                 "strategy": .string(strategy.rawValue),
-                // Reported so the C# backend can resolve ADR-004 R2
-                // per-app correction profiles keyed on the focused app.
                 "bundleId": .string(focused.bundleId ?? ""),
                 "appName": .string(focused.appName ?? ""),
             ]))
@@ -208,8 +194,6 @@ public final class DictationHelper {
                     stdout.write(data)
                 }
             } catch {
-                // Best effort — if encoding fails we cannot signal the error
-                // back via the same channel; swallow and keep the loop alive.
             }
         }
     }

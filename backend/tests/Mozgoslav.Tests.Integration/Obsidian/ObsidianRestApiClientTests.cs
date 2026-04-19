@@ -114,9 +114,6 @@ public sealed class ObsidianRestApiClientTests : IDisposable
     [TestMethod]
     public async Task OpenNoteAsync_PostsEscapedPath()
     {
-        // WireMock matches decoded paths — the client escapes "/" to "%2F" in
-        // transit but the matcher sees the decoded form. We still assert the
-        // request was delivered successfully (200) to prove the route shape.
         _server.Given(Request.Create().WithPath("/open/inbox/note.md").UsingPost())
             .RespondWith(Response.Create().WithStatusCode(200));
         _server.Given(Request.Create().WithPath("/open/inbox%2Fnote.md").UsingPost())

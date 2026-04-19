@@ -1,5 +1,5 @@
-import type { GlobalState } from "../../rootReducer";
-import type { RagState } from "./types";
+import type {GlobalState} from "../../rootReducer";
+import type {RagState} from "./types";
 
 const root = (state: GlobalState): RagState => state.rag;
 

@@ -87,10 +87,6 @@ public sealed class LlmCorrectionService
         return string.IsNullOrWhiteSpace(glossarySuffix) ? core : core + " " + glossarySuffix;
     }
 
-    // Overlapping windows so punctuation/capitalisation at the boundary does
-    // not get truncated by a clean chunk break. Default overlap is small
-    // (400 chars ≈ 100 tokens) which is enough for Russian sentence spans
-    // without ballooning the LLM cost.
     public static IEnumerable<string> Chunk(string text, int chunkChars, int overlapChars)
     {
         if (text.Length <= chunkChars)
@@ -124,17 +120,10 @@ public sealed class LlmCorrectionService
         {
             return corrected[0];
         }
-        // Simple concatenation with an approximate overlap-trim — we drop the
-        // last `overlapChars` of each preceding chunk to avoid duplicated
-        // boundary tokens. This is heuristic; the summarisation step
-        // tolerates small overlaps gracefully.
         var first = corrected[0];
         var builder = new StringBuilder(first, first.Length + corrected.Count * 128);
         for (var i = 1; i < corrected.Count; i++)
         {
-            // Trim the overlap from the end of the running text so the next
-            // chunk starts clean. When the previous chunk was shorter than
-            // the overlap window we just append without trimming.
             if (builder.Length >= overlapChars)
             {
                 builder.Length -= overlapChars;

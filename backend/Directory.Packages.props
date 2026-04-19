@@ -1,63 +1,63 @@
 <Project>
-  <PropertyGroup>
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <!-- Fix majors only; let minor/patch float so security fixes flow in automatically. -->
-    <CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
-  </PropertyGroup>
-  <ItemGroup>
-    <!-- STT / LLM -->
-    <PackageVersion Include="Whisper.net" Version="1.*" />
-    <PackageVersion Include="Whisper.net.Runtime.CoreML" Version="1.*" />
-    <PackageVersion Include="OpenAI" Version="2.*" />
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+        <!-- Fix majors only; let minor/patch float so security fixes flow in automatically. -->
+        <CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
+    </PropertyGroup>
+    <ItemGroup>
+        <!-- STT / LLM -->
+        <PackageVersion Include="Whisper.net" Version="1.*"/>
+        <PackageVersion Include="Whisper.net.Runtime.CoreML" Version="1.*"/>
+        <PackageVersion Include="OpenAI" Version="2.*"/>
 
-    <!-- Data access -->
-    <PackageVersion Include="Dapper" Version="2.*" />
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.*" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.*" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.*" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.*" />
+        <!-- Data access -->
+        <PackageVersion Include="Dapper" Version="2.*"/>
+        <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.*"/>
+        <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.*"/>
+        <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.*"/>
+        <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.*"/>
 
-    <!-- Hosting / DI / HTTP -->
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.*" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.*" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.*" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.*" />
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.*" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.*" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.*" />
+        <!-- Hosting / DI / HTTP -->
+        <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.*"/>
+        <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.*"/>
+        <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.*"/>
+        <PackageVersion Include="Microsoft.Extensions.Http" Version="10.*"/>
+        <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.*"/>
+        <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.*"/>
+        <PackageVersion Include="Microsoft.Extensions.Options" Version="10.*"/>
 
-    <!-- ADR-011 — ML tokenizers / CliWrap / Quartz -->
-    <PackageVersion Include="Microsoft.ML.Tokenizers" Version="1.*" />
-    <PackageVersion Include="Microsoft.ML.Tokenizers.Data.Cl100kBase" Version="1.*" />
-    <PackageVersion Include="CliWrap" Version="3.*" />
-    <PackageVersion Include="Quartz" Version="3.*" />
-    <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.*" />
-    <PackageVersion Include="Quartz.Plugins" Version="3.*" />
+        <!-- ADR-011 — ML tokenizers / CliWrap / Quartz -->
+        <PackageVersion Include="Microsoft.ML.Tokenizers" Version="1.*"/>
+        <PackageVersion Include="Microsoft.ML.Tokenizers.Data.Cl100kBase" Version="1.*"/>
+        <PackageVersion Include="CliWrap" Version="3.*"/>
+        <PackageVersion Include="Quartz" Version="3.*"/>
+        <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.*"/>
+        <PackageVersion Include="Quartz.Plugins" Version="3.*"/>
 
-    <!-- Logging / metrics -->
-    <PackageVersion Include="Serilog.AspNetCore" Version="8.*" />
-    <PackageVersion Include="Serilog.Sinks.File" Version="6.*" />
-    <PackageVersion Include="Serilog.Sinks.Console" Version="6.*" />
-    <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.*" />
-    <PackageVersion Include="Serilog.Enrichers.Process" Version="3.*" />
-    <PackageVersion Include="Serilog.Enrichers.Thread" Version="4.*" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.*" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.*" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.*" />
+        <!-- Logging / metrics -->
+        <PackageVersion Include="Serilog.AspNetCore" Version="8.*"/>
+        <PackageVersion Include="Serilog.Sinks.File" Version="6.*"/>
+        <PackageVersion Include="Serilog.Sinks.Console" Version="6.*"/>
+        <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.*"/>
+        <PackageVersion Include="Serilog.Enrichers.Process" Version="3.*"/>
+        <PackageVersion Include="Serilog.Enrichers.Thread" Version="4.*"/>
+        <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.*"/>
+        <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.*"/>
+        <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.*"/>
 
-    <!-- Testing (MSTest + FluentAssertions — align with team C# service style) -->
-    <PackageVersion Include="MSTest.TestAdapter" Version="3.*" />
-    <PackageVersion Include="MSTest.TestFramework" Version="3.*" />
-    <PackageVersion Include="NSubstitute" Version="5.*" />
-    <PackageVersion Include="FluentAssertions" Version="7.*" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.*" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.*" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.*" />
-    <PackageVersion Include="WireMock.Net" Version="1.*" />
-    <PackageVersion Include="Testcontainers" Version="4.*" />
+        <!-- Testing (MSTest + FluentAssertions — align with team C# service style) -->
+        <PackageVersion Include="MSTest.TestAdapter" Version="3.*"/>
+        <PackageVersion Include="MSTest.TestFramework" Version="3.*"/>
+        <PackageVersion Include="NSubstitute" Version="5.*"/>
+        <PackageVersion Include="FluentAssertions" Version="7.*"/>
+        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.*"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.*"/>
+        <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.*"/>
+        <PackageVersion Include="WireMock.Net" Version="1.*"/>
+        <PackageVersion Include="Testcontainers" Version="4.*"/>
 
-    <!-- Analyzers (applied to every project via Directory.Build.props) -->
-    <PackageVersion Include="IDisposableAnalyzers" Version="4.*" />
-    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.*" />
-  </ItemGroup>
+        <!-- Analyzers (applied to every project via Directory.Build.props) -->
+        <PackageVersion Include="IDisposableAnalyzers" Version="4.*"/>
+        <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.*"/>
+    </ItemGroup>
 </Project>

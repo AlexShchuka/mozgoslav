@@ -23,35 +23,35 @@ mac:
     # scripts/fetch-bundle-models.sh before electron-builder runs.
     - from: build/bundle-models
       to: bundle-models
-      filter: ["**/*"]
+      filter: [ "**/*" ]
     # Push-to-talk helper — built from helpers/MozgoslavDictationHelper
     # via `swift build -c release` on macOS CI and copied into the bundle.
     - from: ../helpers/MozgoslavDictationHelper/.build/release/mozgoslav-dictation-helper
       to: mozgoslav-dictation-helper
-      filter: ["**/*"]
+      filter: [ "**/*" ]
     # Syncthing binaries — populated by scripts/fetch-syncthing.sh (ADR-003 D4).
     # Both darwin archs are bundled so universal builds and cross-arch
     # dev iteration work without extra plumbing. Runtime selection is
     # handled by electron/utils/syncthingLauncher.ts.
     - from: resources/syncthing/darwin-arm64
       to: syncthing/darwin-arm64
-      filter: ["**/*"]
+      filter: [ "**/*" ]
     - from: resources/syncthing/darwin-amd64
       to: syncthing/darwin-amd64
-      filter: ["**/*"]
+      filter: [ "**/*" ]
 win:
   extraResources:
     - from: resources/syncthing/windows-amd64
       to: syncthing/windows-amd64
-      filter: ["**/*"]
+      filter: [ "**/*" ]
 linux:
   extraResources:
     - from: resources/syncthing/linux-amd64
       to: syncthing/linux-amd64
-      filter: ["**/*"]
+      filter: [ "**/*" ]
     - from: resources/syncthing/linux-arm64
       to: syncthing/linux-arm64
-      filter: ["**/*"]
+      filter: [ "**/*" ]
 dmg:
   iconSize: 100
   contents:

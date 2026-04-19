@@ -31,7 +31,6 @@ public sealed class DictationEndpointsTests
         body.Should().NotBeNull();
         body.SessionId.Should().NotBeEmpty();
 
-        // cleanup: otherwise Whisper.net would be invoked on stop (no model available).
         await client.PostAsync($"/api/dictation/cancel/{body.SessionId}", content: null, TestContext.CancellationToken);
     }
 

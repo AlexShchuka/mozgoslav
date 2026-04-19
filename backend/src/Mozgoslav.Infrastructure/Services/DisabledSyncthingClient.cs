@@ -27,7 +27,6 @@ public sealed class DisabledSyncthingClient : ISyncthingClient
     public async IAsyncEnumerable<SyncthingEvent> StreamEventsAsync(
         [EnumeratorCancellation] CancellationToken ct)
     {
-        // Complete immediately — nothing to stream when Syncthing is disabled.
         await Task.CompletedTask;
         yield break;
     }

@@ -23,8 +23,6 @@ public sealed class ProcessQueueWorker
 {
     private const int TranscribeEnd = 50;
     private const int CorrectionEnd = 60;
-    // Plan v0.8 Block 5 — LLM correction stage sits between filler cleanup
-    // (60) and summarisation (85). Progress weighting matches the plan.
     private const int LlmCorrectionEnd = 70;
     private const int SummarizeEnd = 85;
     private const int ExportEnd = 100;
@@ -105,19 +103,12 @@ public sealed class ProcessQueueWorker
             return;
         }
 
-        // ADR-015 — register a per-job linked CTS so the cancel endpoint can
-        // signal cooperative cancellation on the active pipeline stage. The
-        // pipeline runs against `perJobToken`; the host-stopping `ct` is kept
-        // separately so the `when` filter below can distinguish a host-stopping
-        // OCE (re-thrown) from a user-cancel OCE (mark Cancelled).
         var perJobToken = _cancellationRegistry.Register(job.Id, ct).Token;
 
         try
         {
             if (job.CancelRequested)
             {
-                // Cancel was requested while the job was still Queued — skip
-                // the pipeline entirely and go straight to the terminal state.
                 await MarkCancelledAsync(job);
                 return;
             }
@@ -126,15 +117,11 @@ public sealed class ProcessQueueWorker
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
-            // Cooperative cancel — host is still running, only the per-job
-            // token was cancelled. Transition to the Cancelled terminal state
-            // using CancellationToken.None so the repo/notifier writes survive.
             _logger.LogInformation("Processing job {JobId} cancelled by user", job.Id);
             await MarkCancelledAsync(job);
         }
         catch (OperationCanceledException)
         {
-            // Host is shutting down — propagate upward so the loop can exit.
             throw;
         }
         catch (Exception ex)
@@ -162,8 +149,6 @@ public sealed class ProcessQueueWorker
         var wavPath = await _audioConverter.ConvertToWavAsync(recording.FilePath, ct);
 
         var segmentProgress = new Progress<int>(p => _ = NotifyProgressAsync(job, ScaleProgress(p, 0, TranscribeEnd), ct));
-        // Plan v0.8 Block 5 — glossary drives Whisper `initial_prompt`. Empty
-        // glossary → null → existing behaviour (no prompt override).
         var whisperInitialPrompt = _glossary.TryBuildInitialPrompt(profile);
         var segments = await _transcriptionService.TranscribeAsync(
             wavPath, _settings.Language, whisperInitialPrompt, segmentProgress, ct);
@@ -183,10 +168,6 @@ public sealed class ProcessQueueWorker
         await TransitionAsync(job, JobStatus.Correcting, CorrectionEnd, "Cleaning transcript", ct);
         var cleanText = _correctionService.Correct(transcript.RawText, profile);
 
-        // Plan v0.8 Block 5 — optional LLM correction pass. When the profile
-        // opts in and the LLM is reachable, rewrite the transcript to fix
-        // homophones / proper-noun spellings / punctuation. On any failure
-        // the service returns the raw text, so the pipeline never stalls.
         if (profile.LlmCorrectionEnabled && await _llmService.IsAvailableAsync(ct))
         {
             await TransitionAsync(job, JobStatus.Correcting, LlmCorrectionEnd, "LLM correction", ct);

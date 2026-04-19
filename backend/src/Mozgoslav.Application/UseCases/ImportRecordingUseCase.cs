@@ -86,8 +86,6 @@ public sealed class ImportRecordingUseCase
                 throw new FileNotFoundException($"Audio file not found: {path}", path);
             }
 
-            // D1 handoff log: every inbound path + size, so the operator can
-            // correlate missing-recording bugs end-to-end.
             long size = -1;
             try
             {
@@ -116,10 +114,6 @@ public sealed class ImportRecordingUseCase
 
             var sha256 = await HashCalculator.Sha256Async(path, ct);
 
-            // Task #19 — probe the media length at import time so the list
-            // shows the real duration immediately instead of TimeSpan.Zero
-            // (which used to render as "0:00" and now shows the "—" pending
-            // placeholder from task #18).
             var duration = _metadataProbe is not null
                 ? await _metadataProbe.GetDurationAsync(path, ct)
                 : TimeSpan.Zero;
@@ -143,8 +137,6 @@ public sealed class ImportRecordingUseCase
                     ProfileId = profile.Id
                 },
                 ct);
-            // ADR-011 step 6 — hand the job to Quartz. The processing_jobs row
-            // remains the durable UI-facing state; Quartz owns the run cadence.
             await _scheduler.ScheduleAsync(processingJob.Id, ct);
 
             result.Add(recording);

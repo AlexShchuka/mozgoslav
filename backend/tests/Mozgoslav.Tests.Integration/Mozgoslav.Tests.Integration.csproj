@@ -1,39 +1,39 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <RootNamespace>Mozgoslav.Tests.Integration</RootNamespace>
-    <AssemblyName>Mozgoslav.Tests.Integration</AssemblyName>
-    <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="MSTest.TestAdapter" />
-    <PackageReference Include="MSTest.TestFramework" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="FluentAssertions" />
-    <PackageReference Include="NSubstitute" />
-    <PackageReference Include="Microsoft.Data.Sqlite" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
-    <PackageReference Include="WireMock.Net" />
-    <PackageReference Include="Testcontainers" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Mozgoslav.Domain\Mozgoslav.Domain.csproj" />
-    <ProjectReference Include="..\..\src\Mozgoslav.Application\Mozgoslav.Application.csproj" />
-    <ProjectReference Include="..\..\src\Mozgoslav.Infrastructure\Mozgoslav.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\src\Mozgoslav.Api\Mozgoslav.Api.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
-  </ItemGroup>
-  <ItemGroup>
-    <!-- Canned Opus-in-WebM sample (legacy one-shot scenario). -->
-    <Content Include="_fixtures\*.*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <!-- D4 — chunked MediaRecorder fixtures (header-less continuation clusters). -->
-    <Content Include="Fixtures\dictation-webm-chunks\*.*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+    <PropertyGroup>
+        <RootNamespace>Mozgoslav.Tests.Integration</RootNamespace>
+        <AssemblyName>Mozgoslav.Tests.Integration</AssemblyName>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="MSTest.TestAdapter"/>
+        <PackageReference Include="MSTest.TestFramework"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+        <PackageReference Include="FluentAssertions"/>
+        <PackageReference Include="NSubstitute"/>
+        <PackageReference Include="Microsoft.Data.Sqlite"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"/>
+        <PackageReference Include="WireMock.Net"/>
+        <PackageReference Include="Testcontainers"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Mozgoslav.Domain\Mozgoslav.Domain.csproj"/>
+        <ProjectReference Include="..\..\src\Mozgoslav.Application\Mozgoslav.Application.csproj"/>
+        <ProjectReference Include="..\..\src\Mozgoslav.Infrastructure\Mozgoslav.Infrastructure.csproj"/>
+        <ProjectReference Include="..\..\src\Mozgoslav.Api\Mozgoslav.Api.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting"/>
+    </ItemGroup>
+    <ItemGroup>
+        <!-- Canned Opus-in-WebM sample (legacy one-shot scenario). -->
+        <Content Include="_fixtures\*.*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <!-- D4 — chunked MediaRecorder fixtures (header-less continuation clusters). -->
+        <Content Include="Fixtures\dictation-webm-chunks\*.*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
 </Project>

@@ -77,9 +77,6 @@ public sealed class ModelDownloadCoordinator : IModelDownloadCoordinator, IDispo
             SingleReader = false,
             SingleWriter = true
         });
-        // Link caller ct with host-stopping so background downloads abort when
-        // the app shuts down — prevents ObjectDisposedException from disposed
-        // IServiceProvider/IHttpClientFactory caught after teardown.
         var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _hostStopping);
         var state = new DownloadState(channel, linkedCts);
         _downloads[downloadId] = state;
@@ -147,8 +144,6 @@ public sealed class ModelDownloadCoordinator : IModelDownloadCoordinator, IDispo
         }
         catch (ObjectDisposedException)
         {
-            // Host/IServiceProvider disposed mid-download (typical during test
-            // teardown or app shutdown). Treat the same as cancellation.
             _ = state.Channel.Writer.TryWrite(new ModelDownloadProgress(
                 downloadId,
                 BytesRead: 0,

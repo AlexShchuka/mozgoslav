@@ -90,7 +90,7 @@ csharp_indent_case_contents = true
 csharp_indent_switch_labels = true
 
 # File-scoped types
-dotnet_diagnostic.IDE0161.severity = warning  # file-scoped namespace
+dotnet_diagnostic.IDE0161.severity = warning # file-scoped namespace
 
 # Primary constructors: not preferred per team convention
 dotnet_diagnostic.IDE0290.severity = suggestion

@@ -103,9 +103,6 @@ public enum PermissionProbe {
     }
 }
 
-// Dynamic lookup of IOKit HID authorisation APIs. We keep this pattern so the
-// file compiles against older SDKs that did not export the symbols at build
-// time — runtime resolution simply yields `nil` / "undetermined" in that case.
 #if canImport(ApplicationServices)
 private typealias IOHIDAccessCheckFn = @convention(c) (Int) -> Int
 private typealias IOHIDAccessRequestFn = @convention(c) (Int) -> Bool

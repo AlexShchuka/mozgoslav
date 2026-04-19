@@ -1,1 +1,1 @@
-export { default } from "./DictationOverlay";
+export {default} from "./DictationOverlay";

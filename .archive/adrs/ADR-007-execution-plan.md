@@ -1,17 +1,18 @@
 # ADR-007 — Execution Plan
 
-Operational blueprint for turning ADR-007 into shipped MRs. Agent prompts and wave order live here; business cases and bug catalogue live in `ADR-007-iteration-7.md`.
+Operational blueprint for turning ADR-007 into shipped MRs. Agent prompts and wave order live here; business cases and
+bug catalogue live in `ADR-007-iteration-7.md`.
 
 ## Wave overview
 
-| Wave | Purpose | Branch | Base | Agents |
-|------|---------|--------|------|--------|
-| 1 | Write all 53 BCs red-first per ADR-007 §5 | `shuka/adr-007-tests` | `origin/main` | 4 parallel (backend C# / frontend TS / python / swift) |
-| 2 | Implementation MR A — build-fix + critical bugs | `shuka/adr-007-a-build-fix` | `shuka/adr-007-tests` (after Wave 1 merged into main) | 1 developer |
-| 3 | Implementation MR C — RAG production restore | `shuka/adr-007-c-rag` | `origin/main` (after A merged) | 1 developer |
-| 4 | Implementation MR B — UX coherence pass | `shuka/adr-007-b-ux` | `origin/main` (after C merged) | 1 developer |
-| 5 | Implementation MR D — Syncthing full restore + Sync tab | `shuka/adr-007-d-sync` | `origin/main` (after B merged) | 1 developer |
-| 6 | Implementation MR E — Dictation reliability | `shuka/adr-007-e-dictation` | `origin/main` (after D merged) | 1 developer |
+| Wave | Purpose                                                 | Branch                      | Base                                                  | Agents                                                 |
+|------|---------------------------------------------------------|-----------------------------|-------------------------------------------------------|--------------------------------------------------------|
+| 1    | Write all 53 BCs red-first per ADR-007 §5               | `shuka/adr-007-tests`       | `origin/main`                                         | 4 parallel (backend C# / frontend TS / python / swift) |
+| 2    | Implementation MR A — build-fix + critical bugs         | `shuka/adr-007-a-build-fix` | `shuka/adr-007-tests` (after Wave 1 merged into main) | 1 developer                                            |
+| 3    | Implementation MR C — RAG production restore            | `shuka/adr-007-c-rag`       | `origin/main` (after A merged)                        | 1 developer                                            |
+| 4    | Implementation MR B — UX coherence pass                 | `shuka/adr-007-b-ux`        | `origin/main` (after C merged)                        | 1 developer                                            |
+| 5    | Implementation MR D — Syncthing full restore + Sync tab | `shuka/adr-007-d-sync`      | `origin/main` (after B merged)                        | 1 developer                                            |
+| 6    | Implementation MR E — Dictation reliability             | `shuka/adr-007-e-dictation` | `origin/main` (after D merged)                        | 1 developer                                            |
 
 Merge order is strict: **A → C → B → D → E**. No parallel impl merges.
 
@@ -27,19 +28,25 @@ git worktree add /home/coder/workspace/mozgoslav-m7-tests -b shuka/adr-007-tests
 ```
 
 Copy (inside the new worktree) the two canonical docs so agents have them:
+
 - `docs/adr/ADR-007-iteration-7.md`
 - `docs/adr/ADR-007-execution-plan.md`
 
 ### Universal rules (apply to all 4 agents)
 
-1. **Red-first**: tests must compile (C# / TS strict / Swift) or import (Python) and must fail for the *right* reason — missing symbol, missing endpoint, specific assertion mismatch — not environment error.
-2. **No implementation code.** Only test files. If a test needs a production type that doesn't exist yet, reference it — compile/type-check failure is the expected red state.
+1. **Red-first**: tests must compile (C# / TS strict / Swift) or import (Python) and must fail for the *right* reason —
+   missing symbol, missing endpoint, specific assertion mismatch — not environment error.
+2. **No implementation code.** Only test files. If a test needs a production type that doesn't exist yet, reference it —
+   compile/type-check failure is the expected red state.
 3. **No cross-stack edits.** Backend agent does not touch `frontend/`, etc.
-4. **No new dependencies.** If a BC genuinely needs a new package, flag it in the MR description as an Open Item for the orchestrator — do not `dotnet add package` / `npm install` / `pip install` yourself.
-5. **Fixture strategy per ADR-007 §5.4** — use `TestDatabase`, `ApiFactory`, WireMock, Testcontainers exactly as specified. Never hit the real network.
+4. **No new dependencies.** If a BC genuinely needs a new package, flag it in the MR description as an Open Item for the
+   orchestrator — do not `dotnet add package` / `npm install` / `pip install` yourself.
+5. **Fixture strategy per ADR-007 §5.4** — use `TestDatabase`, `ApiFactory`, WireMock, Testcontainers exactly as
+   specified. Never hit the real network.
 6. **One commit per BC area** (≤ 10 tests per commit) so the orchestrator can review.
 7. **Commit message format**: `test(<stack>): BC-XXX..BC-YYY — <short topic> (red)`.
-8. **Skills available**: `superpowers:test-driven-development` (rigid — follow), `superpowers:writing-skills` (optional), `superpowers:verification-before-completion` (before final commit).
+8. **Skills available**: `superpowers:test-driven-development` (rigid — follow), `superpowers:writing-skills` (
+   optional), `superpowers:verification-before-completion` (before final commit).
 
 ### Agent-1 prompt — Backend C# tests
 
@@ -187,14 +194,18 @@ Skills: superpowers:test-driven-development, superpowers:verification-before-com
 
 Orchestrator verifies before opening the tests MR:
 
-- [ ] `cd /home/coder/workspace/mozgoslav-m7-tests && git log --oneline shuka/adr-007-tests ^origin/main` shows one commit per BC group, signed, conventional format.
-- [ ] `dotnet build backend/Mozgoslav.sln -c Debug -maxcpucount:1` succeeds (tests compile; red assertions are fine — compile errors are not).
+- [ ] `cd /home/coder/workspace/mozgoslav-m7-tests && git log --oneline shuka/adr-007-tests ^origin/main` shows one
+  commit per BC group, signed, conventional format.
+- [ ] `dotnet build backend/Mozgoslav.sln -c Debug -maxcpucount:1` succeeds (tests compile; red assertions are fine —
+  compile errors are not).
 - [ ] `npm --prefix frontend run typecheck` succeeds (TS strict green).
 - [ ] `cd python-sidecar && python -m pytest --collect-only` lists the new tests.
-- [ ] No files outside `backend/tests/`, `frontend/src/features/**/__tests__/`, `frontend/__tests__/`, `python-sidecar/tests/`, `helpers/MozgoslavDictationHelper/Tests/`, `wave1-*.md` were modified.
+- [ ] No files outside `backend/tests/`, `frontend/src/features/**/__tests__/`, `frontend/__tests__/`,
+  `python-sidecar/tests/`, `helpers/MozgoslavDictationHelper/Tests/`, `wave1-*.md` were modified.
 - [ ] Each wave1-*.md report lists UNCOVERED BCs with reason + any Open Item flagged for orchestrator.
 
-Then one MR (or four) `shuka/adr-007-tests → main`. Merge with CI failing on red assertions — document this as expected in the MR description. Next waves turn reds to green.
+Then one MR (or four) `shuka/adr-007-tests → main`. Merge with CI failing on red assertions — document this as expected
+in the MR description. Next waves turn reds to green.
 
 ---
 
@@ -202,22 +213,48 @@ Then one MR (or four) `shuka/adr-007-tests → main`. Merge with CI failing on r
 
 ### Scope (from ADR-007 §2)
 
-1. **N1** — fix 3 IDISP analyzer violations in `backend/src/Mozgoslav.Infrastructure/Services/FfmpegAudioRecorder.cs`. Make `dotnet build -c Release -maxcpucount:1` green.
-2. **Bug 2 + 34** — Whisper default chain. Update `backend/src/Mozgoslav.Api/Models/ModelCatalog.cs[0].Url` to user-hosted GitLab release URL for `antony66` ggml. Align filename with `AppPaths.DefaultWhisperModelPath`. Restore `ModelDownloadService` + `POST /api/models/download` + progress channel (see Wave 4 UX for the progress bar; backend channel lands here).
-3. **Bug 6** — Syncthing probe guard. `SyncthingHttpClient` must not probe until `settings.SyncthingBaseUrl` is populated. Full lifecycle restore is Wave 5; here only the guard.
-4. **Bug 7** — Add value-comparers for 8 collection converters in `backend/src/Mozgoslav.Infrastructure/Persistence/MozgoslavDbContext.cs` (`ProcessedNote.ActionItems/Decisions/KeyPoints/Participants/Tags/UnresolvedQuestions`, `Profile.AutoTags`, `Transcript.Segments`).
-5. **Bug 8** — De-duplicate `SQLite schema ensured` + `Seeded 3 built-in profiles` log lines. Resolve Kestrel "Overriding address(es)" warning (remove one of the duplicate host configurations in `Program.cs`).
-6. **Bug 9** — Fix logs-path resolution. `GET /api/logs` + `GET /api/logs/tail` must scan `AppPaths.Logs`, same directory Serilog writes to.
-7. **Bug 10 + 11** — Profiles empty despite seeding. Root-cause expected in `AppPaths.Database` resolution mismatch between seeding and API runtime. Confirm single DB path, fix.
-8. **Bug 19** — Queue cancel button affordance in `frontend/src/features/Queue/*` — wire existing `DELETE /api/queue/{id}` (D-9 backend shipped; UI missing).
-9. **Bug 20** — Queue startup reconciliation: on `QueueBackgroundService` start, reset `Running` jobs to `Queued` (or `Failed` with reason "app restarted"). BC-016 test turns green.
-10. **LogsEndpoints → LogsController rewrite (user directive).** Delete `backend/src/Mozgoslav.Api/Endpoints/LogsEndpoints.cs`. Add `backend/src/Mozgoslav.Api/Controllers/LogsController.cs` as MVC `[ApiController]` + `[Route("api/logs")]`. Wire `builder.Services.AddControllers()` + `app.MapControllers()` in `Program.cs` alongside existing Minimal API endpoints (coexistence, not full replacement — this directive is local to Logs only; other endpoint modules stay Minimal API unless the user extends the directive). Existing BC-042 (`LogsControllerTests.cs::Tail_Default_ReturnsLines`) keeps its intent but lives at the new Controller route; assertion on status + body shape unchanged.
+1. **N1** — fix 3 IDISP analyzer violations in `backend/src/Mozgoslav.Infrastructure/Services/FfmpegAudioRecorder.cs`.
+   Make `dotnet build -c Release -maxcpucount:1` green.
+2. **Bug 2 + 34** — Whisper default chain. Update `backend/src/Mozgoslav.Api/Models/ModelCatalog.cs[0].Url` to
+   user-hosted GitLab release URL for `antony66` ggml. Align filename with `AppPaths.DefaultWhisperModelPath`. Restore
+   `ModelDownloadService` + `POST /api/models/download` + progress channel (see Wave 4 UX for the progress bar; backend
+   channel lands here).
+3. **Bug 6** — Syncthing probe guard. `SyncthingHttpClient` must not probe until `settings.SyncthingBaseUrl` is
+   populated. Full lifecycle restore is Wave 5; here only the guard.
+4. **Bug 7** — Add value-comparers for 8 collection converters in
+   `backend/src/Mozgoslav.Infrastructure/Persistence/MozgoslavDbContext.cs` (
+   `ProcessedNote.ActionItems/Decisions/KeyPoints/Participants/Tags/UnresolvedQuestions`, `Profile.AutoTags`,
+   `Transcript.Segments`).
+5. **Bug 8** — De-duplicate `SQLite schema ensured` + `Seeded 3 built-in profiles` log lines. Resolve Kestrel "
+   Overriding address(es)" warning (remove one of the duplicate host configurations in `Program.cs`).
+6. **Bug 9** — Fix logs-path resolution. `GET /api/logs` + `GET /api/logs/tail` must scan `AppPaths.Logs`, same
+   directory Serilog writes to.
+7. **Bug 10 + 11** — Profiles empty despite seeding. Root-cause expected in `AppPaths.Database` resolution mismatch
+   between seeding and API runtime. Confirm single DB path, fix.
+8. **Bug 19** — Queue cancel button affordance in `frontend/src/features/Queue/*` — wire existing
+   `DELETE /api/queue/{id}` (D-9 backend shipped; UI missing).
+9. **Bug 20** — Queue startup reconciliation: on `QueueBackgroundService` start, reset `Running` jobs to `Queued` (or
+   `Failed` with reason "app restarted"). BC-016 test turns green.
+10. **LogsEndpoints → LogsController rewrite (user directive).** Delete
+    `backend/src/Mozgoslav.Api/Endpoints/LogsEndpoints.cs`. Add
+    `backend/src/Mozgoslav.Api/Controllers/LogsController.cs` as MVC `[ApiController]` + `[Route("api/logs")]`. Wire
+    `builder.Services.AddControllers()` + `app.MapControllers()` in `Program.cs` alongside existing Minimal API
+    endpoints (coexistence, not full replacement — this directive is local to Logs only; other endpoint modules stay
+    Minimal API unless the user extends the directive). Existing BC-042 (
+    `LogsControllerTests.cs::Tail_Default_ReturnsLines`) keeps its intent but lives at the new Controller route;
+    assertion on status + body shape unchanged.
 
-11. **Primary-constructor sweep (user directive).** Audit every branch C# file for primary-constructor syntax (`public sealed class Foo(IBar bar, IBaz baz) { ... }`) and convert to traditional form with explicit `private readonly` fields + a plain constructor. Targets are any `*.cs` file under `backend/src/` and `backend/tests/`. The project's `backend/CLAUDE.md` already forbids primary constructors; the sweep closes the audit loop. Grep pattern: `class [A-Z]\w*(\s*:\s*[A-Z]\w*)?\s*\(` across `.cs` files — narrow with manual review. Tests the Wave-1 agents write MUST use traditional constructors too.
+11. **Primary-constructor sweep (user directive).** Audit every branch C# file for primary-constructor syntax (
+    `public sealed class Foo(IBar bar, IBaz baz) { ... }`) and convert to traditional form with explicit
+    `private readonly` fields + a plain constructor. Targets are any `*.cs` file under `backend/src/` and
+    `backend/tests/`. The project's `backend/CLAUDE.md` already forbids primary constructors; the sweep closes the audit
+    loop. Grep pattern: `class [A-Z]\w*(\s*:\s*[A-Z]\w*)?\s*\(` across `.cs` files — narrow with manual review. Tests
+    the Wave-1 agents write MUST use traditional constructors too.
 
 ### Turn tests green (from Wave 1)
 
-All A-scope BCs' tests are red on main after Wave 1 merge. This MR turns them green. If a test assertion needs to change to be "correct" — stop, escalate; do not silently rewrite.
+All A-scope BCs' tests are red on main after Wave 1 merge. This MR turns them green. If a test assertion needs to change
+to be "correct" — stop, escalate; do not silently rewrite.
 
 ### Agent prompt skeleton
 
@@ -252,13 +289,25 @@ Skills: superpowers:systematic-debugging (for root-cause work on bugs 10+11), su
 
 ### Scope (from ADR-007 §2.3)
 
-1. Restore Python sidecar `/embed` endpoint (`python-sidecar/app/routers/embed.py` or equivalent) with `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (or equivalent multilingual ≤ 500 MB). Retain deterministic SHA-256 BoW fallback for dev boxes without PyTorch. 384-dim L2-normalised output (stable contract).
-2. Restore backend Application layer: `IRagService`, `IEmbeddingService`, `IVectorIndex`, `NoteChunk`, `NoteChunker`, `RagService`.
-3. Restore Infrastructure layer: `PythonSidecarEmbeddingService`, `SqliteVectorIndex` (via `sqlite-vec`). Drop `BagOfWordsEmbeddingService` + `InMemoryVectorIndex` (prod-only mandate per §0.3; keep deterministic fallback in sidecar).
-4. Restore API: `POST /api/rag/reindex`, `POST /api/rag/query` (citations) at `backend/src/Mozgoslav.Api/Endpoints/RagEndpoints.cs`. Route LLM synthesis through `LlmProviderFactory` → user's `openai_compatible` provider.
-5. EF migration (non-destructive): add `embedding BLOB NULL`, `embedding_dim INT NULL` columns on `transcript_segments` or a new `note_embeddings` table. Existing rows remain valid.
-6. Frontend: new `frontend/src/features/RagChat/*` full-page surface. Single chat input with placeholder "Привет, введи сюда…", message stream rendering, streamed answer + citations clickable to source notes. Animations: subtle enter/exit + typing indicator (AnythingLLM-style). Use `motion` package (already on branch) with LazyMotion. Remove bubbles+Ask-button paradigm from the deleted `81afb1d` commit.
-7. Turn Wave-1 C-scope tests green: BC-036 (provider factory), BC-039 (if Ollama BC kept), and any `rag`-related integration tests.
+1. Restore Python sidecar `/embed` endpoint (`python-sidecar/app/routers/embed.py` or equivalent) with
+   `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (or equivalent multilingual ≤ 500 MB). Retain
+   deterministic SHA-256 BoW fallback for dev boxes without PyTorch. 384-dim L2-normalised output (stable contract).
+2. Restore backend Application layer: `IRagService`, `IEmbeddingService`, `IVectorIndex`, `NoteChunk`, `NoteChunker`,
+   `RagService`.
+3. Restore Infrastructure layer: `PythonSidecarEmbeddingService`, `SqliteVectorIndex` (via `sqlite-vec`). Drop
+   `BagOfWordsEmbeddingService` + `InMemoryVectorIndex` (prod-only mandate per §0.3; keep deterministic fallback in
+   sidecar).
+4. Restore API: `POST /api/rag/reindex`, `POST /api/rag/query` (citations) at
+   `backend/src/Mozgoslav.Api/Endpoints/RagEndpoints.cs`. Route LLM synthesis through `LlmProviderFactory` → user's
+   `openai_compatible` provider.
+5. EF migration (non-destructive): add `embedding BLOB NULL`, `embedding_dim INT NULL` columns on `transcript_segments`
+   or a new `note_embeddings` table. Existing rows remain valid.
+6. Frontend: new `frontend/src/features/RagChat/*` full-page surface. Single chat input with placeholder "Привет, введи
+   сюда…", message stream rendering, streamed answer + citations clickable to source notes. Animations: subtle
+   enter/exit + typing indicator (AnythingLLM-style). Use `motion` package (already on branch) with LazyMotion. Remove
+   bubbles+Ask-button paradigm from the deleted `81afb1d` commit.
+7. Turn Wave-1 C-scope tests green: BC-036 (provider factory), BC-039 (if Ollama BC kept), and any `rag`-related
+   integration tests.
 
 ### Agent prompt skeleton
 
@@ -293,22 +342,32 @@ Skills: superpowers:test-driven-development, superpowers:systematic-debugging (f
 
 ### Scope (from ADR-007 §2.5)
 
-1. **Typography bump** — `frontend/src/styles/theme.ts` body-sm ≥ 14 px, weights revisited. Snapshot test BC-041 turns green.
+1. **Typography bump** — `frontend/src/styles/theme.ts` body-sm ≥ 14 px, weights revisited. Snapshot test BC-041 turns
+   green.
 2. **Top-bar spacing (bug 18)** — Dashboard header layout fix; brand block no longer overlapped by action buttons.
 3. **Back-button polish (bug 16)** — fonts + icon replaced; used across Onboarding.
 4. **Queue cancel UI** — already landed in MR A; verify still green here.
 5. **Persistent queue** — landed in MR A; verify.
-6. **Queue resume from checkpoint (bug 21, BC-017)** — new: checkpoint write every ~5 minutes of wall-clock transcription into `Transcript.Segments.CheckpointAt` (new column; non-destructive EF migration). Resume path reads last checkpoint on restart.
-7. **Get-Started mandatory gating (bug 25)** — audit `frontend/src/features/Onboarding/*`. Each step transitions only when precondition met:
-   - LLM step: endpoint ping via `GET /api/health/llm` succeeds (or user skipped).
-   - Models step: chosen model file present on disk (folder-pick auto-detect) OR catalogue URL download completed with progress.
-   - Permissions (macOS): mic/AX/Input-Monitoring system prompts granted (native check via Swift helper stdin/stdout JSON-RPC).
-   - All optional steps expose subtle grey Skip button (≤ 60% opacity of primary CTA).
-   - Welcome step gets a meaningful brand animation (subtle, not loud; `motion` library with `LazyMotion` strict).
-8. **Model download progress bar (bug 26)** — frontend component on Models step + Settings Models page. Backend channel landed in MR A; frontend subscribes.
+6. **Queue resume from checkpoint (bug 21, BC-017)** — new: checkpoint write every ~5 minutes of wall-clock
+   transcription into `Transcript.Segments.CheckpointAt` (new column; non-destructive EF migration). Resume path reads
+   last checkpoint on restart.
+7. **Get-Started mandatory gating (bug 25)** — audit `frontend/src/features/Onboarding/*`. Each step transitions only
+   when precondition met:
+    - LLM step: endpoint ping via `GET /api/health/llm` succeeds (or user skipped).
+    - Models step: chosen model file present on disk (folder-pick auto-detect) OR catalogue URL download completed with
+      progress.
+    - Permissions (macOS): mic/AX/Input-Monitoring system prompts granted (native check via Swift helper stdin/stdout
+      JSON-RPC).
+    - All optional steps expose subtle grey Skip button (≤ 60% opacity of primary CTA).
+    - Welcome step gets a meaningful brand animation (subtle, not loud; `motion` library with `LazyMotion` strict).
+8. **Model download progress bar (bug 26)** — frontend component on Models step + Settings Models page. Backend channel
+   landed in MR A; frontend subscribes.
 9. **Obsidian tab first-class (bug 22)** — `frontend/src/features/Obsidian/*` promoted to a sidebar entry. Two buttons:
-   - "Sync all" — POST `/api/obsidian/export-all` (new endpoint, extend `ObsidianEndpoints.cs`) — bulk-exports every un-exported `ProcessedNote`.
-   - "Разложить по PARA" — POST `/api/obsidian/apply-layout` (new endpoint) — applies `FolderMapping` + `VaultExportRule` from ADR-001 domain entities (if entities don't exist yet, add them as plain domain records in `Mozgoslav.Domain.Entities` with migration).
+    - "Sync all" — POST `/api/obsidian/export-all` (new endpoint, extend `ObsidianEndpoints.cs`) — bulk-exports every
+      un-exported `ProcessedNote`.
+    - "Разложить по PARA" — POST `/api/obsidian/apply-layout` (new endpoint) — applies `FolderMapping` +
+      `VaultExportRule` from ADR-001 domain entities (if entities don't exist yet, add them as plain domain records in
+      `Mozgoslav.Domain.Entities` with migration).
 
 ### Agent prompt skeleton
 
@@ -335,7 +394,8 @@ Skills: superpowers:frontend-design (if available; otherwise superpowers:writing
 
 - Frontend lint + typecheck + test green.
 - `dotnet build` + `dotnet test` green (new Obsidian endpoints covered by new BCs or existing `ObsidianSetupTests`).
-- Manual UX check on orchestrator's side: Get-Started gating blocks forward without completed step; Skip is visually subordinate; Obsidian tab renders, Sync-all triggers export.
+- Manual UX check on orchestrator's side: Get-Started gating blocks forward without completed step; Skip is visually
+  subordinate; Obsidian tab renders, Sync-all triggers export.
 
 ---
 
@@ -344,18 +404,26 @@ Skills: superpowers:frontend-design (if available; otherwise superpowers:writing
 ### Scope (from ADR-007 §2.4)
 
 1. Restore `backend/src/Mozgoslav.Application/Interfaces/ISyncthingClient.cs`, `SyncthingEvent.cs`.
-2. Restore `backend/src/Mozgoslav.Infrastructure/Services/SyncthingHttpClient.cs`, `SyncthingConfigService.cs`, `SyncthingFolderInitializer.cs`, `SyncthingSseEventParser.cs`.
+2. Restore `backend/src/Mozgoslav.Infrastructure/Services/SyncthingHttpClient.cs`, `SyncthingConfigService.cs`,
+   `SyncthingFolderInitializer.cs`, `SyncthingSseEventParser.cs`.
 3. Restore `backend/src/Mozgoslav.Infrastructure/Seed/SyncthingVersioningVerifier.cs` (ADR-004 R8).
-4. Add `SyncthingLifecycleService : IHostedService` — spawns bundled Syncthing binary with **random free local port** + generates API-key on first run and persists to `settings.db` + graceful shutdown via REST. Remove bug 6's guard from MR A once lifecycle is present and ordered correctly.
-5. Restore `backend/src/Mozgoslav.Api/Endpoints/SyncEndpoints.cs` — `GET /api/sync/status`, `GET /api/sync/health`, `GET /api/sync/pairing-payload`, `POST /api/sync/accept-device`, SSE bridge `GET /api/sync/events` mapped from `/rest/events`.
-6. Electron-side: `frontend/electron/utils/syncthingLauncher.ts` — already present; verify it's wired to lifecycle signalling; resource extraction from `extraResources` path.
+4. Add `SyncthingLifecycleService : IHostedService` — spawns bundled Syncthing binary with **random free local port** +
+   generates API-key on first run and persists to `settings.db` + graceful shutdown via REST. Remove bug 6's guard from
+   MR A once lifecycle is present and ordered correctly.
+5. Restore `backend/src/Mozgoslav.Api/Endpoints/SyncEndpoints.cs` — `GET /api/sync/status`, `GET /api/sync/health`,
+   `GET /api/sync/pairing-payload`, `POST /api/sync/accept-device`, SSE bridge `GET /api/sync/events` mapped from
+   `/rest/events`.
+6. Electron-side: `frontend/electron/utils/syncthingLauncher.ts` — already present; verify it's wired to lifecycle
+   signalling; resource extraction from `extraResources` path.
 7. Frontend `frontend/src/features/Sync/*` (new tab, sibling to SyncPairing feature):
-   - Devices sub-view: paired devices list with state (connected / disconnected / last-seen).
-   - Folders sub-view: 3-folder status table (completion %, conflicts badge) from `/api/sync/status`.
-   - Conflicts sub-view: list of `.sync-conflict-*` files from each folder; resolution still manual via Finder (documented in `docs/sync-conflicts.md`).
-   - Settings toggle row: enable/disable global Syncthing.
+    - Devices sub-view: paired devices list with state (connected / disconnected / last-seen).
+    - Folders sub-view: 3-folder status table (completion %, conflicts badge) from `/api/sync/status`.
+    - Conflicts sub-view: list of `.sync-conflict-*` files from each folder; resolution still manual via Finder (
+      documented in `docs/sync-conflicts.md`).
+    - Settings toggle row: enable/disable global Syncthing.
 8. Restore default `.stignore` templates per ADR-004 R7 in `SyncthingFolderInitializer`.
-9. Turn Wave-1 D-scope tests green: BC-048, BC-049, BC-050, `SyncthingSseEventParserTests` suite, `SyncthingVersioningVerifierTests`, `SyncthingHttpClientTests`.
+9. Turn Wave-1 D-scope tests green: BC-048, BC-049, BC-050, `SyncthingSseEventParserTests` suite,
+   `SyncthingVersioningVerifierTests`, `SyncthingHttpClientTests`.
 
 ### Agent prompt skeleton
 
@@ -383,7 +451,8 @@ Skills: superpowers:systematic-debugging (lifecycle bugs are notoriously subtle)
 ### Wave 5 acceptance
 
 - All Syncthing BCs green (Testcontainers `syncthing/syncthing:latest` real path + WireMock unit path both covered).
-- Startup log no longer emits `Connection refused (127.0.0.1:8384)` — lifecycle service spawns binary on random port first.
+- Startup log no longer emits `Connection refused (127.0.0.1:8384)` — lifecycle service spawns binary on random port
+  first.
 - Electron main + backend health `/api/sync/health` both report ready after ~3 s boot.
 
 ---
@@ -392,12 +461,23 @@ Skills: superpowers:systematic-debugging (lifecycle bugs are notoriously subtle)
 
 ### Scope (from ADR-007 §2)
 
-1. **Bug 3** — Dashboard record button end-to-end. Decision from §2: keep the button, wire audio-push from the browser microphone (`navigator.mediaDevices.getUserMedia`) to the backend session endpoint, chunked as the existing Electron mouse-5 flow does. `frontend/src/features/Dashboard/*` + `frontend/src/components/BrainLauncher/*` + `frontend/src/store/slices/recording/saga/*`.
-2. **Bug 14** — Folder picker + auto-detect `.bin` / `.gguf` for models. Settings Models page + Get-Started Models step (Wave 4 stubs in UI — this Wave wires the scan endpoint). Backend: `POST /api/models/scan` (new) reads the user-selected directory, lists files, registers detected ones into `settings.db` as non-catalogue model entries (`source: "local"`).
-3. **N3** — Per-profile transcription prompt wiring. `DictationSessionManager.StartAsync` prefers the selected profile's `transcriptionPromptOverride` over the global `Dictation.Vocabulary`. BC-030 turns green.
-4. **Restore ADR-004 R4** — `backend/src/Mozgoslav.Infrastructure/Services/IdleResourceCache.cs`. Whisper model unload after `Dictation.ModelUnloadMinutes` of inactivity. BC-008 turns green.
-5. **Restore ADR-004 R5** — crash-recovery PCM buffer. `DictationSessionManager` opens FileStream to `~/Library/Application Support/Mozgoslav/temp/dictation-{sessionId}.pcm`; appends every incoming AudioChunk; deletes on successful stop-and-inject; on startup logs orphan files as WARN. BC-009 turns green.
-6. **Electron overlay** — verify tray icon asset path + overlay `focusable: false` + click passthrough per ADR-002 D6. Bug 12 (tray missing + overlay non-clickable) resolves as part of this sweep.
+1. **Bug 3** — Dashboard record button end-to-end. Decision from §2: keep the button, wire audio-push from the browser
+   microphone (`navigator.mediaDevices.getUserMedia`) to the backend session endpoint, chunked as the existing Electron
+   mouse-5 flow does. `frontend/src/features/Dashboard/*` + `frontend/src/components/BrainLauncher/*` +
+   `frontend/src/store/slices/recording/saga/*`.
+2. **Bug 14** — Folder picker + auto-detect `.bin` / `.gguf` for models. Settings Models page + Get-Started Models
+   step (Wave 4 stubs in UI — this Wave wires the scan endpoint). Backend: `POST /api/models/scan` (new) reads the
+   user-selected directory, lists files, registers detected ones into `settings.db` as non-catalogue model entries (
+   `source: "local"`).
+3. **N3** — Per-profile transcription prompt wiring. `DictationSessionManager.StartAsync` prefers the selected profile's
+   `transcriptionPromptOverride` over the global `Dictation.Vocabulary`. BC-030 turns green.
+4. **Restore ADR-004 R4** — `backend/src/Mozgoslav.Infrastructure/Services/IdleResourceCache.cs`. Whisper model unload
+   after `Dictation.ModelUnloadMinutes` of inactivity. BC-008 turns green.
+5. **Restore ADR-004 R5** — crash-recovery PCM buffer. `DictationSessionManager` opens FileStream to
+   `~/Library/Application Support/Mozgoslav/temp/dictation-{sessionId}.pcm`; appends every incoming AudioChunk; deletes
+   on successful stop-and-inject; on startup logs orphan files as WARN. BC-009 turns green.
+6. **Electron overlay** — verify tray icon asset path + overlay `focusable: false` + click passthrough per ADR-002 D6.
+   Bug 12 (tray missing + overlay non-clickable) resolves as part of this sweep.
 
 ### Agent prompt skeleton
 
@@ -424,7 +504,8 @@ Skills: superpowers:systematic-debugging, superpowers:test-driven-development, s
 ### Wave 6 acceptance
 
 - All E-scope BCs green.
-- Manual on orchestrator's side: record button on Dashboard starts → overlay shows → stop → transcript lands in a new ProcessedNote.
+- Manual on orchestrator's side: record button on Dashboard starts → overlay shows → stop → transcript lands in a new
+  ProcessedNote.
 - Idle-unload: Whisper factory disposed after 10 min idle (observable in logs).
 - Crash-recovery: kill app mid-session → relaunch → orphan PCM file logged.
 
@@ -432,10 +513,14 @@ Skills: superpowers:systematic-debugging, superpowers:test-driven-development, s
 
 ## Cross-wave orchestrator rules
 
-1. **No MR merges without green CI.** `dotnet build -c Release`, `dotnet test`, `npm --prefix frontend run typecheck && lint && test`, `python -m pytest -q` must all pass.
+1. **No MR merges without green CI.** `dotnet build -c Release`, `dotnet test`,
+   `npm --prefix frontend run typecheck && lint && test`, `python -m pytest -q` must all pass.
 2. **One MR per wave.** Four Wave-1 MRs are acceptable if the four agents hand in separate branches; otherwise one.
 3. **Merge order A → C → B → D → E is strict.** No skipping.
-4. **Orchestrator reviews each MR** before merge — uses `superpowers:code-reviewer` agent for a second opinion on wave scopes C, D, E (largest).
-5. **Never rewrite a Wave-1 test** silently in a later Wave. Either the test is wrong (escalate) or the implementation makes it green.
-6. **Context hygiene**: ADR-007 is the source of truth. If any wave surfaces a deviation, amend ADR-007 first, then execute.
+4. **Orchestrator reviews each MR** before merge — uses `superpowers:code-reviewer` agent for a second opinion on wave
+   scopes C, D, E (largest).
+5. **Never rewrite a Wave-1 test** silently in a later Wave. Either the test is wrong (escalate) or the implementation
+   makes it green.
+6. **Context hygiene**: ADR-007 is the source of truth. If any wave surfaces a deviation, amend ADR-007 first, then
+   execute.
 7. **All waves respect the root CLAUDE.md** (`.claude/CLAUDE.md`) agent rules and stack-specific CLAUDE.md files.

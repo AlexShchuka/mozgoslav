@@ -1,23 +1,23 @@
 import styled from "styled-components";
 
 export const PageRoot = styled.div`
-  padding: ${({ theme }) => theme.space(6)};
+  padding: ${({theme}) => theme.space(6)};
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.space(4)};
+  gap: ${({theme}) => theme.space(4)};
 `;
 
 export const PageTitle = styled.h1`
   margin: 0;
-  font-size: ${({ theme }) => theme.font.size.xxl};
-  font-weight: ${({ theme }) => theme.font.weight.semibold};
-  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: ${({theme}) => theme.font.size.xxl};
+  font-weight: ${({theme}) => theme.font.weight.semibold};
+  color: ${({theme}) => theme.colors.text.primary};
 `;
 
 export const Subtitle = styled.p`
-  margin: ${({ theme }) => theme.space(1)} 0 0;
-  color: ${({ theme }) => theme.colors.text.secondary};
-  font-size: ${({ theme }) => theme.font.size.md};
+  margin: ${({theme}) => theme.space(1)} 0 0;
+  color: ${({theme}) => theme.colors.text.secondary};
+  font-size: ${({theme}) => theme.font.size.md};
 `;
 
 export const ModelCard = styled.div`
@@ -28,19 +28,19 @@ export const ModelCard = styled.div`
 export const ModelHeader = styled.div`
   display: flex;
   align-items: center;
-  gap: ${({ theme }) => theme.space(2)};
+  gap: ${({theme}) => theme.space(2)};
 `;
 
 export const ModelMeta = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.space(1)};
-  color: ${({ theme }) => theme.colors.text.secondary};
-  font-size: ${({ theme }) => theme.font.size.sm};
+  gap: ${({theme}) => theme.space(1)};
+  color: ${({theme}) => theme.colors.text.secondary};
+  font-size: ${({theme}) => theme.font.size.sm};
 
   code {
-    font-size: ${({ theme }) => theme.font.size.xs};
-    color: ${({ theme }) => theme.colors.text.muted};
+    font-size: ${({theme}) => theme.font.size.xs};
+    color: ${({theme}) => theme.colors.text.muted};
     word-break: break-all;
   }
 `;

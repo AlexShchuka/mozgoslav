@@ -50,7 +50,6 @@ public static class NoteChunker
             var end = Math.Min(start + MaxChars, paragraph.Length);
             if (end < paragraph.Length)
             {
-                // Prefer breaking at the last sentence terminator within the window.
                 var breakAt = paragraph.LastIndexOfAny(SentenceBreaks, end - 1, end - start);
                 if (breakAt > start)
                 {

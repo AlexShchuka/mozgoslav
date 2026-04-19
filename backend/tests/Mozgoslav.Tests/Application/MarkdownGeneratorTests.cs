@@ -118,7 +118,6 @@ public sealed class MarkdownGeneratorTests
 
         markdown.Should().Contain("**Alice (00:03):**");
         markdown.Should().Contain("**Bob (00:05):**");
-        // Consecutive same-speaker segments must merge into a single block.
         markdown.Should().Contain("Здравствуйте, как дела?");
         markdown.Should().NotContain("**Bob (00:07):**",
             "consecutive segments by the same speaker collapse under a single header");

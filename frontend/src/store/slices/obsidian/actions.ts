@@ -1,8 +1,4 @@
-import type {
-  ObsidianApplyLayoutReport,
-  ObsidianBulkExportReport,
-  ObsidianSetupReport,
-} from "./types";
+import type {ObsidianApplyLayoutReport, ObsidianBulkExportReport, ObsidianSetupReport,} from "./types";
 
 export const SETUP_OBSIDIAN = "obsidian/SETUP";
 export const SETUP_OBSIDIAN_SUCCESS = "obsidian/SETUP_SUCCESS";
@@ -17,79 +13,85 @@ export const APPLY_LAYOUT_SUCCESS = "obsidian/APPLY_LAYOUT_SUCCESS";
 export const APPLY_LAYOUT_FAILURE = "obsidian/APPLY_LAYOUT_FAILURE";
 
 export interface SetupObsidianAction {
-  type: typeof SETUP_OBSIDIAN;
-  payload: { vaultPath?: string };
+    type: typeof SETUP_OBSIDIAN;
+    payload: { vaultPath?: string };
 }
+
 export interface SetupObsidianSuccessAction {
-  type: typeof SETUP_OBSIDIAN_SUCCESS;
-  payload: ObsidianSetupReport;
+    type: typeof SETUP_OBSIDIAN_SUCCESS;
+    payload: ObsidianSetupReport;
 }
+
 export interface SetupObsidianFailureAction {
-  type: typeof SETUP_OBSIDIAN_FAILURE;
-  payload: string;
+    type: typeof SETUP_OBSIDIAN_FAILURE;
+    payload: string;
 }
 
 export interface BulkExportAction {
-  type: typeof BULK_EXPORT;
+    type: typeof BULK_EXPORT;
 }
+
 export interface BulkExportSuccessAction {
-  type: typeof BULK_EXPORT_SUCCESS;
-  payload: ObsidianBulkExportReport;
+    type: typeof BULK_EXPORT_SUCCESS;
+    payload: ObsidianBulkExportReport;
 }
+
 export interface BulkExportFailureAction {
-  type: typeof BULK_EXPORT_FAILURE;
-  payload: string;
+    type: typeof BULK_EXPORT_FAILURE;
+    payload: string;
 }
 
 export interface ApplyLayoutAction {
-  type: typeof APPLY_LAYOUT;
+    type: typeof APPLY_LAYOUT;
 }
+
 export interface ApplyLayoutSuccessAction {
-  type: typeof APPLY_LAYOUT_SUCCESS;
-  payload: ObsidianApplyLayoutReport;
+    type: typeof APPLY_LAYOUT_SUCCESS;
+    payload: ObsidianApplyLayoutReport;
 }
+
 export interface ApplyLayoutFailureAction {
-  type: typeof APPLY_LAYOUT_FAILURE;
-  payload: string;
+    type: typeof APPLY_LAYOUT_FAILURE;
+    payload: string;
 }
 
 export type ObsidianAction =
-  | SetupObsidianAction
-  | SetupObsidianSuccessAction
-  | SetupObsidianFailureAction
-  | BulkExportAction
-  | BulkExportSuccessAction
-  | BulkExportFailureAction
-  | ApplyLayoutAction
-  | ApplyLayoutSuccessAction
-  | ApplyLayoutFailureAction;
+    | SetupObsidianAction
+    | SetupObsidianSuccessAction
+    | SetupObsidianFailureAction
+    | BulkExportAction
+    | BulkExportSuccessAction
+    | BulkExportFailureAction
+    | ApplyLayoutAction
+    | ApplyLayoutSuccessAction
+    | ApplyLayoutFailureAction;
 
 export const setupObsidian = (vaultPath?: string): SetupObsidianAction => ({
-  type: SETUP_OBSIDIAN,
-  payload: { vaultPath },
+    type: SETUP_OBSIDIAN,
+    payload: {vaultPath},
 });
 export const setupObsidianSuccess = (
-  report: ObsidianSetupReport,
-): SetupObsidianSuccessAction => ({ type: SETUP_OBSIDIAN_SUCCESS, payload: report });
+    report: ObsidianSetupReport,
+): SetupObsidianSuccessAction => ({type: SETUP_OBSIDIAN_SUCCESS, payload: report});
 export const setupObsidianFailure = (message: string): SetupObsidianFailureAction => ({
-  type: SETUP_OBSIDIAN_FAILURE,
-  payload: message,
+    type: SETUP_OBSIDIAN_FAILURE,
+    payload: message,
 });
 
-export const bulkExport = (): BulkExportAction => ({ type: BULK_EXPORT });
+export const bulkExport = (): BulkExportAction => ({type: BULK_EXPORT});
 export const bulkExportSuccess = (
-  report: ObsidianBulkExportReport,
-): BulkExportSuccessAction => ({ type: BULK_EXPORT_SUCCESS, payload: report });
+    report: ObsidianBulkExportReport,
+): BulkExportSuccessAction => ({type: BULK_EXPORT_SUCCESS, payload: report});
 export const bulkExportFailure = (message: string): BulkExportFailureAction => ({
-  type: BULK_EXPORT_FAILURE,
-  payload: message,
+    type: BULK_EXPORT_FAILURE,
+    payload: message,
 });
 
-export const applyLayout = (): ApplyLayoutAction => ({ type: APPLY_LAYOUT });
+export const applyLayout = (): ApplyLayoutAction => ({type: APPLY_LAYOUT});
 export const applyLayoutSuccess = (
-  report: ObsidianApplyLayoutReport,
-): ApplyLayoutSuccessAction => ({ type: APPLY_LAYOUT_SUCCESS, payload: report });
+    report: ObsidianApplyLayoutReport,
+): ApplyLayoutSuccessAction => ({type: APPLY_LAYOUT_SUCCESS, payload: report});
 export const applyLayoutFailure = (message: string): ApplyLayoutFailureAction => ({
-  type: APPLY_LAYOUT_FAILURE,
-  payload: message,
+    type: APPLY_LAYOUT_FAILURE,
+    payload: message,
 });

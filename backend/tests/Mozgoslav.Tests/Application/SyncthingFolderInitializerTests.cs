@@ -62,7 +62,6 @@ public sealed class SyncthingFolderInitializerTests
             File.Exists(stignore).Should().BeTrue($"{folder} must have a .stignore");
             var text = File.ReadAllText(stignore);
 
-            // ADR-004 R7 — sanity-check the major sections.
             text.Should().Contain(".DS_Store");
             text.Should().Contain("*.partial");
             text.Should().Contain("*.tmp");

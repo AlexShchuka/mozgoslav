@@ -50,9 +50,6 @@ public sealed class ModelDownloadService
             File.Delete(tempPath);
         }
 
-        // The "models" named HttpClient owns timeout, retry and circuit-breaker
-        // via HttpResilience (see Program.cs). User-Agent is attached as a
-        // default header on that client so it lives on every retry attempt.
         using var client = _httpClientFactory.CreateClient("models");
 
         using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
@@ -76,9 +73,6 @@ public sealed class ModelDownloadService
             }
         }
 
-        // Deterministic final "done" report — small payloads may complete in a
-        // single read, so consumers that only care about the terminal state
-        // don't race against the in-loop Progress<T>.Report thread-pool post.
         progress?.Report(new Progress(received, total, 100));
 
         File.Move(tempPath, destinationPath, overwrite: true);

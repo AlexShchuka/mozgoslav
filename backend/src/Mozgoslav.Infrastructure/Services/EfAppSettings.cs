@@ -235,7 +235,6 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     private static class Keys
     {
         public const string VaultPath = "vault_path";
-        // Active LLM provider discriminator (openai_compatible / anthropic / ollama).
         public const string LlmProvider = "llm_provider";
         public const string LlmEndpoint = "llm_endpoint";
         public const string LlmModel = "llm_model";
@@ -251,7 +250,6 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         public const string DictationHotkeyType = "dictation_hotkey_type";
         public const string DictationMouseButton = "dictation_mouse_button";
         public const string DictationKeyboardHotkey = "dictation_keyboard_hotkey";
-        // NEXT H1 — hold-to-record (release to stop) semantics. False ⇒ toggle.
         public const string DictationPushToTalk = "dictation_push_to_talk";
         public const string DictationLanguage = "dictation_language";
         public const string DictationWhisperModelId = "dictation_whisper_model_id";
@@ -267,7 +265,6 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         public const string DictationAppProfiles = "dictation_app_profiles";
         public const string SyncthingEnabled = "syncthing_enabled";
         public const string SyncthingObsidianVaultPath = "syncthing_obsidian_vault_path";
-        // ADR-007-shared §2.8 — Syncthing REST resume state.
         public const string SyncthingApiKey = "syncthing_api_key";
         public const string SyncthingBaseUrl = "syncthing_base_url";
     }

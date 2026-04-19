@@ -39,9 +39,6 @@ public sealed class QuartzProcessingJobScheduler : IProcessingJobScheduler
             .StartNow()
             .Build();
 
-        // ScheduleJob(detail, trigger, replace=true) handles the re-schedule
-        // idempotency — callers can invoke ScheduleAsync for the same job id
-        // repeatedly without producing duplicate triggers.
         await scheduler.ScheduleJob(job, [trigger], replace: true, ct).ConfigureAwait(false);
     }
 

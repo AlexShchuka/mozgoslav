@@ -48,9 +48,9 @@ actually broadcasts the IPC event end-to-end:
 1. `npm --prefix frontend run dev` — Electron boots with dev tools open.
 2. Focus any other app (VSCode, Slack, Finder — anything but Mozgoslav).
 3. Press `Cmd+Shift+Space`. You should see:
-   - The overlay window appear with phase=`recording`.
-   - Dashboard (if open) shows `data-testid="dashboard-record"` flip to
-     the "Stop" label.
+    - The overlay window appear with phase=`recording`.
+    - Dashboard (if open) shows `data-testid="dashboard-record"` flip to
+      the "Stop" label.
 4. Speak; press `Cmd+Shift+Space` again. Overlay disappears; the transcript
    is visible under the Dashboard card once the backend responds.
 
@@ -61,10 +61,10 @@ line tagged `[globalShortcut]`.
 
 ## Source files
 
-| File | Purpose |
-|------|---------|
-| `frontend/electron/dictation/globalHotkey.ts` | Accelerator register/unregister + broadcast |
-| `frontend/electron/main.ts` | Calls `registerGlobalDictationHotkey()` on ready, `unregisterGlobalDictationHotkey()` on quit |
-| `frontend/electron/preload.ts` | `window.mozgoslav.onGlobalHotkey(cb)` bridge |
-| `frontend/src/features/Dashboard/Dashboard.tsx` | Renderer subscription → `api.startDictation({ source: "global-hotkey" })` |
-| `frontend/__tests__/electron/globalShortcut.test.ts` | Unit tests (mocked electron) |
+| File                                                 | Purpose                                                                                       |
+|------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+| `frontend/electron/dictation/globalHotkey.ts`        | Accelerator register/unregister + broadcast                                                   |
+| `frontend/electron/main.ts`                          | Calls `registerGlobalDictationHotkey()` on ready, `unregisterGlobalDictationHotkey()` on quit |
+| `frontend/electron/preload.ts`                       | `window.mozgoslav.onGlobalHotkey(cb)` bridge                                                  |
+| `frontend/src/features/Dashboard/Dashboard.tsx`      | Renderer subscription → `api.startDictation({ source: "global-hotkey" })`                     |
+| `frontend/__tests__/electron/globalShortcut.test.ts` | Unit tests (mocked electron)                                                                  |

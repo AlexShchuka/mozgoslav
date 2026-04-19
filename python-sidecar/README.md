@@ -81,14 +81,14 @@ is launched by the Electron shell as a child process bound to
 
 ## Endpoints
 
-| Method | Path          | Contract                                                  | Status |
-|--------|---------------|-----------------------------------------------------------|--------|
-| GET    | `/health`     | `{status, version, service}`                              | real   |
-| POST   | `/api/diarize`| `{audio_path, min_speakers?, max_speakers?}` → segments   | stub   |
-| POST   | `/api/gender` | `{audio_path}` → `{gender, confidence}`                   | stub   |
-| POST   | `/api/emotion`| `{audio_path}` → `{emotion, valence, arousal, dominance}` | stub   |
-| POST   | `/api/ner`    | `{text}` → `{people, orgs, locations, dates}`             | stub   |
-| POST   | `/api/cleanup`| `{text, level}` → `{cleaned}`                             | real   |
+| Method | Path           | Contract                                                  | Status |
+|--------|----------------|-----------------------------------------------------------|--------|
+| GET    | `/health`      | `{status, version, service}`                              | real   |
+| POST   | `/api/diarize` | `{audio_path, min_speakers?, max_speakers?}` → segments   | stub   |
+| POST   | `/api/gender`  | `{audio_path}` → `{gender, confidence}`                   | stub   |
+| POST   | `/api/emotion` | `{audio_path}` → `{emotion, valence, arousal, dominance}` | stub   |
+| POST   | `/api/ner`     | `{text}` → `{people, orgs, locations, dates}`             | stub   |
+| POST   | `/api/cleanup` | `{text, level}` → `{cleaned}`                             | real   |
 
 All endpoints accept and return JSON. Errors use FastAPI's default
 `HTTPException` envelope. CORS is permissive in dev.
@@ -101,11 +101,11 @@ Full contract details are declared in `app/models/schemas.py`.
 
 Environment variables (prefix `MOZGOSLAV_SIDECAR_`):
 
-| Variable                          | Default     |
-|-----------------------------------|-------------|
-| `MOZGOSLAV_SIDECAR_HOST`          | `127.0.0.1` |
-| `MOZGOSLAV_SIDECAR_PORT`          | `5060`      |
-| `MOZGOSLAV_SIDECAR_LOG_LEVEL`     | `info`      |
+| Variable                      | Default     |
+|-------------------------------|-------------|
+| `MOZGOSLAV_SIDECAR_HOST`      | `127.0.0.1` |
+| `MOZGOSLAV_SIDECAR_PORT`      | `5060`      |
+| `MOZGOSLAV_SIDECAR_LOG_LEVEL` | `info`      |
 
 A `.env` file in the sidecar root is honoured.
 

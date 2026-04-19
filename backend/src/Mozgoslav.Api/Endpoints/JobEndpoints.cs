@@ -53,19 +53,10 @@ public static class JobEndpoints
                 Status = JobStatus.Queued
             };
             await jobs.EnqueueAsync(job, ct);
-            // ADR-011 step 6 — hand off to Quartz immediately. The durable
-            // processing_jobs row is persisted first so the UI can see the
-            // Queued state even if scheduling races with the first SSE tick.
             await scheduler.ScheduleAsync(job.Id, ct);
             return Results.Created($"/api/jobs/{job.Id}", job);
         });
 
-        // ADR-015 — cancel a processing job. Happy-path outcomes:
-        //   Queued    → 204 (flip straight to Cancelled + publish)
-        //   Active    → 202 (set CancelRequested + signal the per-job CTS;
-        //               worker transitions to Cancelled via SSE)
-        //   Done/Failed/Cancelled → 409 (already terminal)
-        //   Unknown id → 404
         endpoints.MapPost("/api/jobs/{id:guid}/cancel", async (
             Guid id,
             IProcessingJobRepository jobs,

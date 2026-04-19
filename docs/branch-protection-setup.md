@@ -8,13 +8,13 @@ https://github.com/AlexShchuka/mozgoslav/settings/branches
 - [x] Require a pull request before merging
 - [ ] Require approvals (0 — solo repo)
 - [x] Require status checks to pass before merging
-      → Выбрать все jobs:
-        - `Backend (.NET ubuntu-latest)`
-        - `Backend (.NET macos-latest)`
-        - `Frontend (ubuntu-latest)`
-        - `Frontend (macos-latest)`
-        - `Python sidecar (ubuntu-latest)`
-        - `Python sidecar (macos-latest)`
+  → Выбрать все jobs:
+  - `Backend (.NET ubuntu-latest)`
+  - `Backend (.NET macos-latest)`
+  - `Frontend (ubuntu-latest)`
+  - `Frontend (macos-latest)`
+  - `Python sidecar (ubuntu-latest)`
+  - `Python sidecar (macos-latest)`
 - [x] Require branches to be up to date before merging
 - [x] Do not allow bypassing the above settings (Include administrators)
 

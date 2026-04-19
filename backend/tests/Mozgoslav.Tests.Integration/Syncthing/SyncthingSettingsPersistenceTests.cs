@@ -21,7 +21,6 @@ public sealed class SyncthingSettingsPersistenceTests
 
         try
         {
-            // First boot: write api key + base url into settings.
             await using (var factory = new ApiFactoryWithDbPath(dbPath))
             {
                 using var _ = factory.CreateClient();
@@ -37,7 +36,6 @@ public sealed class SyncthingSettingsPersistenceTests
                 await settings.SaveAsync(dto, TestContext.CancellationToken);
             }
 
-            // Second boot: different factory instance, same DB file.
             await using (var factory = new ApiFactoryWithDbPath(dbPath))
             {
                 using var _ = factory.CreateClient();

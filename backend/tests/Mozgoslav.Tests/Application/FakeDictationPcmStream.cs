@@ -48,8 +48,6 @@ public sealed class FakeDictationPcmStream : IDictationPcmStream
         }
         _writesByteCount.AddOrUpdate(sessionId, chunk.Length, (_, prev) => prev + chunk.Length);
 
-        // Emit one synthetic PCM sample per input byte — the test only cares
-        // that something arrives at the downstream transcription service.
         var samples = new float[chunk.Length];
         for (var i = 0; i < chunk.Length; i++)
         {

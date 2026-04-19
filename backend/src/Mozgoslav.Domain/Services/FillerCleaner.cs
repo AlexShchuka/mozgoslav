@@ -33,7 +33,6 @@ public static class FillerCleaner
 
         var result = text;
 
-        // Aggressive phrases are removed first — they are longer and more specific.
         if (level == CleanupLevel.Aggressive)
         {
             foreach (var phrase in AggressivePhrases)
@@ -47,7 +46,6 @@ public static class FillerCleaner
             result = RemoveWholeWord(result, filler);
         }
 
-        // Collapse whitespace and strip stray punctuation left behind (" , ,").
         result = WhitespaceRegex.Replace(result, " ");
         result = Regex.Replace(result, @"\s+([,.!?;:])", "$1");
         result = Regex.Replace(result, @"([,.!?;:])\1+", "$1");
@@ -57,7 +55,6 @@ public static class FillerCleaner
 
     private static string RemoveWholeWord(string input, string word)
     {
-        // \b works on ASCII; for Cyrillic we bound on whitespace or punctuation.
         var escaped = Regex.Escape(word);
         var pattern = $@"(?<=^|[\s,.!?;:\-—])({escaped})(?=[\s,.!?;:\-—]|$)";
         return Regex.Replace(input, pattern, string.Empty, RegexOptions.IgnoreCase);

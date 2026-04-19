@@ -164,7 +164,6 @@ public sealed class SqliteVectorIndex : IVectorIndex, IAsyncDisposable
         return ValueTask.CompletedTask;
     }
 
-    // -- internals ------------------------------------------------------------
 
     private SqliteConnection Open()
     {

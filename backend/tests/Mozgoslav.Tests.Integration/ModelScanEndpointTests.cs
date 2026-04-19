@@ -64,7 +64,6 @@ public sealed class ModelScanEndpointTests
                 Path.Combine(dir, "some-custom-model.gguf"),
                 [8, 9],
                 TestContext.CancellationToken);
-            // Non-matching extension — must be excluded from results.
             await File.WriteAllBytesAsync(
                 Path.Combine(dir, "notes.txt"),
                 [0],

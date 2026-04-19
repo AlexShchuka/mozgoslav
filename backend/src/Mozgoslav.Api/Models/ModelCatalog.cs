@@ -11,7 +11,6 @@ public static class ModelCatalog
 {
     public static IReadOnlyList<CatalogEntry> All { get; } =
     [
-        // ---- Whisper STT --------------------------------------------------
         new(
             Id: "whisper-small-russian-bundle",
             Name: "Whisper Small (Russian starter, bundled)",
@@ -67,7 +66,6 @@ public static class ModelCatalog
             Tier: ModelTier.Downloadable,
             IsDefault: false),
 
-        // ---- Silero VAD ---------------------------------------------------
         new(
             Id: "silero-vad",
             Name: "Silero VAD v6.2.0",
@@ -78,7 +76,6 @@ public static class ModelCatalog
             Tier: ModelTier.Bundle,
             IsDefault: true),
 
-        // ---- Audio-domain ML (python sidecar, Tier 2) ---------------------
         new(
             Id: "audeering-age-gender",
             Name: "audeering age-gender (wav2vec2)",
@@ -99,10 +96,6 @@ public static class ModelCatalog
             IsDefault: false)
     ];
 
-    // ADR-007 BC-034 / Phase 1 §DoD — the hand-off acceptance curls the
-    // download endpoint with ``catalogueId:"antony66-ggml"``. Keep the
-    // existing granular Ids (so the Models page UI stays backward-compatible)
-    // and resolve the short, stable alias here.
     private static readonly IReadOnlyDictionary<string, string> Aliases =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {

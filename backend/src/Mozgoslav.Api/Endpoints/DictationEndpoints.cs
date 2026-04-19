@@ -84,16 +84,6 @@ public static class DictationEndpoints
             }
         });
 
-        // ADR-007 BC-004 / D4 — Dashboard record button. The browser's
-        // MediaRecorder ships Opus-in-WebM chunks at
-        // `POST /api/dictation/{sessionId}/push` with Content-Type
-        // `application/octet-stream` (or `audio/webm;codecs=opus`). The handler
-        // forwards each chunk into the session's long-running ffmpeg decoder
-        // (see IDictationPcmStream). Only the first chunk carries the WebM
-        // EBML header, so decoding each chunk in isolation fails with exit
-        // code 183 — hence the per-session process that holds stdin open.
-        // When the body looks like raw PCM (legacy tests / Electron native
-        // path) we skip the decoder entirely.
         endpoints.MapPost("/api/dictation/{sessionId:guid}/push", async (
             Guid sessionId,
             HttpContext context,
@@ -220,14 +210,12 @@ public static class DictationEndpoints
             return true;
         }
 
-        // WebM starts with EBML magic (0x1A 0x45 0xDF 0xA3).
         if (payload.Length >= 4
             && payload[0] == 0x1A && payload[1] == 0x45
             && payload[2] == 0xDF && payload[3] == 0xA3)
         {
             return false;
         }
-        // Ogg starts with "OggS".
         if (payload.Length >= 4
             && payload[0] == 0x4F && payload[1] == 0x67
             && payload[2] == 0x67 && payload[3] == 0x53)
@@ -235,9 +223,6 @@ public static class DictationEndpoints
             return false;
         }
 
-        // Default when `Content-Type: audio/pcm` is NOT set: treat as encoded.
-        // Raw-PCM callers should opt in explicitly via Content-Type so we don't
-        // misinterpret a malformed encoded payload as noise samples.
         return false;
     }
 

@@ -1,48 +1,44 @@
-import { connect } from "react-redux";
-import { bindActionCreators, type Dispatch } from "redux";
+import {connect} from "react-redux";
+import {bindActionCreators, type Dispatch} from "redux";
 
-import type { GlobalState } from "../../store";
+import type {GlobalState} from "../../store";
 import {
-  applyLayout,
-  bulkExport,
-  selectLastApplyLayoutReport,
-  selectLastBulkExportReport,
-  selectLastSetupReport,
-  selectObsidianError,
-  selectObsidianIsApplyingLayout,
-  selectObsidianIsBulkExporting,
-  selectObsidianIsSetupInProgress,
-  setupObsidian,
+    applyLayout,
+    bulkExport,
+    selectLastApplyLayoutReport,
+    selectLastBulkExportReport,
+    selectLastSetupReport,
+    selectObsidianError,
+    selectObsidianIsApplyingLayout,
+    selectObsidianIsBulkExporting,
+    selectObsidianIsSetupInProgress,
+    setupObsidian,
 } from "../../store/slices/obsidian";
-import {
-  loadSettings,
-  saveSettings,
-  selectSettings,
-} from "../../store/slices/settings";
+import {loadSettings, saveSettings, selectSettings,} from "../../store/slices/settings";
 import Obsidian from "./Obsidian";
-import type { ObsidianDispatchProps, ObsidianStateProps } from "./types";
+import type {ObsidianDispatchProps, ObsidianStateProps} from "./types";
 
 const mapStateToProps = (state: GlobalState): ObsidianStateProps => ({
-  settings: selectSettings(state),
-  isBulkExporting: selectObsidianIsBulkExporting(state),
-  isApplyingLayout: selectObsidianIsApplyingLayout(state),
-  isSetupInProgress: selectObsidianIsSetupInProgress(state),
-  lastBulkExportReport: selectLastBulkExportReport(state),
-  lastApplyLayoutReport: selectLastApplyLayoutReport(state),
-  lastSetupReport: selectLastSetupReport(state),
-  error: selectObsidianError(state),
+    settings: selectSettings(state),
+    isBulkExporting: selectObsidianIsBulkExporting(state),
+    isApplyingLayout: selectObsidianIsApplyingLayout(state),
+    isSetupInProgress: selectObsidianIsSetupInProgress(state),
+    lastBulkExportReport: selectLastBulkExportReport(state),
+    lastApplyLayoutReport: selectLastApplyLayoutReport(state),
+    lastSetupReport: selectLastSetupReport(state),
+    error: selectObsidianError(state),
 });
 
 const mapDispatchToProps = (dispatch: Dispatch): ObsidianDispatchProps =>
-  bindActionCreators(
-    {
-      onLoadSettings: loadSettings,
-      onSaveSettings: saveSettings,
-      onSetup: setupObsidian,
-      onBulkExport: bulkExport,
-      onApplyLayout: applyLayout,
-    },
-    dispatch,
-  );
+    bindActionCreators(
+        {
+            onLoadSettings: loadSettings,
+            onSaveSettings: saveSettings,
+            onSetup: setupObsidian,
+            onBulkExport: bulkExport,
+            onApplyLayout: applyLayout,
+        },
+        dispatch,
+    );
 
 export default connect(mapStateToProps, mapDispatchToProps)(Obsidian);

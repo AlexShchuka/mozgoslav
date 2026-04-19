@@ -1,4 +1,4 @@
-import styled, { keyframes } from "styled-components";
+import styled, {keyframes} from "styled-components";
 
 /**
  * Slow diagonal breathing on a `::before` pseudo-element using
@@ -29,13 +29,13 @@ export const TitleBarRoot = styled.header`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: ${({ theme }) => theme.space(2)};
+  gap: ${({theme}) => theme.space(2)};
   /* 78 px left reservation keeps the macOS traffic-light buttons
      (titleBarStyle: "hiddenInset") clear of bar content. */
-  padding: 0 ${({ theme }) => theme.space(4)} 0 78px;
-  color: ${({ theme }) => theme.colors.text.primary};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border.subtle};
-  background-color: ${({ theme }) => theme.colors.bg.elevated2};
+  padding: 0 ${({theme}) => theme.space(4)} 0 78px;
+  color: ${({theme}) => theme.colors.text.primary};
+  border-bottom: 1px solid ${({theme}) => theme.colors.border.subtle};
+  background-color: ${({theme}) => theme.colors.bg.elevated2};
   position: relative;
   overflow: hidden;
   isolation: isolate;
@@ -50,10 +50,10 @@ export const TitleBarRoot = styled.header`
     pointer-events: none;
     background: linear-gradient(
       135deg,
-      ${({ theme }) => theme.colors.accent.glow} 0%,
+      ${({theme}) => theme.colors.accent.glow} 0%,
       transparent 45%,
       transparent 55%,
-      ${({ theme }) => theme.colors.accent.glow} 100%
+      ${({theme}) => theme.colors.accent.glow} 100%
     );
     animation: ${breathe} 9s ease-in-out infinite alternate;
     will-change: transform;
@@ -61,8 +61,8 @@ export const TitleBarRoot = styled.header`
 `;
 
 export const TitleBarLabel = styled.span`
-  font-size: ${({ theme }) => theme.font.size.sm};
-  font-weight: ${({ theme }) => theme.font.weight.semibold};
+  font-size: ${({theme}) => theme.font.size.sm};
+  font-weight: ${({theme}) => theme.font.weight.semibold};
   letter-spacing: 0.02em;
 `;
 

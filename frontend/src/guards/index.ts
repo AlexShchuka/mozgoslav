@@ -1,1 +1,1 @@
-export { default as OnboardingCompleteGuard } from "./OnboardingCompleteGuard";
+export {default as OnboardingCompleteGuard} from "./OnboardingCompleteGuard";

@@ -39,13 +39,11 @@ public sealed class SyncthingLifecycleServiceTests
     [TestMethod]
     public async Task StartAsync_WhenBinaryMissing_LogsInfoAndNoOps()
     {
-        // Settings: enabled, but no binary on PATH, no env var configured.
         var settings = Substitute.For<IAppSettings>();
         settings.SyncthingEnabled.Returns(true);
         var logger = new ListLogger<SyncthingLifecycleService>();
         await using var sut = new SyncthingLifecycleService(settings, logger);
 
-        // Clear both env vars in case the test host has them set.
         var previous = Environment.GetEnvironmentVariable("MOZGOSLAV_SYNCTHING_BINARY");
         var previousLegacy = Environment.GetEnvironmentVariable("SYNCTHING_BINARY");
         Environment.SetEnvironmentVariable("MOZGOSLAV_SYNCTHING_BINARY", null);
@@ -61,10 +59,6 @@ public sealed class SyncthingLifecycleServiceTests
             Environment.SetEnvironmentVariable("SYNCTHING_BINARY", previousLegacy);
         }
 
-        // We either logged "not found" (the clean path), or the test host
-        // actually ships a syncthing binary on PATH and we spawned it
-        // successfully. Both are valid — but we must never have logged an
-        // ERR, because the absence of the binary is a known-supported mode.
         logger.Entries.Should().NotContain(e => e.Level == LogLevel.Error);
         await sut.StopAsync(CancellationToken.None);
     }

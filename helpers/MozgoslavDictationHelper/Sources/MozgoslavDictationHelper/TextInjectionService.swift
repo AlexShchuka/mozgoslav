@@ -94,8 +94,6 @@ public final class TextInjectionService {
 
         let deadline = DispatchTime.now() + Self.accessibilityTimeoutSeconds
         if semaphore.wait(timeout: deadline) == .timedOut {
-            // AX call is wedged; bail to clipboard so the user still gets
-            // their text and the dictation loop stays responsive.
             try injectViaClipboard(text)
             return
         }
@@ -133,8 +131,6 @@ public final class TextInjectionService {
             &focusedValue
         )
         guard focusStatus == .success, let focused = focusedValue else {
-            // No focused element visible via AX — CGEvent is the safer
-            // fallback than clipboard (doesn't clobber pasteboard).
             return .retryViaCgEvent
         }
 
@@ -152,7 +148,6 @@ public final class TextInjectionService {
         if setStatus == .success {
             return .success
         }
-        // Electron apps that refuse AX writes usually accept a paste instead.
         return .retryViaClipboard
     }
     #endif
@@ -166,9 +161,6 @@ public final class TextInjectionService {
 
         try synthesizeCommandV()
 
-        // Restore the prior clipboard entry — but only after the paste
-        // has had a chance to land. 200 ms is well above the longest
-        // observed paste latency (~30 ms) without being user-visible.
         if let saved {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 pasteboard.clearContents()
@@ -187,9 +179,6 @@ public final class TextInjectionService {
             throw HelperError(code: -32032, message: "Failed to create CGEventSource for paste")
         }
 
-        // kVK_ANSI_V is 0x09 — defined in Carbon.HIToolbox but that umbrella
-        // header is deprecated on modern toolchains. Inline constants keep
-        // the helper slim and avoid pulling in Carbon just for a keycode.
         let keyV: CGKeyCode = 0x09
 
         guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: keyV, keyDown: true),

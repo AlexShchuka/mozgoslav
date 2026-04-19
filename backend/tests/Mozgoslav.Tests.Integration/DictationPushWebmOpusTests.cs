@@ -185,8 +185,6 @@ public sealed class DictationPushWebmOpusTests
                     contextLifetime: ServiceLifetime.Scoped,
                     optionsLifetime: ServiceLifetime.Singleton);
 
-                // Replace IStreamingTranscriptionService with the capturing fake so we
-                // can assert on the decoded PCM without needing Whisper on disk.
                 for (var i = services.Count - 1; i >= 0; i--)
                 {
                     if (services[i].ServiceType == typeof(IStreamingTranscriptionService))

@@ -162,7 +162,6 @@ public sealed class PythonSidecarClientTests : IDisposable
     [TestMethod]
     public async Task DiarizeAsync_WhenSidecarDown_PropagatesHttpRequestException()
     {
-        // Stop the server so the call fails at the socket layer.
         _server.Stop();
 
         var act = () => _client.DiarizeAsync("/tmp/audio.wav", TestContext.CancellationToken);

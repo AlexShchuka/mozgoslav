@@ -10,10 +10,6 @@ public static class SseEndpoints
 {
     public static IEndpointRouteBuilder MapSseEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        // ADR-011 step 7 — the SSE wire framing is owned by the framework's
-        // TypedResults.ServerSentEvents (.NET 10) helper. Endpoint hands the
-        // framework an IAsyncEnumerable of payload records; it handles
-        // keep-alives, `data: …`, `event: …`, and retry tokens.
         endpoints.MapGet("/api/jobs/stream", (
             IJobProgressNotifier notifier,
             CancellationToken ct) =>
@@ -23,10 +19,6 @@ public static class SseEndpoints
                 eventType: "job");
         });
 
-        // D3 — hot-plug microphone notifications. Inbound POST from the Swift
-        // helper (via the Electron loopback bridge) carries the fresh device
-        // list; outbound SSE re-emits it to the renderer so the Dashboard can
-        // toast + re-enable Start when a mic is swapped mid-session.
         endpoints.MapPost("/_internal/devices/changed", async (
             [FromBody] AudioDeviceChangePayload payload,
             IAudioDeviceChangeNotifier notifier,
@@ -49,10 +41,6 @@ public static class SseEndpoints
                 eventType: "device-changed");
         });
 
-        // NEXT H1 — push-to-talk. The Swift helper POSTs press / release
-        // events for the configured accelerator; Electron main subscribes to
-        // /api/hotkey/stream and drives the DictationOrchestrator (start on
-        // press, stop on release) instead of globalShortcut's keyDown toggle.
         endpoints.MapPost("/_internal/hotkey/event", async (
             [FromBody] HotkeyEvent payload,
             IHotkeyEventNotifier notifier,

@@ -36,11 +36,6 @@ public sealed class SyncthingVersioningVerifier : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // ADR-007 bug 6 — when Syncthing is not configured, the DI container
-        // hands us the DisabledSyncthingClient. Do not spin a periodic health
-        // probe against a feature that is intentionally off; Phase 2 Backend
-        // MR D rewires this once the lifecycle service actually spawns the
-        // bundled binary.
         if (_client is DisabledSyncthingClient)
         {
             _logger.LogInformation("Syncthing disabled — skipping versioning verifier");

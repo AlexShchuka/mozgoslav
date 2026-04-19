@@ -92,7 +92,6 @@ public sealed class DictationRawChunkPipelineTests
         var fixture = CreateFixture();
         var session = fixture.Manager.Start();
 
-        // PushAudioAsync (PCM path) must NOT touch the raw-chunk decoder.
         await fixture.Manager.PushAudioAsync(
             session.Id,
             new AudioChunk(new float[16], 16_000, TimeSpan.Zero),

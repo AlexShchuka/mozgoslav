@@ -43,9 +43,6 @@ public sealed class AnthropicLlmProvider : ILlmProvider
     {
         try
         {
-            // ADR-011 step 3 — resilience (timeouts, retry, circuit-breaker)
-            // lives on the named "llm" HttpClient in Program.cs. No per-call
-            // Timeout override here so the resilience handler's budget wins.
             using var client = _httpClientFactory.CreateClient("llm");
 
             var endpoint = new Uri(new Uri(_settings.LlmEndpoint), "/v1/messages");
@@ -82,7 +79,6 @@ public sealed class AnthropicLlmProvider : ILlmProvider
                 return string.Empty;
             }
 
-            // Anthropic returns an array of content blocks; concatenate all text blocks (first is typical).
             var text = string.Concat(payload.Content
                 .Where(c => string.Equals(c.Type, "text", StringComparison.Ordinal))
                 .Select(c => c.Text ?? string.Empty));
@@ -90,13 +86,10 @@ public sealed class AnthropicLlmProvider : ILlmProvider
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            // Caller cancelled — let the CancellationToken propagate upstream.
             throw;
         }
         catch (TaskCanceledException ex)
         {
-            // HttpClient timeout surfaces as TaskCanceledException WITHOUT the caller
-            // token being cancelled. Treat that as a transport failure, not a cancel.
             _logger.LogWarning(ex, "Anthropic LLM call timed out");
             return string.Empty;
         }

@@ -43,9 +43,6 @@ public static class RuntimeDefaults
             return current;
         }
 
-        // Never silently point at a non-existent vault — export paths would
-        // land in a directory the user has no Obsidian workspace for. Only
-        // pre-fill when the conventional location actually exists.
         var candidate = AppPaths.DefaultVaultPath;
         return directoryExists(candidate) ? candidate : string.Empty;
     }

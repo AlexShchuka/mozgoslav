@@ -1,8 +1,8 @@
-import { createGlobalStyle } from "styled-components";
+import {createGlobalStyle} from "styled-components";
 
 export const GlobalStyle = createGlobalStyle`
   :root {
-    color-scheme: ${({ theme }) => theme.mode};
+    color-scheme: ${({theme}) => theme.mode};
   }
 
   *, *::before, *::after {
@@ -15,10 +15,10 @@ export const GlobalStyle = createGlobalStyle`
   }
 
   body {
-    background: ${({ theme }) => theme.colors.bg.base};
-    color: ${({ theme }) => theme.colors.text.primary};
-    font-family: ${({ theme }) => theme.font.family};
-    font-size: ${({ theme }) => theme.font.size.md};
+    background: ${({theme}) => theme.colors.bg.base};
+    color: ${({theme}) => theme.colors.text.primary};
+    font-family: ${({theme}) => theme.font.family};
+    font-size: ${({theme}) => theme.font.size.md};
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -30,17 +30,17 @@ export const GlobalStyle = createGlobalStyle`
   }
 
   code, pre, kbd {
-    font-family: ${({ theme }) => theme.font.familyMono};
+    font-family: ${({theme}) => theme.font.familyMono};
   }
 
   /* ADR-013 — use accent.glow on selection so it reads as a brand moment. */
   ::selection {
-    background: ${({ theme }) => theme.colors.accent.soft};
-    color: ${({ theme }) => theme.colors.text.primary};
+    background: ${({theme}) => theme.colors.accent.soft};
+    color: ${({theme}) => theme.colors.text.primary};
   }
 
   a {
-    color: ${({ theme }) => theme.colors.accent.primary};
+    color: ${({theme}) => theme.colors.accent.primary};
     text-decoration: none;
   }
 
@@ -69,10 +69,10 @@ export const GlobalStyle = createGlobalStyle`
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme.colors.border.subtle};
-    border-radius: ${({ theme }) => theme.radii.full};
+    background: ${({theme}) => theme.colors.border.subtle};
+    border-radius: ${({theme}) => theme.radii.full};
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: ${({ theme }) => theme.colors.text.muted};
+    background: ${({theme}) => theme.colors.text.muted};
   }
 `;

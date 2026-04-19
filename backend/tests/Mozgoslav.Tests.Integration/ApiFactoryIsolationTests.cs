@@ -45,20 +45,16 @@ public sealed class ApiFactoryIsolationTests
 
         try
         {
-            // Import a recording into factory A only.
             using var importResponse = await clientA.PostAsJsonAsync(
                 "/api/recordings/import",
                 new { filePaths = new[] { tempFile } });
             importResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-            // Factory A should see exactly one recording.
             using var listA = await clientA.GetAsync("/api/recordings");
             listA.StatusCode.Should().Be(HttpStatusCode.OK);
             var recordingsA = await listA.Content.ReadFromJsonAsync<List<Recording>>();
             recordingsA.Should().ContainSingle();
 
-            // Factory B must see NO recordings — if cross-contamination
-            // returns the databases will be shared and this will fail.
             using var listB = await clientB.GetAsync("/api/recordings");
             listB.StatusCode.Should().Be(HttpStatusCode.OK);
             var recordingsB = await listB.Content.ReadFromJsonAsync<List<Recording>>();
@@ -77,15 +73,12 @@ public sealed class ApiFactoryIsolationTests
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        // Hit an endpoint that forces DatabaseInitializer to run.
         using var response = await client.GetAsync("/api/health");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // The factory's declared DatabasePath must exist on disk...
         File.Exists(factory.DatabasePath).Should().BeTrue(
             "DatabaseInitializer must create the test-owned SQLite file");
 
-        // ...and the old relative default must NOT appear in the CWD.
         var relativeDefault = Path.Combine(Directory.GetCurrentDirectory(), "mozgoslav.db");
         File.Exists(relativeDefault).Should().BeFalse(
             "no integration test may fall through to the relative default path; " +

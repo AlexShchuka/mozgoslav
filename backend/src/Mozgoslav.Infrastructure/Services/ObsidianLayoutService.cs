@@ -67,8 +67,6 @@ public sealed class ObsidianLayoutService : IObsidianLayoutService
             "PARA layout applied at {Vault}: created={Created}, moved=0",
             vaultRoot, created);
 
-        // movedNotes stays 0 until FolderMapping / VaultExportRule are wired
-        // through the repository layer — see class remarks above.
         return Task.FromResult(new ApplyLayoutResult(created, MovedNotes: 0));
     }
 }

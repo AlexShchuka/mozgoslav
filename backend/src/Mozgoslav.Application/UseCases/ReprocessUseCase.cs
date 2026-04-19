@@ -91,7 +91,6 @@ public sealed class ReprocessUseCase
             }
             catch
             {
-                // Export failure shouldn't block creating the note — user can retry from the note viewer.
             }
         }
 

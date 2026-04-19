@@ -34,12 +34,8 @@ public sealed class NoteManualCreateTests
         var created = await response.Content.ReadFromJsonAsync<JsonElement>(Json, TestContext.CancellationToken);
         created.GetProperty("id").GetGuid().Should().NotBeEmpty();
         created.GetProperty("markdownContent").GetString().Should().Contain("First thought");
-        // §2.6 says `Source = Manual` — backend will surface it as either the
-        // enum string or a boolean flag. We assert on the source-level token
-        // so either representation passes as long as it carries "Manual".
         JsonSerializer.Serialize(created).Should().Contain("Manual");
 
-        // Reading back through the list endpoint proves it persisted.
         using var list = await client.GetAsync("/api/notes", TestContext.CancellationToken);
         list.StatusCode.Should().Be(HttpStatusCode.OK);
         var notes = await list.Content.ReadFromJsonAsync<List<ProcessedNote>>(Json, TestContext.CancellationToken);
@@ -60,8 +56,6 @@ public sealed class NoteManualCreateTests
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var created = await response.Content.ReadFromJsonAsync<JsonElement>(Json, TestContext.CancellationToken);
         created.GetProperty("id").GetGuid().Should().NotBeEmpty();
-        // Stub defaults survive — markdownContent is an empty-string placeholder,
-        // NOT a missing field. Frontend relies on the property being present.
         created.TryGetProperty("markdownContent", out _).Should().BeTrue();
     }
 

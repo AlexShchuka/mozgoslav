@@ -24,12 +24,6 @@ namespace Mozgoslav.Infrastructure.Services;
 /// </summary>
 public sealed class OpenAiCompatibleLlmService : ILlmService
 {
-    // ADR-011 step 4 — tiktoken-based chunking. 6000 tokens covers Claude and
-    // GPT-4-family context windows comfortably while leaving headroom for the
-    // system prompt and the LLM's reply. The tokenizer is the OpenAI cl100k_base
-    // encoder used by gpt-4 / gpt-3.5-turbo; Claude's BPE is close enough for
-    // sizing purposes (within ~5% on Russian text), which beats a character
-    // heuristic by a wide margin.
     private const int MaxTokensPerChunk = 6_000;
     private static readonly Tokenizer SharedTokenizer = TiktokenTokenizer.CreateForModel("gpt-4");
 
@@ -54,9 +48,6 @@ public sealed class OpenAiCompatibleLlmService : ILlmService
     {
         try
         {
-            // ADR-011 step 3 — resilience handler already owns timeouts on the
-            // "llm" named client. For the health probe we want a snappy fail,
-            // so we link a 3 s cancellation token on top.
             using var client = _httpClientFactory.CreateClient("llm");
             using var probeCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             probeCts.CancelAfter(TimeSpan.FromSeconds(3));

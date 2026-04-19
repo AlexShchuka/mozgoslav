@@ -47,12 +47,6 @@ public sealed class FfmpegPcmStreamService : IDictationPcmStream, IAsyncDisposab
     {
         ct.ThrowIfCancellationRequested();
 
-        // Ownership of the Session/Process pair is transferred into _sessions
-        // after the ffmpeg binary starts successfully. On any failure before
-        // then the local wrappers are disposed here; IDisposableAnalyzers
-        // doesn't track ConcurrentDictionary transitions, so disposal on the
-        // failure paths is explicitly suppressed to keep error signalling
-        // consistent with the happy path.
         var startInfo = new ProcessStartInfo
         {
             FileName = FfmpegExecutable,
@@ -144,9 +138,6 @@ public sealed class FfmpegPcmStreamService : IDictationPcmStream, IAsyncDisposab
         }
         catch (IOException ex)
         {
-            // ffmpeg closed stdin (decoder error / process exit). Surface as an
-            // invalid-operation so the caller can finalize the session cleanly
-            // without leaking a half-written buffer.
             _logger.LogWarning(ex,
                 "ffmpeg stdin write failed for session {SessionId} (stderr={Stderr})",
                 sessionId, session.SnapshotStderr());
@@ -168,8 +159,6 @@ public sealed class FfmpegPcmStreamService : IDictationPcmStream, IAsyncDisposab
 
         try
         {
-            // Close stdin so ffmpeg sees EOF and flushes whatever clusters
-            // remain in its demuxer.
             await session.WriteLock.WaitAsync(ct).ConfigureAwait(false);
             try
             {
@@ -180,8 +169,6 @@ public sealed class FfmpegPcmStreamService : IDictationPcmStream, IAsyncDisposab
                 session.WriteLock.Release();
             }
 
-            // Drain stdout with a bounded wait — if ffmpeg hangs the
-            // sandboxed caller must still return control to the user.
             using var drainCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             drainCts.CancelAfter(DrainTimeout);
             try
@@ -211,7 +198,6 @@ public sealed class FfmpegPcmStreamService : IDictationPcmStream, IAsyncDisposab
                 }
                 catch (TimeoutException)
                 {
-                    // Stderr pump is harmless background noise.
                 }
             }
 
@@ -352,7 +338,6 @@ public sealed class FfmpegPcmStreamService : IDictationPcmStream, IAsyncDisposab
         }
         catch (InvalidOperationException)
         {
-            // Process already exited between HasExited read and Kill.
         }
     }
 
@@ -417,16 +402,12 @@ public sealed class FfmpegPcmStreamService : IDictationPcmStream, IAsyncDisposab
         {
             try
             {
-                // Process was constructed by StartAsync and handed to this Session
-                // via AttachProcess; ownership lives with the session, so disposing
-                // here is correct even though IDisposableAnalyzers cannot trace it.
 #pragma warning disable IDISP007
                 Process?.Dispose();
 #pragma warning restore IDISP007
             }
             catch (InvalidOperationException)
             {
-                // Already disposed.
             }
             WriteLock.Dispose();
         }

@@ -1,12 +1,16 @@
 # ADR-007 — Phase 2 Python Sidecar Agent
 
-Read first: `ADR-007.md`, `ADR-007-shared.md` (§2.4 defines the `/embed` contract the Backend agent depends on), `python-sidecar/CLAUDE.md`, root `CLAUDE.md`. Precondition: **Phase 1 Agent A acceptance passed**. Runs parallel to Backend / Frontend / Swift agents. Works in `python-sidecar/` only.
+Read first: `ADR-007.md`, `ADR-007-shared.md` (§2.4 defines the `/embed` contract the Backend agent depends on),
+`python-sidecar/CLAUDE.md`, root `CLAUDE.md`. Precondition: **Phase 1 Agent A acceptance passed**. Runs parallel to
+Backend / Frontend / Swift agents. Works in `python-sidecar/` only.
 
 ---
 
 ## 0. Goal and definition of done
 
-**Goal.** Restore `POST /api/embed` so Backend MR C's `PythonSidecarEmbeddingService` can call a live sidecar on the user's Mac. In the pod, the deterministic SHA-256 BoW fallback is the only code path actually executed; sentence-transformers + PyTorch are not installed here.
+**Goal.** Restore `POST /api/embed` so Backend MR C's `PythonSidecarEmbeddingService` can call a live sidecar on the
+user's Mac. In the pod, the deterministic SHA-256 BoW fallback is the only code path actually executed;
+sentence-transformers + PyTorch are not installed here.
 
 **DoD commands.**
 
@@ -19,14 +23,15 @@ python -m pytest -q
 deactivate
 ```
 
-All tests green. `requirements.txt` lists `sentence-transformers` for macOS install; `requirements-dev.txt` stays lightweight.
+All tests green. `requirements.txt` lists `sentence-transformers` for macOS install; `requirements-dev.txt` stays
+lightweight.
 
 ---
 
 ## 1. Scope
 
-| BC | Deliverable |
-|----|-------------|
+| BC                                      | Deliverable                                                                                                                                                                                              |
+|-----------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | BC-039 (sidecar half of full-stack RAG) | `POST /api/embed { text: string }` → `{ embedding: number[], dim: 384 }`. Deterministic BoW fallback path is complete and tested in the pod; real-model path is implementation-ready for the user's Mac. |
 
 ---
@@ -41,8 +46,11 @@ python-sidecar/tests/test_embed.py            (new)
 ```
 
 Also:
-- `python-sidecar/requirements.txt` — ensure `sentence-transformers>=3.0.0` is listed for production install; leave version un-pinned to the minor, pin major.
-- `python-sidecar/requirements-dev.txt` — leave untouched. The `/embed` deterministic path has no runtime dependency beyond what's already there.
+
+- `python-sidecar/requirements.txt` — ensure `sentence-transformers>=3.0.0` is listed for production install; leave
+  version un-pinned to the minor, pin major.
+- `python-sidecar/requirements-dev.txt` — leave untouched. The `/embed` deterministic path has no runtime dependency
+  beyond what's already there.
 
 Wire the router include in `python-sidecar/app/main.py`:
 
@@ -79,7 +87,8 @@ Content-Type: application/json
 ```
 
 - Output is **L2-normalised** (Euclidean norm equal to 1.0 within `1e-5`).
-- Dimension is **fixed at 384** across both real-model and deterministic paths — the C# consumer must never see a contract change.
+- Dimension is **fixed at 384** across both real-model and deterministic paths — the C# consumer must never see a
+  contract change.
 
 ### 3.3 Error (400 / 422)
 
@@ -282,18 +291,22 @@ def test_embed_deterministic_bow_different_texts_different_vectors() -> None:
 ## 5. Acceptance checklist
 
 - [ ] `python -m pytest -q` — all tests green.
-- [ ] `curl -X POST http://127.0.0.1:5060/api/embed -H "Content-Type: application/json" -d '{"text":"hello"}'` (started with `uvicorn app.main:app --port 5060`) returns a 384-dim array, L2-normalised.
+- [ ] `curl -X POST http://127.0.0.1:5060/api/embed -H "Content-Type: application/json" -d '{"text":"hello"}'` (started
+  with `uvicorn app.main:app --port 5060`) returns a 384-dim array, L2-normalised.
 - [ ] Response shape matches `ADR-007-shared.md §2.4` and Backend agent's `PythonSidecarEmbeddingService` client.
 - [ ] `requirements.txt` lists `sentence-transformers` at a compatible version; `requirements-dev.txt` unchanged.
-- [ ] `phase2-python-report.md` at repo root: what was added, tests, open items (e.g. «real-model path untested in sandbox; tested deterministic fallback»).
+- [ ] `phase2-python-report.md` at repo root: what was added, tests, open items (e.g. «real-model path untested in
+  sandbox; tested deterministic fallback»).
 
 ---
 
 ## 6. Escalation triggers
 
 - Existing Python tests break — stop, a stub router was probably sharing a path. Review `app/main.py` include order.
-- `sentence-transformers` import inside `_load()` crashes the dev box — leave it behind the `ImportError` guard; do not install in dev.
-- Backend C# integration test for RAG fails because embedding shape differs — escalate to Backend agent; the contract (`dim=384`, L2-normalised) is frozen.
+- `sentence-transformers` import inside `_load()` crashes the dev box — leave it behind the `ImportError` guard; do not
+  install in dev.
+- Backend C# integration test for RAG fails because embedding shape differs — escalate to Backend agent; the contract (
+  `dim=384`, L2-normalised) is frozen.
 
 ---
 

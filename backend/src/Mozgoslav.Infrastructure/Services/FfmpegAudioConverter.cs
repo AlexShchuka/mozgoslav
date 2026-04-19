@@ -46,8 +46,6 @@ public sealed class FfmpegAudioConverter : IAudioConverter
 
         try
         {
-            // CliWrap's Command is a builder returned by Wrap() — its lifetime
-            // ends at ExecuteAsync, the analyzer can't see that.
 #pragma warning disable IDISP001
             var result = await Cli.Wrap(FfmpegExecutable)
                 .WithArguments(args => args

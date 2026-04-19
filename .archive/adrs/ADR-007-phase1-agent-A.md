@@ -1,14 +1,19 @@
 # ADR-007 — Phase 1 Agent A (Foundation)
 
-Read first: `ADR-007.md` (BCs, bugs, non-goals, coverage map), `ADR-007-shared.md` (conventions, API contract, red-first, quality bar), `backend/CLAUDE.md`, root `CLAUDE.md`.
+Read first: `ADR-007.md` (BCs, bugs, non-goals, coverage map), `ADR-007-shared.md` (conventions, API contract,
+red-first, quality bar), `backend/CLAUDE.md`, root `CLAUDE.md`.
 
-Agent A is **solo and sequential**. It owns every change that touches shared surfaces: `Program.cs`, `MozgoslavDbContext`, migrations, `AppPaths`, settings baseline, Kestrel config, `LogsEndpoints` → `LogsController` rewrite, primary-constructor sweep. Phase 2 starts only after Agent A's acceptance passes.
+Agent A is **solo and sequential**. It owns every change that touches shared surfaces: `Program.cs`,
+`MozgoslavDbContext`, migrations, `AppPaths`, settings baseline, Kestrel config, `LogsEndpoints` → `LogsController`
+rewrite, primary-constructor sweep. Phase 2 starts only after Agent A's acceptance passes.
 
 ---
 
 ## 0. Goal and definition of done
 
-**Goal.** Mozgoslav compiles clean (Release, `TreatWarningsAsErrors=true`), the solution passes the baseline integration suite, shared surfaces are in a stable baseline that Phase 2 agents can extend without colliding, and the API contract in `ADR-007-shared.md §2` is implementable as-is.
+**Goal.** Mozgoslav compiles clean (Release, `TreatWarningsAsErrors=true`), the solution passes the baseline integration
+suite, shared surfaces are in a stable baseline that Phase 2 agents can extend without colliding, and the API contract
+in `ADR-007-shared.md §2` is implementable as-is.
 
 **DoD.** All of the following commands succeed from `/home/coder/workspace/mozgoslav-20260417/mozgoslav/`:
 
@@ -20,10 +25,16 @@ npm --prefix frontend run lint
 ```
 
 Additionally:
-- `dotnet run --project backend/src/Mozgoslav.Api --no-build` — startup log emits `SQLite schema ensured` exactly once, `Seeded 3 built-in profiles` exactly once, zero `Overriding address(es)` warnings, zero EF Core value-comparer warnings, zero `Syncthing REST: Connection refused` lines in the first 5 seconds.
-- `curl http://127.0.0.1:5050/api/logs/tail?lines=10` returns a JSON `{file, lines, totalLines}` payload with real lines.
+
+- `dotnet run --project backend/src/Mozgoslav.Api --no-build` — startup log emits `SQLite schema ensured` exactly once,
+  `Seeded 3 built-in profiles` exactly once, zero `Overriding address(es)` warnings, zero EF Core value-comparer
+  warnings, zero `Syncthing REST: Connection refused` lines in the first 5 seconds.
+- `curl http://127.0.0.1:5050/api/logs/tail?lines=10` returns a JSON `{file, lines, totalLines}` payload with real
+  lines.
 - `curl http://127.0.0.1:5050/api/profiles` returns the 3 built-in profiles.
-- `curl -X POST http://127.0.0.1:5050/api/models/download -d '{"catalogueId":"antony66-ggml"}' -H 'Content-Type: application/json'` returns 202 Accepted with a `downloadId`.
+-
+`curl -X POST http://127.0.0.1:5050/api/models/download -d '{"catalogueId":"antony66-ggml"}' -H 'Content-Type: application/json'`
+returns 202 Accepted with a `downloadId`.
 
 ---
 
@@ -49,6 +60,7 @@ dotnet build   backend/Mozgoslav.sln -c Debug -maxcpucount:1 2>&1 | tee /tmp/ini
 **File.** `backend/src/Mozgoslav.Infrastructure/Services/FfmpegAudioRecorder.cs:22-102`.
 
 **Symptoms.** 3 analyzer errors under `TreatWarningsAsErrors=true`:
+
 - `IDISP006` — Implement IDisposable for a class holding disposables.
 - `IDISP003` × 2 — Dispose previous before assigning.
 
@@ -68,13 +80,11 @@ public sealed class FfmpegAudioRecorder : IAudioRecorder, IDisposable
 
     public async Task StartAsync(...)
     {
-        // Dispose previous before assigning (IDISP003)
         _process?.Dispose();
         _process = new Process { ... };
 
         _cts?.Dispose();
         _cts = new CancellationTokenSource();
-        // ...
     }
 
     public void Dispose()
@@ -100,13 +110,15 @@ dotnet build backend/Mozgoslav.sln -c Release -maxcpucount:1
 **Refs.** BC-027 (profiles seed), Bug 10, Bug 11, Bug 15.
 
 **Files.**
+
 - `backend/src/Mozgoslav.Infrastructure/Platform/AppPaths.cs`
 - `backend/src/Mozgoslav.Infrastructure/Seed/DatabaseInitializer.cs`
 - `backend/src/Mozgoslav.Api/Program.cs`
 
 **What to do.**
 
-1. Single source of DB path: `AppPaths.Database` is canonical. Any `Mozgoslav__DatabasePath` env-var override logs a WARN at startup.
+1. Single source of DB path: `AppPaths.Database` is canonical. Any `Mozgoslav__DatabasePath` env-var override logs a
+   WARN at startup.
 2. Add a startup log line:
    ```csharp
    _logger.LogInformation("Using database at {DbPath}", AppPaths.Database);
@@ -118,6 +130,7 @@ dotnet build backend/Mozgoslav.sln -c Release -maxcpucount:1
 4. Where a different path appears, route it through `AppPaths.Database`.
 
 **Verify.**
+
 - Fresh run: startup log has exactly one DB-path line.
 - `GET /api/profiles` returns the 3 built-ins. If it returns `[]`, the path mismatch is still present — re-audit.
 
@@ -128,10 +141,12 @@ dotnet build backend/Mozgoslav.sln -c Release -maxcpucount:1
 **Refs.** BC-052, Bug 8.
 
 **Files.**
+
 - `backend/src/Mozgoslav.Api/appsettings.json:11` (has `Urls`)
 - `backend/src/Mozgoslav.Api/Program.cs:48` (has `ConfigureKestrel`)
 
-**Decision.** Drop `ConfigureKestrel` in `Program.cs`; keep `appsettings.json Urls` = `"http://127.0.0.1:5050"`. Single source of truth. Rationale: `appsettings.json` is the operator-facing knob.
+**Decision.** Drop `ConfigureKestrel` in `Program.cs`; keep `appsettings.json Urls` = `"http://127.0.0.1:5050"`. Single
+source of truth. Rationale: `appsettings.json` is the operator-facing knob.
 
 **Commands.**
 
@@ -150,14 +165,18 @@ dotnet build backend/Mozgoslav.sln -c Release -maxcpucount:1
 **Refs.** BC-052, Bug 8.
 
 **Files.**
+
 - `backend/src/Mozgoslav.Infrastructure/Seed/DatabaseInitializer.cs`
 - `backend/src/Mozgoslav.Infrastructure/Repositories/EfProfileRepository.cs`
 
 **What to do.**
 
-1. Register `DatabaseInitializer` as a singleton `IHostedService` that runs exactly once at `StartAsync`. Inside, use `IServiceScopeFactory.CreateAsyncScope()` to get a scoped `DbContext`. Do not keep the scope alive.
-2. Audit places that materialise a scoped repository per call. `Seeded 3 built-in profiles` should log once, not three times.
-3. Tests: add integration test `backend/tests/Mozgoslav.Tests.Integration/StartupLogTests.cs::SchemaEnsured_EmittedExactlyOnce`.
+1. Register `DatabaseInitializer` as a singleton `IHostedService` that runs exactly once at `StartAsync`. Inside, use
+   `IServiceScopeFactory.CreateAsyncScope()` to get a scoped `DbContext`. Do not keep the scope alive.
+2. Audit places that materialise a scoped repository per call. `Seeded 3 built-in profiles` should log once, not three
+   times.
+3. Tests: add integration test
+   `backend/tests/Mozgoslav.Tests.Integration/StartupLogTests.cs::SchemaEnsured_EmittedExactlyOnce`.
 
 **Test fixture (red-first).**
 
@@ -204,19 +223,19 @@ modelBuilder.Entity<ProcessedNote>()
     .Property(n => n.KeyPoints)
     .HasConversion(/* existing converter */)
     .Metadata.SetValueComparer(StringListComparer);
-// Repeat for: Decisions, ActionItems, UnresolvedQuestions, Participants, Tags
-// For Profile.AutoTags — same StringListComparer
-// For Transcript.Segments — a dedicated SegmentListComparer (deep compare)
 ```
 
-Add migration `0007_value_comparers` (no schema change — annotation-only; but must be tracked in the `__EFMigrationsHistory` table):
+Add migration `0007_value_comparers` (no schema change — annotation-only; but must be tracked in the
+`__EFMigrationsHistory` table):
 
 ```bash
 cd backend/src/Mozgoslav.Infrastructure
 dotnet ef migrations add 0007_value_comparers --startup-project ../Mozgoslav.Api -- -maxcpucount:1
 ```
 
-**Test (red-first).** `backend/tests/Mozgoslav.Tests.Integration/DbContextValueComparerTests.cs::Mutate_KeyPointsZero_IsDetectedByChangeTracker` — mutate an element, save, reload, assert change detected.
+**Test (red-first).**
+`backend/tests/Mozgoslav.Tests.Integration/DbContextValueComparerTests.cs::Mutate_KeyPointsZero_IsDetectedByChangeTracker` —
+mutate an element, save, reload, assert change detected.
 
 ---
 
@@ -225,6 +244,7 @@ dotnet ef migrations add 0007_value_comparers --startup-project ../Mozgoslav.Api
 **Refs.** BC-042, BC-043, Bug 9.
 
 **Files.**
+
 - DELETE: `backend/src/Mozgoslav.Api/Endpoints/LogsEndpoints.cs`
 - CREATE: `backend/src/Mozgoslav.Api/Controllers/LogsController.cs`
 
@@ -307,9 +327,12 @@ public sealed class LogsController : ControllerBase
 }
 ```
 
-**Test (red-first).** `backend/tests/Mozgoslav.Tests.Integration/LogsControllerTests.cs::Tail_Default_ReturnsLines` — write a `mozgoslav-<date>.log` with known lines in a temp `Logs` dir, GET `/api/logs/tail?lines=5`, assert `lines.Length == 5` and `totalLines >= 5`.
+**Test (red-first).** `backend/tests/Mozgoslav.Tests.Integration/LogsControllerTests.cs::Tail_Default_ReturnsLines` —
+write a `mozgoslav-<date>.log` with known lines in a temp `Logs` dir, GET `/api/logs/tail?lines=5`, assert
+`lines.Length == 5` and `totalLines >= 5`.
 
 **Verify.**
+
 - `GET /api/logs` returns a non-empty JSON list after a manual run.
 - `GET /api/logs/tail?lines=10` returns a payload with `lines` and `totalLines`.
 
@@ -320,6 +343,7 @@ public sealed class LogsController : ControllerBase
 **Refs.** BC-034, Bug 1, Bug 2.
 
 **Files.**
+
 - `backend/src/Mozgoslav.Api/Models/ModelCatalog.cs:13-20`
 - `backend/src/Mozgoslav.Application/Interfaces/AppSettingsDto.cs:44`
 - `backend/src/Mozgoslav.Infrastructure/Platform/AppPaths.cs:28-29`
@@ -329,7 +353,8 @@ public sealed class LogsController : ControllerBase
 
 **What to do.**
 
-1. `ModelCatalog.cs` — `[0].Url` → the user-hosted GitLab release asset. Confirm the exact URL with the user before hard-coding; placeholder:
+1. `ModelCatalog.cs` — `[0].Url` → the user-hosted GitLab release asset. Confirm the exact URL with the user before
+   hard-coding; placeholder:
    ```csharp
    new ModelCatalogEntry
    {
@@ -341,9 +366,14 @@ public sealed class LogsController : ControllerBase
        Description = "Russian-optimised Whisper ggml by antony66 (WER 6.39%). Attribution preserved."
    }
    ```
-2. `AppPaths.cs:28-29` — `DefaultWhisperModelPath` — filename **must match** `ModelCatalog[0].FileName` → `ggml-model-q8_0.bin`.
-3. `AppSettingsDto.cs:44` — `WhisperModelPath` seed in `DatabaseInitializer.cs` → same filename. Changing the seed invalidates existing local dev dbs — acceptable.
-4. Restore `ModelDownloadService` — writes to `AppPaths.Root/models/<filename>`, emits progress via `Channel<ModelDownloadProgress>` in the `ChannelJobProgressNotifier` style (ref `backend/src/Mozgoslav.Infrastructure/Services/ChannelJobProgressNotifier.cs`). Retrieve pre-deletion implementation from the `.archive/` folder:
+2. `AppPaths.cs:28-29` — `DefaultWhisperModelPath` — filename **must match** `ModelCatalog[0].FileName` →
+   `ggml-model-q8_0.bin`.
+3. `AppSettingsDto.cs:44` — `WhisperModelPath` seed in `DatabaseInitializer.cs` → same filename. Changing the seed
+   invalidates existing local dev dbs — acceptable.
+4. Restore `ModelDownloadService` — writes to `AppPaths.Root/models/<filename>`, emits progress via
+   `Channel<ModelDownloadProgress>` in the `ChannelJobProgressNotifier` style (ref
+   `backend/src/Mozgoslav.Infrastructure/Services/ChannelJobProgressNotifier.cs`). Retrieve pre-deletion implementation
+   from the `.archive/` folder:
    ```bash
    grep -rn "ModelDownloadService" mozgoslav/.archive/ 2>/dev/null || true
    ```
@@ -405,15 +435,16 @@ public sealed class LogsController : ControllerBase
 6. Register in `Program.cs`:
    ```csharp
    builder.Services.AddSingleton<IModelDownloadService, ModelDownloadService>();
-   // ...
    app.MapModelDownloadEndpoints();
    ```
 
 **Tests (red-first, extend per-stack catalogue):**
 
 - `backend/tests/Mozgoslav.Tests.Integration/ModelDefaultChainTests.cs::Default_WhenFilePresent_NoExceptionOnTranscribe`
-- `backend/tests/Mozgoslav.Tests.Integration/ModelDefaultChainTests.cs::Default_WhenUrlFails_SurfacesUserActionableError`
-- `backend/tests/Mozgoslav.Tests/Infrastructure/ModelDownloadServiceTests.cs::StartAsync_WritesToAppPaths_ReturnsDownloadId`
+-
+`backend/tests/Mozgoslav.Tests.Integration/ModelDefaultChainTests.cs::Default_WhenUrlFails_SurfacesUserActionableError`
+-
+`backend/tests/Mozgoslav.Tests/Infrastructure/ModelDownloadServiceTests.cs::StartAsync_WritesToAppPaths_ReturnsDownloadId`
 
 WireMock the HF / GitLab download with a canned 404 for the error path.
 
@@ -425,7 +456,9 @@ WireMock the HF / GitLab download with a canned 404 for the error path.
 
 **File.** `backend/src/Mozgoslav.Api/Program.cs:141-143`.
 
-**What to do.** Wrap the `SyncthingHttpClient` registration with a feature-check. If `settings.SyncthingBaseUrl` is null or empty → register a `DisabledSyncthingClient` that returns `syncthing-unavailable` for every call. No background probe, no log spam. Full lifecycle lands in Backend MR D.
+**What to do.** Wrap the `SyncthingHttpClient` registration with a feature-check. If `settings.SyncthingBaseUrl` is null
+or empty → register a `DisabledSyncthingClient` that returns `syncthing-unavailable` for every call. No background
+probe, no log spam. Full lifecycle lands in Backend MR D.
 
 ```csharp
 builder.Services.AddSingleton<ISyncthingClient>(sp =>
@@ -450,7 +483,8 @@ builder.Services.AddSingleton<ISyncthingClient>(sp =>
 
 **Refs.** BC-016, Bug 20.
 
-**File.** `backend/src/Mozgoslav.Infrastructure/Services/QueueBackgroundService.cs` (or wherever `IHostedService` for the queue lives).
+**File.** `backend/src/Mozgoslav.Infrastructure/Services/QueueBackgroundService.cs` (or wherever `IHostedService` for
+the queue lives).
 
 **What to do.** In `StartAsync`, before the main loop:
 
@@ -462,19 +496,18 @@ public async Task StartAsync(CancellationToken ct)
     var stuck = await repo.GetJobsByStatusAsync(ProcessingJobStatus.Running, ct);
     foreach (var job in stuck)
     {
-        // Decision: flip to Queued so user's job resumes, not Failed.
         job.Status = ProcessingJobStatus.Queued;
         job.FailureReason = "app restarted — auto-requeued";
         await repo.UpdateAsync(job, ct);
     }
     _logger.LogInformation("Startup reconciliation: requeued {Count} jobs", stuck.Count);
 
-    // Existing loop...
     await base.StartAsync(ct);
 }
 ```
 
-**Test (red-first).** `backend/tests/Mozgoslav.Tests.Integration/QueueStartupReconciliationTests.cs::StuckRunning_OnStartup_FlipsToQueued`.
+**Test (red-first).**
+`backend/tests/Mozgoslav.Tests.Integration/QueueStartupReconciliationTests.cs::StuckRunning_OnStartup_FlipsToQueued`.
 
 ---
 
@@ -482,7 +515,8 @@ public async Task StartAsync(CancellationToken ct)
 
 **Refs.** ADR-007 §3 D6.
 
-**What to do.** Audit every `.cs` file under `backend/src/` and `backend/tests/` for primary-ctor syntax. Convert to traditional.
+**What to do.** Audit every `.cs` file under `backend/src/` and `backend/tests/` for primary-ctor syntax. Convert to
+traditional.
 
 **Detect.**
 
@@ -495,13 +529,11 @@ grep -rnE "^(public |internal |private |protected )?class [A-Z][A-Za-z0-9_]+\s*\
 **Convert.**
 
 ```csharp
-// Before
 public sealed class FooHandler(IBar bar, IBaz baz) : IHandler
 {
     public void Do() => bar.Use(baz);
 }
 
-// After
 public sealed class FooHandler : IHandler
 {
     private readonly IBar _bar;
@@ -518,6 +550,7 @@ public sealed class FooHandler : IHandler
 ```
 
 **Verify.** After the sweep:
+
 - `dotnet build backend/Mozgoslav.sln -c Release -maxcpucount:1` passes.
 - Spot grep returns zero primary-ctor shapes in classes (records and structs may still use them — ignore).
 
@@ -525,28 +558,30 @@ public sealed class FooHandler : IHandler
 
 ### 1.12 Step 11 — Program.cs wiring stubs for Phase 2
 
-Add **stubs** (interface bindings that Phase-2 Backend agent will flesh out) so `Program.cs` does not become a merge battleground later. Each stub registers the interface to a throwing implementation; the Phase-2 agent replaces the binding.
+Add **stubs** (interface bindings that Phase-2 Backend agent will flesh out) so `Program.cs` does not become a merge
+battleground later. Each stub registers the interface to a throwing implementation; the Phase-2 agent replaces the
+binding.
 
 ```csharp
-// RAG (MR C) — to be replaced by Phase 2 Backend
 builder.Services.AddSingleton<IEmbeddingService, NotYetWiredEmbeddingService>();
 builder.Services.AddSingleton<IVectorIndex,      NotYetWiredVectorIndex>();
 builder.Services.AddSingleton<IRagService,       NotYetWiredRagService>();
 
-// Syncthing full lifecycle (MR D) — to be replaced by Phase 2 Backend
 builder.Services.AddHostedService<NotYetWiredSyncthingLifecycleService>();
 
-// Idle resource cache (MR E)
 builder.Services.AddSingleton(typeof(IIdleResourceCache<>), typeof(NotYetWiredIdleResourceCache<>));
 ```
 
-`NotYetWired*` classes live under `backend/src/Mozgoslav.Infrastructure/NotYetWired/` and each method throws `NotImplementedException("Phase 2")`. They give Phase-2 agents a compile-anchor to remove the stub registration and replace it with the real one without touching the `Program.cs` blocks owned by other features.
+`NotYetWired*` classes live under `backend/src/Mozgoslav.Infrastructure/NotYetWired/` and each method throws
+`NotImplementedException("Phase 2")`. They give Phase-2 agents a compile-anchor to remove the stub registration and
+replace it with the real one without touching the `Program.cs` blocks owned by other features.
 
 ---
 
 ## 2. Files touched by Agent A (Phase-2 agents MUST NOT touch these lines)
 
 Phase-2 agents may *add* new registrations in `Program.cs`, but must not touch:
+
 - Kestrel / Urls block
 - MVC (`AddControllers` + `MapControllers`)
 - `DatabaseInitializer` registration
@@ -562,16 +597,19 @@ Phase-2 agents MAY *replace* `NotYetWired*` stub registrations with real ones wh
 ## 3. Acceptance checklist (self-verify before handing back)
 
 - [ ] `dotnet build backend/Mozgoslav.sln -c Release -maxcpucount:1` — 0 errors, 0 warnings.
-- [ ] `dotnet test  backend/Mozgoslav.sln -maxcpucount:1 --no-restore` — all currently-present tests green + new Agent-A tests green.
+- [ ] `dotnet test  backend/Mozgoslav.sln -maxcpucount:1 --no-restore` — all currently-present tests green + new Agent-A
+  tests green.
 - [ ] `npm --prefix frontend run typecheck` — green (frontend untouched — this is a smoke check).
 - [ ] `npm --prefix frontend run lint` — green.
-- [ ] `dotnet run --project backend/src/Mozgoslav.Api --no-build` — startup log clean (one DB path line, one schema line, one seed line, no address WRN, no Syncthing connection refused, no value-comparer WRN).
+- [ ] `dotnet run --project backend/src/Mozgoslav.Api --no-build` — startup log clean (one DB path line, one schema
+  line, one seed line, no address WRN, no Syncthing connection refused, no value-comparer WRN).
 - [ ] `curl http://127.0.0.1:5050/api/logs` + `/tail` — live payloads.
 - [ ] `curl http://127.0.0.1:5050/api/profiles` — 3 built-ins.
 - [ ] `curl -X POST http://127.0.0.1:5050/api/models/download -d '{"catalogueId":"antony66-ggml"}'` — 202.
 - [ ] Primary-ctor sweep: grep shows zero matches in `class` definitions.
 - [ ] `NotYetWired*` stub files exist for RAG, Syncthing, IdleResourceCache.
-- [ ] Written report `phase1-agent-a-report.md` at the repo root listing: BCs closed, bugs closed, files touched, tests added, open items for Phase 2.
+- [ ] Written report `phase1-agent-a-report.md` at the repo root listing: BCs closed, bugs closed, files touched, tests
+  added, open items for Phase 2.
 
 ---
 
@@ -581,7 +619,8 @@ Phase-2 agents MAY *replace* `NotYetWired*` stub registrations with real ones wh
 - A legacy test that Agent A did not add fails — do not rewrite it. Surface to the user with the failure output.
 - `antony66-ggml` GitLab release URL is unknown — ask the user for the exact asset URL before hard-coding.
 - `dotnet ef migrations add` refuses (mismatched migration history) — do not `--force`; escalate.
-- Any test demands touching Phase-2 files (RAG, Syncthing full, Dictation Idle) — stop; those are out of Agent A's scope.
+- Any test demands touching Phase-2 files (RAG, Syncthing full, Dictation Idle) — stop; those are out of Agent A's
+  scope.
 
 ---
 
@@ -602,6 +641,8 @@ Phase-2 agents MAY *replace* `NotYetWired*` stub registrations with real ones wh
 - `backend/src/Mozgoslav.Infrastructure/Services/DisabledSyncthingClient.cs` — new.
 - `backend/src/Mozgoslav.Infrastructure/NotYetWired/*.cs` — new (4-6 stub files).
 - `backend/src/Mozgoslav.Infrastructure/Persistence/Migrations/0007_value_comparers.*` — new.
-- `backend/tests/Mozgoslav.Tests.Integration/{LogsControllerTests, ModelDefaultChainTests, QueueStartupReconciliationTests, StartupLogTests, DbContextValueComparerTests}.cs` — new.
+-
+`backend/tests/Mozgoslav.Tests.Integration/{LogsControllerTests, ModelDefaultChainTests, QueueStartupReconciliationTests, StartupLogTests, DbContextValueComparerTests}.cs` —
+new.
 - `backend/tests/Mozgoslav.Tests/Infrastructure/ModelDownloadServiceTests.cs` — new.
 - `phase1-agent-a-report.md` at repo root — the hand-off report.

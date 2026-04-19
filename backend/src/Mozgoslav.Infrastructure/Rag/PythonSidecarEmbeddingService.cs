@@ -48,8 +48,6 @@ public sealed class PythonSidecarEmbeddingService : IEmbeddingService
         _httpClient = httpClient;
         _fallback = fallback;
         _logger = logger;
-        // Until we've heard from the sidecar, advertise the fallback
-        // dimensions so the RAG layer can size its buffers.
         Dimensions = fallback.Dimensions;
     }
 
@@ -110,12 +108,9 @@ public sealed class PythonSidecarEmbeddingService : IEmbeddingService
             or InvalidOperationException
             or Polly.ExecutionRejectedException;
 
-    // ADR-007-shared §2.4 — single-text request body.
     private sealed record EmbedRequest(
         [property: JsonPropertyName("text")] string Text);
 
-    // ADR-007-shared §2.4 — single-text response body. `dim` is declared by
-    // the sidecar so we can detect vocabulary-model swaps between calls.
     private sealed record EmbedResponse(
         [property: JsonPropertyName("embedding")] float[] Embedding,
         [property: JsonPropertyName("dim")] int Dim);

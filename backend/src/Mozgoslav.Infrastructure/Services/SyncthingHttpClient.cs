@@ -94,7 +94,6 @@ public sealed class SyncthingHttpClient : ISyncthingClient
             }
             catch (HttpRequestException ex)
             {
-                // Syncthing restart, transient TCP reset, etc. — back off and retry.
                 _logger.LogDebug(ex, "Syncthing event poll failed; retrying in 2 s");
                 await SafeDelay(TimeSpan.FromSeconds(2), ct);
                 continue;
@@ -209,8 +208,6 @@ public sealed class SyncthingHttpClient : ISyncthingClient
                 Id: folder.Id,
                 State: status.State ?? "unknown",
                 CompletionPct: completion,
-                // Conflicts aren't surfaced by /rest/db/status; the SSE parser
-                // side-channels them via SyncthingEvent.FileConflict.
                 Conflicts: 0));
         }
         return results;

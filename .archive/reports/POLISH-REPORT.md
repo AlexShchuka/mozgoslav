@@ -6,17 +6,17 @@ Final commit after polish: see `git log origin/shuka/wire-everything-green` afte
 
 ## Phases Completed
 
-| # | Phase | Commit message | Status |
-|---|---|---|---|
-| 1 | Archive historical docs | `[archive] move historical docs to .archive/` | DONE |
-| 2 | `.editorconfig` from scenarios | `[style] import .editorconfig from scenarios` | DONE |
-| 3 | Directory.Build.props + analyzers | `[style] add analyzers, enforce code style in build` | DONE |
-| 4 | Style full-sweep | `[style] full sweep — naming, ordering, exceptions` | DONE |
-| 5 | Lefthook | `[dev] lefthook + formatters` | DONE |
-| 6 | GitHub Actions CI | `[ci] github actions workflow + branch protection docs` | DONE |
-| 7 | Demo `.command` | `[demo] macOS .command launcher script` | DONE |
-| 8 | Meetily port | `[docs] bluetooth notice + meetily inheritance + fresh TODO` | DONE |
-| 9 | Final verification + push | `[verify] polish phase complete` | DONE |
+| # | Phase                             | Commit message                                               | Status |
+|---|-----------------------------------|--------------------------------------------------------------|--------|
+| 1 | Archive historical docs           | `[archive] move historical docs to .archive/`                | DONE   |
+| 2 | `.editorconfig` from scenarios    | `[style] import .editorconfig from scenarios`                | DONE   |
+| 3 | Directory.Build.props + analyzers | `[style] add analyzers, enforce code style in build`         | DONE   |
+| 4 | Style full-sweep                  | `[style] full sweep — naming, ordering, exceptions`          | DONE   |
+| 5 | Lefthook                          | `[dev] lefthook + formatters`                                | DONE   |
+| 6 | GitHub Actions CI                 | `[ci] github actions workflow + branch protection docs`      | DONE   |
+| 7 | Demo `.command`                   | `[demo] macOS .command launcher script`                      | DONE   |
+| 8 | Meetily port                      | `[docs] bluetooth notice + meetily inheritance + fresh TODO` | DONE   |
+| 9 | Final verification + push         | `[verify] polish phase complete`                             | DONE   |
 
 ## Verification (final)
 
@@ -35,7 +35,9 @@ Invariant held after every phase. No red in the chain.
 ## Files Changed (high-level)
 
 ### Added
-- `.archive/README.md`, `.archive/original-idea/*` (moved), `.archive/SELF-REVIEW.md`, `.archive/AGENT-REPORT.md`, `.archive/TODO.md`
+
+- `.archive/README.md`, `.archive/original-idea/*` (moved), `.archive/SELF-REVIEW.md`, `.archive/AGENT-REPORT.md`,
+  `.archive/TODO.md`
 - `.github/workflows/ci.yml` — GitHub Actions CI matrix (ubuntu + macos × backend/frontend/python)
 - `.editorconfig` (root) — full import from scenarios + project-specific analyzer tuning
 - `lefthook.yml` — pre-commit hooks for dotnet-format / eslint / prettier / ruff + black
@@ -50,6 +52,7 @@ Invariant held after every phase. No red in the chain.
 - `backend/src/Mozgoslav.Infrastructure/Persistence/AppSetting.cs` — split from `MozgoslavDbContext.cs`
 
 ### Modified
+
 - `README.md` — Dev setup (lefthook), Demo (macOS), Bluetooth caveat, trimmed stale `original-idea/` links
 - `CLAUDE.md` — `.archive/` guidance for agents; removed `original-idea/` references
 - `docs/README.md` — pointer updated from `original-idea/` to `TODO.md`
@@ -73,17 +76,20 @@ Invariant held after every phase. No red in the chain.
 - `python-sidecar/requirements-dev.txt` — `+ruff` `+black` for hook parity
 
 ### Moved
+
 - `docs/original-idea/*` → `.archive/original-idea/*`
 - `SELF-REVIEW.md` → `.archive/SELF-REVIEW.md`
 - `backend/AGENT-REPORT.md` → `.archive/AGENT-REPORT.md`
 - `backend/TODO.md` → `.archive/TODO.md`
 
 ## Tests Added
+
 None — polish phase preserves existing 86/6/8 test footprint. No new test code.
 
 ## Design Decisions Documented
 
 ### Analyzer suppressions (in `.editorconfig`, each with a comment)
+
 - `CA1002` / `CA2227` — domain entities expose `List<T>` on purpose (EF Core + JSON round-trip).
 - `CA1308` — SHA-256 hex lowercase is industry convention.
 - `CA1724` — `Profile` name collides with dead `System.Web.Profile`; not referenced here.
@@ -95,6 +101,7 @@ None — polish phase preserves existing 86/6/8 test footprint. No new test code
 - `CA1305` — IFormatProvider noise for Serilog/log-path/dev strings.
 
 ### Scoped-out from the prompt (intentional)
+
 1. **DateTime `Utc`/`Local`/`Date`/`Time` suffix rename** — touches SQLite column names,
    JSON API contract, frontend types, and tests. That is a separate feature, not a style sweep.
    Preserved `CreatedAt` / `CompletedAt` naming; all values remain UTC.
@@ -105,9 +112,11 @@ None — polish phase preserves existing 86/6/8 test footprint. No new test code
    Moving to `ZipFile.OpenAsync` is tracked in `TODO.md`.
 
 ## Blockers
+
 None encountered; no 2-strike failures.
 
 ## UNVERIFIED
+
 - `scripts/demo.command` syntax-checked only (`bash -n`) — not executed end-to-end
   (would require macOS host with .NET + Node + Python + launched Electron UI).
 - `.github/workflows/ci.yml` first run will only happen after push + PR. Branch-protection
@@ -117,4 +126,5 @@ None encountered; no 2-strike failures.
   `ruff + black`) verified conceptually; not exercised against a sample commit in this run.
 
 ## Questions
+
 None — all choices documented above.

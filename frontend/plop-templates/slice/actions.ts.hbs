@@ -3,19 +3,20 @@ export const LOAD_{{constantCase name}}_SUCCESS = "{{camelCase name}}/LOAD_SUCCE
 export const LOAD_{{constantCase name}}_FAILURE = "{{camelCase name}}/LOAD_FAILURE";
 
 export interface Load{{pascalCase name}}Action {
-  type: typeof LOAD_{{constantCase name}};
+type: typeof LOAD_{{constantCase name}};
 }
 
-export interface Load{{pascalCase name}}SuccessAction<TPayload> {
-  type: typeof LOAD_{{constantCase name}}_SUCCESS;
-  payload: TPayload;
-}
+export interface Load{{pascalCase name}}SuccessAction
+<TPayload> {
+    type: typeof LOAD_{{constantCase name}}_SUCCESS;
+    payload: TPayload;
+    }
 
-export interface Load{{pascalCase name}}FailureAction {
-  type: typeof LOAD_{{constantCase name}}_FAILURE;
-  payload: string;
-}
+    export interface Load{{pascalCase name}}FailureAction {
+    type: typeof LOAD_{{constantCase name}}_FAILURE;
+    payload: string;
+    }
 
-export const load{{pascalCase name}} = (): Load{{pascalCase name}}Action => ({
-  type: LOAD_{{constantCase name}},
-});
+    export const load{{pascalCase name}} = (): Load{{pascalCase name}}Action => ({
+    type: LOAD_{{constantCase name}},
+    });

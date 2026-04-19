@@ -148,7 +148,6 @@ public sealed class RagServiceTests
         public static async Task<Fixture> Seed()
         {
             var f = new Fixture();
-            // Several seeded notes — RAG should find the Obsidian-sync one.
             var notes = new[]
             {
                 MakeNote("Созвон по проекту. Обсудили ML-сайдкар и диаризацию спикеров."),

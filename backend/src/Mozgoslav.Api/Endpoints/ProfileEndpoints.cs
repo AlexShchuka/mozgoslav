@@ -14,7 +14,6 @@ public static class ProfileEndpoints
         string? ExportFolder,
         IReadOnlyList<string>? AutoTags,
         bool IsDefault,
-        // Plan v0.8 Block 5 — new profile surface.
         IReadOnlyList<string>? Glossary = null,
         bool LlmCorrectionEnabled = false);
 
@@ -70,10 +69,6 @@ public static class ProfileEndpoints
             return Results.Created($"/api/profiles/{profile.Id}", profile);
         });
 
-        // ADR-007-shared §2.6 BC-029 — clone any profile (including built-ins)
-        // into a fresh user-owned record. The copy carries a "(copy)" suffix
-        // on its name, a new Id, IsBuiltIn=false and IsDefault=false so the
-        // new row does not accidentally displace the existing default.
         endpoints.MapPost("/api/profiles/{id:guid}/duplicate", async (
             Guid id,
             IProfileRepository repository,

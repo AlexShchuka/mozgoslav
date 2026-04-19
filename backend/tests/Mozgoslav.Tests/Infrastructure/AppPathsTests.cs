@@ -40,9 +40,6 @@ public sealed class AppPathsTests
     [TestMethod]
     public void DefaultWhisperModelPath_filename_is_Tier1_bundled_small_q8()
     {
-        // End-to-end sanity — regardless of bundle presence, the filename
-        // component is the Tier 1 bundled STT. Previously pointed at the
-        // 1.5 GB antony66 Tier 2 download path, stranding first-run users.
         Path.GetFileName(AppPaths.DefaultWhisperModelPath)
             .Should().Be("ggml-small-q8_0.bin");
     }

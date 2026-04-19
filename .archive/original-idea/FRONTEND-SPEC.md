@@ -6,21 +6,21 @@
 
 ## 1. Tech Stack (по типичный feature-based React + Redux-Saga проект)
 
-| Что | Технология | Как в feature-based референс |
-|---|---|---|
-| Desktop shell | **Electron** | Новое (feature-based референс — SPA в браузере) |
-| Bundler | **Vite** | feature-based референс: webpack через shared-configs |
-| UI framework | **React 18+** | ✅ как в feature-based референс |
-| Language | **TypeScript strict** | ✅ |
-| State | **Redux + Redux-Saga** | ✅ как в feature-based референс (actionCreator → reducer → saga → selectors) |
-| Styling | **styled-components** | ✅ как в feature-based референс |
-| HTTP client | **Axios** | ✅ как в feature-based референс (BaseApi + ApiFactory) |
-| UI components | **корпоративный ui-kit** или свои | В pet-project: свои styled-components |
-| Routing | **@reach/router** или React Router | feature-based референс: @reach/router |
-| Forms | По месту (controlled inputs) | Как в feature-based референс |
-| Tests | **Jest + React Testing Library** | ✅ как в feature-based референс |
-| Code generation | **Plop** | ✅ generators для features/states |
-| Lint | **ESLint** (shared-configs) | ✅ |
+| Что             | Технология                         | Как в feature-based референс                                                |
+|-----------------|------------------------------------|-----------------------------------------------------------------------------|
+| Desktop shell   | **Electron**                       | Новое (feature-based референс — SPA в браузере)                             |
+| Bundler         | **Vite**                           | feature-based референс: webpack через shared-configs                        |
+| UI framework    | **React 18+**                      | ✅ как в feature-based референс                                              |
+| Language        | **TypeScript strict**              | ✅                                                                           |
+| State           | **Redux + Redux-Saga**             | ✅ как в feature-based референс (actionCreator → reducer → saga → selectors) |
+| Styling         | **styled-components**              | ✅ как в feature-based референс                                              |
+| HTTP client     | **Axios**                          | ✅ как в feature-based референс (BaseApi + ApiFactory)                       |
+| UI components   | **корпоративный ui-kit** или свои  | В pet-project: свои styled-components                                       |
+| Routing         | **@reach/router** или React Router | feature-based референс: @reach/router                                       |
+| Forms           | По месту (controlled inputs)       | Как в feature-based референс                                                |
+| Tests           | **Jest + React Testing Library**   | ✅ как в feature-based референс                                              |
+| Code generation | **Plop**                           | ✅ generators для features/states                                            |
+| Lint            | **ESLint** (shared-configs)        | ✅                                                                           |
 
 ---
 
@@ -344,6 +344,7 @@ frontend/
 Каждый feature-компонент разделён на 3 файла:
 
 **Component.tsx** — чистый presentational, получает props, рендерит UI:
+
 ```typescript
 import React, { FC } from "react";
 import { DashboardProps } from "./types";
@@ -373,6 +374,7 @@ export default Dashboard;
 ```
 
 **Component.container.ts** — connect к Redux store:
+
 ```typescript
 import { connect } from "react-redux";
 import { Dispatch, bindActionCreators } from "redux";
@@ -408,6 +410,7 @@ export default connect(mapStateToProps, mapDispatchToProps, mergeProps)(Dashboar
 ```
 
 **Component.style.ts** — styled-components:
+
 ```typescript
 import styled from "styled-components";
 
@@ -425,6 +428,7 @@ export const StatsSection = styled.div`
 ```
 
 **types.ts** — props interface:
+
 ```typescript
 import { Recording } from "../../models/recording";
 
@@ -441,6 +445,7 @@ export interface DashboardProps {
 Каждый store slice состоит из:
 
 **state.ts:**
+
 ```typescript
 import { Recording } from "../../models/recording";
 
@@ -458,6 +463,7 @@ export const initialState: RecordingState = {
 ```
 
 **actionCreator.ts:**
+
 ```typescript
 import { createTypedAction } from "../utils/createTypedAction";
 import { Recording } from "../../models/recording";
@@ -471,6 +477,7 @@ export const importRecordingsSuccess = createTypedAction<Recording[]>("recording
 ```
 
 **reducer.ts:**
+
 ```typescript
 import { joinReducers } from "../utils";
 import * as mutations from "./mutations";
@@ -487,11 +494,11 @@ const loadSuccessReducer = loadRecordingsSuccess.createReducer<RecordingState>(
   initialState
 );
 
-// ... combine with joinReducers
 export default joinReducers([loadReducer, loadSuccessReducer, ...]);
 ```
 
 **mutations.ts** (immer-style):
+
 ```typescript
 import { RecordingState } from "./state";
 import { Recording } from "../../models/recording";
@@ -510,6 +517,7 @@ export const setRecordings = (recordings: Recording[]) => (state: RecordingState
 ```
 
 **selectors.ts:**
+
 ```typescript
 import { GlobalState } from "../index";
 import { createSelector } from "reselect";
@@ -533,6 +541,7 @@ export const selectRecordingById = (id: string) => createSelector(
 ```
 
 **saga/importRecordingsSaga.ts:**
+
 ```typescript
 import { call, put, takeLatest } from "redux-saga/effects";
 import { importRecordings, importRecordingsSuccess } from "../actionCreator";
@@ -544,7 +553,6 @@ function* importRecordingsSaga(action: ReturnType<typeof importRecordings.create
     const response = yield call([api, api.import], action.payload);
     yield put(importRecordingsSuccess.createAction(response.data.recordings));
   } catch (error) {
-    // error handling
   }
 }
 
@@ -556,6 +564,7 @@ export function* watchImportRecordings() {
 ### 3.3 API Pattern (BaseApi + Factory)
 
 **BaseApi.ts:**
+
 ```typescript
 import { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 
@@ -587,6 +596,7 @@ export default BaseApi;
 ```
 
 **RecordingApi.ts:**
+
 ```typescript
 import BaseApi from "../BaseApi";
 import { RecordingDto, ImportResponseDto } from "./types";
@@ -612,6 +622,7 @@ export class RecordingApi extends BaseApi {
 ```
 
 **apiFactory.ts:**
+
 ```typescript
 import { AxiosInstance } from "axios";
 import { RecordingApi } from "./recording";
@@ -644,7 +655,6 @@ export default apiFactory;
 ### 3.4 SSE (Job Progress) через Saga
 
 ```typescript
-// store/job/saga/sseJobProgressSaga.ts
 import { eventChannel, END } from "redux-saga";
 import { take, put, call } from "redux-saga/effects";
 import { updateJobProgress } from "../actionCreator";
@@ -666,7 +676,6 @@ export function* sseJobProgressSaga() {
       yield put(updateJobProgress.createAction(job));
     }
   } finally {
-    // cleanup
   }
 }
 ```
@@ -676,7 +685,6 @@ export function* sseJobProgressSaga() {
 ## 4. Models (доменные типы)
 
 ```typescript
-// models/recording.ts
 export type AudioFormat = "Mp3" | "M4a" | "Wav" | "Mp4" | "Ogg" | "Flac" | "Webm" | "Aac";
 export type SourceType = "Recorded" | "Imported";
 export type RecordingStatus = "New" | "Transcribing" | "Transcribed" | "Failed";
@@ -693,7 +701,6 @@ export interface Recording {
   createdAt: string;
 }
 
-// models/job.ts
 export type JobStatus = "Queued" | "Transcribing" | "Correcting" | "Summarizing" | "Exporting" | "Done" | "Failed";
 
 export interface ProcessingJob {
@@ -709,7 +716,6 @@ export interface ProcessingJob {
   finishedAt: string | null;
 }
 
-// models/processedNote.ts
 export type ConversationType = "Meeting" | "OneOnOne" | "Idea" | "Personal" | "Other";
 
 export interface ActionItem {
@@ -740,7 +746,6 @@ export interface ProcessedNote {
   createdAt: string;
 }
 
-// models/profile.ts
 export type CleanupLevel = "None" | "Light" | "Aggressive";
 
 export interface Profile {
@@ -761,14 +766,15 @@ export interface Profile {
 ## 5. Testing (по feature-based референс)
 
 ### Подход
+
 - **Jest** (не Vitest) — как в feature-based референс
 - **React Testing Library** для компонентов
 - **redux-saga-test-plan** для saga тестов
 - Тесты рядом с кодом: `__tests__/` папки внутри features/store
 
 ### Пример saga test:
+
 ```typescript
-// store/recording/saga/__tests__/importRecordingsSaga.test.ts
 import { expectSaga } from "redux-saga-test-plan";
 import * as matchers from "redux-saga-test-plan/matchers";
 import { importRecordingsSaga } from "../importRecordingsSaga";
@@ -788,8 +794,8 @@ describe("importRecordingsSaga", () => {
 ```
 
 ### Пример component test:
+
 ```typescript
-// features/Dashboard/__tests__/Dashboard.test.tsx
 import { render, screen } from "@testing-library/react";
 import Dashboard from "../Dashboard";
 
@@ -830,7 +836,6 @@ describe("Dashboard", () => {
 ## 7. Electron Layer (НОВОЕ, не из feature-based референс)
 
 ```typescript
-// electron/main.ts
 import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import { startBackend, stopBackend } from "./utils/backendProcess";
 import path from "path";
@@ -859,7 +864,6 @@ app.on("ready", async () => {
     mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
   }
 
-  // IPC handlers
   ipcMain.handle("dialog:openFile", async () => {
     return dialog.showOpenDialog({
       properties: ["openFile", "multiSelections"],
