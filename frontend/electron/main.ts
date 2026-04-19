@@ -215,6 +215,32 @@ app.whenReady().then(async () => {
     return error || undefined;
   });
 
+  // Onboarding permission cards need to deeplink into System Settings
+  // (`x-apple.systempreferences:…`). `window.open` is blocked for non-http
+  // URLs by `setWindowOpenHandler` above, so we route via IPC and gate
+  // forwarding to a known-safe scheme whitelist — renderer-originating URLs
+  // must not be able to reach arbitrary OS handlers.
+  const EXTERNAL_URL_PREFIXES = [
+    "http://",
+    "https://",
+    "mailto:",
+    "x-apple.systempreferences:",
+  ] as const;
+  ipcMain.handle("shell:openExternal", async (_, url: string) => {
+    if (typeof url !== "string") return false;
+    if (!EXTERNAL_URL_PREFIXES.some((prefix) => url.startsWith(prefix))) {
+      console.warn(`[shell:openExternal] rejected non-whitelisted URL: ${url}`);
+      return false;
+    }
+    try {
+      await shell.openExternal(url);
+      return true;
+    } catch (error) {
+      console.error("[shell:openExternal] failed:", error);
+      return false;
+    }
+  });
+
   // BC-033 — model-file picker filters to Whisper/VAD extensions.
   ipcMain.handle("dialog:openModelFile", async () => {
     if (!mainWindow) return { canceled: true, filePaths: [] };
@@ -419,10 +445,14 @@ const walkForConflicts = async (
   return results;
 };
 
+// Closing the main window tears down the whole app, including the ASP.NET
+// backend and the Swift dictation helper. Per-user preference: a Mozgoslav
+// without a window is not useful, and leaving orphaned `dotnet` / helper
+// processes running in the background is the top paper-cut on macOS. We
+// diverge from the default AppKit semantics (where the app stays resident)
+// on purpose — `before-quit` handles the actual cleanup.
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
+  app.quit();
 });
 
 app.on("before-quit", () => {
