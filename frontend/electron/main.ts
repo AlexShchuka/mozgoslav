@@ -292,11 +292,11 @@ app.whenReady().then(async () => {
             "[globalShortcut] Failed to register CommandOrControl+Shift+Space — likely a conflicting OS binding.",
         );
     }
-    void applyCustomHotkeyFromSettings();
 
     if (process.platform === "darwin") {
-        void initializeDictation();
+        await initializeDictation();
     }
+    void applyCustomHotkeyFromSettings();
 
     app.on("activate", () => {
         if (BrowserWindow.getAllWindows().length === 0) {

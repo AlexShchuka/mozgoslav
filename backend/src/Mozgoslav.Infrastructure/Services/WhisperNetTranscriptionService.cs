@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -113,8 +114,10 @@ public sealed class WhisperNetTranscriptionService
 #pragma warning restore IDISP001
         var buffer = new List<float>();
         var samplesSinceLastEmit = 0;
+        var totalSamples = 0L;
         var windowSamples = StreamSampleRate * StreamWindowMs / 1000;
         var maxBufferSamples = StreamSampleRate * StreamMaxBufferSeconds;
+        var committed = new StringBuilder();
 
         await foreach (var chunk in chunks.WithCancellation(ct))
         {
@@ -131,11 +134,23 @@ public sealed class WhisperNetTranscriptionService
 
             buffer.AddRange(chunk.Samples);
             samplesSinceLastEmit += chunk.Samples.Length;
+            totalSamples += chunk.Samples.Length;
 
             if (buffer.Count > maxBufferSamples)
             {
-                var overflow = buffer.Count - maxBufferSamples;
-                buffer.RemoveRange(0, overflow);
+                var snapshot = buffer.ToArray();
+                var committedText = await TranscribeBufferAsync(whisperFactory, snapshot, language, initialPrompt, ct);
+                if (!string.IsNullOrWhiteSpace(committedText))
+                {
+                    if (committed.Length > 0) committed.Append(' ');
+                    committed.Append(committedText.Trim());
+                }
+                buffer.Clear();
+                samplesSinceLastEmit = 0;
+                _logger.LogInformation(
+                    "Stream commit: buffer cap reached, committed chars={Chars}, total committed={TotalChars}",
+                    committedText?.Length ?? 0, committed.Length);
+                continue;
             }
 
             if (samplesSinceLastEmit >= windowSamples)
@@ -144,11 +159,14 @@ public sealed class WhisperNetTranscriptionService
                 _ = _cache.TryGetValue(CacheKey, out _);
                 var snapshot = buffer.ToArray();
                 var text = await TranscribeBufferAsync(whisperFactory, snapshot, language, initialPrompt, ct);
-                if (!string.IsNullOrWhiteSpace(text))
+                if (!string.IsNullOrWhiteSpace(text) || committed.Length > 0)
                 {
+                    var emitted = committed.Length > 0
+                        ? $"{committed} {text}".Trim()
+                        : text;
                     yield return new PartialTranscript(
-                        Text: text,
-                        Timestamp: TimeSpan.FromSeconds((double)buffer.Count / StreamSampleRate));
+                        Text: emitted,
+                        Timestamp: TimeSpan.FromSeconds((double)totalSamples / StreamSampleRate));
                 }
             }
         }
@@ -157,12 +175,21 @@ public sealed class WhisperNetTranscriptionService
         {
             var tail = buffer.ToArray();
             var text = await TranscribeBufferAsync(whisperFactory, tail, language, initialPrompt, ct);
-            if (!string.IsNullOrWhiteSpace(text))
+            if (!string.IsNullOrWhiteSpace(text) || committed.Length > 0)
             {
+                var emitted = committed.Length > 0
+                    ? $"{committed} {text}".Trim()
+                    : text;
                 yield return new PartialTranscript(
-                    Text: text,
-                    Timestamp: TimeSpan.FromSeconds((double)buffer.Count / StreamSampleRate));
+                    Text: emitted,
+                    Timestamp: TimeSpan.FromSeconds((double)totalSamples / StreamSampleRate));
             }
+        }
+        else if (committed.Length > 0)
+        {
+            yield return new PartialTranscript(
+                Text: committed.ToString().Trim(),
+                Timestamp: TimeSpan.FromSeconds((double)totalSamples / StreamSampleRate));
         }
     }
 
