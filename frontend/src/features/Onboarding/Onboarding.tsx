@@ -182,10 +182,20 @@ const Onboarding: FC<OnboardingProps> = ({
   const permissionTestId = PERMISSION_TEST_ID[currentStep];
 
   const openSystemPreferences = () => {
+    // Dictation card: trigger the macOS Accessibility prompt on the
+    // Electron parent process. Spawned children (our Swift helper) inherit
+    // the grant on macOS 13+, so this is the only path that actually wires
+    // up the global hotkey — an unbundled CLI helper cannot request TCC on
+    // its own. If the user has already denied, the bridge falls back to
+    // deeplinking the Accessibility pane so grant is still one click away.
+    if (currentStep === "dictation") {
+      void window.mozgoslav.requestAccessibility();
+      return;
+    }
+    // Mic card and any future permission card: plain deeplink. `window.open`
+    // is silently blocked by the main-process `setWindowOpenHandler`, which
+    // only forwards http(s) — route x-apple.systempreferences:… via IPC.
     if (!systemPreferencesUrl) return;
-    // `window.open` is silently blocked by the main-process
-    // `setWindowOpenHandler`, which only forwards http(s) URLs. Route
-    // `x-apple.systempreferences:…` through the explicit bridge instead.
     void window.mozgoslav.openExternal(systemPreferencesUrl);
   };
 

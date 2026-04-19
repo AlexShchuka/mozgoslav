@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, session, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, session, shell, systemPreferences } from "electron";
 import path from "node:path";
 import { existsSync, promises as fs } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -172,6 +172,13 @@ app.whenReady().then(async () => {
   // (appsettings key: Mozgoslav:AudioRecorder:ElectronBridgePort).
   const recorderEnv: Record<string, string> = {};
   if (process.platform === "darwin") {
+    // macOS TCC is parent-process scoped: Accessibility is granted to the
+    // Electron.app (dev) or Mozgoslav.app (packaged) — spawned children
+    // inherit trust on macOS 13+. Trigger the native prompt here, BEFORE we
+    // spawn the Swift helper, so `NSEvent.addGlobalMonitorForEvents` inside
+    // the helper starts receiving events on the first successful grant.
+    // `isTrustedAccessibilityClient(true)` both probes and prompts.
+    ensureParentAccessibility();
     try {
         const helperBinaryPath = resolveDictationHelperPath();
       recordingHelper = new NativeHelperClient(helperBinaryPath);
@@ -213,6 +220,29 @@ app.whenReady().then(async () => {
   ipcMain.handle("shell:openPath", async (_, targetPath: string) => {
     const error = await shell.openPath(targetPath);
     return error || undefined;
+  });
+
+  // Accessibility trust lives on the parent Electron process — renderer
+  // surfaces (Onboarding, Settings) drive the prompt via these channels.
+  // `prompt=true` variant triggers the native macOS dialog; the read-only
+  // variant is safe for polling UI state without side-effects.
+  ipcMain.handle("permissions:isAccessibilityTrusted", async () => {
+    if (process.platform !== "darwin") return true;
+    return systemPreferences.isTrustedAccessibilityClient(false);
+  });
+
+  ipcMain.handle("permissions:requestAccessibility", async () => {
+    if (process.platform !== "darwin") return true;
+    const trusted = systemPreferences.isTrustedAccessibilityClient(true);
+    if (!trusted) {
+      // macOS suppresses the prompt once the user has denied (or dismissed)
+      // it, so we also deeplink them into the right Settings pane — at least
+      // the path to grant is one click away either way.
+      void shell.openExternal(
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
+      );
+    }
+    return trusted;
   });
 
   // Onboarding permission cards need to deeplink into System Settings
@@ -393,6 +423,27 @@ const forwardHotkeyToBackend = async (payload: {
   } catch (err) {
     console.warn("[hotkey] failed to forward helper event to backend:", err);
   }
+};
+
+/**
+ * Probe + prompt Accessibility on the Electron parent process. macOS 13+
+ * TCC inheritance means a trusted parent lets its spawned children (the
+ * Swift helper we use for `NSEvent.addGlobalMonitorForEvents`) see input
+ * events without a separate System Settings entry. Returns the current
+ * trust state after the prompt call — callers usually don't read it,
+ * they just want the side-effect of showing the dialog once.
+ */
+const ensureParentAccessibility = (): boolean => {
+  if (process.platform !== "darwin") return true;
+  const trusted = systemPreferences.isTrustedAccessibilityClient(true);
+  if (!trusted) {
+    console.warn(
+      "[permissions] Accessibility not granted to the Electron parent. " +
+        "Hotkey monitor in the Swift helper will not receive events until " +
+        "the user grants access in System Settings → Privacy → Accessibility.",
+    );
+  }
+  return trusted;
 };
 
 const initializeDictation = async (): Promise<void> => {

@@ -29,7 +29,6 @@ public final class HotkeyMonitor {
     private let isoFormatter: ISO8601DateFormatter
     private var parsed: ParsedAccelerator?
     private var holding: Bool = false
-    private var didRequestPermissionsOnce: Bool = false
 
     #if canImport(AppKit) && os(macOS)
     private var keyDownMonitor: Any?
@@ -56,24 +55,20 @@ public final class HotkeyMonitor {
         self.parsed = parsed
 
         #if canImport(AppKit) && os(macOS)
-        // `NSEvent.addGlobalMonitorForEvents` silently returns a no-op
-        // observer when the helper process lacks Accessibility (and often
-        // Input Monitoring). On the first `start` per process we trigger
-        // the native macOS prompts — that educates first-run users and
-        // makes the underlying failure mode visible in the FileLog.
-        // Subsequent starts re-check without re-opening Settings, so we
-        // don't nag after every settings save.
+        // Accessibility is a **parent-process** concern: macOS TCC tracks
+        // trust per app bundle. This helper is an unbundled CLI binary, so
+        // calling `AXIsProcessTrustedWithOptions(prompt:)` from here does
+        // nothing useful — the prompt never appears and no entry is created
+        // in System Settings. Trust comes from the Electron parent (which
+        // has a bundle identity); spawned children inherit its TCC on
+        // macOS 13+. We log current state for diagnostics, nothing else.
+        // See Electron main — `systemPreferences.isTrustedAccessibilityClient`.
         let accessibilityGranted = PermissionProbe.accessibilityStatus() == "granted"
-        if !didRequestPermissionsOnce {
-            didRequestPermissionsOnce = true
-            _ = PermissionProbe.requestAccessibility()
-            _ = PermissionProbe.requestInputMonitoring()
-            if !accessibilityGranted {
-                FileLog.shared.warn(
-                    "H1 HotkeyMonitor: Accessibility not granted — opening System Settings"
-                )
-                PermissionProbe.openAccessibilitySettings()
-            }
+        if !accessibilityGranted {
+            FileLog.shared.warn(
+                "H1 HotkeyMonitor: Accessibility not inherited — parent Electron.app " +
+                "is missing TCC approval; hotkey monitor will receive no events."
+            )
         }
 
         keyDownMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in

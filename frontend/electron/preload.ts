@@ -20,6 +20,18 @@ export interface MozgoslavBridge {
    * blocked by the hardened `setWindowOpenHandler` that only allows http(s).
    */
   openExternal: (url: string) => Promise<boolean>;
+  /**
+   * Read-only probe of Accessibility trust on the Electron parent process.
+   * Returns true outside macOS — renderer UIs should treat that as "n/a".
+   */
+  isAccessibilityTrusted: () => Promise<boolean>;
+  /**
+   * Trigger the native macOS Accessibility prompt on the Electron parent
+   * process (macOS 13+ children inherit the grant). If the prompt was
+   * suppressed by a prior denial, also deeplinks the user into System
+   * Settings → Privacy → Accessibility. Returns the post-call trust state.
+   */
+  requestAccessibility: () => Promise<boolean>;
   openModelFile: () => Promise<{ canceled: boolean; filePaths: string[] }>;
   openModelFolder: () => Promise<{ canceled: boolean; filePaths: string[] }>;
   listSyncConflicts: (
@@ -61,6 +73,8 @@ const bridge: MozgoslavBridge = {
   openFolder: () => ipcRenderer.invoke("dialog:openFolder"),
   openPath: (path) => ipcRenderer.invoke("shell:openPath", path),
   openExternal: (url) => ipcRenderer.invoke("shell:openExternal", url),
+  isAccessibilityTrusted: () => ipcRenderer.invoke("permissions:isAccessibilityTrusted"),
+  requestAccessibility: () => ipcRenderer.invoke("permissions:requestAccessibility"),
   openModelFile: () => ipcRenderer.invoke("dialog:openModelFile"),
   openModelFolder: () => ipcRenderer.invoke("dialog:openModelFolder"),
   listSyncConflicts: (folderPath) =>
