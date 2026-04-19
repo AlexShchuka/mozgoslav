@@ -1,10 +1,62 @@
-import {type ChildProcess, spawn} from "node:child_process";
+import {type ChildProcess, execFile, spawn} from "node:child_process";
 import {existsSync} from "node:fs";
 import path from "node:path";
 
 const BACKEND_BINARY_NAME = "Mozgoslav.Api";
+const BACKEND_PORT = 5050;
 
 let backendProcess: ChildProcess | null = null;
+
+const findPidsOnPort = (port: number): Promise<number[]> =>
+    new Promise((resolve) => {
+        if (process.platform === "win32") {
+            resolve([]);
+            return;
+        }
+        execFile("lsof", ["-ti", `tcp:${port}`], (err, stdout) => {
+            if (err || !stdout) {
+                resolve([]);
+                return;
+            }
+            const pids = stdout
+                .trim()
+                .split(/\s+/)
+                .map(Number)
+                .filter((p) => Number.isInteger(p) && p !== process.pid);
+            resolve(pids);
+        });
+    });
+
+const killZombieOnPort = async (port: number): Promise<void> => {
+    const pids = await findPidsOnPort(port);
+    if (pids.length === 0) return;
+
+    console.info(`[backendLauncher] port :${port} occupied by pid(s) ${pids.join(", ")} — sending SIGTERM`);
+    for (const pid of pids) {
+        try {
+            process.kill(pid, "SIGTERM");
+        } catch {
+        }
+    }
+
+    for (let i = 0; i < 30; i++) {
+        await new Promise((r) => setTimeout(r, 100));
+        const remaining = await findPidsOnPort(port);
+        if (remaining.length === 0) return;
+    }
+
+    const stubborn = await findPidsOnPort(port);
+    if (stubborn.length === 0) return;
+
+    console.warn(`[backendLauncher] pid(s) ${stubborn.join(", ")} survived SIGTERM — sending SIGKILL`);
+    for (const pid of stubborn) {
+        try {
+            process.kill(pid, "SIGKILL");
+        } catch {
+        }
+    }
+    await new Promise((r) => setTimeout(r, 200));
+};
 
 export interface BackendStartOptions {
     /** Extra CLI args forwarded to the backend (e.g., ``--Mozgoslav:SyncthingBaseUrl=...``). */
@@ -41,6 +93,8 @@ export const tryStartBackend = async (
         );
         return;
     }
+
+    await killZombieOnPort(BACKEND_PORT);
 
     try {
         backendProcess = spawn(binaryPath, [...(options.extraArgs ?? [])], {
