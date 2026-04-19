@@ -1,30 +1,30 @@
 import styled from "styled-components";
 
 export const PageRoot = styled.div`
-  padding: ${({theme}) => theme.space(6)};
-  display: flex;
-  flex-direction: column;
-  gap: ${({theme}) => theme.space(4)};
+    padding: ${({theme}) => theme.space(6)};
+    display: flex;
+    flex-direction: column;
+    gap: ${({theme}) => theme.space(4)};
 `;
 
 export const PageTitle = styled.h1`
-  margin: 0;
-  font-size: ${({theme}) => theme.font.size.xxl};
-  font-weight: ${({theme}) => theme.font.weight.semibold};
-  color: ${({theme}) => theme.colors.text.primary};
+    margin: 0;
+    font-size: ${({theme}) => theme.font.size.xxl};
+    font-weight: ${({theme}) => theme.font.weight.semibold};
+    color: ${({theme}) => theme.colors.text.primary};
 `;
 
 export const Meta = styled.div`
-  display: flex;
-  align-items: center;
-  gap: ${({theme}) => theme.space(3)};
-  color: ${({theme}) => theme.colors.text.secondary};
-  font-size: ${({theme}) => theme.font.size.sm};
+    display: flex;
+    align-items: center;
+    gap: ${({theme}) => theme.space(3)};
+    color: ${({theme}) => theme.colors.text.secondary};
+    font-size: ${({theme}) => theme.font.size.sm};
 `;
 
 export const Actions = styled.div`
-  display: flex;
-  gap: ${({theme}) => theme.space(2)};
+    display: flex;
+    gap: ${({theme}) => theme.space(2)};
 `;
 
 export const MarkdownBody = styled.div`

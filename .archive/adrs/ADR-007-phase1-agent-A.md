@@ -33,6 +33,7 @@ Additionally:
   lines.
 - `curl http://127.0.0.1:5050/api/profiles` returns the 3 built-in profiles.
 -
+
 `curl -X POST http://127.0.0.1:5050/api/models/download -d '{"catalogueId":"antony66-ggml"}' -H 'Content-Type: application/json'`
 returns 202 Accepted with a `downloadId`.
 
@@ -442,6 +443,7 @@ write a `mozgoslav-<date>.log` with known lines in a temp `Logs` dir, GET `/api/
 
 - `backend/tests/Mozgoslav.Tests.Integration/ModelDefaultChainTests.cs::Default_WhenFilePresent_NoExceptionOnTranscribe`
 -
+
 `backend/tests/Mozgoslav.Tests.Integration/ModelDefaultChainTests.cs::Default_WhenUrlFails_SurfacesUserActionableError`
 -
 `backend/tests/Mozgoslav.Tests/Infrastructure/ModelDownloadServiceTests.cs::StartAsync_WritesToAppPaths_ReturnsDownloadId`
@@ -642,7 +644,9 @@ Phase-2 agents MAY *replace* `NotYetWired*` stub registrations with real ones wh
 - `backend/src/Mozgoslav.Infrastructure/NotYetWired/*.cs` — new (4-6 stub files).
 - `backend/src/Mozgoslav.Infrastructure/Persistence/Migrations/0007_value_comparers.*` — new.
 -
+
 `backend/tests/Mozgoslav.Tests.Integration/{LogsControllerTests, ModelDefaultChainTests, QueueStartupReconciliationTests, StartupLogTests, DbContextValueComparerTests}.cs` —
 new.
+
 - `backend/tests/Mozgoslav.Tests/Infrastructure/ModelDownloadServiceTests.cs` — new.
 - `phase1-agent-a-report.md` at repo root — the hand-off report.

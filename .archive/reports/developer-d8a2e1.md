@@ -42,6 +42,7 @@ All endpoints returned the frozen contract shape:
 Created:
 
 -
+
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Infrastructure/Services/ObsidianLayoutService.cs`
 -
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Infrastructure/Services/SyncthingLifecycleService.cs`
@@ -49,6 +50,7 @@ Created:
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/tests/Mozgoslav.Tests/Infrastructure/SyncthingLifecycleServiceTests.cs`
 -
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/tests/Mozgoslav.Tests.Integration/ModelScanEndpointTests.cs`
+
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/phase2-backend-report.md`
 
 Modified:
@@ -58,6 +60,7 @@ Modified:
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Api/Program.cs`
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Domain/Enums/NoteSource.cs`
 -
+
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Infrastructure/Rag/PythonSidecarEmbeddingService.cs`
 -
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/tests/Mozgoslav.Tests.Integration/Rag/PythonSidecarEmbeddingServiceTests.cs`
@@ -65,6 +68,7 @@ Modified:
 Deleted:
 
 -
+
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Infrastructure/NotYetWired/NotYetWiredSyncthingLifecycleService.cs` (
 directory `NotYetWired/` removed).
 

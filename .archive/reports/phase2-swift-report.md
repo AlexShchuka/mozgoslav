@@ -82,9 +82,12 @@ Existing 11 selector tests preserved unchanged — they still assert the
 `helpers/MozgoslavDictationHelper/Package.swift` was read only. It already declares:
 
 -
+
 `.executableTarget(name: "MozgoslavDictationHelper", dependencies: ["DictationHelperCore"], path: "Sources/MozgoslavDictationHelper")`
+
 - `.target(name: "DictationHelperCore", path: "Sources/DictationHelperCore")`
 -
+
 `.testTarget(name: "DictationHelperCoreTests", dependencies: ["DictationHelperCore"], path: "Tests/DictationHelperCoreTests")`
 
 All three targets match §3.3 exactly. No edit required.

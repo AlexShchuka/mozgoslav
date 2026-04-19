@@ -257,11 +257,13 @@ Key new components:
 
 - `SearchAdapterTests` × 4 (one per supported provider) with WireMock fixtures for each provider's HTTP shape.
 -
+
 `WebFetcherTests::{Robots_Disallow_Skips, Cache_WithinTtl_NoSecondFetch, Cache_AfterTtl_Refetches, Extractor_Boilerplate_Removed, AllowlistEmpty_Permissive, Blocklist_Deny, PrivateIp_RefusedUnlessAllowed}`.
 -
 `WebRagOrchestratorTests::{Disabled_BypassesAdapter, Mode_Local_NoFetch, Mode_Web_LocalIgnored, Mode_Both_MergesCitations, RateLimit_OverCap_FallsBackLocal}`.
 -
 `RagEndpointsContractTests::{Query_WithMode_Web_ReturnsWebKindCitations, Query_WithMode_Both_ReturnsMixed, Query_LegacyCall_NoMode_BehavesLocalOnly}`.
+
 - Integration test `PromptInjection_FetchedPage_IgnoredByModel` — canned malicious page; fake LLM that echoes the
   system-prompt role assertion.
 

@@ -22,6 +22,7 @@ Absolute paths:
 
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Application/Interfaces/ILlmProvider.cs`
 -
+
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Application/Interfaces/ILlmProviderFactory.cs`
 -
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Infrastructure/Services/OpenAiCompatibleLlmProvider.cs`
@@ -45,6 +46,7 @@ Absolute paths:
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/tests/Mozgoslav.Tests.Integration/OllamaLlmProviderTests.cs`
 -
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/tests/Mozgoslav.Tests.Integration/LlmProviderFactoryIntegrationTests.cs`
+
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/docs/llm-chunking-review.md`
 
 ## Files modified
@@ -56,19 +58,25 @@ Absolute paths:
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Application/Interfaces/IAppSettings.cs` —
   added `LlmProvider` getter.
 -
+
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Application/Interfaces/IDictationSessionManager.cs` —
 `Start(string? source = null)`.
+
 -
+
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Application/Services/DictationSessionManager.cs` —
 plumb `source` into the new `DictationSession` instance + start log.
+
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Domain/Entities/DictationSession.cs` —
   `Source` nullable string `init`-only property.
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Infrastructure/Services/EfAppSettings.cs` —
   `LlmProvider` load / save / projection + `Keys.LlmProvider` via Migration0012 constant.
 -
+
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Infrastructure/Services/OpenAiCompatibleLlmService.cs` —
 **rewrite**: becomes thin `ILlmService` adapter routing transport through `ILlmProviderFactory`; owns chunking +
 JSON-repair + merge only.
+
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Infrastructure/Services/BackupService.cs` —
   `CreateAsync` now `Task.Run`-based; pragma removed.
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Api/Endpoints/DictationEndpoints.cs` — added
@@ -76,10 +84,13 @@ JSON-repair + merge only.
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Api/Program.cs` — registered
   `ILlmProvider × 3` + `ILlmProviderFactory` as singletons; retained existing `ILlmService` registration.
 -
+
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/tests/Mozgoslav.Tests/Application/DictationSessionManagerTests.cs` —
 replaced method-group act `fixture.Manager.Start` with lambda (method now has optional param, method-group inference
 broke `.Should().Throw<>()`).
+
 -
+
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/tests/Mozgoslav.Tests.Integration/OpenAiCompatibleLlmServiceTests.cs` —
 updated fixture to inject an `ILlmProviderFactory` that returns a real `OpenAiCompatibleLlmProvider` (WireMock-backed);
 no assertion changes.

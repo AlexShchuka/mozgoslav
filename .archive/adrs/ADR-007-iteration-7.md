@@ -867,16 +867,22 @@ silently rewrite.
 
 - `backend/src/Mozgoslav.Api/Program.cs`
 -
+
 `backend/src/Mozgoslav.Api/Endpoints/{Dictation,Queue,Sync,Model,LmStudio,Profile,Recording,Note,Obsidian,Meetily,Backup,Sse}Endpoints.cs`
+
 - `backend/src/Mozgoslav.Api/Controllers/LogsController.cs` (new, MR A)
 - `backend/src/Mozgoslav.Api/Models/ModelCatalog.cs`
 -
+
 `backend/src/Mozgoslav.Application/Services/{DictationSessionManager,LlmChunker,MarkdownGenerator,CorrectionService}.cs`
+
 - `backend/src/Mozgoslav.Application/Rag/*` (restored, MR C)
 -
+
 `backend/src/Mozgoslav.Application/Interfaces/{AppSettingsDto,IAppSettings,ILlmProvider,ILlmProviderFactory,ILmStudioClient,IRagService,IEmbeddingService,IVectorIndex,ISyncthingClient,SyncthingEvent}.cs`
 -
 `backend/src/Mozgoslav.Infrastructure/Services/{Whisper,Llm,LmStudio,Syncthing,Ffmpeg,BackupService,EfAppSettings,IdleResourceCache}.cs`
+
 - `backend/src/Mozgoslav.Infrastructure/Rag/{BagOfWords,InMemory,Sqlite,PythonSidecar}*.cs` (restored, MR C —
   sqlite-vec)
 - `backend/src/Mozgoslav.Infrastructure/Seed/{DatabaseInitializer,SyncthingVersioningVerifier}.cs`
@@ -888,7 +894,9 @@ silently rewrite.
 
 - `frontend/src/App.tsx`, `frontend/src/main.tsx`
 -
+
 `frontend/src/features/{Dashboard,Queue,Notes,Obsidian,Onboarding,Settings,Models,Logs,Backups,Profiles,RecordingList,CommandPalette,SyncPairing}`
+
 - `frontend/src/features/RagChat/*` (restored, MR C)
 - `frontend/src/features/Sync/*` (new, MR D)
 - `frontend/src/components/{Layout,BrainLauncher,Modal,Button,Input,ProgressBar,Card,Badge,EmptyState}`
@@ -903,7 +911,9 @@ silently rewrite.
 
 - `frontend/electron/{main,preload}.ts`
 -
+
 `frontend/electron/dictation/{DictationOrchestrator,NativeHelperClient,TrayManager,HotkeyMonitor,OverlayWindow,PhaseSoundPlayer,types}.ts`
+
 - `frontend/electron/utils/{backendLauncher,syncthingLauncher}.ts`
 
 **Swift helper**

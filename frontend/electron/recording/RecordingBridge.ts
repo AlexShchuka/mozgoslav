@@ -29,6 +29,10 @@ export class RecordingBridge {
     constructor(private readonly helper: NativeHelperClient) {
     }
 
+    get activePort(): number {
+        return this.port;
+    }
+
     async start(): Promise<number> {
         if (this.server) {
             return this.port;
@@ -59,10 +63,6 @@ export class RecordingBridge {
             this.server = null;
         }
         this.sessions.clear();
-    }
-
-    get activePort(): number {
-        return this.port;
     }
 
     private async handle(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {

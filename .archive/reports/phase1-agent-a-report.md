@@ -71,6 +71,7 @@ Additional verification:
 
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Api/Controllers/LogsController.cs`
 -
+
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Infrastructure/Services/ModelDownloadCoordinator.cs`
 -
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Infrastructure/Services/DisabledSyncthingClient.cs`
@@ -78,17 +79,22 @@ Additional verification:
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Infrastructure/NotYetWired/NotYetWiredSyncthingLifecycleService.cs`
 -
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Infrastructure/Persistence/Migrations/0007_value_comparers.cs`
+
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/tests/Mozgoslav.Tests.Integration/CapturingLogger.cs`
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/tests/Mozgoslav.Tests.Integration/LogsControllerTests.cs`
 -
+
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/tests/Mozgoslav.Tests.Integration/ModelDefaultChainTests.cs`
 -
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/tests/Mozgoslav.Tests.Integration/QueueStartupReconciliationTests.cs`
+
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/tests/Mozgoslav.Tests.Integration/StartupLogTests.cs`
 -
+
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/tests/Mozgoslav.Tests.Integration/DbContextValueComparerTests.cs`
 -
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/tests/Mozgoslav.Tests/Infrastructure/ModelDownloadServiceTests.cs`
+
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/frontend/.env`  *(`WATCHPACK_POLLING=true`)*
 
 ## Files deleted
@@ -109,9 +115,12 @@ Additional verification:
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Api/appsettings.json`
     - `Urls` updated to `http://127.0.0.1:5050` (matches ADR-007-phase1-agent-A §1.4).
 -
+
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Api/BackgroundServices/QueueBackgroundService.cs`
-    - Added `public override StartAsync` that calls `ReconcileAsync(repo, ct)` before `base.StartAsync`.
-    - Extracted static `ReconcileAsync` seam for TDD-friendly unit testing.
+
+- Added `public override StartAsync` that calls `ReconcileAsync(repo, ct)` before `base.StartAsync`.
+- Extracted static `ReconcileAsync` seam for TDD-friendly unit testing.
+
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Api/Endpoints/ModelEndpoints.cs`
     - Rewrote `POST /api/models/download` to async 202 + `{downloadId}` matching ADR-007-shared §2.3.
     - Added `GET /api/models/download/stream` SSE endpoint.
@@ -119,21 +128,32 @@ Additional verification:
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Api/Models/ModelCatalog.cs`
     - Added `antony66-ggml` alias → canonical `whisper-large-v3-russian-antony66` (DoD curl).
 -
+
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Application/Interfaces/IProcessingJobRepository.cs`
-    - Added `GetByStatusAsync(JobStatus, ct)`.
+
+- Added `GetByStatusAsync(JobStatus, ct)`.
+
 -
+
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Infrastructure/Persistence/MozgoslavDbContext.cs`
-    - Added 3 `ValueComparer<List<…>>`s and attached them to 8 collection properties via `.Metadata.SetValueComparer`.
+
+- Added 3 `ValueComparer<List<…>>`s and attached them to 8 collection properties via `.Metadata.SetValueComparer`.
+
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Infrastructure/Platform/AppPaths.cs`
     - `DefaultWhisperModelPath` filename aligned with default catalogue entry.
 -
+
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Infrastructure/Repositories/EfProcessingJobRepository.cs`
-    - Implemented `GetByStatusAsync`.
+
+- Implemented `GetByStatusAsync`.
+
 - `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Infrastructure/Seed/DatabaseInitializer.cs`
     - Now accepts `IServiceScopeFactory` (root-scope safe); opens exactly one scope per startup; de-dupes the seed log.
 -
+
 `/home/coder/workspace/mozgoslav-20260417/mozgoslav/backend/src/Mozgoslav.Infrastructure/Seed/SyncthingVersioningVerifier.cs`
-    - Short-circuits when `ISyncthingClient` is the `DisabledSyncthingClient`.
+
+- Short-circuits when `ISyncthingClient` is the `DisabledSyncthingClient`.
 
 ---
 

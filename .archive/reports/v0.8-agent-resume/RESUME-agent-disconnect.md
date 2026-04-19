@@ -66,7 +66,9 @@ Run ONCE:
 - `cd backend && dotnet test Mozgoslav.sln -maxcpucount:1 --filter "FullyQualifiedName!~Sidecar.SidecarContainer"` (
   exclude Docker tests)
 -
+
 `cd python-sidecar && source .venv/bin/activate 2>/dev/null || python -m venv .venv && source .venv/bin/activate && pip install -q -r requirements.txt -r requirements-dev.txt && pytest`
+
 - `cd frontend && npm test -- --watchAll=false`
 
 Fix failures with cap **3 iterations per test**. If can't go green — document in report and move on.

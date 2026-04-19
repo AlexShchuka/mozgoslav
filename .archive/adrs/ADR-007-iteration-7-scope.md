@@ -156,7 +156,7 @@ informal-profile; into Chrome the default."
 hot."
 
 - **Gap today**: `IdleResourceCache<T>` deleted — restore in Backend agent MR E. `DictationModelUnloadMinutes` (default
-  10) triggers dispose; next call re-loads with 1-2 s latency.
+    10) triggers dispose; next call re-loads with 1-2 s latency.
 - Edge: re-entrant calls under load → factory stays warm; thread safety via `Interlocked`.
 
 **BC-009 | Dictation | ADR-004 R5.** "If the app crashes mid-dictation, my audio buffer is on disk and I can recover
@@ -743,11 +743,15 @@ spec).
 - `backend/src/Mozgoslav.Api/Controllers/LogsController.cs` (new, Phase 1)
 - `backend/src/Mozgoslav.Api/Models/ModelCatalog.cs`
 -
+
 `backend/src/Mozgoslav.Application/Services/{DictationSessionManager, LlmChunker, MarkdownGenerator, CorrectionService}.cs`
+
 - `backend/src/Mozgoslav.Application/Rag/*` (restored, Backend MR C)
 - `backend/src/Mozgoslav.Application/Interfaces/*` (see `ADR-007-phase2-backend.md`)
 -
+
 `backend/src/Mozgoslav.Infrastructure/Services/{Whisper, Llm, LmStudio, Syncthing, Ffmpeg, BackupService, EfAppSettings, IdleResourceCache}.cs`
+
 - `backend/src/Mozgoslav.Infrastructure/Rag/*` (restored, Backend MR C — `sqlite-vec`)
 - `backend/src/Mozgoslav.Infrastructure/Seed/{DatabaseInitializer, SyncthingVersioningVerifier}.cs`
 - `backend/src/Mozgoslav.Infrastructure/Persistence/MozgoslavDbContext.cs`
@@ -758,7 +762,9 @@ spec).
 
 - `frontend/src/App.tsx`, `frontend/src/main.tsx`
 -
+
 `frontend/src/features/{Dashboard, Queue, Notes, Obsidian, Onboarding, Settings, Models, Logs, Backups, Profiles, RecordingList, CommandPalette, SyncPairing}/*`
+
 - `frontend/src/features/RagChat/*` (restored, Frontend MR C)
 - `frontend/src/features/Sync/*` (new, Frontend MR D)
 - `frontend/src/components/{Layout, BrainLauncher, Modal, Button, Input, ProgressBar, Card, Badge, EmptyState}/*`

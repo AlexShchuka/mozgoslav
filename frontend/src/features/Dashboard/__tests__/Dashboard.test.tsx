@@ -184,11 +184,11 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
         const closeMock = jest.fn();
 
         class FakeEventSource {
+            public close = closeMock;
+
             public addEventListener(name: string, cb: (event: MessageEvent) => void): void {
                 listeners.set(name, cb);
             }
-
-            public close = closeMock;
         }
 
         const originalEventSource = (globalThis as any).EventSource;
