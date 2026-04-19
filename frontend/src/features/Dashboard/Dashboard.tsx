@@ -9,7 +9,7 @@ import Button from "../../components/Button";
 import Card from "../../components/Card";
 import {apiFactory} from "../../api";
 import {API_ENDPOINTS, BACKEND_URL} from "../../constants/api";
-import {RECORDINGS_CHANGED_EVENT} from "../../constants/events";
+import {GLOBAL_HOTKEY_REDISPATCH_EVENT, RECORDINGS_CHANGED_EVENT} from "../../constants/events";
 import {usePushToTalk} from "../../hooks/usePushToTalk";
 import {
     DashboardRoot,
@@ -229,9 +229,9 @@ const Dashboard: FC = () => {
     };
 
     useEffect(() => {
-        const bridge = typeof window !== "undefined" ? window.mozgoslav : undefined;
-        if (!bridge?.onGlobalHotkey) return;
-        const unsubscribe = bridge.onGlobalHotkey((payload) => {
+        const handleGlobalHotkey = (event: Event) => {
+            const detail = (event as CustomEvent<{source: string}>).detail;
+            console.info("[hotkey] Dashboard received redispatch:", detail);
             if (sessionRef.current) {
                 void stopRecording();
             } else {
@@ -239,7 +239,7 @@ const Dashboard: FC = () => {
                     setRecordState("starting");
                     setTranscript(null);
                     try {
-                        const started = await dictationApi.start({source: payload.source});
+                        const started = await dictationApi.start({source: detail.source});
                         const stream = await navigator.mediaDevices.getUserMedia({
                             audio: {channelCount: 1, sampleRate: 48000},
                         });
@@ -280,8 +280,9 @@ const Dashboard: FC = () => {
                     }
                 })();
             }
-        });
-        return unsubscribe;
+        };
+        window.addEventListener(GLOBAL_HOTKEY_REDISPATCH_EVENT, handleGlobalHotkey);
+        return () => window.removeEventListener(GLOBAL_HOTKEY_REDISPATCH_EVENT, handleGlobalHotkey);
     }, []);
 
     usePushToTalk({

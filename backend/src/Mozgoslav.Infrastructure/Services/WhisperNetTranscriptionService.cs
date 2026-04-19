@@ -40,10 +40,12 @@ public sealed class WhisperNetTranscriptionService
 {
     internal const string CacheKey = "whisper.factory";
     private const int BeamSize = 5;
-    private const string DefaultPrompt = "Мысли вслух, встречи, диалоги, рассуждения.";
+    private const int StreamBeamSize = 1;
+    private const string DefaultPrompt =
+        "Мысли вслух, встречи, диалоги, рассуждения. Запятые, точки, тире, вопросительные и восклицательные знаки: так, ведь, вот — именно.";
     private const int StreamSampleRate = 16_000;
-    private const int StreamWindowMs = 500;
-    private const int StreamMaxBufferSeconds = 120;
+    private const int StreamWindowMs = 300;
+    private const int StreamMaxBufferSeconds = 15;
     private static readonly TimeSpan MinSlidingExpiration = TimeSpan.FromMinutes(1);
 
     private readonly IVadPreprocessor _vad;
@@ -207,7 +209,7 @@ public sealed class WhisperNetTranscriptionService
         string? initialPrompt,
         CancellationToken ct)
     {
-        await using var processor = BuildProcessor(whisperFactory, language, initialPrompt);
+        await using var processor = BuildProcessor(whisperFactory, language, initialPrompt, StreamBeamSize);
 
         var parts = new List<string>();
         await foreach (var segment in processor.ProcessAsync(samples, ct).WithCancellation(ct))
@@ -222,7 +224,8 @@ public sealed class WhisperNetTranscriptionService
         return string.Join(" ", parts).Trim();
     }
 
-    private static WhisperProcessor BuildProcessor(WhisperFactory factory, string language, string? initialPrompt)
+    private static WhisperProcessor BuildProcessor(
+        WhisperFactory factory, string language, string? initialPrompt, int beamSize = BeamSize)
     {
         var builder = factory.CreateBuilder()
             .WithLanguage(language)
@@ -232,7 +235,7 @@ public sealed class WhisperNetTranscriptionService
         var beamStrategy = builder.WithBeamSearchSamplingStrategy();
         if (beamStrategy is BeamSearchSamplingStrategyBuilder beamBuilder)
         {
-            beamBuilder.WithBeamSize(BeamSize);
+            beamBuilder.WithBeamSize(beamSize);
         }
 
         return builder.Build();

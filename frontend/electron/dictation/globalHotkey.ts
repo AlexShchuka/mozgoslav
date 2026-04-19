@@ -26,11 +26,13 @@ export interface GlobalHotkeyPayload {
 
 const notifyRenderer = (payload: GlobalHotkeyPayload): void => {
     const windows = BrowserWindow.getAllWindows();
-    for (const win of windows) {
-        if (win.isDestroyed()) continue;
+    const alive = windows.filter((w) => !w.isDestroyed());
+    console.info(`[hotkey] notifyRenderer: broadcasting to ${alive.length}/${windows.length} window(s)`);
+    for (const win of alive) {
         try {
             win.webContents.send(GLOBAL_HOTKEY_IPC_CHANNEL, payload);
-        } catch {
+        } catch (err) {
+            console.warn("[hotkey] notifyRenderer: webContents.send threw:", err);
         }
     }
 };
@@ -50,9 +52,14 @@ export const registerGlobalDictationHotkey = (
     accelerator: string = GLOBAL_HOTKEY_ACCELERATOR,
 ): boolean => {
     const effective = accelerator.trim() === "" ? GLOBAL_HOTKEY_ACCELERATOR : accelerator;
-    return globalShortcut.register(effective, () => {
+    console.info(`[hotkey] register: requesting accelerator='${effective}'`);
+    const ok = globalShortcut.register(effective, () => {
+        console.info(`[hotkey] FIRED: accelerator='${effective}' at ${new Date().toISOString()}`);
         notifyRenderer({source: "global-hotkey"});
     });
+    const verified = globalShortcut.isRegistered(effective);
+    console.info(`[hotkey] register: result=${ok} isRegistered=${verified} accelerator='${effective}'`);
+    return ok;
 };
 
 /**

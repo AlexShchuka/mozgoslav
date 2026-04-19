@@ -114,6 +114,7 @@ public final class HotkeyMonitor {
             holding = false
         }
 
+        FileLog.shared.info("H1 HotkeyMonitor: \(kind) accelerator='\(parsed.accelerator)'")
         let payload = Payload(
             kind: kind,
             accelerator: parsed.accelerator,

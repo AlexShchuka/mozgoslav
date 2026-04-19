@@ -97,6 +97,7 @@ export const createMockApi = (): MockApiBundle => {
         getById: jestFn(),
         create: jestFn(),
         exportNote: jestFn(),
+        remove: jestFn(),
     } as unknown as MockedNotesApi;
     const obsidianApi = {
         setup: jestFn(),
@@ -119,11 +120,13 @@ export const createMockApi = (): MockApiBundle => {
     const recordingApi = {
         getAll: jestFn(),
         getById: jestFn(),
+        getNotes: jestFn(),
         importFiles: jestFn(),
         importByPaths: jestFn(),
         upload: jestFn(),
         reprocess: jestFn(),
         importFromMeetily: jestFn(),
+        remove: jestFn(),
     } as unknown as MockedRecordingApi;
     const settingsApi = {
         getSettings: jestFn(),

@@ -1,5 +1,5 @@
-import {FC} from "react";
-import {Navigate, Route, Routes, useLocation} from "react-router-dom";
+import {FC, useEffect} from "react";
+import {Navigate, Route, Routes, useLocation, useNavigate} from "react-router-dom";
 import {KBarProvider} from "kbar";
 
 import {Layout} from "./components/Layout";
@@ -19,6 +19,7 @@ import DictationOverlay from "./features/DictationOverlay";
 import CommandPalette, {useCommandPaletteActions} from "./features/CommandPalette";
 import {useGlobalHotkeys} from "./hooks/useGlobalHotkeys";
 import {ROUTES} from "./constants/routes";
+import {GLOBAL_HOTKEY_REDISPATCH_EVENT} from "./constants/events";
 import {OnboardingCompleteGuard} from "./guards";
 
 const OVERLAY_ROUTE = "/dictation-overlay";
@@ -26,6 +27,25 @@ const OVERLAY_ROUTE = "/dictation-overlay";
 const AppShell: FC = () => {
     useGlobalHotkeys();
     useCommandPaletteActions();
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        const bridge = typeof window !== "undefined" ? window.mozgoslav : undefined;
+        if (!bridge?.onGlobalHotkey) return;
+        const unsubscribe = bridge.onGlobalHotkey((payload) => {
+            console.info("[hotkey] AppShell received global-hotkey payload:", payload);
+            const redispatch = () =>
+                window.dispatchEvent(new CustomEvent(GLOBAL_HOTKEY_REDISPATCH_EVENT, {detail: payload}));
+            if (location.pathname !== ROUTES.home) {
+                navigate(ROUTES.home);
+                setTimeout(redispatch, 50);
+            } else {
+                redispatch();
+            }
+        });
+        return unsubscribe;
+    }, [navigate, location.pathname]);
 
     return (
         <>

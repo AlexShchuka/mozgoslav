@@ -35,15 +35,24 @@ public final class TextInjectionService {
     public init() {}
 
     public func inject(text: String, strategy: InjectionStrategy) throws {
-        guard !text.isEmpty else { return }
-
-        switch strategy {
-        case .cgEvent:
-            try injectViaCgEvent(text)
-        case .accessibility:
-            try injectViaAccessibilityWithFallback(text)
-        case .clipboard:
-            try injectViaClipboard(text)
+        guard !text.isEmpty else {
+            FileLog.shared.info("TextInjectionService: skip empty text")
+            return
+        }
+        FileLog.shared.info("TextInjectionService: inject strategy=\(strategy) len=\(text.count)")
+        do {
+            switch strategy {
+            case .cgEvent:
+                try injectViaCgEvent(text)
+            case .accessibility:
+                try injectViaAccessibilityWithFallback(text)
+            case .clipboard:
+                try injectViaClipboard(text)
+            }
+            FileLog.shared.info("TextInjectionService: injected strategy=\(strategy) len=\(text.count)")
+        } catch {
+            FileLog.shared.warn("TextInjectionService: failed strategy=\(strategy) error=\(error)")
+            throw error
         }
     }
 

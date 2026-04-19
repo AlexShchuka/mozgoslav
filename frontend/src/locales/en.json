@@ -69,7 +69,9 @@
     "empty": "No recordings yet — import or record your first one.",
     "waiting": "Waiting",
     "openNote": "Open note",
-    "noNoteYet": "Note is not ready yet"
+    "noNoteYet": "Note is not ready yet",
+    "deleteConfirm": "Delete recording \"{{name}}\" and its audio file? Notes will remain.",
+    "deleted": "Recording deleted"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -109,7 +111,9 @@
     "titleLabel": "Title",
     "bodyLabel": "Body (Markdown supported)",
     "submit": "Save",
-    "created": "Note created"
+    "created": "Note created",
+    "deleteConfirm": "Delete note \"{{title}}\"? This cannot be undone.",
+    "deleted": "Note deleted"
   },
   "note": {
     "title": "Note",

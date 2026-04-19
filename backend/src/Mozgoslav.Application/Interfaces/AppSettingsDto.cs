@@ -40,7 +40,7 @@ public sealed record AppSettingsDto(
     string SyncthingObsidianVaultPath,
     string SyncthingApiKey,
     string SyncthingBaseUrl,
-    bool DictationPushToTalk = false)
+    bool DictationPushToTalk = true)
 {
     public static AppSettingsDto Defaults { get; } = new(
         VaultPath: string.Empty,

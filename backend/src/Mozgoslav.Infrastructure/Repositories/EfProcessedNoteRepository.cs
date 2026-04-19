@@ -49,4 +49,16 @@ public sealed class EfProcessedNoteRepository : IProcessedNoteRepository
         _db.ProcessedNotes.Update(note);
         await _db.SaveChangesAsync(ct);
     }
+
+    public async Task<bool> TryDeleteAsync(Guid id, CancellationToken ct)
+    {
+        var note = await _db.ProcessedNotes.FirstOrDefaultAsync(n => n.Id == id, ct);
+        if (note is null)
+        {
+            return false;
+        }
+        _db.ProcessedNotes.Remove(note);
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
 }

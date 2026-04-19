@@ -30,4 +30,8 @@ export class NotesApi extends BaseApi {
         const response = await this.post<ProcessedNote>(API_ENDPOINTS.noteExport(id));
         return response.data;
     }
+
+    public async remove(id: string): Promise<void> {
+        await this.delete<void>(API_ENDPOINTS.note(id));
+    }
 }

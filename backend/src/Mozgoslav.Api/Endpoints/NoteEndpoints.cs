@@ -57,6 +57,15 @@ public static class NoteEndpoints
             return note is null ? Results.NotFound() : Results.Ok(note);
         });
 
+        endpoints.MapDelete("/api/notes/{id:guid}", async (
+            Guid id,
+            IProcessedNoteRepository repository,
+            CancellationToken ct) =>
+        {
+            var deleted = await repository.TryDeleteAsync(id, ct);
+            return deleted ? Results.NoContent() : Results.NotFound();
+        });
+
         endpoints.MapGet("/api/recordings/{recordingId:guid}/notes", async (
             Guid recordingId,
             IProcessedNoteRepository noteRepo,

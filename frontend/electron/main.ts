@@ -112,7 +112,6 @@ const createWindow = (): void => {
 
     if (DEV_SERVER_URL) {
         void mainWindow.loadURL(DEV_SERVER_URL);
-        mainWindow.webContents.openDevTools({mode: "detach"});
     } else {
         void mainWindow.loadFile(path.join(__dirname, "..", "dist", "index.html"));
     }
@@ -326,6 +325,9 @@ const applyCustomHotkeyFromSettings = async (): Promise<void> => {
             };
             const custom = settings.dictationKeyboardHotkey?.trim() ?? "";
             const pushToTalk = settings.dictationPushToTalk === true;
+            console.info(
+                `[hotkey] applyCustomHotkeyFromSettings: custom='${custom}' pushToTalk=${pushToTalk} orchestratorReady=${dictationOrchestrator !== null}`,
+            );
 
             if (pushToTalk && dictationOrchestrator && custom) {
                 unregisterGlobalDictationHotkey();
@@ -451,15 +453,25 @@ app.on("window-all-closed", () => {
     app.quit();
 });
 
-app.on("before-quit", () => {
-    dictationOrchestrator?.destroy();
-    dictationOrchestrator = null;
-    recordingBridge?.stop();
-    recordingBridge = null;
-    recordingHelper?.stop();
-    recordingHelper = null;
-    stopBackend();
-    void stopSyncthing();
+let teardownStarted = false;
+
+app.on("before-quit", (event) => {
+    if (teardownStarted) return;
+    teardownStarted = true;
+    event.preventDefault();
+    void (async () => {
+        try {
+            dictationOrchestrator?.destroy();
+            dictationOrchestrator = null;
+            recordingBridge?.stop();
+            recordingBridge = null;
+            recordingHelper?.stop();
+            recordingHelper = null;
+            await Promise.allSettled([stopBackend(), stopSyncthing()]);
+        } finally {
+            app.exit(0);
+        }
+    })();
 });
 
 app.on("will-quit", () => {

@@ -1,7 +1,7 @@
 import {FC, useEffect, useMemo, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
-import {FileText, Mic, X} from "lucide-react";
+import {FileText, Mic, Trash2, X} from "lucide-react";
 import {toast} from "react-toastify";
 
 import Badge, {BadgeTone} from "../../components/Badge";
@@ -48,6 +48,7 @@ const HomeList: FC = () => {
     const [reconnectKey, setReconnectKey] = useState(0);
     const [openingNoteIds, setOpeningNoteIds] = useState<Set<string>>(() => new Set());
     const [cancellingJobIds, setCancellingJobIds] = useState<Set<string>>(() => new Set());
+    const [deletingRecordingIds, setDeletingRecordingIds] = useState<Set<string>>(() => new Set());
 
     useEffect(() => {
         let cancelled = false;
@@ -131,6 +132,26 @@ const HomeList: FC = () => {
         }
     };
 
+    const deleteRecording = async (rec: Recording): Promise<void> => {
+        const confirmed = window.confirm(t("home.deleteConfirm", {name: rec.fileName}));
+        if (!confirmed) return;
+        setDeletingRecordingIds((prev) => new Set(prev).add(rec.id));
+        try {
+            await recordingsApi.remove(rec.id);
+            setRecordings((prev) => prev.filter((r) => r.id !== rec.id));
+            setJobs((prev) => prev.filter((j) => j.recordingId !== rec.id));
+            toast.success(t("home.deleted"));
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : String(err));
+        } finally {
+            setDeletingRecordingIds((prev) => {
+                const next = new Set(prev);
+                next.delete(rec.id);
+                return next;
+            });
+        }
+    };
+
     const cancelJob = async (job: ProcessingJob): Promise<void> => {
         if (!TERMINAL.includes(job.status) && job.status !== "Queued") {
             const ok = window.confirm(t("queue.cancelConfirmRunning"));
@@ -168,6 +189,7 @@ const HomeList: FC = () => {
                             : t("home.waiting");
                         const isOpening = openingNoteIds.has(rec.id);
                         const isCancelling = job !== null && cancellingJobIds.has(job.id);
+                        const isDeleting = deletingRecordingIds.has(rec.id);
                         return (
                             <Card key={rec.id} data-testid={`home-row-${rec.id}`}>
                                 <RowTop>
@@ -206,6 +228,17 @@ const HomeList: FC = () => {
                                                 {t("queue.cancel")}
                                             </Button>
                                         )}
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            leftIcon={<Trash2 size={14}/>}
+                                            isLoading={isDeleting}
+                                            disabled={isDeleting}
+                                            data-testid={`home-delete-${rec.id}`}
+                                            onClick={() => void deleteRecording(rec)}
+                                        >
+                                            {t("common.delete")}
+                                        </Button>
                                     </RowRight>
                                 </RowTop>
                                 <ProgressBar
