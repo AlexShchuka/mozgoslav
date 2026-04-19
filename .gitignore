@@ -72,6 +72,11 @@ models/
 !python-sidecar/app/models/
 !python-sidecar/app/models/*.py
 
+.build/
+Package.resolved
+/package-lock.json
+/scripts/package-lock.json
+
 # ---- IDE ----
 .idea/
 .vs/
