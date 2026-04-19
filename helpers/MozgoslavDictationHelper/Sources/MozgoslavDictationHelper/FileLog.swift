@@ -37,11 +37,14 @@ public final class FileLog {
     private func append(level: String, message: String) {
         queue.async { [self] in
             let now = Date()
+            let line = "[\(isoFormatter.string(from: now))] [\(level)] \(message)\n"
+            if let data = line.data(using: .utf8) {
+                FileHandle.standardError.write(data)
+            }
             guard let logsDir = logsDirectory() else { return }
             let logFile = logsDir.appendingPathComponent(
                 "helper-\(dateFormatter.string(from: now)).log"
             )
-            let line = "[\(isoFormatter.string(from: now))] [\(level)] \(message)\n"
             try? FileManager.default.createDirectory(at: logsDir, withIntermediateDirectories: true)
             if let data = line.data(using: .utf8) {
                 if FileManager.default.fileExists(atPath: logFile.path) {

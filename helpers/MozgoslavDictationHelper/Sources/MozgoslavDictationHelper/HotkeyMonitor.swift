@@ -58,8 +58,9 @@ public final class HotkeyMonitor {
         let accessibilityGranted = PermissionProbe.accessibilityStatus() == "granted"
         if !accessibilityGranted {
             FileLog.shared.warn(
-                "H1 HotkeyMonitor: Accessibility not inherited — parent Electron.app " +
-                "is missing TCC approval; hotkey monitor will receive no events."
+                "H1 HotkeyMonitor: Accessibility NOT granted — NSEvent.addGlobalMonitorForEvents " +
+                "will silently return nil; push-to-talk hotkey will NEVER fire. " +
+                "Grant in System Settings → Privacy & Security → Accessibility (Electron.app or Mozgoslav.app)."
             )
         }
 
@@ -73,8 +74,16 @@ public final class HotkeyMonitor {
             _ = event
             _ = self
         }
+        if keyDownMonitor == nil || keyUpMonitor == nil {
+            FileLog.shared.warn(
+                "H1 HotkeyMonitor: NSEvent.addGlobalMonitorForEvents returned nil " +
+                "(keyDown=\(keyDownMonitor != nil ? "ok" : "NIL") keyUp=\(keyUpMonitor != nil ? "ok" : "NIL")) — " +
+                "hotkey will not fire. Check Accessibility grant."
+            )
+        }
         FileLog.shared.info(
-            "H1 HotkeyMonitor started for accelerator='\(trimmed)' accessibilityGranted=\(accessibilityGranted)"
+            "H1 HotkeyMonitor started for accelerator='\(trimmed)' accessibilityGranted=\(accessibilityGranted) " +
+            "keyDownMonitor=\(keyDownMonitor != nil) keyUpMonitor=\(keyUpMonitor != nil)"
         )
         #else
         _ = parsed

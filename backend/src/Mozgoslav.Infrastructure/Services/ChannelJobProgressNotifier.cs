@@ -45,8 +45,21 @@ public sealed class ChannelJobProgressNotifier : IJobProgressNotifier, IDisposab
         _subscribers[id] = channel;
         try
         {
-            await foreach (var job in channel.Reader.ReadAllAsync(ct))
+            while (true)
             {
+                ProcessingJob job;
+                try
+                {
+                    job = await channel.Reader.ReadAsync(ct);
+                }
+                catch (OperationCanceledException)
+                {
+                    yield break;
+                }
+                catch (ChannelClosedException)
+                {
+                    yield break;
+                }
                 yield return job;
             }
         }
