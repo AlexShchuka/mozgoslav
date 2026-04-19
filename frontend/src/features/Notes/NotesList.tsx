@@ -55,7 +55,7 @@ const NotesList: FC = () => {
 
     const handleDelete = async (note: ProcessedNote) => {
         const confirmed = window.confirm(
-            t("notes.deleteConfirm", {title: note.title || note.topic || ""}),
+            t("notes.deleteConfirm", {title: note.topic || "conversation"}),
         );
         if (!confirmed) return;
         try {

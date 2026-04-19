@@ -27,6 +27,8 @@ public final class DictationHelper {
     }
 
     public func run() {
+        probeAndRequestPermissionsAtStartup()
+
         audioCapture.onAudioChunk = { [weak self] chunk in
             self?.emit(event: "audio", params: .object([
                 "samples": .array(chunk.samples.map { .double(Double($0)) }),
@@ -36,6 +38,7 @@ public final class DictationHelper {
         }
 
         hotkeyMonitor.onEvent = { [weak self] payload in
+            FileLog.shared.info("DictationHelper: emit hotkey kind=\(payload.kind)")
             self?.emit(event: "hotkey", params: .object([
                 "kind": .string(payload.kind),
                 "accelerator": .string(payload.accelerator),
@@ -46,6 +49,22 @@ public final class DictationHelper {
         while let line = stdin.readLine() {
             guard !line.isEmpty else { continue }
             handle(line: line)
+        }
+    }
+
+    private func probeAndRequestPermissionsAtStartup() {
+        let mic = PermissionProbe.microphoneStatus()
+        let ax = PermissionProbe.accessibilityStatus()
+        let im = PermissionProbe.inputMonitoringStatus()
+        FileLog.shared.info("DictationHelper startup: mic=\(mic) accessibility=\(ax) inputMonitoring=\(im)")
+
+        if ax != "granted" {
+            let granted = PermissionProbe.requestAccessibility()
+            FileLog.shared.info("DictationHelper startup: requestAccessibility returned \(granted)")
+        }
+        if im != "granted" {
+            let granted = PermissionProbe.requestInputMonitoring()
+            FileLog.shared.info("DictationHelper startup: requestInputMonitoring returned \(granted)")
         }
     }
 

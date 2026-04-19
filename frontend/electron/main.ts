@@ -325,6 +325,9 @@ const applyCustomHotkeyFromSettings = async (): Promise<void> => {
             };
             const custom = settings.dictationKeyboardHotkey?.trim() ?? "";
             const pushToTalk = settings.dictationPushToTalk === true;
+            console.info(
+                `[hotkey] applyCustomHotkeyFromSettings: custom='${custom}' pushToTalk=${pushToTalk} orchestratorReady=${dictationOrchestrator !== null}`,
+            );
 
             if (pushToTalk && dictationOrchestrator && custom) {
                 unregisterGlobalDictationHotkey();

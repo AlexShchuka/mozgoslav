@@ -219,35 +219,18 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
         installMocks();
         api.startDictation.mockResolvedValue({sessionId: "sess-hotkey"});
 
-        let firedCallback: ((payload: { source: string }) => void) | null = null;
-        const unsubscribe = jest.fn();
-        (globalThis as unknown as { window: Window }).window.mozgoslav = {
-            version: "test",
-            openAudioFiles: jest.fn(),
-            openFolder: jest.fn(),
-            openPath: jest.fn(),
-            openModelFile: jest.fn(),
-            openModelFolder: jest.fn(),
-            listSyncConflicts: jest.fn(),
-            onGlobalHotkey: (cb: (payload: { source: string }) => void) => {
-                firedCallback = cb;
-                return unsubscribe;
-            },
-        } as unknown as Window["mozgoslav"];
+        renderDashboard();
 
-        try {
-            renderDashboard();
-            await waitFor(() => expect(firedCallback).not.toBeNull());
-
-            act(() => {
-                firedCallback!({source: "global-hotkey"});
-            });
-
-            await waitFor(() =>
-                expect(api.startDictation).toHaveBeenCalledWith({source: "global-hotkey"}),
+        act(() => {
+            window.dispatchEvent(
+                new CustomEvent("mozgoslav:global-hotkey-redispatch", {
+                    detail: {source: "global-hotkey"},
+                }),
             );
-        } finally {
-            delete (window as unknown as { mozgoslav?: unknown }).mozgoslav;
-        }
+        });
+
+        await waitFor(() =>
+            expect(api.startDictation).toHaveBeenCalledWith({source: "global-hotkey"}),
+        );
     });
 });
