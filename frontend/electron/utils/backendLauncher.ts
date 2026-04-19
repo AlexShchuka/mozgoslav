@@ -71,13 +71,35 @@ export const tryStartBackend = async (
     }
 };
 
-export const stopBackend = (): void => {
-    if (backendProcess && !backendProcess.killed) {
-        try {
-            backendProcess.kill();
-        } catch (err) {
-            console.error("[backendLauncher] Error stopping backend:", err);
-        }
-    }
+const BACKEND_STOP_GRACE_MS = 5000;
+
+export const stopBackend = async (graceMs: number = BACKEND_STOP_GRACE_MS): Promise<void> => {
+    const proc = backendProcess;
     backendProcess = null;
+    if (!proc || proc.killed || proc.exitCode !== null) {
+        return;
+    }
+
+    const exited = new Promise<void>((resolve) => {
+        proc.once("exit", () => resolve());
+    });
+
+    try {
+        proc.kill("SIGTERM");
+    } catch (err) {
+        console.error("[backendLauncher] Error sending SIGTERM:", err);
+    }
+
+    const timeout = new Promise<void>((resolve) => setTimeout(resolve, graceMs));
+    await Promise.race([exited, timeout]);
+
+    if (proc.exitCode === null && !proc.killed) {
+        console.warn(`[backendLauncher] Backend did not exit in ${graceMs}ms — sending SIGKILL`);
+        try {
+            proc.kill("SIGKILL");
+        } catch (err) {
+            console.error("[backendLauncher] Error sending SIGKILL:", err);
+        }
+        await Promise.race([exited, new Promise<void>((r) => setTimeout(r, 1000))]);
+    }
 };

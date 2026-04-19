@@ -47,4 +47,16 @@ public sealed class EfRecordingRepository : IRecordingRepository
         _db.Recordings.Update(recording);
         await _db.SaveChangesAsync(ct);
     }
+
+    public async Task<bool> TryDeleteAsync(Guid id, CancellationToken ct)
+    {
+        var recording = await _db.Recordings.FirstOrDefaultAsync(r => r.Id == id, ct);
+        if (recording is null)
+        {
+            return false;
+        }
+        _db.Recordings.Remove(recording);
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
 }

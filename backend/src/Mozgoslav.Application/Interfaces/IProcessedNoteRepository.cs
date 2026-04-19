@@ -14,4 +14,5 @@ public interface IProcessedNoteRepository
     Task<IReadOnlyList<ProcessedNote>> GetByTranscriptIdAsync(Guid transcriptId, CancellationToken ct);
     Task<IReadOnlyList<ProcessedNote>> GetAllAsync(CancellationToken ct);
     Task UpdateAsync(ProcessedNote note, CancellationToken ct);
+    Task<bool> TryDeleteAsync(Guid id, CancellationToken ct);
 }

@@ -51,6 +51,35 @@ public static class RecordingEndpoints
             return recording is null ? Results.NotFound() : Results.Ok(recording);
         });
 
+        endpoints.MapDelete("/api/recordings/{id:guid}", async (
+            Guid id,
+            IRecordingRepository repository,
+            ILoggerFactory loggerFactory,
+            CancellationToken ct) =>
+        {
+            var log = loggerFactory.CreateLogger("RecordingEndpoints");
+            var recording = await repository.GetByIdAsync(id, ct);
+            if (recording is null)
+            {
+                return Results.NotFound();
+            }
+
+            if (!string.IsNullOrWhiteSpace(recording.FilePath) && File.Exists(recording.FilePath))
+            {
+                try
+                {
+                    File.Delete(recording.FilePath);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    log.LogWarning(ex, "Failed to delete audio file {Path}", recording.FilePath);
+                }
+            }
+
+            await repository.TryDeleteAsync(id, ct);
+            return Results.NoContent();
+        });
+
         endpoints.MapPost("/api/recordings/import", async (
             ImportByPathRequest request,
             ImportRecordingUseCase useCase,

@@ -1,8 +1,8 @@
-import {FC, useEffect, useState} from "react";
+import {FC, useEffect, useMemo, useState} from "react";
 import {Link} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {toast} from "react-toastify";
-import {Brain, Plus} from "lucide-react";
+import {Brain, Plus, Trash2} from "lucide-react";
 
 import Badge from "../../components/Badge";
 import Button from "../../components/Button";
@@ -48,6 +48,25 @@ const NotesList: FC = () => {
     };
     const closeAdd = () => setIsAdding(false);
 
+    const sortedNotes = useMemo(
+        () => [...notes].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
+        [notes],
+    );
+
+    const handleDelete = async (note: ProcessedNote) => {
+        const confirmed = window.confirm(
+            t("notes.deleteConfirm", {title: note.title || note.topic || ""}),
+        );
+        if (!confirmed) return;
+        try {
+            await notesApi.remove(note.id);
+            setNotes((prev) => prev.filter((n) => n.id !== note.id));
+            toast.success(t("notes.deleted"));
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : String(err));
+        }
+    };
+
     const submit = async () => {
         const trimmedTitle = title.trim();
         if (!trimmedTitle) return;
@@ -77,11 +96,11 @@ const NotesList: FC = () => {
                     {t("notes.add")}
                 </Button>
             </AddToolbar>
-            {notes.length === 0 ? (
+            {sortedNotes.length === 0 ? (
                 <EmptyState title={t("common.empty")} icon={<Brain size={28}/>}/>
             ) : (
                 <Card>
-                    {notes.map((note) => (
+                    {sortedNotes.map((note) => (
                         <NoteRow key={note.id}>
                             <NoteTopic as={Link} to={noteRoute(note.id)}>
                                 {note.topic || "conversation"}
@@ -90,6 +109,15 @@ const NotesList: FC = () => {
                                 v{note.version} · {new Date(note.createdAt).toLocaleDateString()}
                             </NoteMeta>
                             {note.exportedToVault && <Badge tone="success">vault</Badge>}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                leftIcon={<Trash2 size={14}/>}
+                                data-testid={`notes-delete-${note.id}`}
+                                onClick={() => void handleDelete(note)}
+                            >
+                                {t("common.delete")}
+                            </Button>
                         </NoteRow>
                     ))}
                 </Card>

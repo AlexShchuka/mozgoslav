@@ -60,6 +60,10 @@ export class RecordingApi extends BaseApi {
         return response.data;
     }
 
+    public async remove(id: string): Promise<void> {
+        await this.delete<void>(API_ENDPOINTS.recording(id));
+    }
+
     public async reprocess(recordingId: string, profileId: string): Promise<ProcessedNote> {
         const response = await this.post<ProcessedNote, { profileId: string }>(
             API_ENDPOINTS.reprocess(recordingId),
