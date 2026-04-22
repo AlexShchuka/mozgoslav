@@ -1,9 +1,8 @@
-import {FC, useEffect, useState} from "react";
+import {FC, useEffect, useMemo, useState} from "react";
 import {useNavigate, useParams} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import remarkFrontmatter from "remark-frontmatter";
 import {toast} from "react-toastify";
 import {ArrowLeft, Copy, FolderOutput, RefreshCw} from "lucide-react";
 
@@ -13,7 +12,19 @@ import Badge from "../../components/Badge";
 import {apiFactory} from "../../api";
 import {ProcessedNote} from "../../domain/ProcessedNote";
 import {ROUTES} from "../../constants/routes";
-import {Actions, BackBar, MarkdownBody, Meta, PageRoot, PageTitle} from "./NoteViewer.style";
+import {stripFrontmatter} from "./markdown";
+import {
+    Actions,
+    BackBar,
+    ChipRow,
+    ChipRowLabel,
+    MarkdownBody,
+    Meta,
+    MetaTime,
+    PageRoot,
+    PageTitle,
+    SummaryLead,
+} from "./NoteViewer.style";
 
 const notesApi = apiFactory.createNotesApi();
 
@@ -27,6 +38,11 @@ const NoteViewer: FC = () => {
         if (!id) return;
         void notesApi.getById(id).then(setNote).catch(() => setNote(null));
     }, [id]);
+
+    const body = useMemo(
+        () => (note ? stripFrontmatter(note.markdownContent) : ""),
+        [note],
+    );
 
     const onBack = () => {
         if (window.history.length > 1) {
@@ -55,6 +71,8 @@ const NoteViewer: FC = () => {
 
     if (!note) return <PageRoot>{t("common.loading")}</PageRoot>;
 
+    const title = note.summary || note.topic || t("note.title");
+
     return (
         <PageRoot>
             <BackBar>
@@ -68,13 +86,32 @@ const NoteViewer: FC = () => {
                     {t("notes.back")}
                 </Button>
             </BackBar>
-            <PageTitle>{note.topic || t("note.title")}</PageTitle>
+            <PageTitle>{title}</PageTitle>
             <Meta>
+                <MetaTime>{new Date(note.createdAt).toLocaleString()}</MetaTime>
                 <Badge tone="accent">v{note.version}</Badge>
                 <Badge tone="neutral">{note.conversationType}</Badge>
                 {note.exportedToVault && <Badge tone="success">vault</Badge>}
-                <span>{new Date(note.createdAt).toLocaleString()}</span>
             </Meta>
+            {note.participants.length > 0 && (
+                <ChipRow data-testid="note-participants">
+                    <ChipRowLabel>{t("note.participants")}</ChipRowLabel>
+                    {note.participants.map((p) => (
+                        <Badge key={p} tone="neutral">{p}</Badge>
+                    ))}
+                </ChipRow>
+            )}
+            {note.tags.length > 0 && (
+                <ChipRow data-testid="note-tags">
+                    <ChipRowLabel>{t("note.tags")}</ChipRowLabel>
+                    {note.tags.map((tag) => (
+                        <Badge key={tag} tone="accent">{tag}</Badge>
+                    ))}
+                </ChipRow>
+            )}
+            {note.summary && note.topic && note.summary !== note.topic && (
+                <SummaryLead data-testid="note-summary-lead">{note.summary}</SummaryLead>
+            )}
             <Actions>
                 <Button variant="secondary" leftIcon={<Copy size={16}/>} onClick={onCopy}>
                     {t("note.actions.copyMarkdown")}
@@ -88,10 +125,8 @@ const NoteViewer: FC = () => {
             </Actions>
             <Card>
                 <MarkdownBody>
-                    <ReactMarkdown
-                        remarkPlugins={[remarkGfm, [remarkFrontmatter, ["yaml"]]]}
-                    >
-                        {note.markdownContent || "*empty*"}
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {body || "*empty*"}
                     </ReactMarkdown>
                 </MarkdownBody>
             </Card>

@@ -100,7 +100,7 @@ describe("NotesList — add note (BC-022 / Bug 4)", () => {
                 body: "Hello",
             }),
         );
-        expect(await screen.findByText("handwritten")).toBeInTheDocument();
+        expect(await screen.findByText(/handwritten/)).toBeInTheDocument();
     });
 
     it("NotesList_EmptyState", async () => {
@@ -131,7 +131,7 @@ describe("NotesList — grouping by vault path folder", () => {
 
         renderNotes();
 
-        await screen.findByText("Alpha");
+        await screen.findByText(/Alpha/);
         expect(screen.getByRole("button", {name: /Projects/})).toBeInTheDocument();
         expect(screen.getByRole("button", {name: /Archive/})).toBeInTheDocument();
         expect(screen.getByRole("button", {name: /Без папки/})).toBeInTheDocument();

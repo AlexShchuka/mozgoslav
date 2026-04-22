@@ -132,13 +132,31 @@ const NotesList: FC = () => {
         dispatch(applyLayout());
     };
 
-    const renderPrimary = (note: ProcessedNote) => note.topic || "conversation";
+    const renderPrimary = (note: ProcessedNote) => {
+        const when = new Date(note.createdAt).toLocaleString();
+        const label = note.summary || note.topic || "conversation";
+        return (
+            <>
+                <MetaLine>{when}</MetaLine>
+                {" · "}
+                {label}
+            </>
+        );
+    };
 
     const renderSecondary = (note: ProcessedNote) => (
         <>
             <MetaLine>v{note.version}</MetaLine>
-            {" · "}
-            <MetaLine>{new Date(note.createdAt).toLocaleDateString()}</MetaLine>
+            {note.tags.length > 0 && (
+                <>
+                    {" · "}
+                    {note.tags.map((tag, idx) => (
+                        <span key={tag}>
+                            {idx > 0 && ", "}#{tag}
+                        </span>
+                    ))}
+                </>
+            )}
             {note.exportedToVault && (
                 <>
                     {" · "}

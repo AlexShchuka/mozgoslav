@@ -121,6 +121,8 @@
   },
   "note": {
     "title": "Заметка",
+    "participants": "Участники",
+    "tags": "Теги",
     "actions": {
       "reprocess": "Перепрогнать",
       "export": "Экспорт в vault",

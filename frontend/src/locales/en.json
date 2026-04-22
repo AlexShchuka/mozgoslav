@@ -121,6 +121,8 @@
   },
   "note": {
     "title": "Note",
+    "participants": "Participants",
+    "tags": "Tags",
     "actions": {
       "reprocess": "Reprocess",
       "export": "Export to vault",
