@@ -1,15 +1,11 @@
 import type {AppSettings} from "../../domain/Settings";
-import type {
-    ObsidianBulkExportReport,
-    ObsidianSetupReport,
-} from "../../store/slices/obsidian/types";
+import type {ObsidianSetupReport} from "../../store/slices/obsidian/types";
 
 export interface ObsidianStateProps {
     readonly settings: AppSettings | null;
     readonly isBulkExporting: boolean;
     readonly isApplyingLayout: boolean;
     readonly isSetupInProgress: boolean;
-    readonly lastBulkExportReport: ObsidianBulkExportReport | null;
     readonly lastSetupReport: ObsidianSetupReport | null;
     readonly error: string | null;
 }

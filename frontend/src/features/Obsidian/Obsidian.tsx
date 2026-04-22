@@ -32,7 +32,6 @@ const Obsidian: FC<ObsidianProps> = ({
                                          isBulkExporting,
                                          isApplyingLayout,
                                          isSetupInProgress,
-                                         lastBulkExportReport,
                                          lastSetupReport,
                                          error,
                                          onLoadSettings,
@@ -58,12 +57,6 @@ const Obsidian: FC<ObsidianProps> = ({
     useEffect(() => {
         if (error) toast.error(error);
     }, [error]);
-
-    useEffect(() => {
-        if (lastBulkExportReport) {
-            toast.success(t("obsidian.syncAllSuccess", {count: lastBulkExportReport.exportedCount}));
-        }
-    }, [lastBulkExportReport, t]);
 
     useEffect(() => {
         if (lastSetupReport) {

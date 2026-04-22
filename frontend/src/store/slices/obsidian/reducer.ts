@@ -4,8 +4,7 @@ import {
     APPLY_LAYOUT,
     APPLY_LAYOUT_DONE,
     BULK_EXPORT,
-    BULK_EXPORT_FAILURE,
-    BULK_EXPORT_SUCCESS,
+    BULK_EXPORT_DONE,
     type ObsidianAction,
     SETUP_OBSIDIAN,
     SETUP_OBSIDIAN_FAILURE,
@@ -34,15 +33,8 @@ export const obsidianReducer: Reducer<ObsidianState> = (
 
         case BULK_EXPORT:
             return beginBulkExport(state);
-        case BULK_EXPORT_SUCCESS:
-            return {
-                ...state,
-                isBulkExporting: false,
-                lastBulkExportReport: typed.payload,
-                error: null,
-            };
-        case BULK_EXPORT_FAILURE:
-            return {...state, isBulkExporting: false, error: typed.payload};
+        case BULK_EXPORT_DONE:
+            return {...state, isBulkExporting: false, error: null};
 
         case APPLY_LAYOUT:
             return beginApplyLayout(state);

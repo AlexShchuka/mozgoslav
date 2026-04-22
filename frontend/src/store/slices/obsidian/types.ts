@@ -16,7 +16,6 @@ export interface ObsidianState {
     readonly isBulkExporting: boolean;
     readonly isApplyingLayout: boolean;
     readonly lastSetupReport: ObsidianSetupReport | null;
-    readonly lastBulkExportReport: ObsidianBulkExportReport | null;
     readonly error: string | null;
 }
 
@@ -25,6 +24,5 @@ export const initialObsidianState: ObsidianState = {
     isBulkExporting: false,
     isApplyingLayout: false,
     lastSetupReport: null,
-    lastBulkExportReport: null,
     error: null,
 };
