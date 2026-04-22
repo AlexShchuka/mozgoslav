@@ -3,6 +3,7 @@ import {useNavigate, useParams} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkFrontmatter from "remark-frontmatter";
 import {toast} from "react-toastify";
 import {ArrowLeft, Copy, FolderOutput, RefreshCw} from "lucide-react";
 
@@ -87,7 +88,11 @@ const NoteViewer: FC = () => {
             </Actions>
             <Card>
                 <MarkdownBody>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{note.markdownContent || "*empty*"}</ReactMarkdown>
+                    <ReactMarkdown
+                        remarkPlugins={[remarkGfm, [remarkFrontmatter, ["yaml"]]]}
+                    >
+                        {note.markdownContent || "*empty*"}
+                    </ReactMarkdown>
                 </MarkdownBody>
             </Card>
         </PageRoot>

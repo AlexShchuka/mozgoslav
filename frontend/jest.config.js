@@ -13,6 +13,7 @@ module.exports = {
         "\\.(css|less|scss|sass)$": "identity-obj-proxy",
         "^react-markdown$": "<rootDir>/src/testUtils/reactMarkdownStub.tsx",
         "^remark-gfm$": "<rootDir>/src/testUtils/remarkGfmStub.ts",
+        "^remark-frontmatter$": "<rootDir>/src/testUtils/remarkFrontmatterStub.ts",
     },
     transform: {
         "^.+\\.(ts|tsx)$": [
