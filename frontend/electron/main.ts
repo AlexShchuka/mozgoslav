@@ -191,7 +191,7 @@ app.whenReady().then(async () => {
     ipcMain.handle("dialog:openFolder", async () => {
         if (!mainWindow) return {filePaths: []};
         return dialog.showOpenDialog(mainWindow, {
-            title: "Выбери папку",
+            title: "Выбери папка",
             properties: ["openDirectory"],
         });
     });
@@ -426,6 +426,21 @@ const initializeDictation = async (): Promise<void> => {
             dictationOrchestrator = null;
             app.quit();
         });
+
+        // Инициалиси хоткей по Swift хелпер коррект
+        const settingsResponse = await fetch(`${BACKEND_ORIGIN}/api/settings`);
+        if (settingsResponse.ok) {
+            const settings = (await settingsResponse.json()) as { dictationKeyboardHotkey?: string };
+            const hotkey = settings.dictationKeyboardHotkey?.trim() ?? "";
+            if (hotkey && recordingHelper) {
+                try {
+                    await recordingHelper.startHotkey(hotkey);
+                    console.info(`[dictation] Swift helper hotkey started: ${hotkey}`);
+                } catch (err) {
+                    console.warn("[dictation] failed to start Swift helper hotkey:", err);
+                }
+            }
+        }
     } catch (error) {
         console.error("[dictation] initialization failed:", error);
         dictationOrchestrator = null;
