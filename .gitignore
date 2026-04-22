@@ -82,3 +82,4 @@ Package.resolved
 .vs/
 .vscode/
 *.iml
+.aider*
