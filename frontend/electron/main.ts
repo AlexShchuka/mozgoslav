@@ -24,7 +24,7 @@ const resolveDictationHelperPath = (): string => {
 const initializeDictation = async (): Promise<void> => {
     try {
         const helperBinaryPath = resolveDictationHelperPath();
-        dictationOrchestrator = new import("./dictation/DictationOrchestrator").DictationOrchestrator({
+        dictationOrchestrator = new (await import("./dictation/DictationOrchestrator")).DictationOrchestrator({
             helperBinaryPath,
             mouseButton: null,
             keyboardFallbackKeycode: null,
