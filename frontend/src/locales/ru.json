@@ -215,7 +215,9 @@
     },
     "testConnection": "Проверить соединение",
     "tokenHint": "Хранится локально в SQLite. Никогда не отправляется никуда, кроме указанного endpoint.",
-    "savedToast": "Настройки сохранены"
+    "savedToast": "Настройки сохранены",
+    "llmCheckSuccessToast": "LLM: соединение установлено",
+    "llmCheckFailureToast": "LLM: соединение не установлено"
   },
   "sync": {
     "live": "Онлайн",

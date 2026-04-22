@@ -4,7 +4,7 @@ export interface SettingsStateProps {
     readonly settings: AppSettings | null;
     readonly isLoading: boolean;
     readonly isSaving: boolean;
-    readonly llmProbe: { ok: boolean | null; probing: boolean };
+    readonly isLlmProbing: boolean;
     readonly error: string | null;
 }
 

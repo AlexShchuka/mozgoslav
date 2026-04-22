@@ -9,7 +9,7 @@ export const SAVE_SETTINGS_SUCCESS = "settings/SAVE_SUCCESS";
 export const SAVE_SETTINGS_FAILURE = "settings/SAVE_FAILURE";
 
 export const CHECK_LLM = "settings/CHECK_LLM";
-export const CHECK_LLM_RESULT = "settings/CHECK_LLM_RESULT";
+export const CHECK_LLM_DONE = "settings/CHECK_LLM_DONE";
 
 export interface LoadSettingsAction {
     type: typeof LOAD_SETTINGS;
@@ -44,9 +44,8 @@ export interface CheckLlmAction {
     type: typeof CHECK_LLM;
 }
 
-export interface CheckLlmResultAction {
-    type: typeof CHECK_LLM_RESULT;
-    payload: { ok: boolean };
+export interface CheckLlmDoneAction {
+    type: typeof CHECK_LLM_DONE;
 }
 
 export type SettingsAction =
@@ -57,7 +56,7 @@ export type SettingsAction =
     | SaveSettingsSuccessAction
     | SaveSettingsFailureAction
     | CheckLlmAction
-    | CheckLlmResultAction;
+    | CheckLlmDoneAction;
 
 export const loadSettings = (): LoadSettingsAction => ({type: LOAD_SETTINGS});
 export const loadSettingsSuccess = (settings: AppSettings): LoadSettingsSuccessAction => ({
@@ -83,7 +82,4 @@ export const saveSettingsFailure = (message: string): SaveSettingsFailureAction 
 });
 
 export const checkLlm = (): CheckLlmAction => ({type: CHECK_LLM});
-export const checkLlmResult = (ok: boolean): CheckLlmResultAction => ({
-    type: CHECK_LLM_RESULT,
-    payload: {ok},
-});
+export const checkLlmDone = (): CheckLlmDoneAction => ({type: CHECK_LLM_DONE});

@@ -6,7 +6,7 @@ import {
     checkLlm,
     loadSettings,
     saveSettings,
-    selectLlmProbe,
+    selectLlmProbing,
     selectSettings,
     selectSettingsError,
     selectSettingsLoading,
@@ -19,7 +19,7 @@ const mapStateToProps = (state: GlobalState): SettingsStateProps => ({
     settings: selectSettings(state),
     isLoading: selectSettingsLoading(state),
     isSaving: selectSettingsSaving(state),
-    llmProbe: selectLlmProbe(state),
+    isLlmProbing: selectLlmProbing(state),
     error: selectSettingsError(state),
 });
 

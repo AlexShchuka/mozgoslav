@@ -215,7 +215,9 @@
     },
     "testConnection": "Test connection",
     "tokenHint": "Stored locally in SQLite. Never leaves your machine except to the configured endpoint.",
-    "savedToast": "Settings saved"
+    "savedToast": "Settings saved",
+    "llmCheckSuccessToast": "LLM: connection OK",
+    "llmCheckFailureToast": "LLM: connection failed"
   },
   "sync": {
     "live": "Live",
