@@ -32,7 +32,6 @@ const Obsidian: FC<ObsidianProps> = ({
                                          isBulkExporting,
                                          isApplyingLayout,
                                          isSetupInProgress,
-                                         lastSetupReport,
                                          error,
                                          onLoadSettings,
                                          onSaveSettings,
@@ -57,14 +56,6 @@ const Obsidian: FC<ObsidianProps> = ({
     useEffect(() => {
         if (error) toast.error(error);
     }, [error]);
-
-    useEffect(() => {
-        if (lastSetupReport) {
-            toast.success(
-                t("obsidian.setupSuccess", {created: lastSetupReport.createdPaths.length}),
-            );
-        }
-    }, [lastSetupReport, t]);
 
     const toggle = (key: string, required: boolean) => {
         if (required) return;

@@ -1,8 +1,5 @@
-import type {ObsidianSetupReport} from "./types";
-
 export const SETUP_OBSIDIAN = "obsidian/SETUP";
-export const SETUP_OBSIDIAN_SUCCESS = "obsidian/SETUP_SUCCESS";
-export const SETUP_OBSIDIAN_FAILURE = "obsidian/SETUP_FAILURE";
+export const SETUP_OBSIDIAN_DONE = "obsidian/SETUP_DONE";
 
 export const BULK_EXPORT = "obsidian/BULK_EXPORT";
 export const BULK_EXPORT_DONE = "obsidian/BULK_EXPORT_DONE";
@@ -15,14 +12,8 @@ export interface SetupObsidianAction {
     payload: { vaultPath?: string };
 }
 
-export interface SetupObsidianSuccessAction {
-    type: typeof SETUP_OBSIDIAN_SUCCESS;
-    payload: ObsidianSetupReport;
-}
-
-export interface SetupObsidianFailureAction {
-    type: typeof SETUP_OBSIDIAN_FAILURE;
-    payload: string;
+export interface SetupObsidianDoneAction {
+    type: typeof SETUP_OBSIDIAN_DONE;
 }
 
 export interface BulkExportAction {
@@ -43,8 +34,7 @@ export interface ApplyLayoutDoneAction {
 
 export type ObsidianAction =
     | SetupObsidianAction
-    | SetupObsidianSuccessAction
-    | SetupObsidianFailureAction
+    | SetupObsidianDoneAction
     | BulkExportAction
     | BulkExportDoneAction
     | ApplyLayoutAction
@@ -54,13 +44,7 @@ export const setupObsidian = (vaultPath?: string): SetupObsidianAction => ({
     type: SETUP_OBSIDIAN,
     payload: {vaultPath},
 });
-export const setupObsidianSuccess = (
-    report: ObsidianSetupReport,
-): SetupObsidianSuccessAction => ({type: SETUP_OBSIDIAN_SUCCESS, payload: report});
-export const setupObsidianFailure = (message: string): SetupObsidianFailureAction => ({
-    type: SETUP_OBSIDIAN_FAILURE,
-    payload: message,
-});
+export const setupObsidianDone = (): SetupObsidianDoneAction => ({type: SETUP_OBSIDIAN_DONE});
 
 export const bulkExport = (): BulkExportAction => ({type: BULK_EXPORT});
 export const bulkExportDone = (): BulkExportDoneAction => ({type: BULK_EXPORT_DONE});

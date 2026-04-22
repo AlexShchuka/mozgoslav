@@ -15,7 +15,6 @@ export interface ObsidianState {
     readonly isSetupInProgress: boolean;
     readonly isBulkExporting: boolean;
     readonly isApplyingLayout: boolean;
-    readonly lastSetupReport: ObsidianSetupReport | null;
     readonly error: string | null;
 }
 
@@ -23,6 +22,5 @@ export const initialObsidianState: ObsidianState = {
     isSetupInProgress: false,
     isBulkExporting: false,
     isApplyingLayout: false,
-    lastSetupReport: null,
     error: null,
 };

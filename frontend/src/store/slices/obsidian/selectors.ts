@@ -20,7 +20,3 @@ export const selectObsidianError = createSelector(
     selectObsidianState,
     (slice) => slice.error,
 );
-export const selectLastSetupReport = createSelector(
-    selectObsidianState,
-    (slice) => slice.lastSetupReport,
-);

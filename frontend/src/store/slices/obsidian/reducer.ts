@@ -7,8 +7,7 @@ import {
     BULK_EXPORT_DONE,
     type ObsidianAction,
     SETUP_OBSIDIAN,
-    SETUP_OBSIDIAN_FAILURE,
-    SETUP_OBSIDIAN_SUCCESS,
+    SETUP_OBSIDIAN_DONE,
 } from "./actions";
 import {beginApplyLayout, beginBulkExport, beginSetup} from "./mutations";
 import {initialObsidianState, type ObsidianState} from "./types";
@@ -21,15 +20,8 @@ export const obsidianReducer: Reducer<ObsidianState> = (
     switch (typed.type) {
         case SETUP_OBSIDIAN:
             return beginSetup(state);
-        case SETUP_OBSIDIAN_SUCCESS:
-            return {
-                ...state,
-                isSetupInProgress: false,
-                lastSetupReport: typed.payload,
-                error: null,
-            };
-        case SETUP_OBSIDIAN_FAILURE:
-            return {...state, isSetupInProgress: false, error: typed.payload};
+        case SETUP_OBSIDIAN_DONE:
+            return {...state, isSetupInProgress: false, error: null};
 
         case BULK_EXPORT:
             return beginBulkExport(state);
