@@ -54,6 +54,7 @@ export class HotkeyMonitor extends EventEmitter {
     stop(): void {
         if (!this.started || !this.uiohook) return;
         try {
+            this.uiohook.uIOhook.removeAllListeners();
             this.uiohook.uIOhook.stop();
         } catch (error) {
             console.error("[dictation:hotkey] stop failed:", error);
@@ -101,6 +102,7 @@ interface UiohookApi {
     uIOhook: {
         start(): void;
         stop(): void;
+        removeAllListeners(): void;
         on(event: "mousedown" | "mouseup", listener: (event: UiohookMouseEvent) => void): void;
         on(event: "keydown" | "keyup", listener: (event: UiohookKeyboardEvent) => void): void;
     };

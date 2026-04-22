@@ -406,7 +406,7 @@ const initializeDictation = async (): Promise<void> => {
         const helperBinaryPath = resolveDictationHelperPath();
         dictationOrchestrator = new DictationOrchestrator({
             helperBinaryPath,
-            mouseButton: 5,
+            mouseButton: null,
             keyboardFallbackKeycode: null,
             keyboardAccelerator: null,
             sampleRate: 48_000,

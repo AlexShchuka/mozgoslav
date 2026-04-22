@@ -64,7 +64,10 @@ export class DictationOrchestrator {
             if (event.type === "press") void this.handlePress();
             else void this.handleRelease();
         });
-        await this.hotkey.start();
+
+        if (this.options.mouseButton !== null) {
+            await this.hotkey.start();
+        }
 
         if (this.options.keyboardAccelerator) {
             await this.helper.startHotkey(this.options.keyboardAccelerator);
@@ -76,6 +79,11 @@ export class DictationOrchestrator {
         keyboardAccelerator: string | null;
     }): Promise<void> {
         this.hotkey.setMouseButton(options.mouseButton);
+        if (options.mouseButton !== null) {
+            await this.hotkey.start();
+        } else {
+            this.hotkey.stop();
+        }
 
         if (options.keyboardAccelerator) {
             await this.helper.startHotkey(options.keyboardAccelerator);
