@@ -20,7 +20,6 @@ const Settings: FC<SettingsProps> = ({
                                          settings: loadedSettings,
                                          isSaving,
                                          isLlmProbing,
-                                         error,
                                          onLoad,
                                          onSave,
                                          onCheckLlm,
@@ -42,10 +41,6 @@ const Settings: FC<SettingsProps> = ({
             setThemeMode(loadedSettings.themeMode);
         }
     }, [loadedSettings]);
-
-    useEffect(() => {
-        if (error) toast.error(error);
-    }, [error]);
 
     const update = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) =>
         setDraft((prev) => ({...prev, [key]: value}));

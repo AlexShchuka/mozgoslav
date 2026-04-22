@@ -8,7 +8,6 @@ import {
     saveSettings,
     selectLlmProbing,
     selectSettings,
-    selectSettingsError,
     selectSettingsLoading,
     selectSettingsSaving,
 } from "../../store/slices/settings";
@@ -20,7 +19,6 @@ const mapStateToProps = (state: GlobalState): SettingsStateProps => ({
     isLoading: selectSettingsLoading(state),
     isSaving: selectSettingsSaving(state),
     isLlmProbing: selectLlmProbing(state),
-    error: selectSettingsError(state),
 });
 
 const mapDispatchToProps = (dispatch: Dispatch): SettingsDispatchProps =>

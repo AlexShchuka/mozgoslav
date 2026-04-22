@@ -21,18 +21,18 @@ export const settingsReducer: Reducer<SettingsState> = (
     const typed = action as SettingsAction;
     switch (typed.type) {
         case LOAD_SETTINGS:
-            return {...state, isLoading: true, error: null};
+            return {...state, isLoading: true};
         case LOAD_SETTINGS_SUCCESS:
             return applyLoaded(state, typed.payload);
         case LOAD_SETTINGS_FAILURE:
-            return {...state, isLoading: false, error: typed.payload};
+            return {...state, isLoading: false};
 
         case SAVE_SETTINGS:
-            return {...state, isSaving: true, error: null};
+            return {...state, isSaving: true};
         case SAVE_SETTINGS_SUCCESS:
             return applySaved(state, typed.payload);
         case SAVE_SETTINGS_FAILURE:
-            return {...state, isSaving: false, error: typed.payload};
+            return {...state, isSaving: false};
 
         case CHECK_LLM:
             return markLlmProbing(state);

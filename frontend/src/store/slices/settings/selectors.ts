@@ -13,7 +13,6 @@ export const selectSettingsSaving = createSelector(
     selectSettingsState,
     (slice) => slice.isSaving,
 );
-export const selectSettingsError = createSelector(selectSettingsState, (slice) => slice.error);
 export const selectLlmProbing = createSelector(
     selectSettingsState,
     (slice) => slice.llmProbe.probing,

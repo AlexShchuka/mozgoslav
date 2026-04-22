@@ -4,7 +4,6 @@ export interface SettingsState {
     readonly settings: AppSettings | null;
     readonly isLoading: boolean;
     readonly isSaving: boolean;
-    readonly error: string | null;
     readonly llmProbe: { probing: boolean };
 }
 
@@ -12,6 +11,5 @@ export const initialSettingsState: SettingsState = {
     settings: null,
     isLoading: false,
     isSaving: false,
-    error: null,
     llmProbe: {probing: false},
 };

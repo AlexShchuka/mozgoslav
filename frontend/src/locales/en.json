@@ -393,5 +393,8 @@
       "listening": "go ahead, I'm listening…",
       "finalizing": "wrapping up…"
     }
+  },
+  "errors": {
+    "genericErrorWithMessage": "Error: {{message}}"
   }
 }

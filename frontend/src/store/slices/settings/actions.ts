@@ -22,7 +22,6 @@ export interface LoadSettingsSuccessAction {
 
 export interface LoadSettingsFailureAction {
     type: typeof LOAD_SETTINGS_FAILURE;
-    payload: string;
 }
 
 export interface SaveSettingsAction {
@@ -37,7 +36,6 @@ export interface SaveSettingsSuccessAction {
 
 export interface SaveSettingsFailureAction {
     type: typeof SAVE_SETTINGS_FAILURE;
-    payload: string;
 }
 
 export interface CheckLlmAction {
@@ -63,9 +61,8 @@ export const loadSettingsSuccess = (settings: AppSettings): LoadSettingsSuccessA
     type: LOAD_SETTINGS_SUCCESS,
     payload: settings,
 });
-export const loadSettingsFailure = (message: string): LoadSettingsFailureAction => ({
+export const loadSettingsFailure = (): LoadSettingsFailureAction => ({
     type: LOAD_SETTINGS_FAILURE,
-    payload: message,
 });
 
 export const saveSettings = (settings: AppSettings): SaveSettingsAction => ({
@@ -76,9 +73,8 @@ export const saveSettingsSuccess = (settings: AppSettings): SaveSettingsSuccessA
     type: SAVE_SETTINGS_SUCCESS,
     payload: settings,
 });
-export const saveSettingsFailure = (message: string): SaveSettingsFailureAction => ({
+export const saveSettingsFailure = (): SaveSettingsFailureAction => ({
     type: SAVE_SETTINGS_FAILURE,
-    payload: message,
 });
 
 export const checkLlm = (): CheckLlmAction => ({type: CHECK_LLM});

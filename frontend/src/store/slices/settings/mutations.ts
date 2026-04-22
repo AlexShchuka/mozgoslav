@@ -15,12 +15,10 @@ export const applyLoaded = (state: SettingsState, settings: AppSettings): Settin
     ...state,
     settings,
     isLoading: false,
-    error: null,
 });
 
 export const applySaved = (state: SettingsState, settings: AppSettings): SettingsState => ({
     ...state,
     settings,
     isSaving: false,
-    error: null,
 });

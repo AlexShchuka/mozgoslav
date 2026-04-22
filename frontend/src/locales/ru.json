@@ -393,5 +393,8 @@
       "listening": "говори, я слушаю…",
       "finalizing": "заканчиваю…"
     }
+  },
+  "errors": {
+    "genericErrorWithMessage": "Ошибка: {{message}}"
   }
 }

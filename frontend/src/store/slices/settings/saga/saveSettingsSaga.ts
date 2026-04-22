@@ -3,6 +3,7 @@ import type {SagaIterator} from "redux-saga";
 
 import {apiFactory} from "../../../../api";
 import type {AppSettings} from "../../../../domain/Settings";
+import {notifyError} from "../../notifications";
 import {SAVE_SETTINGS, type SaveSettingsAction, saveSettingsFailure, saveSettingsSuccess,} from "../actions";
 
 export function* saveSettingsSaga(action: SaveSettingsAction): SagaIterator {
@@ -15,7 +16,11 @@ export function* saveSettingsSaga(action: SaveSettingsAction): SagaIterator {
         yield put(saveSettingsSuccess(saved));
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        yield put(saveSettingsFailure(message));
+        yield put(notifyError({
+            messageKey: "errors.genericErrorWithMessage",
+            params: {message},
+        }));
+        yield put(saveSettingsFailure());
     }
 }
 
