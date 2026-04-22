@@ -15,12 +15,18 @@ export class HotkeyMonitor extends EventEmitter {
     private started = false;
     private uiohook: UiohookApi | null = null;
     private pressed = false;
+    private mouseButton: number | null;
 
     constructor(
-        private readonly mouseButton: number,
+        mouseButton: number | null,
         private readonly keyboardFallbackKeycode: number | null
     ) {
         super();
+        this.mouseButton = mouseButton;
+    }
+
+    setMouseButton(button: number | null): void {
+        this.mouseButton = button;
     }
 
     async start(): Promise<void> {
@@ -57,12 +63,14 @@ export class HotkeyMonitor extends EventEmitter {
     }
 
     private handleMouseDown(event: UiohookMouseEvent): void {
+        if (this.mouseButton === null) return;
         if (event.button !== this.mouseButton || this.pressed) return;
         this.pressed = true;
         this.emit("hotkey", {type: "press", source: "mouse"} satisfies HotkeyEvent);
     }
 
     private handleMouseUp(event: UiohookMouseEvent): void {
+        if (this.mouseButton === null) return;
         if (event.button !== this.mouseButton || !this.pressed) return;
         this.pressed = false;
         this.emit("hotkey", {type: "release", source: "mouse"} satisfies HotkeyEvent);

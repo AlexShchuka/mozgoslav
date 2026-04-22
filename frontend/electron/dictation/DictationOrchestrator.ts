@@ -1,7 +1,7 @@
 import {net} from "electron";
 
 import {HotkeyMonitor} from "./HotkeyMonitor";
-import {NativeHelperClient} from "./NativeHelperClient";
+import {NativeHelperClient, type HotkeyEventPayload} from "./NativeHelperClient";
 import {OverlayWindow} from "./OverlayWindow";
 import {PhaseSoundPlayer} from "./PhaseSoundPlayer";
 import {TrayManager} from "./TrayManager";
@@ -11,8 +11,9 @@ const BACKEND_ORIGIN = "http://localhost:5050";
 
 export interface OrchestratorOptions {
     readonly helperBinaryPath: string;
-    readonly mouseButton: number;
+    readonly mouseButton: number | null;
     readonly keyboardFallbackKeycode: number | null;
+    readonly keyboardAccelerator: string | null;
     readonly sampleRate: number;
     readonly injectMode: "auto" | "cgevent" | "accessibility";
     readonly overlayEnabled: boolean;
@@ -54,12 +55,33 @@ export class DictationOrchestrator {
         this.helper.on("audio", (chunk: AudioChunkPayload) => {
             void this.pushAudioToBackend(chunk);
         });
+        this.helper.on("hotkey", (payload: HotkeyEventPayload) => {
+            if (payload.kind === "press") void this.handlePress();
+            else void this.handleRelease();
+        });
 
         this.hotkey.on("hotkey", (event) => {
             if (event.type === "press") void this.handlePress();
             else void this.handleRelease();
         });
         await this.hotkey.start();
+
+        if (this.options.keyboardAccelerator) {
+            await this.helper.startHotkey(this.options.keyboardAccelerator);
+        }
+    }
+
+    async configurePushToTalk(options: {
+        mouseButton: number | null;
+        keyboardAccelerator: string | null;
+    }): Promise<void> {
+        this.hotkey.setMouseButton(options.mouseButton);
+
+        if (options.keyboardAccelerator) {
+            await this.helper.startHotkey(options.keyboardAccelerator);
+        } else {
+            await this.helper.stopHotkey();
+        }
     }
 
     destroy(): void {

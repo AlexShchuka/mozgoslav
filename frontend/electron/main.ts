@@ -321,29 +321,40 @@ const applyCustomHotkeyFromSettings = async (): Promise<void> => {
             if (!response.ok) throw new Error(`status ${response.status}`);
             const settings = (await response.json()) as {
                 dictationKeyboardHotkey?: string;
+                dictationHotkeyType?: string;
+                dictationMouseButton?: number;
                 dictationPushToTalk?: boolean;
             };
             const custom = settings.dictationKeyboardHotkey?.trim() ?? "";
             const pushToTalk = settings.dictationPushToTalk === true;
+            const hotkeyType = settings.dictationHotkeyType ?? "mouse";
+            const mouseButton = settings.dictationMouseButton ?? 5;
             console.info("=".repeat(70));
             console.info(
-                `[hotkey] CHECKPOINT settings.custom='${custom}' settings.pushToTalk=${pushToTalk} orchestratorReady=${dictationOrchestrator !== null}`,
+                `[hotkey] CHECKPOINT settings.custom='${custom}' settings.pushToTalk=${pushToTalk} settings.hotkeyType='${hotkeyType}' settings.mouseButton=${mouseButton} orchestratorReady=${dictationOrchestrator !== null}`,
             );
 
-            if (pushToTalk && dictationOrchestrator && custom) {
-                console.info("[hotkey] PATH -> Swift helper push-to-talk (cursor injection enabled)");
+            if (pushToTalk && dictationOrchestrator) {
                 unregisterGlobalDictationHotkey();
                 console.info("[hotkey]   unregistered Electron globalShortcut");
                 try {
-                    dictationOrchestrator.onKeyboardHotkeyEvent((payload) => {
-                        void forwardHotkeyToBackend(payload);
-                    });
-                    await dictationOrchestrator.startKeyboardHotkey(custom);
-                    console.info(`[hotkey]   Swift helper monitor started for '${custom}' — check stderr for 'H1 HotkeyMonitor' lines`);
+                    if (hotkeyType === "keyboard" && custom) {
+                        console.info(`[hotkey] PATH -> Swift helper keyboard push-to-talk (cursor injection enabled) accelerator='${custom}'`);
+                        await dictationOrchestrator.configurePushToTalk({
+                            mouseButton: null,
+                            keyboardAccelerator: custom,
+                        });
+                    } else {
+                        console.info(`[hotkey] PATH -> uiohook mouse push-to-talk (cursor injection enabled) button=${mouseButton}`);
+                        await dictationOrchestrator.configurePushToTalk({
+                            mouseButton,
+                            keyboardAccelerator: null,
+                        });
+                    }
                 } catch (err) {
-                    console.warn("[hotkey] Swift helper FAILED to start monitor:", err);
+                    console.warn("[hotkey] push-to-talk setup FAILED:", err);
                     console.warn("[hotkey] FALLBACK -> Electron globalShortcut toggle (NO cursor injection)");
-                    registerGlobalDictationHotkey(custom);
+                    registerGlobalDictationHotkey(custom || undefined);
                 }
                 return;
             }
@@ -417,6 +428,7 @@ const initializeDictation = async (): Promise<void> => {
             helperBinaryPath,
             mouseButton: 5,
             keyboardFallbackKeycode: null,
+            keyboardAccelerator: null,
             sampleRate: 48_000,
             injectMode: "auto",
             overlayEnabled: true,
