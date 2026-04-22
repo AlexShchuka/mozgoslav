@@ -108,6 +108,7 @@ public sealed class WhisperNetTranscriptionService
         ArgumentNullException.ThrowIfNull(chunks);
 
         _logger.LogInformation("Starting streaming transcription");
+_logger.LogDebug("Transcription parameters: language={Lang}, prompt={Prompt}", language, initialPrompt ?? "<none>");
 
 #pragma warning disable IDISP001
         var whisperFactory = GetOrCreateFactory();
