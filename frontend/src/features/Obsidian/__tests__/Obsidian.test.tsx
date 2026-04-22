@@ -4,6 +4,7 @@ import {MemoryRouter} from "react-router-dom";
 import {ToastContainer} from "react-toastify";
 
 import Obsidian from "../index";
+import {watchNotificationsSagas} from "../../../store/slices/notifications";
 import {watchObsidianSagas} from "../../../store/slices/obsidian";
 import {watchSettingsSagas} from "../../../store/slices/settings";
 import type {MockApiBundle} from "../../../testUtils";
@@ -33,7 +34,7 @@ const renderObsidian = () =>
             <Obsidian/>
             <ToastContainer/>
         </MemoryRouter>,
-        {sagas: [watchObsidianSagas, watchSettingsSagas]},
+        {sagas: [watchNotificationsSagas, watchObsidianSagas, watchSettingsSagas]},
     );
 
 describe("Obsidian — first-class tab (BC-025 / Bug 22)", () => {

@@ -1,97 +1,53 @@
-import type {ObsidianApplyLayoutReport, ObsidianBulkExportReport, ObsidianSetupReport,} from "./types";
-
 export const SETUP_OBSIDIAN = "obsidian/SETUP";
-export const SETUP_OBSIDIAN_SUCCESS = "obsidian/SETUP_SUCCESS";
-export const SETUP_OBSIDIAN_FAILURE = "obsidian/SETUP_FAILURE";
+export const SETUP_OBSIDIAN_DONE = "obsidian/SETUP_DONE";
 
 export const BULK_EXPORT = "obsidian/BULK_EXPORT";
-export const BULK_EXPORT_SUCCESS = "obsidian/BULK_EXPORT_SUCCESS";
-export const BULK_EXPORT_FAILURE = "obsidian/BULK_EXPORT_FAILURE";
+export const BULK_EXPORT_DONE = "obsidian/BULK_EXPORT_DONE";
 
 export const APPLY_LAYOUT = "obsidian/APPLY_LAYOUT";
-export const APPLY_LAYOUT_SUCCESS = "obsidian/APPLY_LAYOUT_SUCCESS";
-export const APPLY_LAYOUT_FAILURE = "obsidian/APPLY_LAYOUT_FAILURE";
+export const APPLY_LAYOUT_DONE = "obsidian/APPLY_LAYOUT_DONE";
 
 export interface SetupObsidianAction {
     type: typeof SETUP_OBSIDIAN;
     payload: { vaultPath?: string };
 }
 
-export interface SetupObsidianSuccessAction {
-    type: typeof SETUP_OBSIDIAN_SUCCESS;
-    payload: ObsidianSetupReport;
-}
-
-export interface SetupObsidianFailureAction {
-    type: typeof SETUP_OBSIDIAN_FAILURE;
-    payload: string;
+export interface SetupObsidianDoneAction {
+    type: typeof SETUP_OBSIDIAN_DONE;
 }
 
 export interface BulkExportAction {
     type: typeof BULK_EXPORT;
 }
 
-export interface BulkExportSuccessAction {
-    type: typeof BULK_EXPORT_SUCCESS;
-    payload: ObsidianBulkExportReport;
-}
-
-export interface BulkExportFailureAction {
-    type: typeof BULK_EXPORT_FAILURE;
-    payload: string;
+export interface BulkExportDoneAction {
+    type: typeof BULK_EXPORT_DONE;
 }
 
 export interface ApplyLayoutAction {
     type: typeof APPLY_LAYOUT;
 }
 
-export interface ApplyLayoutSuccessAction {
-    type: typeof APPLY_LAYOUT_SUCCESS;
-    payload: ObsidianApplyLayoutReport;
-}
-
-export interface ApplyLayoutFailureAction {
-    type: typeof APPLY_LAYOUT_FAILURE;
-    payload: string;
+export interface ApplyLayoutDoneAction {
+    type: typeof APPLY_LAYOUT_DONE;
 }
 
 export type ObsidianAction =
     | SetupObsidianAction
-    | SetupObsidianSuccessAction
-    | SetupObsidianFailureAction
+    | SetupObsidianDoneAction
     | BulkExportAction
-    | BulkExportSuccessAction
-    | BulkExportFailureAction
+    | BulkExportDoneAction
     | ApplyLayoutAction
-    | ApplyLayoutSuccessAction
-    | ApplyLayoutFailureAction;
+    | ApplyLayoutDoneAction;
 
 export const setupObsidian = (vaultPath?: string): SetupObsidianAction => ({
     type: SETUP_OBSIDIAN,
     payload: {vaultPath},
 });
-export const setupObsidianSuccess = (
-    report: ObsidianSetupReport,
-): SetupObsidianSuccessAction => ({type: SETUP_OBSIDIAN_SUCCESS, payload: report});
-export const setupObsidianFailure = (message: string): SetupObsidianFailureAction => ({
-    type: SETUP_OBSIDIAN_FAILURE,
-    payload: message,
-});
+export const setupObsidianDone = (): SetupObsidianDoneAction => ({type: SETUP_OBSIDIAN_DONE});
 
 export const bulkExport = (): BulkExportAction => ({type: BULK_EXPORT});
-export const bulkExportSuccess = (
-    report: ObsidianBulkExportReport,
-): BulkExportSuccessAction => ({type: BULK_EXPORT_SUCCESS, payload: report});
-export const bulkExportFailure = (message: string): BulkExportFailureAction => ({
-    type: BULK_EXPORT_FAILURE,
-    payload: message,
-});
+export const bulkExportDone = (): BulkExportDoneAction => ({type: BULK_EXPORT_DONE});
 
 export const applyLayout = (): ApplyLayoutAction => ({type: APPLY_LAYOUT});
-export const applyLayoutSuccess = (
-    report: ObsidianApplyLayoutReport,
-): ApplyLayoutSuccessAction => ({type: APPLY_LAYOUT_SUCCESS, payload: report});
-export const applyLayoutFailure = (message: string): ApplyLayoutFailureAction => ({
-    type: APPLY_LAYOUT_FAILURE,
-    payload: message,
-});
+export const applyLayoutDone = (): ApplyLayoutDoneAction => ({type: APPLY_LAYOUT_DONE});

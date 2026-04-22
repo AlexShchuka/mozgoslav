@@ -2,16 +2,23 @@ import {call, put, takeLatest} from "redux-saga/effects";
 import type {SagaIterator} from "redux-saga";
 
 import {apiFactory} from "../../../../api";
-import {CHECK_LLM, checkLlmResult} from "../actions";
+import {notifySuccess, notifyWarning} from "../../notifications";
+import {CHECK_LLM, checkLlmDone} from "../actions";
 
 export function* checkLlmSaga(): SagaIterator {
     const healthApi = apiFactory.createHealthApi();
+    let ok = false;
     try {
-        const ok: boolean = yield call([healthApi, healthApi.checkLlm]);
-        yield put(checkLlmResult(ok));
+        ok = yield call([healthApi, healthApi.checkLlm]);
     } catch {
-        yield put(checkLlmResult(false));
+        ok = false;
     }
+    if (ok) {
+        yield put(notifySuccess({messageKey: "settings.llmCheckSuccessToast"}));
+    } else {
+        yield put(notifyWarning({messageKey: "settings.llmCheckFailureToast"}));
+    }
+    yield put(checkLlmDone());
 }
 
 export function* watchCheckLlm(): SagaIterator {

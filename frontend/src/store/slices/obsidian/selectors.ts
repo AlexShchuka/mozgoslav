@@ -16,19 +16,3 @@ export const selectObsidianIsSetupInProgress = createSelector(
     selectObsidianState,
     (slice) => slice.isSetupInProgress,
 );
-export const selectObsidianError = createSelector(
-    selectObsidianState,
-    (slice) => slice.error,
-);
-export const selectLastBulkExportReport = createSelector(
-    selectObsidianState,
-    (slice) => slice.lastBulkExportReport,
-);
-export const selectLastApplyLayoutReport = createSelector(
-    selectObsidianState,
-    (slice) => slice.lastApplyLayoutReport,
-);
-export const selectLastSetupReport = createSelector(
-    selectObsidianState,
-    (slice) => slice.lastSetupReport,
-);

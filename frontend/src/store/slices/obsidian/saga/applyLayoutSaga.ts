@@ -2,7 +2,8 @@ import {call, put, takeLatest} from "redux-saga/effects";
 import type {SagaIterator} from "redux-saga";
 
 import {apiFactory} from "../../../../api";
-import {APPLY_LAYOUT, applyLayoutFailure, applyLayoutSuccess} from "../actions";
+import {notifyError, notifySuccess} from "../../notifications";
+import {APPLY_LAYOUT, applyLayoutDone} from "../actions";
 import type {ObsidianApplyLayoutReport} from "../types";
 
 export function* applyLayoutSaga(): SagaIterator {
@@ -12,11 +13,18 @@ export function* applyLayoutSaga(): SagaIterator {
             obsidianApi,
             obsidianApi.applyLayout,
         ]);
-        yield put(applyLayoutSuccess(report));
+        yield put(notifySuccess({
+            messageKey: "obsidian.applyLayoutSuccess",
+            params: {folders: report.createdFolders, notes: report.movedNotes},
+        }));
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        yield put(applyLayoutFailure(message));
+        yield put(notifyError({
+            messageKey: "errors.genericErrorWithMessage",
+            params: {message},
+        }));
     }
+    yield put(applyLayoutDone());
 }
 
 export function* watchApplyLayout(): SagaIterator {

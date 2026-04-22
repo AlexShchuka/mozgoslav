@@ -19,8 +19,7 @@ type TabKey = "general" | "storage" | "llm" | "whisper" | "dictation" | "obsidia
 const Settings: FC<SettingsProps> = ({
                                          settings: loadedSettings,
                                          isSaving,
-                                         llmProbe,
-                                         error,
+                                         isLlmProbing,
                                          onLoad,
                                          onSave,
                                          onCheckLlm,
@@ -42,19 +41,6 @@ const Settings: FC<SettingsProps> = ({
             setThemeMode(loadedSettings.themeMode);
         }
     }, [loadedSettings]);
-
-    useEffect(() => {
-        if (error) toast.error(error);
-    }, [error]);
-
-    useEffect(() => {
-        if (llmProbe.ok === null || llmProbe.probing) return;
-        if (llmProbe.ok) {
-            toast.success("LLM: ✓");
-        } else {
-            toast.warning("LLM: ✗");
-        }
-    }, [llmProbe]);
 
     const update = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) =>
         setDraft((prev) => ({...prev, [key]: value}));
@@ -171,7 +157,13 @@ const Settings: FC<SettingsProps> = ({
                             sensitive
                             hint={t("settings.tokenHint")}
                         />
-                        <Button variant="secondary" leftIcon={<Play size={16}/>} onClick={checkLlm}>
+                        <Button
+                            variant="secondary"
+                            leftIcon={<Play size={16}/>}
+                            onClick={checkLlm}
+                            isLoading={isLlmProbing}
+                            disabled={isLlmProbing}
+                        >
                             {t("settings.testConnection")}
                         </Button>
                     </FormGrid>

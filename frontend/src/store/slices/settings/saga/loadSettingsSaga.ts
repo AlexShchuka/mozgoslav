@@ -3,6 +3,7 @@ import type {SagaIterator} from "redux-saga";
 
 import {apiFactory} from "../../../../api";
 import type {AppSettings} from "../../../../domain/Settings";
+import {notifyError} from "../../notifications";
 import {LOAD_SETTINGS, loadSettingsFailure, loadSettingsSuccess} from "../actions";
 
 export function* loadSettingsSaga(): SagaIterator {
@@ -12,7 +13,11 @@ export function* loadSettingsSaga(): SagaIterator {
         yield put(loadSettingsSuccess(settings));
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        yield put(loadSettingsFailure(message));
+        yield put(notifyError({
+            messageKey: "errors.genericErrorWithMessage",
+            params: {message},
+        }));
+        yield put(loadSettingsFailure());
     }
 }
 

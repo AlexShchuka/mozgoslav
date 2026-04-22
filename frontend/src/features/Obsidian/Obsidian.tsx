@@ -32,10 +32,6 @@ const Obsidian: FC<ObsidianProps> = ({
                                          isBulkExporting,
                                          isApplyingLayout,
                                          isSetupInProgress,
-                                         lastBulkExportReport,
-                                         lastApplyLayoutReport,
-                                         lastSetupReport,
-                                         error,
                                          onLoadSettings,
                                          onSaveSettings,
                                          onSetup,
@@ -55,35 +51,6 @@ const Obsidian: FC<ObsidianProps> = ({
     useEffect(() => {
         if (loadedSettings) setSettings(loadedSettings);
     }, [loadedSettings]);
-
-    useEffect(() => {
-        if (error) toast.error(error);
-    }, [error]);
-
-    useEffect(() => {
-        if (lastBulkExportReport) {
-            toast.success(t("obsidian.syncAllSuccess", {count: lastBulkExportReport.exportedCount}));
-        }
-    }, [lastBulkExportReport, t]);
-
-    useEffect(() => {
-        if (lastApplyLayoutReport) {
-            toast.success(
-                t("obsidian.applyLayoutSuccess", {
-                    folders: lastApplyLayoutReport.createdFolders,
-                    notes: lastApplyLayoutReport.movedNotes,
-                }),
-            );
-        }
-    }, [lastApplyLayoutReport, t]);
-
-    useEffect(() => {
-        if (lastSetupReport) {
-            toast.success(
-                t("obsidian.setupSuccess", {created: lastSetupReport.createdPaths.length}),
-            );
-        }
-    }, [lastSetupReport, t]);
 
     const toggle = (key: string, required: boolean) => {
         if (required) return;
