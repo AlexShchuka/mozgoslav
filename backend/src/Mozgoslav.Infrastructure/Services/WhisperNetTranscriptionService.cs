@@ -119,77 +119,108 @@ public sealed class WhisperNetTranscriptionService
         var maxBufferSamples = StreamSampleRate * StreamMaxBufferSeconds;
         var committed = new StringBuilder();
 
-        await foreach (var chunk in chunks.WithCancellation(ct))
+        var chunksReceived = 0;
+        var chunksPassedVad = 0;
+        var partialsEmitted = 0;
+        double peakRms = 0;
+
+        try
         {
-            if (chunk.SampleRate != StreamSampleRate)
+            await foreach (var chunk in chunks.WithCancellation(ct))
             {
-                throw new InvalidOperationException(
-                    $"Streaming expects {StreamSampleRate} Hz mono samples, got {chunk.SampleRate} Hz");
-            }
-
-            if (!_vad.ContainsSpeech(chunk))
-            {
-                continue;
-            }
-
-            buffer.AddRange(chunk.Samples);
-            samplesSinceLastEmit += chunk.Samples.Length;
-            totalSamples += chunk.Samples.Length;
-
-            if (buffer.Count > maxBufferSamples)
-            {
-                var snapshot = buffer.ToArray();
-                var committedText = await TranscribeBufferAsync(whisperFactory, snapshot, language, initialPrompt, ct);
-                if (!string.IsNullOrWhiteSpace(committedText))
+                chunksReceived++;
+                if (chunk.SampleRate != StreamSampleRate)
                 {
-                    if (committed.Length > 0) committed.Append(' ');
-                    committed.Append(committedText.Trim());
+                    throw new InvalidOperationException(
+                        $"Streaming expects {StreamSampleRate} Hz mono samples, got {chunk.SampleRate} Hz");
                 }
-                buffer.Clear();
-                samplesSinceLastEmit = 0;
-                _logger.LogInformation(
-                    "Stream commit: buffer cap reached, committed chars={Chars}, total committed={TotalChars}",
-                    committedText?.Length ?? 0, committed.Length);
-                continue;
+
+                if (chunk.Samples.Length > 0)
+                {
+                    double sum = 0;
+                    for (int i = 0; i < chunk.Samples.Length; i++)
+                    {
+                        var s = chunk.Samples[i];
+                        sum += s * s;
+                    }
+                    var rms = Math.Sqrt(sum / chunk.Samples.Length);
+                    if (rms > peakRms) peakRms = rms;
+                }
+
+                if (!_vad.ContainsSpeech(chunk))
+                {
+                    continue;
+                }
+                chunksPassedVad++;
+
+                buffer.AddRange(chunk.Samples);
+                samplesSinceLastEmit += chunk.Samples.Length;
+                totalSamples += chunk.Samples.Length;
+
+                if (buffer.Count > maxBufferSamples)
+                {
+                    var snapshot = buffer.ToArray();
+                    var committedText = await TranscribeBufferAsync(whisperFactory, snapshot, language, initialPrompt, ct);
+                    if (!string.IsNullOrWhiteSpace(committedText))
+                    {
+                        if (committed.Length > 0) committed.Append(' ');
+                        committed.Append(committedText.Trim());
+                    }
+                    buffer.Clear();
+                    samplesSinceLastEmit = 0;
+                    _logger.LogInformation(
+                        "Stream commit: buffer cap reached, committed chars={Chars}, total committed={TotalChars}",
+                        committedText?.Length ?? 0, committed.Length);
+                    continue;
+                }
+
+                if (samplesSinceLastEmit >= windowSamples)
+                {
+                    samplesSinceLastEmit = 0;
+                    _ = _cache.TryGetValue(CacheKey, out _);
+                    var snapshot = buffer.ToArray();
+                    var text = await TranscribeBufferAsync(whisperFactory, snapshot, language, initialPrompt, ct);
+                    if (!string.IsNullOrWhiteSpace(text) || committed.Length > 0)
+                    {
+                        var emitted = committed.Length > 0
+                            ? $"{committed} {text}".Trim()
+                            : text;
+                        partialsEmitted++;
+                        yield return new PartialTranscript(
+                            Text: emitted,
+                            Timestamp: TimeSpan.FromSeconds((double)totalSamples / StreamSampleRate));
+                    }
+                }
             }
 
-            if (samplesSinceLastEmit >= windowSamples)
+            if (buffer.Count > 0)
             {
-                samplesSinceLastEmit = 0;
-                _ = _cache.TryGetValue(CacheKey, out _);
-                var snapshot = buffer.ToArray();
-                var text = await TranscribeBufferAsync(whisperFactory, snapshot, language, initialPrompt, ct);
+                var tail = buffer.ToArray();
+                var text = await TranscribeBufferAsync(whisperFactory, tail, language, initialPrompt, ct);
                 if (!string.IsNullOrWhiteSpace(text) || committed.Length > 0)
                 {
                     var emitted = committed.Length > 0
                         ? $"{committed} {text}".Trim()
                         : text;
+                    partialsEmitted++;
                     yield return new PartialTranscript(
                         Text: emitted,
                         Timestamp: TimeSpan.FromSeconds((double)totalSamples / StreamSampleRate));
                 }
             }
-        }
-
-        if (buffer.Count > 0)
-        {
-            var tail = buffer.ToArray();
-            var text = await TranscribeBufferAsync(whisperFactory, tail, language, initialPrompt, ct);
-            if (!string.IsNullOrWhiteSpace(text) || committed.Length > 0)
+            else if (committed.Length > 0)
             {
-                var emitted = committed.Length > 0
-                    ? $"{committed} {text}".Trim()
-                    : text;
+                partialsEmitted++;
                 yield return new PartialTranscript(
-                    Text: emitted,
+                    Text: committed.ToString().Trim(),
                     Timestamp: TimeSpan.FromSeconds((double)totalSamples / StreamSampleRate));
             }
         }
-        else if (committed.Length > 0)
+        finally
         {
-            yield return new PartialTranscript(
-                Text: committed.ToString().Trim(),
-                Timestamp: TimeSpan.FromSeconds((double)totalSamples / StreamSampleRate));
+            _logger.LogInformation(
+                "Streaming transcription ended: chunks={ChunksReceived} vadPassed={ChunksPassedVad} partials={PartialsEmitted} peakRms={PeakRms:F5} committedChars={CommittedChars}",
+                chunksReceived, chunksPassedVad, partialsEmitted, peakRms, committed.Length);
         }
     }
 
@@ -227,6 +258,45 @@ public sealed class WhisperNetTranscriptionService
             disposable.Dispose();
         }
 #pragma warning restore IDISP007
+    }
+
+    public async Task<string> TranscribeSamplesAsync(
+        float[] samples,
+        string language,
+        string? initialPrompt,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(samples);
+        if (samples.Length == 0)
+        {
+            _logger.LogInformation("One-shot dictation transcription skipped: 0 samples");
+            return string.Empty;
+        }
+
+        _logger.LogInformation(
+            "One-shot dictation transcription start: {Samples} samples (~{DurationMs} ms)",
+            samples.Length, samples.Length * 1000L / StreamSampleRate);
+
+#pragma warning disable IDISP001
+        var whisperFactory = GetOrCreateFactory();
+#pragma warning restore IDISP001
+        _ = _cache.TryGetValue(CacheKey, out _);
+
+        await using var processor = BuildProcessor(whisperFactory, language, initialPrompt, BeamSize);
+
+        var parts = new List<string>();
+        await foreach (var segment in processor.ProcessAsync(samples, ct).WithCancellation(ct))
+        {
+            var text = segment.Text?.Trim();
+            if (!string.IsNullOrEmpty(text))
+            {
+                parts.Add(text);
+            }
+        }
+
+        var result = string.Join(" ", parts).Trim();
+        _logger.LogInformation("One-shot dictation transcription done: {Chars} chars", result.Length);
+        return result;
     }
 
     private async Task<string> TranscribeBufferAsync(
