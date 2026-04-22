@@ -53,6 +53,16 @@ export interface MozgoslavBridge {
      */
     startNativeRecording?: (outputPath: string) => Promise<{ sessionId: string }>;
     stopNativeRecording?: (sessionId: string) => Promise<{ path: string; durationMs: number }>;
+    /**
+     * Writes the given text into whichever app currently owns keyboard focus
+     * via the native dictation helper. Used by the toggle-mode dictation path
+     * so that every successful transcription ends up at the caret, matching
+     * push-to-talk behavior.
+     */
+    dictationInject?: (
+        text: string,
+        mode: "auto" | "cgevent" | "accessibility",
+    ) => Promise<void>;
 }
 
 export interface DictationOverlayState {
@@ -91,6 +101,8 @@ const bridge: MozgoslavBridge = {
         ipcRenderer.invoke("record:start", outputPath),
     stopNativeRecording: (sessionId) =>
         ipcRenderer.invoke("record:stop", sessionId),
+    dictationInject: (text, mode) =>
+        ipcRenderer.invoke("dictation:inject", text, mode),
 };
 
 const overlayBridge: MozgoslavOverlayBridge = {

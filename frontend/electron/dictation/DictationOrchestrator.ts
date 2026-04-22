@@ -74,6 +74,13 @@ export class DictationOrchestrator {
         }
     }
 
+    async injectText(
+        text: string,
+        mode: "auto" | "cgevent" | "accessibility",
+    ): Promise<void> {
+        await this.helper.injectText(text, mode);
+    }
+
     async configurePushToTalk(options: {
         mouseButton: number | null;
         keyboardAccelerator: string | null;

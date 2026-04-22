@@ -141,7 +141,9 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
         installMocks();
         api.startDictation.mockResolvedValue({sessionId: "sess-2"});
         api.stopDictation.mockResolvedValue({
-            transcript: "Hello world",
+            rawText: "Hello world",
+            polishedText: "Hello world",
+            durationMs: 1000,
         });
 
         renderDashboard();
