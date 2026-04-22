@@ -7,19 +7,57 @@ export const PageRoot = styled.div`
     gap: ${({theme}) => theme.space(4)};
 `;
 
+export const BackBar = styled.div`
+    display: flex;
+    align-items: center;
+    gap: ${({theme}) => theme.space(2)};
+    margin-bottom: ${({theme}) => theme.space(2)};
+`;
+
 export const PageTitle = styled.h1`
     margin: 0;
     font-size: ${({theme}) => theme.font.size.xxl};
     font-weight: ${({theme}) => theme.font.weight.semibold};
     color: ${({theme}) => theme.colors.text.primary};
+    letter-spacing: -0.01em;
 `;
 
 export const Meta = styled.div`
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: ${({theme}) => theme.space(3)};
     color: ${({theme}) => theme.colors.text.secondary};
     font-size: ${({theme}) => theme.font.size.sm};
+`;
+
+export const MetaTime = styled.span`
+    font-variant-numeric: tabular-nums;
+`;
+
+export const SummaryLead = styled.p`
+    margin: 0;
+    padding: ${({theme}) => theme.space(3)} ${({theme}) => theme.space(4)};
+    border-left: 3px solid ${({theme}) => theme.colors.accent.primary};
+    background: ${({theme}) => theme.colors.accent.soft};
+    border-radius: ${({theme}) => theme.radii.md};
+    color: ${({theme}) => theme.colors.text.primary};
+    font-size: ${({theme}) => theme.font.size.md};
+    line-height: 1.55;
+`;
+
+export const ChipRow = styled.div`
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: ${({theme}) => theme.space(2)};
+`;
+
+export const ChipRowLabel = styled.span`
+    color: ${({theme}) => theme.colors.text.muted};
+    font-size: ${({theme}) => theme.font.size.xs};
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 `;
 
 export const Actions = styled.div`

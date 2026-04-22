@@ -1,6 +1,9 @@
 import {render, screen} from "@testing-library/react";
+import {ThemeProvider} from "styled-components";
+
 import RecordingList from "../src/features/RecordingList/RecordingList";
 import type {Recording} from "../src/domain";
+import {lightTheme} from "../src/styles/theme";
 
 const buildRecording = (overrides: Partial<Recording> = {}): Recording => ({
     id: "1",
@@ -15,10 +18,13 @@ const buildRecording = (overrides: Partial<Recording> = {}): Recording => ({
     ...overrides,
 });
 
+const renderWithTheme = (ui: React.ReactElement) =>
+    render(<ThemeProvider theme={lightTheme}>{ui}</ThemeProvider>);
+
 describe("RecordingList", () => {
     it("renders the empty state when there are no recordings", () => {
         const onLoad = jest.fn();
-        render(
+        renderWithTheme(
             <RecordingList
                 recordings={[]}
                 isLoading={false}
@@ -33,7 +39,7 @@ describe("RecordingList", () => {
     });
 
     it("renders the backend-unavailable banner when backend is down", () => {
-        render(
+        renderWithTheme(
             <RecordingList
                 recordings={[]}
                 isLoading={false}
@@ -49,7 +55,7 @@ describe("RecordingList", () => {
     });
 
     it("renders recordings when provided", () => {
-        render(
+        renderWithTheme(
             <RecordingList
                 recordings={[buildRecording({id: "1", fileName: "meeting.m4a"})]}
                 isLoading={false}
@@ -60,6 +66,7 @@ describe("RecordingList", () => {
         );
 
         expect(screen.getByText("meeting.m4a")).toBeInTheDocument();
-        expect(screen.getByText(/2:15 · Transcribed/)).toBeInTheDocument();
+        expect(screen.getByText(/2:15/)).toBeInTheDocument();
+        expect(screen.getByText(/Transcribed/)).toBeInTheDocument();
     });
 });

@@ -4,7 +4,7 @@ export const PageRoot = styled.div`
     padding: ${({theme}) => theme.space(6)};
     display: flex;
     flex-direction: column;
-    gap: ${({theme}) => theme.space(4)};
+    gap: ${({theme}) => theme.space(5)};
 `;
 
 export const PageTitle = styled.h1`
@@ -12,42 +12,25 @@ export const PageTitle = styled.h1`
     font-size: ${({theme}) => theme.font.size.xxl};
     font-weight: ${({theme}) => theme.font.weight.semibold};
     color: ${({theme}) => theme.colors.text.primary};
+    letter-spacing: -0.01em;
 `;
 
-export const NoteRow = styled.div`
-    display: flex;
-    align-items: center;
-    gap: ${({theme}) => theme.space(3)};
-    padding: ${({theme}) => theme.space(3)} 0;
-    border-bottom: 1px solid ${({theme}) => theme.colors.border.subtle};
-
-    &:last-child {
-        border-bottom: 0;
-    }
-`;
-
-export const NoteTopic = styled.a`
-    flex: 1;
-    font-weight: ${({theme}) => theme.font.weight.medium};
-    color: ${({theme}) => theme.colors.text.primary};
-    text-decoration: none;
-
-    &:hover {
-        color: ${({theme}) => theme.colors.accent.primary};
-    }
-`;
-
-export const NoteMeta = styled.span`
-    font-size: ${({theme}) => theme.font.size.xs};
-    color: ${({theme}) => theme.colors.text.secondary};
-    font-variant-numeric: tabular-nums;
-`;
-
-export const AddToolbar = styled.div`
+export const Toolbar = styled.div`
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: ${({theme}) => theme.space(3)};
+    flex-wrap: wrap;
+`;
+
+export const ToolbarActions = styled.div`
+    display: flex;
+    align-items: center;
+    gap: ${({theme}) => theme.space(2)};
+`;
+
+export const MetaLine = styled.span`
+    font-variant-numeric: tabular-nums;
 `;
 
 export const FieldLabel = styled.label`

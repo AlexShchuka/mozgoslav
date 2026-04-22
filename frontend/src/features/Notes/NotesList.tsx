@@ -1,45 +1,84 @@
-import {FC, useEffect, useMemo, useState} from "react";
-import {Link} from "react-router-dom";
+import {FC, useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
-import {toast} from "react-toastify";
-import {Brain, Plus, Trash2} from "lucide-react";
+import {useDispatch, useSelector} from "react-redux";
+import {Brain, FolderTree, Plus, Trash2} from "lucide-react";
 
 import Badge from "../../components/Badge";
 import Button from "../../components/Button";
-import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
+import GroupedList from "../../components/GroupedList";
 import Modal from "../../components/Modal";
 import {apiFactory} from "../../api";
 import {ProcessedNote} from "../../domain/ProcessedNote";
 import {noteRoute} from "../../constants/routes";
+import {notifyError, notifySuccess} from "../../store/slices/notifications";
 import {
-    AddToolbar,
+    applyLayout,
+    selectObsidianIsApplyingLayout,
+} from "../../store/slices/obsidian";
+import {
+    loadSettings,
+    selectSettings,
+} from "../../store/slices/settings";
+import {folderFromVaultPath} from "./folder";
+import {
     BodyField,
     FieldLabel,
-    NoteMeta,
-    NoteRow,
-    NoteTopic,
+    MetaLine,
     PageRoot,
     PageTitle,
     TitleField,
+    Toolbar,
+    ToolbarActions,
 } from "./NotesList.style";
 
 const notesApi = apiFactory.createNotesApi();
 
 const NotesList: FC = () => {
     const {t} = useTranslation();
+    const navigate = useNavigate();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- matches project-wide useDispatch cast (Layout.tsx, Sync.tsx)
+    const dispatch = useDispatch() as (action: any) => void;
+    const settings = useSelector(selectSettings);
+    const isApplyingLayout = useSelector(selectObsidianIsApplyingLayout);
+    const prevApplyingRef = useRef(false);
+
     const [notes, setNotes] = useState<ProcessedNote[]>([]);
     const [isAdding, setIsAdding] = useState(false);
     const [title, setTitle] = useState("");
     const [body, setBody] = useState("");
     const [submitting, setSubmitting] = useState(false);
 
-    useEffect(() => {
+    const loadNotes = useCallback(() => {
         void notesApi
             .list()
             .then(setNotes)
             .catch(() => setNotes([]));
     }, []);
+
+    useEffect(() => {
+        loadNotes();
+    }, [loadNotes]);
+
+    useEffect(() => {
+        if (!settings) dispatch(loadSettings());
+    }, [dispatch, settings]);
+
+    useEffect(() => {
+        if (prevApplyingRef.current && !isApplyingLayout) {
+            loadNotes();
+        }
+        prevApplyingRef.current = isApplyingLayout;
+    }, [isApplyingLayout, loadNotes]);
+
+    const sortedNotes = useMemo(
+        () => [...notes].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
+        [notes],
+    );
+
+    const vaultRoot = settings?.vaultPath ?? "";
+    const organizeDisabled = !vaultRoot || isApplyingLayout;
 
     const openAdd = () => {
         setIsAdding(true);
@@ -48,10 +87,7 @@ const NotesList: FC = () => {
     };
     const closeAdd = () => setIsAdding(false);
 
-    const sortedNotes = useMemo(
-        () => [...notes].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
-        [notes],
-    );
+    const openNote = (note: ProcessedNote) => navigate(noteRoute(note.id));
 
     const handleDelete = async (note: ProcessedNote) => {
         const confirmed = window.confirm(
@@ -61,9 +97,13 @@ const NotesList: FC = () => {
         try {
             await notesApi.remove(note.id);
             setNotes((prev) => prev.filter((n) => n.id !== note.id));
-            toast.success(t("notes.deleted"));
+            dispatch(notifySuccess({messageKey: "notes.deleted"}));
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : String(err));
+            const message = err instanceof Error ? err.message : String(err);
+            dispatch(notifyError({
+                messageKey: "errors.genericErrorWithMessage",
+                params: {message},
+            }));
         }
     };
 
@@ -74,53 +114,111 @@ const NotesList: FC = () => {
         try {
             const created = await notesApi.create({title: trimmedTitle, body});
             setNotes((prev) => [created, ...prev]);
-            toast.success(t("notes.created"));
+            dispatch(notifySuccess({messageKey: "notes.created"}));
             closeAdd();
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : String(err));
+            const message = err instanceof Error ? err.message : String(err);
+            dispatch(notifyError({
+                messageKey: "errors.genericErrorWithMessage",
+                params: {message},
+            }));
         } finally {
             setSubmitting(false);
         }
     };
 
+    const organize = () => {
+        if (organizeDisabled) return;
+        dispatch(applyLayout());
+    };
+
+    const renderPrimary = (note: ProcessedNote) => {
+        const when = new Date(note.createdAt).toLocaleString();
+        const label = note.summary || note.topic || "conversation";
+        return (
+            <>
+                <MetaLine>{when}</MetaLine>
+                {" · "}
+                {label}
+            </>
+        );
+    };
+
+    const renderSecondary = (note: ProcessedNote) => (
+        <>
+            <MetaLine>v{note.version}</MetaLine>
+            {note.tags.length > 0 && (
+                <>
+                    {" · "}
+                    {note.tags.map((tag, idx) => (
+                        <span key={tag}>
+                            {idx > 0 && ", "}#{tag}
+                        </span>
+                    ))}
+                </>
+            )}
+            {note.exportedToVault && (
+                <>
+                    {" · "}
+                    <Badge tone="success">vault</Badge>
+                </>
+            )}
+        </>
+    );
+
+    const renderActions = (note: ProcessedNote) => (
+        <Button
+            variant="ghost"
+            size="sm"
+            leftIcon={<Trash2 size={14}/>}
+            data-testid={`notes-delete-${note.id}`}
+            onClick={() => void handleDelete(note)}
+        >
+            {t("common.delete")}
+        </Button>
+    );
+
     return (
         <PageRoot>
-            <AddToolbar>
+            <Toolbar>
                 <PageTitle>{t("nav.notes")}</PageTitle>
-                <Button
-                    variant="primary"
-                    leftIcon={<Plus size={16}/>}
-                    data-testid="notes-add-button"
-                    onClick={openAdd}
-                >
-                    {t("notes.add")}
-                </Button>
-            </AddToolbar>
+                <ToolbarActions>
+                    <Button
+                        variant="secondary"
+                        leftIcon={<FolderTree size={16}/>}
+                        data-testid="notes-organize"
+                        isLoading={isApplyingLayout}
+                        disabled={organizeDisabled}
+                        title={!vaultRoot ? t("notes.organizeHint") : undefined}
+                        onClick={organize}
+                    >
+                        {t("notes.organize")}
+                    </Button>
+                    <Button
+                        variant="primary"
+                        leftIcon={<Plus size={16}/>}
+                        data-testid="notes-add-button"
+                        onClick={openAdd}
+                    >
+                        {t("notes.add")}
+                    </Button>
+                </ToolbarActions>
+            </Toolbar>
+
             {sortedNotes.length === 0 ? (
                 <EmptyState title={t("common.empty")} icon={<Brain size={28}/>}/>
             ) : (
-                <Card>
-                    {sortedNotes.map((note) => (
-                        <NoteRow key={note.id}>
-                            <NoteTopic as={Link} to={noteRoute(note.id)}>
-                                {note.topic || "conversation"}
-                            </NoteTopic>
-                            <NoteMeta>
-                                v{note.version} · {new Date(note.createdAt).toLocaleDateString()}
-                            </NoteMeta>
-                            {note.exportedToVault && <Badge tone="success">vault</Badge>}
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                leftIcon={<Trash2 size={14}/>}
-                                data-testid={`notes-delete-${note.id}`}
-                                onClick={() => void handleDelete(note)}
-                            >
-                                {t("common.delete")}
-                            </Button>
-                        </NoteRow>
-                    ))}
-                </Card>
+                <GroupedList
+                    items={sortedNotes}
+                    getId={(n) => n.id}
+                    getGroupPath={(n) => folderFromVaultPath(n.vaultPath, vaultRoot)}
+                    renderPrimary={renderPrimary}
+                    renderSecondary={renderSecondary}
+                    renderActions={renderActions}
+                    onItemClick={openNote}
+                    ungroupedLabel={t("notes.ungrouped")}
+                    data-testid="notes-list"
+                />
             )}
 
             <Modal

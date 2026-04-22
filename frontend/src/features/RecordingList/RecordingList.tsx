@@ -1,7 +1,9 @@
 import {type FC, useEffect} from "react";
+
+import GroupedList from "../../components/GroupedList";
 import {formatDuration} from "../../core/utils/format";
 import type {RecordingListProps} from "./types";
-import {EmptyState, ErrorText, FileName, Item, List, ListHeader, Meta, Title,} from "./RecordingList.style";
+import {EmptyState, ErrorText, ListHeader, Meta, Title,} from "./RecordingList.style";
 
 const BACKEND_UNAVAILABLE_MESSAGE = "Бэкенд не отвечает. Запусти backend.";
 
@@ -31,16 +33,19 @@ const RecordingList: FC<RecordingListProps> = ({
                     {isLoading ? "Загружаем…" : "Пока нет записей. Импортируй аудио, чтобы начать."}
                 </EmptyState>
             ) : (
-                <List data-testid="recording-list">
-                    {recordings.map((recording) => (
-                        <Item key={recording.id}>
-                            <FileName>{recording.fileName}</FileName>
-                            <Meta>
-                                {formatDuration(recording.duration)} · {recording.status}
-                            </Meta>
-                        </Item>
-                    ))}
-                </List>
+                <GroupedList
+                    items={recordings}
+                    getId={(r) => r.id}
+                    renderPrimary={(r) => r.fileName}
+                    renderSecondary={(r) => (
+                        <>
+                            <Meta>{formatDuration(r.duration)}</Meta>
+                            {" · "}
+                            <Meta>{r.status}</Meta>
+                        </>
+                    )}
+                    data-testid="recording-list"
+                />
             )}
         </section>
     );

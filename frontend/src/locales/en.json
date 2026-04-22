@@ -113,10 +113,16 @@
     "submit": "Save",
     "created": "Note created",
     "deleteConfirm": "Delete note \"{{title}}\"? This cannot be undone.",
-    "deleted": "Note deleted"
+    "deleted": "Note deleted",
+    "organize": "Organize by PARA",
+    "organizeHint": "Configure Obsidian vault path first",
+    "ungrouped": "No folder",
+    "back": "Back to list"
   },
   "note": {
     "title": "Note",
+    "participants": "Participants",
+    "tags": "Tags",
     "actions": {
       "reprocess": "Reprocess",
       "export": "Export to vault",
