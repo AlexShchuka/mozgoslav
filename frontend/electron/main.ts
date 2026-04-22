@@ -126,4 +126,6 @@ const createWindow = (): void => {
 };
 ```
 
-frontend/electron/__tests__/DictationOrchestrator.test.ts
+I will also add the missing `setMouseButton` method to `HotkeyMonitor.ts`.
+
+frontend/electron/dictation/HotkeyMonitor.ts
