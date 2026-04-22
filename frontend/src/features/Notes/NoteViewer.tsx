@@ -1,22 +1,24 @@
 import {FC, useEffect, useState} from "react";
-import {useParams} from "react-router-dom";
+import {useNavigate, useParams} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {toast} from "react-toastify";
-import {Copy, FolderOutput, RefreshCw} from "lucide-react";
+import {ArrowLeft, Copy, FolderOutput, RefreshCw} from "lucide-react";
 
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import Badge from "../../components/Badge";
 import {apiFactory} from "../../api";
 import {ProcessedNote} from "../../domain/ProcessedNote";
-import {Actions, MarkdownBody, Meta, PageRoot, PageTitle} from "./NoteViewer.style";
+import {ROUTES} from "../../constants/routes";
+import {Actions, BackBar, MarkdownBody, Meta, PageRoot, PageTitle} from "./NoteViewer.style";
 
 const notesApi = apiFactory.createNotesApi();
 
 const NoteViewer: FC = () => {
     const {t} = useTranslation();
+    const navigate = useNavigate();
     const {id = ""} = useParams();
     const [note, setNote] = useState<ProcessedNote | null>(null);
 
@@ -24,6 +26,14 @@ const NoteViewer: FC = () => {
         if (!id) return;
         void notesApi.getById(id).then(setNote).catch(() => setNote(null));
     }, [id]);
+
+    const onBack = () => {
+        if (window.history.length > 1) {
+            navigate(-1);
+        } else {
+            navigate(ROUTES.notes);
+        }
+    };
 
     const onCopy = async () => {
         if (!note) return;
@@ -46,6 +56,17 @@ const NoteViewer: FC = () => {
 
     return (
         <PageRoot>
+            <BackBar>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    leftIcon={<ArrowLeft size={16}/>}
+                    data-testid="note-back"
+                    onClick={onBack}
+                >
+                    {t("notes.back")}
+                </Button>
+            </BackBar>
             <PageTitle>{note.topic || t("note.title")}</PageTitle>
             <Meta>
                 <Badge tone="accent">v{note.version}</Badge>

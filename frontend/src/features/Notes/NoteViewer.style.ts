@@ -7,6 +7,13 @@ export const PageRoot = styled.div`
     gap: ${({theme}) => theme.space(4)};
 `;
 
+export const BackBar = styled.div`
+    display: flex;
+    align-items: center;
+    gap: ${({theme}) => theme.space(2)};
+    margin-bottom: ${({theme}) => theme.space(2)};
+`;
+
 export const PageTitle = styled.h1`
     margin: 0;
     font-size: ${({theme}) => theme.font.size.xxl};
