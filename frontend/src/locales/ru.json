@@ -113,7 +113,11 @@
     "submit": "Сохранить",
     "created": "Заметка создана",
     "deleteConfirm": "Удалить заметку «{{title}}»? Отменить нельзя.",
-    "deleted": "Заметка удалена"
+    "deleted": "Заметка удалена",
+    "organize": "Разложить по PARA",
+    "organizeHint": "Сначала настрой путь к Obsidian vault",
+    "ungrouped": "Без папки",
+    "back": "К списку"
   },
   "note": {
     "title": "Заметка",
