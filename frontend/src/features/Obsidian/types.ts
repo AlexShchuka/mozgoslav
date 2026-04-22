@@ -1,6 +1,5 @@
 import type {AppSettings} from "../../domain/Settings";
 import type {
-    ObsidianApplyLayoutReport,
     ObsidianBulkExportReport,
     ObsidianSetupReport,
 } from "../../store/slices/obsidian/types";
@@ -11,7 +10,6 @@ export interface ObsidianStateProps {
     readonly isApplyingLayout: boolean;
     readonly isSetupInProgress: boolean;
     readonly lastBulkExportReport: ObsidianBulkExportReport | null;
-    readonly lastApplyLayoutReport: ObsidianApplyLayoutReport | null;
     readonly lastSetupReport: ObsidianSetupReport | null;
     readonly error: string | null;
 }

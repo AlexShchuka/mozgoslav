@@ -2,8 +2,7 @@ import type {Reducer} from "redux";
 
 import {
     APPLY_LAYOUT,
-    APPLY_LAYOUT_FAILURE,
-    APPLY_LAYOUT_SUCCESS,
+    APPLY_LAYOUT_DONE,
     BULK_EXPORT,
     BULK_EXPORT_FAILURE,
     BULK_EXPORT_SUCCESS,
@@ -47,15 +46,8 @@ export const obsidianReducer: Reducer<ObsidianState> = (
 
         case APPLY_LAYOUT:
             return beginApplyLayout(state);
-        case APPLY_LAYOUT_SUCCESS:
-            return {
-                ...state,
-                isApplyingLayout: false,
-                lastApplyLayoutReport: typed.payload,
-                error: null,
-            };
-        case APPLY_LAYOUT_FAILURE:
-            return {...state, isApplyingLayout: false, error: typed.payload};
+        case APPLY_LAYOUT_DONE:
+            return {...state, isApplyingLayout: false, error: null};
 
         default:
             return state;

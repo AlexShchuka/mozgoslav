@@ -1,4 +1,4 @@
-import type {ObsidianApplyLayoutReport, ObsidianBulkExportReport, ObsidianSetupReport,} from "./types";
+import type {ObsidianBulkExportReport, ObsidianSetupReport} from "./types";
 
 export const SETUP_OBSIDIAN = "obsidian/SETUP";
 export const SETUP_OBSIDIAN_SUCCESS = "obsidian/SETUP_SUCCESS";
@@ -9,8 +9,7 @@ export const BULK_EXPORT_SUCCESS = "obsidian/BULK_EXPORT_SUCCESS";
 export const BULK_EXPORT_FAILURE = "obsidian/BULK_EXPORT_FAILURE";
 
 export const APPLY_LAYOUT = "obsidian/APPLY_LAYOUT";
-export const APPLY_LAYOUT_SUCCESS = "obsidian/APPLY_LAYOUT_SUCCESS";
-export const APPLY_LAYOUT_FAILURE = "obsidian/APPLY_LAYOUT_FAILURE";
+export const APPLY_LAYOUT_DONE = "obsidian/APPLY_LAYOUT_DONE";
 
 export interface SetupObsidianAction {
     type: typeof SETUP_OBSIDIAN;
@@ -45,14 +44,8 @@ export interface ApplyLayoutAction {
     type: typeof APPLY_LAYOUT;
 }
 
-export interface ApplyLayoutSuccessAction {
-    type: typeof APPLY_LAYOUT_SUCCESS;
-    payload: ObsidianApplyLayoutReport;
-}
-
-export interface ApplyLayoutFailureAction {
-    type: typeof APPLY_LAYOUT_FAILURE;
-    payload: string;
+export interface ApplyLayoutDoneAction {
+    type: typeof APPLY_LAYOUT_DONE;
 }
 
 export type ObsidianAction =
@@ -63,8 +56,7 @@ export type ObsidianAction =
     | BulkExportSuccessAction
     | BulkExportFailureAction
     | ApplyLayoutAction
-    | ApplyLayoutSuccessAction
-    | ApplyLayoutFailureAction;
+    | ApplyLayoutDoneAction;
 
 export const setupObsidian = (vaultPath?: string): SetupObsidianAction => ({
     type: SETUP_OBSIDIAN,
@@ -88,10 +80,4 @@ export const bulkExportFailure = (message: string): BulkExportFailureAction => (
 });
 
 export const applyLayout = (): ApplyLayoutAction => ({type: APPLY_LAYOUT});
-export const applyLayoutSuccess = (
-    report: ObsidianApplyLayoutReport,
-): ApplyLayoutSuccessAction => ({type: APPLY_LAYOUT_SUCCESS, payload: report});
-export const applyLayoutFailure = (message: string): ApplyLayoutFailureAction => ({
-    type: APPLY_LAYOUT_FAILURE,
-    payload: message,
-});
+export const applyLayoutDone = (): ApplyLayoutDoneAction => ({type: APPLY_LAYOUT_DONE});

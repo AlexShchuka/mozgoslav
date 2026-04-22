@@ -33,7 +33,6 @@ const Obsidian: FC<ObsidianProps> = ({
                                          isApplyingLayout,
                                          isSetupInProgress,
                                          lastBulkExportReport,
-                                         lastApplyLayoutReport,
                                          lastSetupReport,
                                          error,
                                          onLoadSettings,
@@ -65,17 +64,6 @@ const Obsidian: FC<ObsidianProps> = ({
             toast.success(t("obsidian.syncAllSuccess", {count: lastBulkExportReport.exportedCount}));
         }
     }, [lastBulkExportReport, t]);
-
-    useEffect(() => {
-        if (lastApplyLayoutReport) {
-            toast.success(
-                t("obsidian.applyLayoutSuccess", {
-                    folders: lastApplyLayoutReport.createdFolders,
-                    notes: lastApplyLayoutReport.movedNotes,
-                }),
-            );
-        }
-    }, [lastApplyLayoutReport, t]);
 
     useEffect(() => {
         if (lastSetupReport) {

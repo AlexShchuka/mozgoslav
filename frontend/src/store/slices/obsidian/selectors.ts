@@ -24,10 +24,6 @@ export const selectLastBulkExportReport = createSelector(
     selectObsidianState,
     (slice) => slice.lastBulkExportReport,
 );
-export const selectLastApplyLayoutReport = createSelector(
-    selectObsidianState,
-    (slice) => slice.lastApplyLayoutReport,
-);
 export const selectLastSetupReport = createSelector(
     selectObsidianState,
     (slice) => slice.lastSetupReport,
