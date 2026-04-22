@@ -193,7 +193,14 @@ const Dashboard: FC = () => {
 
             try {
                 const result = await dictationApi.stop(active.sessionId);
-                setTranscript(result.transcript);
+                setTranscript(result.polishedText);
+                if (!active.persistOnStop && result.polishedText) {
+                    try {
+                        await window.mozgoslav?.dictationInject?.(result.polishedText, "auto");
+                    } catch (injectErr) {
+                        console.warn("[dictation] inject failed:", injectErr);
+                    }
+                }
             } catch (err) {
                 toast.error(err instanceof Error ? err.message : String(err));
             }

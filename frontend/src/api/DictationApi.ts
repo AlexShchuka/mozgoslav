@@ -10,7 +10,9 @@ export interface StartDictationResult {
 }
 
 export interface StopDictationResult {
-    readonly transcript: string;
+    readonly rawText: string;
+    readonly polishedText: string;
+    readonly durationMs: number;
 }
 
 export interface AudioCapabilities {

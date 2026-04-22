@@ -271,6 +271,17 @@ app.whenReady().then(async () => {
         return recordingHelper.stopFileCapture(sessionId);
     });
 
+    ipcMain.handle(
+        "dictation:inject",
+        async (_event, text: string, mode: "auto" | "cgevent" | "accessibility") => {
+            if (!text) return;
+            if (!dictationOrchestrator) {
+                throw new Error("Dictation orchestrator is not ready.");
+            }
+            await dictationOrchestrator.injectText(text, mode);
+        },
+    );
+
     ipcMain.handle("sync:listConflicts", async (_event, folderPath: string) => {
         try {
             const walked = await walkForConflicts(folderPath);
