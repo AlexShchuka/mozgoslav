@@ -1,99 +1,61 @@
-import {EventEmitter} from "node:events";
+import { EventEmitter } from "events";
+import uiohook from "uiohook-napi";
 
-import type {HotkeyEvent} from "./types";
-
-/**
- * Subscribes to the global mouse + keyboard listener (`uiohook-napi`) and
- * emits `press` / `release` lifecycle events for the configured hotkey. The
- * orchestrator drives session start/stop off these events.
- *
- * Event is never "consumed" — the underlying system still sees the mouse-5
- * click and can forward-navigate as usual; the user opts out via macOS
- * System Preferences per ADR-002 D1.
- */
 export class HotkeyMonitor extends EventEmitter {
-    private started = false;
-    private uiohook: UiohookApi | null = null;
-    private pressed = false;
+    private mouseButton: number | null;
+    private keyboardFallbackKeycode: number | null;
 
-    constructor(
-        private readonly mouseButton: number,
-        private readonly keyboardFallbackKeycode: number | null
-    ) {
+    constructor(mouseButton: number | null, keyboardFallbackKeycode: number | null) {
         super();
+        this.mouseButton = mouseButton;
+        this.keyboardFallbackKeycode = keyboardFallbackKeycode;
+    }
+
+    setMouseButton(button: number | null): void {
+        this.mouseButton = button;
     }
 
     async start(): Promise<void> {
-        if (this.started) return;
-
-        try {
-            const module = await import("uiohook-napi");
-            this.uiohook = module as unknown as UiohookApi;
-        } catch (error) {
-            console.error("[dictation:hotkey] uiohook-napi unavailable:", error);
-            return;
-        }
-
-        this.uiohook.uIOhook.on("mousedown", (event) => this.handleMouseDown(event));
-        this.uiohook.uIOhook.on("mouseup", (event) => this.handleMouseUp(event));
+        uiohook.on("mousedown", (event) => this.handleMouseDown(event));
+        uiohook.on("mouseup", (event) => this.handleMouseUp(event));
         if (this.keyboardFallbackKeycode !== null) {
-            this.uiohook.uIOhook.on("keydown", (event) => this.handleKeyDown(event));
-            this.uiohook.uIOhook.on("keyup", (event) => this.handleKeyUp(event));
+            uiohook.on("keydown", (event) => this.handleKeyDown(event));
+            uiohook.on("keyup", (event) => this.handleKeyUp(event));
         }
-
-        this.uiohook.uIOhook.start();
-        this.started = true;
     }
 
     stop(): void {
-        if (!this.started || !this.uiohook) return;
-        try {
-            this.uiohook.uIOhook.stop();
-        } catch (error) {
-            console.error("[dictation:hotkey] stop failed:", error);
-        }
-        this.started = false;
-        this.pressed = false;
+        uiohook.removeAllListeners();
     }
 
-    private handleMouseDown(event: UiohookMouseEvent): void {
+    private handleMouseDown(event: uiohook.MouseEvent): void {
+        if (this.mouseButton === null) return;
         if (event.button !== this.mouseButton || this.pressed) return;
         this.pressed = true;
-        this.emit("hotkey", {type: "press", source: "mouse"} satisfies HotkeyEvent);
+        this.emit("hotkey", { type: "press" });
     }
 
-    private handleMouseUp(event: UiohookMouseEvent): void {
+    private handleMouseUp(event: uiohook.MouseEvent): void {
+        if (this.mouseButton === null) return;
         if (event.button !== this.mouseButton || !this.pressed) return;
         this.pressed = false;
-        this.emit("hotkey", {type: "release", source: "mouse"} satisfies HotkeyEvent);
+        this.emit("hotkey", { type: "release" });
     }
 
-    private handleKeyDown(event: UiohookKeyboardEvent): void {
-        if (event.keycode !== this.keyboardFallbackKeycode || this.pressed) return;
+    private handleKeyDown(event: uiohook.KeyboardEvent): void {
+        if (this.keyboardFallbackKeycode === null) return;
+        if (event.keyCode !== this.keyboardFallbackKeycode || this.pressed) return;
         this.pressed = true;
-        this.emit("hotkey", {type: "press", source: "keyboard"} satisfies HotkeyEvent);
+        this.emit("hotkey", { type: "press" });
     }
 
-    private handleKeyUp(event: UiohookKeyboardEvent): void {
-        if (event.keycode !== this.keyboardFallbackKeycode || !this.pressed) return;
+    private handleKeyUp(event: uiohook.KeyboardEvent): void {
+        if (this.keyboardFallbackKeycode === null) return;
+        if (event.keyCode !== this.keyboardFallbackKeycode || !this.pressed) return;
         this.pressed = false;
-        this.emit("hotkey", {type: "release", source: "keyboard"} satisfies HotkeyEvent);
+        this.emit("hotkey", { type: "release" });
     }
-}
 
-interface UiohookMouseEvent {
-    button: number;
+    private pressed = false;
 }
-
-interface UiohookKeyboardEvent {
-    keycode: number;
-}
-
-interface UiohookApi {
-    uIOhook: {
-        start(): void;
-        stop(): void;
-        on(event: "mousedown" | "mouseup", listener: (event: UiohookMouseEvent) => void): void;
-        on(event: "keydown" | "keyup", listener: (event: UiohookKeyboardEvent) => void): void;
-    };
-}
+```
