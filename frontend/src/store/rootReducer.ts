@@ -15,6 +15,8 @@ import type {OnboardingState} from "./slices/onboarding";
 import {onboardingReducer} from "./slices/onboarding";
 import type {UiState} from "./slices/ui";
 import {uiReducer} from "./slices/ui";
+import type {JobsState} from "./slices/jobs";
+import {jobsReducer} from "./slices/jobs";
 
 export const rootReducer = combineReducers({
     recording: recordingReducer,
@@ -25,6 +27,7 @@ export const rootReducer = combineReducers({
     obsidian: obsidianReducer,
     onboarding: onboardingReducer,
     ui: uiReducer,
+    jobs: jobsReducer,
 });
 
 export interface GlobalState {
@@ -36,4 +39,5 @@ export interface GlobalState {
     obsidian: ObsidianState;
     onboarding: OnboardingState;
     ui: UiState;
+    jobs: JobsState;
 }
