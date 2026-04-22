@@ -405,6 +405,7 @@ public sealed class DictationSessionManagerTests
     {
         public List<AudioChunk> Chunks { get; } = [];
         public List<PartialTranscript> Partials { get; } = [];
+        public List<float> SamplesReceived { get; } = [];
         public string? InitialPrompt { get; private set; }
 
         public async IAsyncEnumerable<PartialTranscript> TranscribeStreamAsync(
@@ -422,6 +423,17 @@ public sealed class DictationSessionManagerTests
             {
                 yield return partial;
             }
+        }
+
+        public Task<string> TranscribeSamplesAsync(
+            float[] samples,
+            string language,
+            string? initialPrompt,
+            CancellationToken ct)
+        {
+            InitialPrompt = initialPrompt;
+            SamplesReceived.AddRange(samples);
+            return Task.FromResult(Partials.LastOrDefault()?.Text ?? string.Empty);
         }
     }
 

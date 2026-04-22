@@ -103,5 +103,11 @@ public sealed class DictationSessionSourceTests
             }
             yield break;
         }
+
+        public Task<string> TranscribeSamplesAsync(
+            float[] samples,
+            string language,
+            string? initialPrompt,
+            CancellationToken ct) => Task.FromResult(string.Empty);
     }
 }

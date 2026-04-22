@@ -154,6 +154,7 @@ public sealed class DictationRawChunkPipelineTests
     private sealed class FakeStreamingService : IStreamingTranscriptionService
     {
         public List<AudioChunk> Chunks { get; } = [];
+        public List<float> SamplesReceived { get; } = [];
 
         public async IAsyncEnumerable<PartialTranscript> TranscribeStreamAsync(
             IAsyncEnumerable<AudioChunk> chunks,
@@ -166,6 +167,16 @@ public sealed class DictationRawChunkPipelineTests
                 Chunks.Add(chunk);
             }
             yield break;
+        }
+
+        public Task<string> TranscribeSamplesAsync(
+            float[] samples,
+            string language,
+            string? initialPrompt,
+            CancellationToken ct)
+        {
+            SamplesReceived.AddRange(samples);
+            return Task.FromResult(string.Empty);
         }
     }
 }

@@ -132,6 +132,7 @@ public sealed class DictationPushWebmOpusTests
     private sealed class CapturingStreamingService : IStreamingTranscriptionService
     {
         public List<AudioChunk> ReceivedChunks { get; } = [];
+        public List<float> ReceivedSamples { get; } = [];
 
         public async IAsyncEnumerable<PartialTranscript> TranscribeStreamAsync(
             IAsyncEnumerable<AudioChunk> chunks,
@@ -144,6 +145,16 @@ public sealed class DictationPushWebmOpusTests
                 ReceivedChunks.Add(chunk);
             }
             yield break;
+        }
+
+        public Task<string> TranscribeSamplesAsync(
+            float[] samples,
+            string language,
+            string? initialPrompt,
+            CancellationToken ct)
+        {
+            ReceivedSamples.AddRange(samples);
+            return Task.FromResult(string.Empty);
         }
     }
 

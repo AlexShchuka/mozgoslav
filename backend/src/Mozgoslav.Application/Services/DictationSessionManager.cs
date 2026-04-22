@@ -156,6 +156,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
                     Samples: samples,
                     SampleRate: _pcmStream.TargetSampleRate,
                     Offset: TimeSpan.Zero);
+                runtime.AccumulatedChunks.Enqueue(chunk);
                 await runtime.AudioWriter.WriteAsync(chunk, runtime.Cts.Token).ConfigureAwait(false);
             }
         }
@@ -178,6 +179,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
             throw new InvalidOperationException(
                 $"Session {sessionId} is not recording (state={runtime.Session.State}).");
         }
+        runtime.AccumulatedChunks.Enqueue(chunk);
         return runtime.AudioWriter.WriteAsync(chunk, ct);
     }
 
@@ -246,12 +248,32 @@ public sealed class DictationSessionManager : IDictationSessionManager
         }
         catch (Exception ex)
         {
-            MarkError(runtime, ex);
-            throw;
+            _logger.LogWarning(ex,
+                "Streaming preview task failed for session {SessionId}; continuing with one-shot transcription",
+                sessionId);
         }
 
         var duration = DateTime.UtcNow - runtime.Session.StartedAt;
-        var rawText = runtime.LastPartialText;
+        var accumulated = FlattenChunks(runtime.AccumulatedChunks);
+
+        string rawText;
+        try
+        {
+            rawText = await _streaming.TranscribeSamplesAsync(
+                accumulated,
+                _settings.DictationLanguage,
+                BuildInitialPrompt(runtime.Profile, _settings.DictationVocabulary),
+                ct);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            MarkError(runtime, ex);
+            throw;
+        }
 
         var profile = _perAppProfiles.Resolve(bundleId);
         var glossaryApplied = ApplyGlossary(rawText, profile);
@@ -272,10 +294,31 @@ public sealed class DictationSessionManager : IDictationSessionManager
         runtime.Dispose();
 
         _logger.LogInformation(
-            "Dictation session {SessionId} finalized in {Duration} ms, {Chars} chars",
-            sessionId, duration.TotalMilliseconds, rawText.Length);
+            "Dictation session {SessionId} finalized in {Duration} ms, {Chars} chars ({Samples} samples)",
+            sessionId, duration.TotalMilliseconds, rawText.Length, accumulated.Length);
 
         return new FinalTranscript(rawText, polished, duration);
+    }
+
+    private static float[] FlattenChunks(ConcurrentQueue<AudioChunk> chunks)
+    {
+        var total = 0;
+        foreach (var chunk in chunks)
+        {
+            total += chunk.Samples.Length;
+        }
+        if (total == 0)
+        {
+            return [];
+        }
+        var result = new float[total];
+        var idx = 0;
+        foreach (var chunk in chunks)
+        {
+            Array.Copy(chunk.Samples, 0, result, idx, chunk.Samples.Length);
+            idx += chunk.Samples.Length;
+        }
+        return result;
     }
 
     public async Task CancelAsync(Guid sessionId, CancellationToken ct)
@@ -560,6 +603,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
                 SingleReader = false,
                 SingleWriter = true
             });
+            AccumulatedChunks = new ConcurrentQueue<AudioChunk>();
             Cts = new CancellationTokenSource();
             TranscriptionTask = Task.CompletedTask;
             LastPartialText = string.Empty;
@@ -581,6 +625,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
         public ChannelReader<AudioChunk> AudioReader { get; }
         public ChannelWriter<AudioChunk> AudioWriter { get; }
         public Channel<PartialTranscript> Partials { get; }
+        public ConcurrentQueue<AudioChunk> AccumulatedChunks { get; }
         public CancellationTokenSource Cts { get; }
         public Task TranscriptionTask { get; set; }
         public string LastPartialText { get; set; }
