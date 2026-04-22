@@ -21,17 +21,17 @@ export const obsidianReducer: Reducer<ObsidianState> = (
         case SETUP_OBSIDIAN:
             return beginSetup(state);
         case SETUP_OBSIDIAN_DONE:
-            return {...state, isSetupInProgress: false, error: null};
+            return {...state, isSetupInProgress: false};
 
         case BULK_EXPORT:
             return beginBulkExport(state);
         case BULK_EXPORT_DONE:
-            return {...state, isBulkExporting: false, error: null};
+            return {...state, isBulkExporting: false};
 
         case APPLY_LAYOUT:
             return beginApplyLayout(state);
         case APPLY_LAYOUT_DONE:
-            return {...state, isApplyingLayout: false, error: null};
+            return {...state, isApplyingLayout: false};
 
         default:
             return state;

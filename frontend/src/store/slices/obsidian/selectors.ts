@@ -16,7 +16,3 @@ export const selectObsidianIsSetupInProgress = createSelector(
     selectObsidianState,
     (slice) => slice.isSetupInProgress,
 );
-export const selectObsidianError = createSelector(
-    selectObsidianState,
-    (slice) => slice.error,
-);

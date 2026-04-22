@@ -44,7 +44,6 @@ describe("setupObsidianSaga", () => {
             .run();
 
         expect(result.storeState.isSetupInProgress).toBe(false);
-        expect(result.storeState.error).toBeNull();
     });
 
     it("emits notifyError + SETUP_OBSIDIAN_DONE on throw", async () => {
@@ -59,7 +58,6 @@ describe("setupObsidianSaga", () => {
             .run();
 
         expect(result.storeState.isSetupInProgress).toBe(false);
-        expect(result.storeState.error).toBeNull();
     });
 
     it("reducer — SETUP_OBSIDIAN flips isSetupInProgress true", () => {

@@ -44,7 +44,6 @@ describe("bulkExportSaga", () => {
             .run();
 
         expect(result.storeState.isBulkExporting).toBe(false);
-        expect(result.storeState.error).toBeNull();
     });
 
     it("emits notifyError + BULK_EXPORT_DONE on throw", async () => {
@@ -59,7 +58,6 @@ describe("bulkExportSaga", () => {
             .run();
 
         expect(result.storeState.isBulkExporting).toBe(false);
-        expect(result.storeState.error).toBeNull();
     });
 
     it("reducer — BULK_EXPORT flips isBulkExporting true", () => {

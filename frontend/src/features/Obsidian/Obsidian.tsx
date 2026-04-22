@@ -32,7 +32,6 @@ const Obsidian: FC<ObsidianProps> = ({
                                          isBulkExporting,
                                          isApplyingLayout,
                                          isSetupInProgress,
-                                         error,
                                          onLoadSettings,
                                          onSaveSettings,
                                          onSetup,
@@ -52,10 +51,6 @@ const Obsidian: FC<ObsidianProps> = ({
     useEffect(() => {
         if (loadedSettings) setSettings(loadedSettings);
     }, [loadedSettings]);
-
-    useEffect(() => {
-        if (error) toast.error(error);
-    }, [error]);
 
     const toggle = (key: string, required: boolean) => {
         if (required) return;

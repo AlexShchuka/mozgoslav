@@ -5,7 +5,6 @@ export interface ObsidianStateProps {
     readonly isBulkExporting: boolean;
     readonly isApplyingLayout: boolean;
     readonly isSetupInProgress: boolean;
-    readonly error: string | null;
 }
 
 export interface ObsidianDispatchProps {

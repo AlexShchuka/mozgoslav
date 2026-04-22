@@ -5,7 +5,6 @@ import type {GlobalState} from "../../store";
 import {
     applyLayout,
     bulkExport,
-    selectObsidianError,
     selectObsidianIsApplyingLayout,
     selectObsidianIsBulkExporting,
     selectObsidianIsSetupInProgress,
@@ -20,7 +19,6 @@ const mapStateToProps = (state: GlobalState): ObsidianStateProps => ({
     isBulkExporting: selectObsidianIsBulkExporting(state),
     isApplyingLayout: selectObsidianIsApplyingLayout(state),
     isSetupInProgress: selectObsidianIsSetupInProgress(state),
-    error: selectObsidianError(state),
 });
 
 const mapDispatchToProps = (dispatch: Dispatch): ObsidianDispatchProps =>

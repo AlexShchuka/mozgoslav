@@ -44,7 +44,6 @@ describe("applyLayoutSaga", () => {
             .run();
 
         expect(result.storeState.isApplyingLayout).toBe(false);
-        expect(result.storeState.error).toBeNull();
     });
 
     it("emits notifyError + APPLY_LAYOUT_DONE on throw", async () => {
@@ -59,7 +58,6 @@ describe("applyLayoutSaga", () => {
             .run();
 
         expect(result.storeState.isApplyingLayout).toBe(false);
-        expect(result.storeState.error).toBeNull();
     });
 
     it("reducer — APPLY_LAYOUT flips isApplyingLayout true", () => {
@@ -67,10 +65,9 @@ describe("applyLayoutSaga", () => {
         expect(state.isApplyingLayout).toBe(true);
     });
 
-    it("reducer — APPLY_LAYOUT_DONE flips isApplyingLayout false and clears error", () => {
+    it("reducer — APPLY_LAYOUT_DONE flips isApplyingLayout false", () => {
         const progress = obsidianReducer(undefined, dispatch(applyLayout()));
         const done = obsidianReducer(progress, dispatch(applyLayoutDone()));
         expect(done.isApplyingLayout).toBe(false);
-        expect(done.error).toBeNull();
     });
 });
