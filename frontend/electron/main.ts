@@ -381,26 +381,6 @@ const applyCustomHotkeyFromSettings = async (): Promise<void> => {
 };
 
 /**
- * NEXT H1 — forward every helper-emitted hotkey press/release to the
- * backend so the SSE bus relays it to the renderer.
- */
-const forwardHotkeyToBackend = async (payload: {
-    kind: string;
-    accelerator: string;
-    observedAt: string;
-}): Promise<void> => {
-    try {
-        await fetch(`${BACKEND_ORIGIN}/_internal/hotkey/event`, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(payload),
-        });
-    } catch (err) {
-        console.warn("[hotkey] failed to forward helper event to backend:", err);
-    }
-};
-
-/**
  * Probe + prompt Accessibility on the Electron parent process. macOS 13+
  * TCC inheritance means a trusted parent lets its spawned children (the
  * Swift helper we use for `NSEvent.addGlobalMonitorForEvents`) see input
