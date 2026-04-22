@@ -1,248 +1,55 @@
-import {type ChildProcess, spawn} from "node:child_process";
-import {EventEmitter} from "node:events";
-import {randomUUID} from "node:crypto";
+import { ipcRenderer } from "electron";
 
-import type {AudioChunkPayload, FocusedTarget} from "./types";
+export class NativeHelperClient {
+    private static instance: NativeHelperClient;
 
-/**
- * Wraps the `mozgoslav-dictation-helper` Swift binary. Messages flow as
- * newline-delimited JSON-RPC on the child's stdin/stdout. The client exposes
- * three entry points: `start/stop` for mic capture, `injectText` for text
- * injection, `detectTarget` for focused-app introspection. Audio chunks are
- * surfaced as `"audio"` events on the emitter.
- */
-export class NativeHelperClient extends EventEmitter {
-    private process: ChildProcess | null = null;
-    private buffer = "";
-    private pending = new Map<
-        string,
-        { resolve: (value: unknown) => void; reject: (error: Error) => void }
-    >();
-
-    constructor(private readonly binaryPath: string) {
-        super();
+    static getInstance(): NativeHelperClient {
+        if (!NativeHelperClient.instance) {
+            NativeHelperClient.instance = new NativeHelperClient();
+        }
+        return NativeHelperClient.instance;
     }
 
-    start(): void {
-        if (this.process) return;
-
-        const child = spawn(this.binaryPath, [], {
-            stdio: ["pipe", "pipe", "pipe"],
-        });
-
-        this.process = child;
-
-        console.info(`[dictation:helper] spawned: ${this.binaryPath} pid=${child.pid ?? "n/a"}`);
-
-        child.stdout?.on("data", (chunk: Buffer) => this.handleStdout(chunk));
-
-        child.stderr?.on("data", (chunk: Buffer) => {
-            console.error(`[dictation:helper:err] ${chunk.toString().trimEnd()}`);
-        });
-
-        child.stdin?.on("error", (error) => {
-            console.error("[dictation:helper:stdin] error:", error);
-        });
-
-        child.on("error", (error) => {
-            console.error("[dictation:helper] process error:", error);
-            this.process = null;
-            this.rejectAllPending(error instanceof Error ? error : new Error(String(error)));
-        });
-
-        child.on("exit", (code, signal) => {
-            console.info(`[dictation:helper] exited code=${code} signal=${signal}`);
-            this.process = null;
-            this.rejectAllPending(new Error(`helper exited (code=${code}, signal=${signal})`));
-        });
-    }
-
-    stop(): void {
-        if (!this.process) return;
+    async call(method: string, params?: Record<string, unknown>): Promise<unknown> {
+        const id = Math.random().toString(36).slice(2);
+        const message = JSON.stringify({ id, method, params });
+        
         try {
-            this.send("shutdown", undefined).catch(() => undefined);
-            this.process.kill();
+            const result = await ipcRenderer.invoke("helper-call", { id, method, params });
+            return result;
         } catch (error) {
-            console.error("[dictation:helper] kill failed:", error);
-        }
-        this.process = null;
-    }
-
-    async captureStart(sampleRate: number, deviceId?: string): Promise<void> {
-        await this.send<object>("capture.start", {deviceId, sampleRate});
-    }
-
-    async captureStop(): Promise<void> {
-        await this.send<object>("capture.stop", undefined);
-    }
-
-    /**
-     * Plan v0.8 Block 3 §2.4 — start recording directly into a WAV file
-     * (distinct from the streaming `capture.start` used for live dictation).
-     * The helper echoes every audio callback into the given output path using
-     * AVAudioEngine + a resampler node to the 16 kHz mono format Whisper
-     * expects.
-     */
-    async startFileCapture(outputPath: string, sessionId: string): Promise<void> {
-        await this.send<object>("capture.startFile", {
-            outputPath,
-            sessionId,
-            sampleRate: 16000,
-            channels: 1,
-            format: "wav",
-        });
-    }
-
-    async stopFileCapture(sessionId: string): Promise<{ path: string; durationMs: number }> {
-        const result = (await this.send<{ path: string; durationMs: number }>(
-            "capture.stopFile",
-            {sessionId},
-        )) ?? {path: "", durationMs: 0};
-        return result;
-    }
-
-    /**
-     * Plan v0.8 Block 3 §2.4 — single-shot permission probe. Returns the
-     * three macOS authorization states that gate the recording + dictation
-     * features (Onboarding Block 4 uses this to auto-advance the permissions
-     * card).
-     */
-    async checkPermissions(): Promise<{
-        microphone: "granted" | "denied" | "undetermined";
-        accessibility: "granted" | "denied" | "undetermined";
-        inputMonitoring: "granted" | "denied" | "undetermined";
-    }> {
-        const result = (await this.send<{
-            microphone?: string;
-            accessibility?: string;
-            inputMonitoring?: string;
-        }>("permission.check", undefined)) ?? {};
-        return {
-            microphone: normalizePermission(result.microphone),
-            accessibility: normalizePermission(result.accessibility),
-            inputMonitoring: normalizePermission(result.inputMonitoring),
-        };
-    }
-
-    async injectText(text: string, mode: "auto" | "cgevent" | "accessibility"): Promise<void> {
-        await this.send<object>("inject.text", {text, mode});
-    }
-
-    /** NEXT H1 — start/stop the global push-to-talk hotkey monitor. */
-    async startHotkey(accelerator: string): Promise<void> {
-        await this.send<object>("hotkey.start", {accelerator});
-    }
-
-    async stopHotkey(): Promise<void> {
-        await this.send<object>("hotkey.stop", undefined);
-    }
-
-    async detectTarget(): Promise<FocusedTarget> {
-        const result = (await this.send<FocusedTarget>("inject.detectTarget", undefined)) as
-            | { bundleId?: string; appName?: string; useAX?: boolean }
-            | undefined;
-        return {
-            bundleId: result?.bundleId ?? "",
-            appName: result?.appName ?? "",
-            useAX: Boolean(result?.useAX),
-        };
-    }
-
-    private send<T>(method: string, params: unknown): Promise<T | undefined> {
-        const child = this.process;
-
-        if (!child) {
-            return Promise.reject(new Error("helper process not running"));
-        }
-
-        const stdin = child.stdin;
-        if (!stdin || stdin.destroyed || !stdin.writable) {
-            return Promise.reject(new Error("helper stdin is not writable"));
-        }
-
-        const id = randomUUID();
-        const payload = JSON.stringify({id, method, params});
-
-        return new Promise<T | undefined>((resolve, reject) => {
-            this.pending.set(id, {
-                resolve: (value) => resolve(value as T | undefined),
-                reject,
-            });
-
-            stdin.write(`${payload}\n`, (error) => {
-                if (error) {
-                    this.pending.delete(id);
-                    reject(error instanceof Error ? error : new Error(String(error)));
-                }
-            });
-        });
-    }
-
-    private handleStdout(chunk: Buffer): void {
-        this.buffer += chunk.toString("utf8");
-        let newlineIndex = this.buffer.indexOf("\n");
-        while (newlineIndex !== -1) {
-            const line = this.buffer.slice(0, newlineIndex).trim();
-            this.buffer = this.buffer.slice(newlineIndex + 1);
-            if (line.length > 0) this.handleMessage(line);
-            newlineIndex = this.buffer.indexOf("\n");
+            console.error(`[NativeHelperClient] call failed: ${method}`, error);
+            throw error;
         }
     }
 
-    private handleMessage(line: string): void {
-        let message: HelperMessage;
-        try {
-            message = JSON.parse(line) as HelperMessage;
-        } catch (error) {
-            console.error("[dictation:helper] bad message:", line, error);
-            return;
-        }
-
-        if (message.id?.startsWith("event.")) {
-            const event = message.result?.event;
-            const params = message.result?.params;
-            if (event === "audio" && params) {
-                this.emit("audio", params as unknown as AudioChunkPayload);
-            } else if (event === "hotkey" && params) {
-                this.emit("hotkey", params as unknown as HotkeyEventPayload);
-            }
-            return;
-        }
-
-        const pending = this.pending.get(message.id ?? "");
-        if (!pending) return;
-        this.pending.delete(message.id ?? "");
-        if (message.error) {
-            pending.reject(new Error(`${message.error.code}: ${message.error.message}`));
-        } else {
-            pending.resolve(message.result);
-        }
+    async startHotkeyMonitoring(): Promise<void> {
+        await this.call("start-hotkey-monitor");
     }
 
-    private rejectAllPending(error: Error): void {
-        for (const pending of this.pending.values()) {
-            pending.reject(error);
-        }
-        this.pending.clear();
+    async stopHotkeyMonitoring(): Promise<void> {
+        await this.call("stop-hotkey-monitor");
+    }
+
+    async registerGlobalHotkey(id: string, key: string): Promise<void> {
+        await this.call("global-hotkey.register", { id, key });
+    }
+
+    async unregisterGlobalHotkey(id: string): Promise<void> {
+        await this.call("global-hotkey.unregister", { id });
+    }
+
+    async startCapture(deviceId?: string, sampleRate = 48000): Promise<void> {
+        await this.call("capture.start", { deviceId, sampleRate });
+    }
+
+    async stopCapture(): Promise<void> {
+        await this.call("capture.stop");
+    }
+
+    async injectText(text: string): Promise<void> {
+        await this.call("inject.text", { text, mode: "auto" });
     }
 }
 
-interface HelperMessage {
-    id?: string;
-    result?: { event?: string; params?: unknown } & Record<string, unknown>;
-    error?: { code: number; message: string };
-}
-
-export interface HotkeyEventPayload {
-    kind: "press" | "release";
-    accelerator: string;
-    observedAt: string;
-}
-
-const normalizePermission = (
-    raw: string | undefined,
-): "granted" | "denied" | "undetermined" => {
-    if (raw === "granted") return "granted";
-    if (raw === "denied") return "denied";
-    return "undetermined";
-};
+export const nativeHelperClient = NativeHelperClient.getInstance();
