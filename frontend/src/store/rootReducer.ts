@@ -1,22 +1,22 @@
 import {combineReducers} from "redux";
-import type {RecordingState} from "./slices/recording";
-import {recordingReducer} from "./slices/recording";
-import type {SyncState} from "./slices/sync";
-import {syncReducer} from "./slices/sync";
-import type {RagState} from "./slices/rag";
-import {ragReducer} from "./slices/rag";
-import type {ProfilesState} from "./slices/profiles";
-import {profilesReducer} from "./slices/profiles";
-import type {SettingsState} from "./slices/settings";
-import {settingsReducer} from "./slices/settings";
-import type {ObsidianState} from "./slices/obsidian";
-import {obsidianReducer} from "./slices/obsidian";
-import type {OnboardingState} from "./slices/onboarding";
-import {onboardingReducer} from "./slices/onboarding";
-import type {UiState} from "./slices/ui";
-import {uiReducer} from "./slices/ui";
-import type {JobsState} from "./slices/jobs";
-import {jobsReducer} from "./slices/jobs";
+import type {RecordingState} from "./slices/recording/types";
+import {recordingReducer} from "./slices/recording/reducer";
+import type {SyncState} from "./slices/sync/types";
+import {syncReducer} from "./slices/sync/reducer";
+import type {RagState} from "./slices/rag/types";
+import {ragReducer} from "./slices/rag/reducer";
+import type {ProfilesState} from "./slices/profiles/types";
+import {profilesReducer} from "./slices/profiles/reducer";
+import type {SettingsState} from "./slices/settings/types";
+import {settingsReducer} from "./slices/settings/reducer";
+import type {ObsidianState} from "./slices/obsidian/types";
+import {obsidianReducer} from "./slices/obsidian/reducer";
+import type {OnboardingState} from "./slices/onboarding/types";
+import {onboardingReducer} from "./slices/onboarding/reducer";
+import type {UiState} from "./slices/ui/types";
+import {uiReducer} from "./slices/ui/reducer";
+import type {JobsState} from "./slices/jobs/types";
+import {jobsReducer} from "./slices/jobs/reducer";
 
 export const rootReducer = combineReducers({
     recording: recordingReducer,
@@ -41,3 +41,5 @@ export interface GlobalState {
     ui: UiState;
     jobs: JobsState;
 }
+
+export type RootState = ReturnType<typeof rootReducer>;
