@@ -33,7 +33,7 @@ public sealed class WhisperNetTranscriptionServiceStreamCoreTests
         }
 
         var partials = await Collect(WhisperNetTranscriptionService.StreamCoreAsync(
-            ToAsync(Array.Empty<AudioChunk>()),
+            ToAsync([]),
             vad,
             Transcribe,
             onEmitWindow: null,
@@ -158,7 +158,7 @@ public sealed class WhisperNetTranscriptionServiceStreamCoreTests
     {
         var vad = AlwaysSpeech();
         var callIndex = 0;
-        string[] outputs = { "first", "second", "third" };
+        string[] outputs = ["first", "second", "third"];
         Task<string> Transcribe(float[] _, CancellationToken __)
         {
             var text = outputs[Math.Min(callIndex, outputs.Length - 1)];
@@ -197,7 +197,7 @@ public sealed class WhisperNetTranscriptionServiceStreamCoreTests
         var oneChunk = new AudioChunk(SpeechSamples(241_000), SampleRate, TimeSpan.Zero);
 
         var partials = await Collect(WhisperNetTranscriptionService.StreamCoreAsync(
-            ToAsync(new[] { oneChunk }),
+            ToAsync([oneChunk]),
             vad,
             Transcribe,
             onEmitWindow: null,
@@ -249,10 +249,10 @@ public sealed class WhisperNetTranscriptionServiceStreamCoreTests
 
         var chunk = new AudioChunk(SpeechSamples(1000), 48_000, TimeSpan.Zero);
 
-        Func<Task> act = async () =>
+        var act = async () =>
         {
             await foreach (var _ in WhisperNetTranscriptionService.StreamCoreAsync(
-                ToAsync(new[] { chunk }),
+                ToAsync([chunk]),
                 vad,
                 Transcribe,
                 onEmitWindow: null,
