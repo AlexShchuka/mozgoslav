@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api", tags=["emotion"])
 )
 async def classify_emotion(
     payload: EmotionRequest,
-    service = Depends(get_emotion_service),  # noqa: ANN001 — deferred import
+    service=Depends(get_emotion_service),  # noqa: ANN001 — deferred import
 ):
     try:
         result = service.classify(payload)

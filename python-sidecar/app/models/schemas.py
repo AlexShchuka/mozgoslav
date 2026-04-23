@@ -5,8 +5,6 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
-
-
 class DiarizeRequest(BaseModel):
     audio_path: str = Field(..., description="Absolute path to a 16 kHz mono WAV file.")
     min_speakers: int | None = Field(default=None, ge=1)
@@ -24,8 +22,6 @@ class DiarizeResponse(BaseModel):
     num_speakers: int = Field(..., ge=0)
 
 
-
-
 class GenderRequest(BaseModel):
     audio_path: str
 
@@ -33,8 +29,6 @@ class GenderRequest(BaseModel):
 class GenderResponse(BaseModel):
     gender: str = Field(..., description="One of: 'male', 'female', 'unknown'.")
     confidence: float = Field(..., ge=0.0, le=1.0)
-
-
 
 
 class EmotionRequest(BaseModel):
@@ -48,8 +42,6 @@ class EmotionResponse(BaseModel):
     dominance: float = Field(..., ge=-1.0, le=1.0)
 
 
-
-
 class NerRequest(BaseModel):
     text: str
 
@@ -59,8 +51,6 @@ class NerResponse(BaseModel):
     orgs: list[str] = Field(default_factory=list)
     locations: list[str] = Field(default_factory=list)
     dates: list[str] = Field(default_factory=list)
-
-
 
 
 class CleanupLevel(str, Enum):
@@ -76,8 +66,6 @@ class CleanupRequest(BaseModel):
 
 class CleanupResponse(BaseModel):
     cleaned: str
-
-
 
 
 class EmbedRequest(BaseModel):

@@ -62,9 +62,7 @@ class CleanupService:
             return text
 
         pattern = (
-            _AGGRESSIVE_PATTERN
-            if level is CleanupLevel.aggressive
-            else _LIGHT_PATTERN
+            _AGGRESSIVE_PATTERN if level is CleanupLevel.aggressive else _LIGHT_PATTERN
         )
 
         out = pattern.sub("", text)

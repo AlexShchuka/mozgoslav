@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-
 DEFAULT_ROOT = Path.home() / "Library" / "Application Support" / "Mozgoslav" / "models"
 
 AUDEERING_GENDER_ID = "audeering-age-gender"
@@ -29,12 +28,10 @@ class ModelPaths:
     def root(self) -> Path:
         return self._root
 
-
     def silero_vad(self) -> Path | None:
 
         candidate = self._root / "silero_vad.onnx"
         return candidate if candidate.is_file() else None
-
 
     def audeering_gender(self) -> Path | None:
 
@@ -52,8 +49,7 @@ def _looks_like_hf_cache(directory: Path) -> bool:
         return False
     if not (directory / "config.json").is_file():
         return False
-    weights = (
-        (directory / "model.safetensors").is_file()
-        or (directory / "pytorch_model.bin").is_file()
-    )
+    weights = (directory / "model.safetensors").is_file() or (
+        directory / "pytorch_model.bin"
+    ).is_file()
     return weights

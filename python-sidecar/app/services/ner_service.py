@@ -28,7 +28,6 @@ class NerService:
             dates=_dedupe(dates),
         )
 
-
     def _ensure_loaded(self) -> None:
         if self._ner_tagger is not None:
             return
@@ -49,9 +48,7 @@ class NerService:
         self._ner_tagger = NewsNERTagger(embedding)
         self._dates_extractor = DatesExtractor(self._morph_vocab)
 
-    def _extract_spans(
-        self, text: str
-    ) -> tuple[list[str], list[str], list[str]]:
+    def _extract_spans(self, text: str) -> tuple[list[str], list[str], list[str]]:
         from natasha import Doc  # noqa: PLC0415
 
         doc = Doc(text)

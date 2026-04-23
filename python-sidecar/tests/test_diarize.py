@@ -37,13 +37,17 @@ def _build_service_with_script(
 ) -> DiarizeService:
 
     class _ScriptedService(DiarizeService):
-        def _vad_segments(self, wav: np.ndarray) -> list[tuple[float, float]]:  # noqa: ARG002
+        def _vad_segments(
+            self, wav: np.ndarray
+        ) -> list[tuple[float, float]]:  # noqa: ARG002
             return list(vad_segments)
 
     from app.ml.model_paths import ModelPaths  # noqa: PLC0415
 
     paths = ModelPaths(Path("/tmp/definitely-missing"))
-    return _ScriptedService(paths, embedder=_StubEmbedder(embed_pattern), vad_model=object())
+    return _ScriptedService(
+        paths, embedder=_StubEmbedder(embed_pattern), vad_model=object()
+    )
 
 
 def _write_silent_wav(path: Path, duration_seconds: float = 3.0) -> None:
@@ -94,8 +98,8 @@ def test_diarize_short_segment_glued_to_nearest_long_cluster(tmp_path: Path) -> 
     audio = tmp_path / "sample.wav"
     _write_silent_wav(audio)
     service = _build_service_with_script(
-        vad_segments=[(0.0, 1.0), (1.1, 1.3), (1.5, 2.5)],  
-        embed_pattern=[0, 3],  
+        vad_segments=[(0.0, 1.0), (1.1, 1.3), (1.5, 2.5)],
+        embed_pattern=[0, 3],
     )
     result = service.diarize(DiarizeRequest(audio_path=str(audio)))
     assert len(result.segments) == 3

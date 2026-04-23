@@ -11,7 +11,6 @@ from app.ml.loader import get_model_paths
 from app.models.common import HealthResponse
 from app.routers import cleanup, diarize, embed, emotion, gender, ner
 
-
 _logger = logging.getLogger("mozgoslav.sidecar")
 
 

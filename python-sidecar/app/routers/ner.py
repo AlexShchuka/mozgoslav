@@ -11,6 +11,6 @@ router = APIRouter(prefix="/api", tags=["ner"])
 @router.post("/ner", response_model=NerResponse)
 async def extract_entities(
     payload: NerRequest,
-    service = Depends(get_ner_service),  # noqa: ANN001 — deferred import
+    service=Depends(get_ner_service),  # noqa: ANN001 — deferred import
 ) -> NerResponse:
     return service.extract(payload)

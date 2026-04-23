@@ -7,8 +7,6 @@ from app.models.schemas import CleanupLevel, CleanupRequest
 from app.services.cleanup_service import CleanupService
 
 
-
-
 @pytest.fixture()
 def service() -> CleanupService:
     return CleanupService()
@@ -44,8 +42,6 @@ def test_aggressive_removes_composite_fillers(service: CleanupService) -> None:
         )
     )
     assert result.cleaned == "всё готово"
-
-
 
 
 def test_cleanup_endpoint_roundtrip(client: TestClient) -> None:

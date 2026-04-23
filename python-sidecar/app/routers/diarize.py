@@ -11,7 +11,7 @@ router = APIRouter(prefix="/api", tags=["diarize"])
 @router.post("/diarize", response_model=DiarizeResponse)
 async def diarize(
     payload: DiarizeRequest,
-    service = Depends(get_diarize_service),  # noqa: ANN001 — deferred import
+    service=Depends(get_diarize_service),  # noqa: ANN001 — deferred import
 ) -> DiarizeResponse:
     try:
         return service.diarize(payload)

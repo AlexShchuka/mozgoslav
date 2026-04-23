@@ -13,7 +13,9 @@ from app.services.gender_service import GenderService, _to_response
 import numpy as np
 
 
-def test_classify_raises_model_not_available_when_weights_absent(tmp_path: Path) -> None:
+def test_classify_raises_model_not_available_when_weights_absent(
+    tmp_path: Path,
+) -> None:
     service = GenderService(ModelPaths(tmp_path))
     with pytest.raises(ModelNotAvailableError) as excinfo:
         service.classify(GenderRequest(audio_path="/tmp/any.wav"))
@@ -43,7 +45,7 @@ def test_to_response_prefers_highest_class() -> None:
     female_heavy = np.array([0.8, 0.1, 0.1], dtype=np.float32)
     result = _to_response(female_heavy)
     assert result.gender == "female"
-    assert result.confidence == pytest.approx(0.9)  
+    assert result.confidence == pytest.approx(0.9)
 
     male_heavy = np.array([0.1, 0.85, 0.05], dtype=np.float32)
     result = _to_response(male_heavy)

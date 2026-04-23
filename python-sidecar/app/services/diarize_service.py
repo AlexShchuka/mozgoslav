@@ -8,7 +8,6 @@ import numpy as np
 from app.ml.model_paths import ModelPaths
 from app.models.schemas import DiarizeRequest, DiarizeResponse, SpeakerSegment
 
-
 _TARGET_SR = 16_000
 _MIN_EMBED_SECONDS = 0.7
 _CLUSTER_DISTANCE_THRESHOLD = 0.75
@@ -55,8 +54,12 @@ class DiarizeService:
 
         if long_segments:
             embeddings = np.stack(
-                [self._embedder.embed_utterance(wav[int(s * _TARGET_SR) : int(e * _TARGET_SR)])
-                 for s, e in long_segments]
+                [
+                    self._embedder.embed_utterance(
+                        wav[int(s * _TARGET_SR) : int(e * _TARGET_SR)]
+                    )
+                    for s, e in long_segments
+                ]
             )
             labels = _cluster(
                 embeddings,
@@ -70,7 +73,6 @@ class DiarizeService:
             segments=_merge_short_into_nearest(vad_segments, long_segments, labels),
             num_speakers=len({int(label) for label in labels}) if labels else 0,
         )
-
 
     def _vad_segments(self, wav: np.ndarray) -> list[tuple[float, float]]:
         import torch  # noqa: PLC0415
@@ -134,14 +136,18 @@ def _merge_short_into_nearest(
             midpoint = (start + end) / 2
             nearest_idx = min(
                 range(len(long_segments)),
-                key=lambda i: abs(((long_segments[i][0] + long_segments[i][1]) / 2) - midpoint),
+                key=lambda i: abs(
+                    ((long_segments[i][0] + long_segments[i][1]) / 2) - midpoint
+                ),
             )
             label = long_labels[nearest_idx]
-        output.append(SpeakerSegment(
-            speaker=_label_name(label),
-            start=start,
-            end=end,
-        ))
+        output.append(
+            SpeakerSegment(
+                speaker=_label_name(label),
+                start=start,
+                end=end,
+            )
+        )
     return output
 
 

@@ -12,7 +12,6 @@ from app.ml.model_paths import (
 )
 from app.models.schemas import GenderRequest, GenderResponse
 
-
 _TARGET_SR = 16_000
 
 
@@ -29,7 +28,6 @@ class GenderService:
         probabilities = self._predict(wav)
         return _to_response(probabilities)
 
-
     def _ensure_loaded(self) -> None:
         if self._model is not None:
             return
@@ -42,7 +40,10 @@ class GenderService:
             )
 
         import torch  # noqa: F401, PLC0415
-        from transformers import AutoFeatureExtractor, AutoModelForAudioClassification  # noqa: PLC0415
+        from transformers import (
+            AutoFeatureExtractor,
+            AutoModelForAudioClassification,
+        )  # noqa: PLC0415
 
         self._feature_extractor = AutoFeatureExtractor.from_pretrained(str(model_dir))
         self._model = AutoModelForAudioClassification.from_pretrained(str(model_dir))
@@ -61,7 +62,7 @@ class GenderService:
 
 def _to_response(probabilities: np.ndarray) -> GenderResponse:
 
-    female_prob = float(probabilities[0]) + float(probabilities[2])  
+    female_prob = float(probabilities[0]) + float(probabilities[2])
     male_prob = float(probabilities[1])
     if male_prob > female_prob:
         return GenderResponse(gender="male", confidence=male_prob)

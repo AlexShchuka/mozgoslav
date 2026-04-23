@@ -13,7 +13,6 @@ from app.ml.model_paths import (
 from app.ml.patches import safe_emotion_cfg
 from app.models.schemas import EmotionRequest, EmotionResponse
 
-
 _TARGET_SR = 16_000
 
 
@@ -48,7 +47,11 @@ class EmotionService:
             )
 
         import torch  # noqa: F401, PLC0415
-        from transformers import AutoConfig, AutoFeatureExtractor, AutoModelForAudioClassification  # noqa: PLC0415
+        from transformers import (
+            AutoConfig,
+            AutoFeatureExtractor,
+            AutoModelForAudioClassification,
+        )  # noqa: PLC0415
 
         cfg = safe_emotion_cfg(AutoConfig.from_pretrained(str(model_dir)))
         self._feature_extractor = AutoFeatureExtractor.from_pretrained(str(model_dir))

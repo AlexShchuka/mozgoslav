@@ -6,7 +6,6 @@ import threading
 from functools import lru_cache
 from typing import Protocol
 
-
 DIM = 384
 
 
@@ -44,7 +43,9 @@ class SentenceTransformersBackend:
         if self._model is None:
             with self._lock:
                 if self._model is None:
-                    from sentence_transformers import SentenceTransformer  # noqa: PLC0415
+                    from sentence_transformers import (
+                        SentenceTransformer,
+                    )  # noqa: PLC0415
 
                     self._model = SentenceTransformer(
                         "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"

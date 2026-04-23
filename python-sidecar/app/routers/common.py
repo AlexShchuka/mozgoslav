@@ -5,7 +5,6 @@ from fastapi.responses import JSONResponse
 
 from app.ml.errors import ModelNotAvailableError
 
-
 MODEL_NOT_INSTALLED_STATUS = 503
 
 

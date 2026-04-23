@@ -14,14 +14,10 @@ from app.services.embed_service import (
 )
 
 
-
-
 @pytest.fixture
 def embed_client() -> TestClient:
 
     return TestClient(create_app())
-
-
 
 
 def test_embed_happy_path_returns_384_dim_l2_normalised(
@@ -69,8 +65,6 @@ def test_embed_missing_text_field_returns_422(embed_client: TestClient) -> None:
     assert res.status_code == 422
 
 
-
-
 def test_embed_deterministic_bow_same_text_same_vector() -> None:
 
     backend = DeterministicBoWBackend()
@@ -110,15 +104,11 @@ def test_embed_deterministic_bow_is_case_insensitive() -> None:
     assert lower == upper
 
 
-
-
 def test_default_backend_is_deterministic_in_pod() -> None:
 
     default_backend.cache_clear()
     backend = default_backend()
     assert isinstance(backend, DeterministicBoWBackend)
-
-
 
 
 def test_l2_normalise_zero_input_returns_unit_vector() -> None:

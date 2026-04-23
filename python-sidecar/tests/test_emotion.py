@@ -12,7 +12,9 @@ from app.models.schemas import EmotionRequest
 from app.services.emotion_service import EmotionService, _label_from_av
 
 
-def test_classify_raises_model_not_available_when_weights_absent(tmp_path: Path) -> None:
+def test_classify_raises_model_not_available_when_weights_absent(
+    tmp_path: Path,
+) -> None:
     service = EmotionService(ModelPaths(tmp_path))
     with pytest.raises(ModelNotAvailableError) as excinfo:
         service.classify(EmotionRequest(audio_path="/tmp/any.wav"))
