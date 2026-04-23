@@ -4,6 +4,9 @@
         <AssemblyName>Mozgoslav.Infrastructure</AssemblyName>
     </PropertyGroup>
     <ItemGroup>
+        <InternalsVisibleTo Include="Mozgoslav.Tests"/>
+    </ItemGroup>
+    <ItemGroup>
         <ProjectReference Include="..\Mozgoslav.Application\Mozgoslav.Application.csproj"/>
         <ProjectReference Include="..\Mozgoslav.Domain\Mozgoslav.Domain.csproj"/>
     </ItemGroup>

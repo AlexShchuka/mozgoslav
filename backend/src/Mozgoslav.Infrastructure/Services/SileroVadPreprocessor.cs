@@ -33,22 +33,30 @@ public sealed class SileroVadPreprocessor : IVadPreprocessor
     public bool ContainsSpeech(AudioChunk chunk)
     {
         ArgumentNullException.ThrowIfNull(chunk);
+
         if (chunk.Samples.Length < MinSamples)
         {
+            _logger.LogDebug("[VAD] Reject: too short ({Length} samples, need >= {Min})",
+                chunk.Samples.Length, MinSamples);
             return false;
         }
 
         var rms = ComputeRms(chunk.Samples);
         var isSpeech = rms >= RmsThreshold;
 
+        _logger.LogDebug("[VAD] Chunk={Length} samples RMS={Rms:F5} threshold={Thresh:F5} speech={IsSpeech}",
+            chunk.Samples.Length, rms, RmsThreshold, isSpeech);
+
         if (isSpeech)
         {
             return isSpeech;
         }
+
         var modelPath = _settings.VadModelPath;
         if (!string.IsNullOrEmpty(modelPath) && !File.Exists(modelPath))
         {
-            _logger.LogDebug("Silero VAD model missing at {Path}, using energy gate only", modelPath);
+            _logger.LogDebug("[VAD] Silero VAD model missing at {Path}, using energy gate only",
+                modelPath);
         }
 
         return isSpeech;
