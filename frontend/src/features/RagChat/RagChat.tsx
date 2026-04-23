@@ -3,7 +3,6 @@ import {useTranslation} from "react-i18next";
 import type {TFunction} from "i18next";
 import {AnimatePresence, motion} from "framer-motion";
 
-import Badge from "../../components/Badge";
 import Button from "../../components/Button";
 import type {RagCitation, RagMessage} from "../../store/slices/rag/types";
 import type {RagChatProps} from "./types";
@@ -19,12 +18,22 @@ import {
     MessageContent,
     MessageList,
     MessageRow,
+    StatusGroup,
+    StatusText,
     Title,
     TypingDots,
     Warning,
 } from "./RagChat.style";
 
-const RagChat: FC<RagChatProps> = ({messages, isAsking, onAsk, onCitationNavigate}) => {
+const RagChat: FC<RagChatProps> = ({
+    messages,
+    isAsking,
+    status,
+    isReindexing,
+    onAsk,
+    onReindex,
+    onCitationNavigate,
+}) => {
     const {t} = useTranslation();
     const [draft, setDraft] = useState("");
     const listRef = useRef<HTMLOListElement | null>(null);
@@ -53,13 +62,33 @@ const RagChat: FC<RagChatProps> = ({messages, isAsking, onAsk, onCitationNavigat
         }
     };
 
+    const statusLabel = ((): string => {
+        if (status === null) return t("rag.statusUnknown");
+        if (status.chunks === 0) return t("rag.statusEmpty");
+        return t("rag.statusReady", {chunks: status.chunks, notes: status.notes});
+    })();
+    const statusIsEmpty = status !== null && status.chunks === 0;
+
     return (
         <ChatRoot>
             <Header>
                 <Title>{t("rag.title")}</Title>
-                <Badge tone="warning" data-testid="rag-wip-badge">
-                    {t("rag.wipBadge")}
-                </Badge>
+                <StatusGroup>
+                    <StatusText data-testid="rag-status" $empty={statusIsEmpty}>
+                        {statusLabel}
+                    </StatusText>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={onReindex}
+                        isLoading={isReindexing}
+                        disabled={isReindexing}
+                        data-testid="rag-reindex"
+                    >
+                        {t("rag.reindex")}
+                    </Button>
+                </StatusGroup>
             </Header>
 
             <MessageList ref={listRef} data-testid="rag-message-list">

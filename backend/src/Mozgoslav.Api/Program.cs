@@ -110,7 +110,12 @@ try
 
     builder.Services.AddScoped<IRecordingRepository, EfRecordingRepository>();
     builder.Services.AddScoped<ITranscriptRepository, EfTranscriptRepository>();
-    builder.Services.AddScoped<IProcessedNoteRepository, EfProcessedNoteRepository>();
+    builder.Services.AddScoped<EfProcessedNoteRepository>();
+    builder.Services.AddScoped<IProcessedNoteRepository>(sp =>
+        new RagIndexingProcessedNoteRepository(
+            sp.GetRequiredService<EfProcessedNoteRepository>(),
+            sp.GetRequiredService<IRagService>(),
+            sp.GetRequiredService<ILogger<RagIndexingProcessedNoteRepository>>()));
     builder.Services.AddScoped<IProfileRepository, EfProfileRepository>();
     builder.Services.AddScoped<IProcessingJobRepository, EfProcessingJobRepository>();
 

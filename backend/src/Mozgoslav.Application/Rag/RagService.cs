@@ -69,6 +69,11 @@ public sealed class RagService : IRagService
         _logger.LogInformation("Indexed note {NoteId} ({ChunkCount} chunks)", note.Id, chunks.Count);
     }
 
+    public Task DeindexAsync(Guid noteId, CancellationToken ct)
+    {
+        return _index.RemoveByNoteAsync(noteId, ct);
+    }
+
     public async Task<RagAnswer> AnswerAsync(string question, int topK, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(question);

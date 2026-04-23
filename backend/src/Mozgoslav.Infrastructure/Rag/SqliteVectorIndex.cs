@@ -29,10 +29,8 @@ namespace Mozgoslav.Infrastructure.Rag;
 /// </summary>
 public sealed class SqliteVectorIndex : IVectorIndex, IAsyncDisposable
 {
-    private const string SchemaVersion = "v1";
     private readonly string _connectionString;
     private readonly SemaphoreSlim _mutex = new(1, 1);
-    private bool _initialised;
     private bool _disposed;
 
     public SqliteVectorIndex(string connectionString)
@@ -48,7 +46,7 @@ public sealed class SqliteVectorIndex : IVectorIndex, IAsyncDisposable
     {
         get
         {
-            EnsureSchema();
+            ObjectDisposedException.ThrowIf(_disposed, this);
             using var conn = Open();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "SELECT COUNT(*) FROM rag_chunks";
@@ -60,7 +58,7 @@ public sealed class SqliteVectorIndex : IVectorIndex, IAsyncDisposable
     public async Task UpsertAsync(NoteChunk chunk, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(chunk);
-        EnsureSchema();
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         await _mutex.WaitAsync(ct).ConfigureAwait(false);
         try
@@ -91,7 +89,7 @@ public sealed class SqliteVectorIndex : IVectorIndex, IAsyncDisposable
 
     public async Task RemoveByNoteAsync(Guid noteId, CancellationToken ct)
     {
-        EnsureSchema();
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         await _mutex.WaitAsync(ct).ConfigureAwait(false);
         try
@@ -118,7 +116,7 @@ public sealed class SqliteVectorIndex : IVectorIndex, IAsyncDisposable
         {
             return [];
         }
-        EnsureSchema();
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         var matches = new List<NoteChunkHit>(128);
 
@@ -175,42 +173,6 @@ public sealed class SqliteVectorIndex : IVectorIndex, IAsyncDisposable
         var conn = new SqliteConnection(_connectionString);
         conn.Open();
         return conn;
-    }
-
-    private void EnsureSchema()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        if (_initialised)
-        {
-            return;
-        }
-        _mutex.Wait();
-        try
-        {
-            if (_initialised)
-            {
-                return;
-            }
-            using var conn = Open();
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = $"""
-                CREATE TABLE IF NOT EXISTS rag_chunks (
-                    id TEXT PRIMARY KEY,
-                    note_id TEXT NOT NULL,
-                    text TEXT NOT NULL,
-                    embedding BLOB NOT NULL,
-                    dimensions INTEGER NOT NULL,
-                    schema TEXT NOT NULL DEFAULT '{SchemaVersion}'
-                );
-                CREATE INDEX IF NOT EXISTS ix_rag_chunks_note_id ON rag_chunks(note_id);
-                """;
-            cmd.ExecuteNonQuery();
-            _initialised = true;
-        }
-        finally
-        {
-            _mutex.Release();
-        }
     }
 
     internal static byte[] Serialize(float[] vector)

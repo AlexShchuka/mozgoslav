@@ -116,6 +116,7 @@ export const createMockApi = (): MockApiBundle => {
     const ragApi = {
         query: jestFn(),
         reindex: jestFn(),
+        status: jestFn(),
     } as unknown as MockedRagApi;
     const recordingApi = {
         getAll: jestFn(),
