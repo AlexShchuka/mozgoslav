@@ -32,7 +32,7 @@ describe("bulkExportSaga", () => {
     beforeEach(() => jest.clearAllMocks());
 
     it("emits notifySuccess + BULK_EXPORT_DONE on happy path", async () => {
-        const report: ObsidianBulkExportReport = {exportedCount: 42};
+        const report: ObsidianBulkExportReport = {exportedCount: 42, skippedCount: 0};
         const result = await expectSaga(bulkExportSaga)
             .withReducer(obsidianReducer)
             .provide([[matchers.call.fn(obsidianStub.bulkExport), report]])

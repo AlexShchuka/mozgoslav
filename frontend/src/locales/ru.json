@@ -299,8 +299,30 @@
     "bulkExportHint": "Прогнать все не-экспортированные заметки и разложить их по PARA.",
     "syncAll": "Выгрузить все новые заметки",
     "syncAllSuccess": "Экспортировано заметок: {{count}}",
+    "syncAllUpToDate": "Всё уже в vault'е ({{count}} заметок пропущено)",
     "applyLayout": "Разложить по PARA",
-    "applyLayoutSuccess": "Создано папок: {{folders}}, перемещено заметок: {{notes}}"
+    "applyLayoutSuccess": "Создано папок: {{folders}}, перемещено заметок: {{notes}}",
+    "emptyState": {
+      "vault-not-configured": "Vault не настроен",
+      "plugins-missing": "Плагины Obsidian не установлены",
+      "obsidian-feature-disabled": "Интеграция с Obsidian выключена в настройках",
+      "export-failed": "Экспорт не удался: {{hint}}",
+      "vaultHint": "Укажи путь к Obsidian vault в настройках, чтобы начать синхронизацию."
+    },
+    "diagnostics": {
+      "title": "Диагностика интеграции",
+      "subtitle": "Одним взглядом — что подключено, что отсутствует, что обновлено.",
+      "refresh": "Обновить",
+      "reapplyBootstrap": "Переустановить шаблоны",
+      "reinstallPlugins": "Переустановить плагины",
+      "reapplyBootstrapSuccess": "Шаблоны и скрипты восстановлены из версии приложения.",
+      "reinstallPluginsSuccess": "Плагинов переустановлено: {{count}}",
+      "vault": "Vault",
+      "templater": "Templater",
+      "bootstrap": "Шаблоны / скрипты",
+      "restApi": "Local REST API",
+      "lmStudio": "LM Studio"
+    }
   },
   "onboarding": {
     "title": "Добро пожаловать в Мозгослав",

@@ -299,8 +299,30 @@
     "bulkExportHint": "Push any un-exported notes into your vault and lay them out using PARA.",
     "syncAll": "Sync all un-exported notes",
     "syncAllSuccess": "Exported notes: {{count}}",
+    "syncAllUpToDate": "Already in sync ({{count}} notes skipped)",
     "applyLayout": "Apply PARA layout",
-    "applyLayoutSuccess": "Folders created: {{folders}}, notes moved: {{notes}}"
+    "applyLayoutSuccess": "Folders created: {{folders}}, notes moved: {{notes}}",
+    "emptyState": {
+      "vault-not-configured": "Vault not configured",
+      "plugins-missing": "Obsidian plugins are not installed",
+      "obsidian-feature-disabled": "Obsidian integration is disabled in Settings",
+      "export-failed": "Export failed: {{hint}}",
+      "vaultHint": "Point Mozgoslav at your Obsidian vault to start syncing."
+    },
+    "diagnostics": {
+      "title": "Integration diagnostics",
+      "subtitle": "At-a-glance view of what's connected, missing, or drifted.",
+      "refresh": "Refresh",
+      "reapplyBootstrap": "Reapply templates",
+      "reinstallPlugins": "Reinstall plugins",
+      "reapplyBootstrapSuccess": "Templates and scripts restored from the shipped version.",
+      "reinstallPluginsSuccess": "Plugins reinstalled: {{count}}",
+      "vault": "Vault",
+      "templater": "Templater",
+      "bootstrap": "Templates / scripts",
+      "restApi": "Local REST API",
+      "lmStudio": "LM Studio"
+    }
   },
   "onboarding": {
     "title": "Welcome to Mozgoslav",
