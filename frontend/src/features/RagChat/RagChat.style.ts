@@ -25,6 +25,18 @@ export const Title = styled.h1`
     color: ${({theme}) => theme.colors.text.primary};
 `;
 
+export const StatusGroup = styled.div`
+    display: flex;
+    align-items: center;
+    gap: ${({theme}) => theme.space(3)};
+`;
+
+export const StatusText = styled.span<{ $empty?: boolean }>`
+    font-size: ${({theme}) => theme.font.size.sm};
+    color: ${({theme, $empty}) =>
+            $empty ? theme.colors.warning : theme.colors.text.secondary};
+`;
+
 export const MessageList = styled.ol`
     flex: 1;
     min-height: 0;

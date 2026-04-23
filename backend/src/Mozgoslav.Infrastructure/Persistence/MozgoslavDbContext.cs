@@ -30,6 +30,7 @@ public sealed class MozgoslavDbContext : DbContext
     public DbSet<Profile> Profiles => Set<Profile>();
     public DbSet<ProcessingJob> ProcessingJobs => Set<ProcessingJob>();
     public DbSet<AppSetting> Settings => Set<AppSetting>();
+    public DbSet<RagChunk> RagChunks => Set<RagChunk>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -177,6 +178,23 @@ public sealed class MozgoslavDbContext : DbContext
             e.HasKey(x => x.Key);
             e.Property(x => x.Key).HasColumnName("key");
             e.Property(x => x.Value).HasColumnName("value").IsRequired();
+        });
+
+        modelBuilder.Entity<RagChunk>(e =>
+        {
+            e.ToTable("rag_chunks");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id").IsRequired();
+            e.Property(x => x.NoteId).HasColumnName("note_id")
+                .HasConversion(v => v.ToString("D"), v => Guid.Parse(v))
+                .IsRequired();
+            e.Property(x => x.Text).HasColumnName("text").IsRequired();
+            e.Property(x => x.Embedding).HasColumnName("embedding").IsRequired();
+            e.Property(x => x.Dimensions).HasColumnName("dimensions").IsRequired();
+            e.Property(x => x.Schema).HasColumnName("schema")
+                .IsRequired()
+                .HasDefaultValue("v1");
+            e.HasIndex(x => x.NoteId).HasDatabaseName("ix_rag_chunks_note_id");
         });
     }
 }

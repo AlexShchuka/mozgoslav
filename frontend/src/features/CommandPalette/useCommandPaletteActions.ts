@@ -128,7 +128,7 @@ export const useCommandPaletteActions = (): void => {
                     void ragApi
                         .reindex()
                         .then((res) =>
-                            toast.success(t("rag.reindexedToast", {count: res.indexed})),
+                            toast.success(t("rag.reindexedToast", {count: res.embeddedNotes})),
                         )
                         .catch((err) =>
                             toast.error(err instanceof Error ? err.message : String(err)),

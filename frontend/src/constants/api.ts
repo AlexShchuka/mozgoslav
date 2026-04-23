@@ -55,6 +55,7 @@ export const API_ENDPOINTS = {
 
     ragQuery: "/api/rag/query",
     ragReindex: "/api/rag/reindex",
+    ragStatus: "/api/rag/status",
 
     dictationStart: "/api/dictation/start",
     dictationPush: (sessionId: string) => `/api/dictation/${sessionId}/push`,

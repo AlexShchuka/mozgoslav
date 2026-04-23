@@ -30,7 +30,9 @@
     "error": "Request failed",
     "citationLink": "open in note",
     "openNote": "Open note",
-    "wipBadge": "Work in progress"
+    "statusUnknown": "Index status unavailable",
+    "statusEmpty": "Index is empty — reindex your notes",
+    "statusReady": "Indexed: {{chunks}} chunks across {{notes}} notes"
   },
   "common": {
     "save": "Save",

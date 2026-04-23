@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +10,7 @@ namespace Mozgoslav.Application.Rag;
 /// <summary>
 /// ADR-005 — top-level facade the API endpoint talks to. Everything the
 /// feature needs (chunking + embedding + vector search + LLM answer
-/// synthesis) hides behind these two methods.
+/// synthesis) hides behind these methods.
 /// </summary>
 public interface IRagService
 {
@@ -18,6 +19,13 @@ public interface IRagService
     /// Called whenever a note is created or materially edited.
     /// </summary>
     Task IndexAsync(ProcessedNote note, CancellationToken ct);
+
+    /// <summary>
+    /// Drops every chunk belonging to <paramref name="noteId"/> from the
+    /// index. Called when a note is deleted so stale vectors stop showing
+    /// up as citations.
+    /// </summary>
+    Task DeindexAsync(Guid noteId, CancellationToken ct);
 
     /// <summary>
     /// Retrieves the top-K relevant chunks for <paramref name="question"/>

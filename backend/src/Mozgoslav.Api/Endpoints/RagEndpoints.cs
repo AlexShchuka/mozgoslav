@@ -16,6 +16,7 @@ namespace Mozgoslav.Api.Endpoints;
 /// ADR-005 + ADR-007-shared §2.4 — thin HTTP surface over <see cref="IRagService"/>.
 /// Contract:
 /// <list type="bullet">
+///   <item><c>GET  /api/rag/status</c>  → <c>{ chunks, notes }</c></item>
 ///   <item><c>POST /api/rag/reindex</c> → <c>{ embeddedNotes, chunks }</c></item>
 ///   <item><c>POST /api/rag/query</c>   → <c>{ answer, citations:[{noteId, segmentId, text, snippet}] }</c></item>
 /// </list>
@@ -34,6 +35,19 @@ public static class RagEndpoints
 
     public static IEndpointRouteBuilder MapRagEndpoints(this IEndpointRouteBuilder endpoints)
     {
+        endpoints.MapGet("/api/rag/status", async (
+            IProcessedNoteRepository notes,
+            IVectorIndex index,
+            CancellationToken ct) =>
+        {
+            var allNotes = await notes.GetAllAsync(ct);
+            return Results.Ok(new
+            {
+                chunks = index.Count,
+                notes = allNotes.Count,
+            });
+        });
+
         endpoints.MapPost("/api/rag/reindex", async (
             IProcessedNoteRepository notes,
             IRagService rag,
