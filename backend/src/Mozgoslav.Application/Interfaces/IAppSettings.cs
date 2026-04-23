@@ -44,6 +44,7 @@ public interface IAppSettings
     string SyncthingObsidianVaultPath { get; }
     string SyncthingApiKey { get; }
     string SyncthingBaseUrl { get; }
+    bool ObsidianFeatureEnabled { get; }
 
     AppSettingsDto Snapshot { get; }
 

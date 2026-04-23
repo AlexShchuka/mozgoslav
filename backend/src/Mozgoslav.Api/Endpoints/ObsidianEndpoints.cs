@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Application.Obsidian;
 using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Api.Endpoints;
@@ -49,8 +51,28 @@ public static class ObsidianEndpoints
 
         endpoints.MapPost("/api/obsidian/export-all", async (
             IObsidianExportService service,
+            IAppSettings settings,
+            IVaultDiagnostics diagnostics,
             CancellationToken ct) =>
         {
+            if (!settings.ObsidianFeatureEnabled)
+            {
+                return FeatureDisabledResult();
+            }
+            if (string.IsNullOrWhiteSpace(settings.VaultPath))
+            {
+                return BadRequestWithActions("vault-not-configured",
+                    "Open Settings → Obsidian and run the first-run wizard.",
+                    [DiagnosticAction.OpenOnboarding]);
+            }
+            var report = await diagnostics.RunAsync(ct);
+            var missingPlugins = report.Plugins.Where(p => !p.Ok && !p.Optional).ToList();
+            if (missingPlugins.Count > 0)
+            {
+                return BadRequestWithActions("plugins-missing",
+                    $"{missingPlugins.Count} Obsidian plugin(s) are missing or disabled — run 'Reinstall plugins' before exporting.",
+                    [DiagnosticAction.ReinstallPlugins]);
+            }
             try
             {
                 var result = await service.ExportAllUnexportedAsync(ct);
@@ -58,7 +80,7 @@ public static class ObsidianEndpoints
             }
             catch (InvalidOperationException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return BadRequestWithActions("export-failed", ex.Message, [DiagnosticAction.OpenOnboarding]);
             }
         });
 
@@ -164,6 +186,87 @@ public static class ObsidianEndpoints
             return Results.Ok(new { detected = matches, searched = candidates });
         });
 
+        endpoints.MapGet("/api/obsidian/diagnostics", async (
+            IVaultDiagnostics diagnostics,
+            CancellationToken ct) =>
+        {
+            var report = await diagnostics.RunAsync(ct);
+            return Results.Ok(report);
+        });
+
+        endpoints.MapPost("/api/obsidian/reapply-bootstrap", async (
+            IAppSettings settings,
+            IVaultDriver driver,
+            IVaultBootstrapProvider bootstrap,
+            IVaultDiagnostics diagnostics,
+            CancellationToken ct) =>
+        {
+            if (!settings.ObsidianFeatureEnabled)
+            {
+                return FeatureDisabledResult();
+            }
+            if (string.IsNullOrWhiteSpace(settings.VaultPath))
+            {
+                return BadRequestWithActions("vault-not-configured",
+                    "Open Settings → Obsidian and run the first-run wizard.",
+                    [DiagnosticAction.OpenOnboarding]);
+            }
+            var spec = BuildProvisioningSpec(settings.VaultPath, bootstrap);
+            await driver.EnsureVaultPreparedAsync(spec, ct);
+            var report = await diagnostics.RunAsync(ct);
+            return Results.Ok(new { report });
+        });
+
+        endpoints.MapPost("/api/obsidian/reinstall-plugins", async (
+            IAppSettings settings,
+            IPluginInstaller installer,
+            IReadOnlyList<PluginInstallSpec> pinnedPlugins,
+            IVaultDiagnostics diagnostics,
+            CancellationToken ct) =>
+        {
+            if (!settings.ObsidianFeatureEnabled)
+            {
+                return FeatureDisabledResult();
+            }
+            if (string.IsNullOrWhiteSpace(settings.VaultPath))
+            {
+                return BadRequestWithActions("vault-not-configured",
+                    "Open Settings → Obsidian and run the first-run wizard.",
+                    [DiagnosticAction.OpenOnboarding]);
+            }
+            var results = new List<PluginInstallResult>(pinnedPlugins.Count);
+            foreach (var plugin in pinnedPlugins)
+            {
+                ct.ThrowIfCancellationRequested();
+                results.Add(await installer.InstallAsync(plugin, settings.VaultPath, ct));
+            }
+            var report = await diagnostics.RunAsync(ct);
+            return Results.Ok(new { plugins = results, report });
+        });
+
         return endpoints;
+    }
+
+    private static IResult BadRequestWithActions(string error, string hint, IReadOnlyList<DiagnosticAction> actions)
+    {
+        return Results.BadRequest(new { error, hint, actions });
+    }
+
+    private static IResult FeatureDisabledResult()
+    {
+        return Results.Json(
+            new { error = "obsidian-feature-disabled", hint = "Enable the Obsidian feature in Settings before calling this endpoint.", actions = new[] { DiagnosticAction.OpenSettings } },
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    private static VaultProvisioningSpec BuildProvisioningSpec(string vaultRoot, IVaultBootstrapProvider bootstrap)
+    {
+        var files = new List<BootstrapFileSpec>(bootstrap.Manifest.Count);
+        foreach (var entry in bootstrap.Manifest)
+        {
+            files.Add(new BootstrapFileSpec(
+                entry.VaultRelativePath, entry.EmbeddedResourceKey, entry.WritePolicy, entry.Sha256));
+        }
+        return new VaultProvisioningSpec(vaultRoot, files);
     }
 }
