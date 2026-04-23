@@ -4,14 +4,42 @@ import Foundation
 import AVFoundation
 #endif
 
-/// Captures audio from the default or user-selected microphone at 48 kHz and
-/// downsamples to 16 kHz mono PCM (the format Whisper.net consumes). Emits
-/// chunks as they arrive — the Electron main receives them over JSON-RPC and
-/// forwards to the backend `/api/dictation/push/{sessionId}` endpoint.
+/// Captures audio from the default input and emits 16 kHz mono float32 PCM
+/// chunks — the format Whisper.net consumes directly on the backend side.
 ///
-/// macOS implementation uses AVAudioEngine + AVAudioConverter. On non-macOS
-/// platforms (CI linting, unit-test host) the service is a no-op placeholder —
-/// the helper binary itself only runs on macOS so this never ships.
+/// ## Graph
+///
+///     engine.inputNode ──(inputFormat, any channels)──▶ mixer ──(tap: 16 kHz mono)──▶ onAudioChunk
+///
+/// An `AVAudioMixerNode` is inserted between the input node and the tap
+/// instead of handling conversion in a callback with `AVAudioConverter`.
+/// The mixer is the only Apple-sanctioned path that simultaneously
+///
+///   * **sums** all input channels into mono. A bare `AVAudioConverter`
+///     without an explicit `AudioChannelLayout` / `channelMap` picks
+///     channel 0 when downmixing N→1, and on macOS *aggregate* input
+///     devices (e.g. «камера + наушники») channel 0 is often a silent
+///     loopback/monitor channel — the real microphone lives on a higher
+///     index. The mixer sums every channel together, so the signal
+///     survives no matter which sub-device is carrying it;
+///   * resamples to the tap format's `sampleRate` in a single pass using
+///     the mixer's internal resampler.
+///
+/// `engine.prepare()` is called before `engine.start()` to avoid the
+/// intermittent macOS bug where the first few input buffers arrive silent
+/// on certain Core Audio configurations.
+///
+/// On non-macOS platforms (CI linting, unit-test host) the service is a
+/// no-op placeholder — the helper binary itself only runs on macOS so this
+/// never ships.
+///
+/// References:
+///   * https://developer.apple.com/documentation/avfaudio/avaudiomixernode
+///   * https://github.com/AudioKit/AudioKit/issues/2130 — AVAudioEngine
+///     aggregate-device limitations that motivated the mixer-based pattern.
+///   * https://developer.apple.com/forums/thread/771048 — zero-samples
+///     diagnosis checklist (sandbox `Audio Input` entitlement is still
+///     required when the helper ships inside a sandboxed DMG).
 public final class AudioCaptureService {
     public struct Chunk {
         public let samples: [Float]
@@ -23,14 +51,18 @@ public final class AudioCaptureService {
 
     #if canImport(AVFoundation)
     private let engine = AVAudioEngine()
-    private var converter: AVAudioConverter?
+    private let mixer = AVAudioMixerNode()
     private var startedAt: Date?
     private var isRunning = false
     private var firstChunkLogged = false
     private let targetSampleRate: Double = 16_000
     #endif
 
-    public init() {}
+    public init() {
+        #if canImport(AVFoundation)
+        engine.attach(mixer)
+        #endif
+    }
 
     public func start(deviceId: String?, sampleRate: Int) throws {
         #if canImport(AVFoundation)
@@ -42,11 +74,19 @@ public final class AudioCaptureService {
             )
         }
         firstChunkLogged = false
+
         let input = engine.inputNode
         let inputFormat = input.outputFormat(forBus: 0)
         FileLog.shared.info(
             "AudioCaptureService: start inputFormat sampleRate=\(inputFormat.sampleRate) channels=\(inputFormat.channelCount) interleaved=\(inputFormat.isInterleaved)"
         )
+
+        guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
+            throw HelperError(
+                code: -32030,
+                message: "Default input device reports invalid format (sampleRate=\(inputFormat.sampleRate), channels=\(inputFormat.channelCount)). Select a valid microphone in System Settings → Sound → Input."
+            )
+        }
 
         guard let targetFormat = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
@@ -57,18 +97,26 @@ public final class AudioCaptureService {
             throw HelperError(code: -32010, message: "Failed to create target audio format")
         }
 
-        guard let converter = AVAudioConverter(from: inputFormat, to: targetFormat) else {
-            throw HelperError(code: -32011, message: "Failed to create audio converter")
-        }
-        self.converter = converter
-        self.startedAt = Date()
+        engine.connect(input, to: mixer, format: inputFormat)
 
-        input.installTap(onBus: 0, bufferSize: 4_800, format: inputFormat) { [weak self] buffer, _ in
-            self?.process(buffer: buffer, targetFormat: targetFormat)
+        mixer.installTap(onBus: 0, bufferSize: 4_800, format: targetFormat) { [weak self] buffer, _ in
+            self?.emitChunk(from: buffer)
         }
 
-        try engine.start()
+        engine.prepare()
+
+        do {
+            try engine.start()
+        } catch {
+            mixer.removeTap(onBus: 0)
+            engine.disconnectNodeInput(mixer)
+            throw error
+        }
+
+        startedAt = Date()
         isRunning = true
+        _ = deviceId
+        _ = sampleRate
         #else
         _ = deviceId
         _ = sampleRate
@@ -79,9 +127,9 @@ public final class AudioCaptureService {
     public func stop() {
         #if canImport(AVFoundation)
         guard isRunning else { return }
-        engine.inputNode.removeTap(onBus: 0)
+        mixer.removeTap(onBus: 0)
         engine.stop()
-        converter = nil
+        engine.disconnectNodeInput(mixer)
         startedAt = nil
         isRunning = false
         #endif
@@ -118,12 +166,24 @@ public final class AudioCaptureService {
         FileLog.shared.info(
             "startFileCapture enter sessionId=\(sessionId) outputPath=\(outputPath) sampleRate=\(sampleRate)"
         )
-        let targetFormat = AVAudioFormat(
+
+        let input = engine.inputNode
+        let inputFormat = input.outputFormat(forBus: 0)
+        guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
+            throw HelperError(
+                code: -32030,
+                message: "Default input device reports invalid format (sampleRate=\(inputFormat.sampleRate), channels=\(inputFormat.channelCount)). Select a valid microphone in System Settings → Sound → Input."
+            )
+        }
+
+        guard let targetFormat = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
             sampleRate: Double(sampleRate),
             channels: 1,
             interleaved: false
-        )!
+        ) else {
+            throw HelperError(code: -32010, message: "Failed to create target audio format for file capture")
+        }
 
         let url = URL(fileURLWithPath: outputPath)
         let parent = url.deletingLastPathComponent()
@@ -136,12 +196,6 @@ public final class AudioCaptureService {
             interleaved: false
         )
 
-        let input = engine.inputNode
-        let inputFormat = input.outputFormat(forBus: 0)
-        guard let sessionConverter = AVAudioConverter(from: inputFormat, to: targetFormat) else {
-            throw HelperError(code: -32011, message: "Failed to create audio converter")
-        }
-
         let session = FileSession(
             sessionId: sessionId,
             outputPath: outputPath,
@@ -151,10 +205,19 @@ public final class AudioCaptureService {
         fileSessions[sessionId] = session
 
         if !engine.isRunning {
-            input.installTap(onBus: 0, bufferSize: 4_800, format: inputFormat) { [weak self] buffer, _ in
-                self?.writeToFiles(buffer: buffer, converter: sessionConverter, targetFormat: targetFormat)
+            engine.connect(input, to: mixer, format: inputFormat)
+            mixer.installTap(onBus: 0, bufferSize: 4_800, format: targetFormat) { [weak self] buffer, _ in
+                self?.writeToFiles(buffer: buffer)
             }
-            try engine.start()
+            engine.prepare()
+            do {
+                try engine.start()
+            } catch {
+                mixer.removeTap(onBus: 0)
+                engine.disconnectNodeInput(mixer)
+                fileSessions.removeValue(forKey: sessionId)
+                throw error
+            }
         }
         #else
         _ = sessionId
@@ -173,8 +236,9 @@ public final class AudioCaptureService {
         let durationMs = Int(Date().timeIntervalSince(session.startedAt) * 1000)
 
         if fileSessions.isEmpty && !isRunning {
-            engine.inputNode.removeTap(onBus: 0)
+            mixer.removeTap(onBus: 0)
             engine.stop()
+            engine.disconnectNodeInput(mixer)
         }
 
         session.file = nil
@@ -193,71 +257,19 @@ public final class AudioCaptureService {
     }
 
     #if canImport(AVFoundation)
-    private func writeToFiles(
-        buffer: AVAudioPCMBuffer,
-        converter: AVAudioConverter,
-        targetFormat: AVAudioFormat
-    ) {
-        let ratio = targetFormat.sampleRate / buffer.format.sampleRate
-        let outputFrameCapacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio) + 32
-        guard let outputBuffer = AVAudioPCMBuffer(
-            pcmFormat: targetFormat,
-            frameCapacity: outputFrameCapacity
-        ) else { return }
-
-        var error: NSError?
-        var consumed = false
-        let status = converter.convert(to: outputBuffer, error: &error) { _, inputStatus in
-            if consumed {
-                inputStatus.pointee = .noDataNow
-                return nil
-            }
-            consumed = true
-            inputStatus.pointee = .haveData
-            return buffer
+    private func emitChunk(from buffer: AVAudioPCMBuffer) {
+        guard let channelData = buffer.floatChannelData?.pointee else { return }
+        let frameCount = Int(buffer.frameLength)
+        if frameCount == 0 {
+            return
         }
 
-        guard status != .error, outputBuffer.frameLength > 0 else { return }
-
-        for session in fileSessions.values where !session.stopped {
-            if let file = session.file {
-                try? file.write(from: outputBuffer)
-            }
-        }
-    }
-
-    private func process(buffer: AVAudioPCMBuffer, targetFormat: AVAudioFormat) {
-        guard let converter = converter else { return }
-
-        let ratio = targetFormat.sampleRate / buffer.format.sampleRate
-        let outputFrameCapacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio) + 32
-        guard let outputBuffer = AVAudioPCMBuffer(
-            pcmFormat: targetFormat,
-            frameCapacity: outputFrameCapacity
-        ) else { return }
-
-        var error: NSError?
-        var consumed = false
-        let status = converter.convert(to: outputBuffer, error: &error) { _, inputStatus in
-            if consumed {
-                inputStatus.pointee = .noDataNow
-                return nil
-            }
-            consumed = true
-            inputStatus.pointee = .haveData
-            return buffer
-        }
-
-        guard status != .error, outputBuffer.frameLength > 0 else { return }
-        guard let channelData = outputBuffer.floatChannelData?.pointee else { return }
-
-        let frameCount = Int(outputBuffer.frameLength)
         var samples = [Float](repeating: 0, count: frameCount)
         for i in 0..<frameCount {
             samples[i] = channelData[i]
         }
 
-        if !firstChunkLogged && frameCount > 0 {
+        if !firstChunkLogged {
             var sumSq: Double = 0
             var minV: Float = samples[0]
             var maxV: Float = samples[0]
@@ -268,7 +280,7 @@ public final class AudioCaptureService {
             }
             let rms = (sumSq / Double(frameCount)).squareRoot()
             FileLog.shared.info(
-                "AudioCaptureService: first chunk emitted frames=\(frameCount) rms=\(rms) min=\(minV) max=\(maxV) inputSR=\(buffer.format.sampleRate) outputSR=\(Int(targetFormat.sampleRate))"
+                "AudioCaptureService: first chunk emitted frames=\(frameCount) rms=\(rms) min=\(minV) max=\(maxV) outputSR=\(Int(targetSampleRate))"
             )
             firstChunkLogged = true
         }
@@ -280,7 +292,15 @@ public final class AudioCaptureService {
             offsetMs = 0
         }
 
-        onAudioChunk?(Chunk(samples: samples, sampleRate: Int(targetFormat.sampleRate), offsetMs: offsetMs))
+        onAudioChunk?(Chunk(samples: samples, sampleRate: Int(targetSampleRate), offsetMs: offsetMs))
+    }
+
+    private func writeToFiles(buffer: AVAudioPCMBuffer) {
+        for session in fileSessions.values where !session.stopped {
+            if let file = session.file {
+                try? file.write(from: buffer)
+            }
+        }
     }
     #endif
 }
