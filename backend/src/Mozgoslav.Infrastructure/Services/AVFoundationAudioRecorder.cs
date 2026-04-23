@@ -15,20 +15,6 @@ using Mozgoslav.Infrastructure.Configuration;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// macOS native audio recorder. Delegates capture to the Swift helper
-/// (<c>helpers/MozgoslavDictationHelper</c>) via an internal loopback HTTP
-/// endpoint exposed by the Electron main process. The port is resolved from
-/// configuration (<c>Mozgoslav:AudioRecorder:ElectronBridgePort</c>, typically
-/// populated from the <c>Mozgoslav__AudioRecorder__ElectronBridgePort</c>
-/// environment variable set by <c>frontend/electron/utils/backendLauncher.ts</c>
-/// at backend spawn time).
-/// <para>
-/// On invocation without a running Electron host (dev backend started via
-/// <c>dotnet run</c>), <see cref="IsSupported"/> returns <c>false</c> and
-/// <see cref="StartAsync"/> throws.
-/// </para>
-/// </summary>
 public sealed class AVFoundationAudioRecorder : IAudioRecorder
 {
     private readonly HttpClient _http;

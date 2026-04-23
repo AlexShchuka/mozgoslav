@@ -117,6 +117,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build
-        run: cd helpers/MozgoslavDictationHelper && swift build -c release
+        run: cd native/MozgoslavDictationHelper && swift build -c release
       - name: Test
-        run: cd helpers/MozgoslavDictationHelper && swift test
+        run: cd native/MozgoslavDictationHelper && swift test
