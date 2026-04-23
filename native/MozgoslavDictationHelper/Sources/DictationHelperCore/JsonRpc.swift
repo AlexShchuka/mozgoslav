@@ -1,8 +1,5 @@
 import Foundation
 
-/// Minimal JSON-RPC envelope used between the Electron main process and the
-/// Swift helper. One-line JSON per message on stdin/stdout — no length prefix,
-/// no batching. Matches the style used by `vscode-jsonrpc` light mode.
 public struct JsonRpcRequest: Codable, Equatable, Sendable {
     public let id: String
     public let method: String
@@ -37,9 +34,6 @@ public struct JsonRpcError: Codable, Equatable, Sendable {
     }
 }
 
-/// Value type for `params` / `result` that preserves JSON shape without
-/// forcing a typed schema on the core package. Good enough for the 4 RPC
-/// methods the helper exposes.
 public enum JsonValue: Codable, Equatable, Sendable {
     case string(String)
     case int(Int)

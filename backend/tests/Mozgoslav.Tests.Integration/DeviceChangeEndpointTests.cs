@@ -18,12 +18,6 @@ using NSubstitute;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// D3 — inbound hot-plug event from the Swift helper forwards into
-/// <see cref="IAudioDeviceChangeNotifier.PublishAsync"/>. The SSE side of the
-/// pipeline is exercised by frontend RTL against an EventSource stub, so the
-/// backend test focuses on the POST + publish handshake.
-/// </summary>
 [TestClass]
 public sealed class DeviceChangeEndpointTests
 {

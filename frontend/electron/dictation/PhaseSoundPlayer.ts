@@ -2,22 +2,6 @@ import {spawn} from "node:child_process";
 
 import type {DictationPhase} from "./types";
 
-/**
- * ADR-002 R6 — audible feedback on dictation lifecycle transitions. A short
- * system sound fires when recording starts, when Whisper output arrives for
- * injection, and when the pipeline fails. Other phases are silent so the
- * feedback stays legible; the orchestrator calls {@link handleTransition} on
- * every state change.
- *
- * Sounds are played via the platform's bundled CLI so we don't have to ship
- * audio assets or link a native player:
- *   - macOS: `afplay /System/Library/Sounds/*.aiff`
- *   - Linux: `paplay` → `aplay` fallback on `/usr/share/sounds/freedesktop/...`
- *   - Windows: silent today (no reliable single-command player bundled)
- *
- * Missing players and missing sound files are tolerated — any spawn error is
- * swallowed so a desktop without audio never blocks the dictation flow.
- */
 export class PhaseSoundPlayer {
     private lastPhase: DictationPhase = "idle";
 

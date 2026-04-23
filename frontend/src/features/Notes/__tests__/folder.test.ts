@@ -30,7 +30,6 @@ describe("folderFromVaultPath", () => {
     });
 
     it("returns null if vault root does not match prefix (defensive)", () => {
-        // path exists at another vault — treat the whole thing as relative, parent dir used
         expect(folderFromVaultPath("/other/root/Archive/a.md", "/vault")).toBe(
             "other/root/Archive",
         );

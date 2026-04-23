@@ -1,14 +1,5 @@
 import type {Transition, Variants} from "framer-motion";
 
-/**
- * ADR-013 — framer-motion variant catalogue.
- *
- * Each exported variant is a plain `Variants` object so callers can apply it
- * to `motion.div` / `motion.button` / etc. without rebuilding the spring or
- * easing shape in every component. Durations are encoded in seconds (framer
- * expects fractional seconds, not ms strings) and deliberately mirror the
- * numeric values in `theme.motion.duration.*`.
- */
 
 const springSoft: Transition = {type: "spring", stiffness: 260, damping: 28};
 const springFirm: Transition = {type: "spring", stiffness: 420, damping: 32};
@@ -23,10 +14,6 @@ const durations = {
 const standardEase = [0.2, 0, 0, 1] as const;
 const emphasizedEase = [0.3, 0, 0.1, 1] as const;
 
-/**
- * Button — hover lift, active press, loading pulse. Pair with
- * `whileHover="hover"` + `whileTap="tap"` + `animate={isLoading ? "loading" : "idle"}`.
- */
 export const buttonVariants: Variants = {
     idle: {scale: 1, boxShadow: "0 0 0 0 rgba(41, 252, 195, 0)"},
     hover: {
@@ -45,10 +32,6 @@ export const buttonVariants: Variants = {
     },
 };
 
-/**
- * Card — mount reveal (opacity + translateY), hover lift, click squish.
- * Stagger between siblings is handled at the parent via `staggerChildren`.
- */
 export const cardVariants: Variants = {
     hidden: {opacity: 0, y: 8},
     show: {
@@ -63,11 +46,6 @@ export const cardVariants: Variants = {
     tap: {scale: 0.99, transition: {duration: durations.instant}},
 };
 
-/**
- * Sidebar item — active-indicator glow bar uses `layoutId="sidebar-active"` on
- * the highlighted element so framer-motion animates the glow between items.
- * The variants below control the hover/inactive surface fill.
- */
 export const sidebarItemVariants: Variants = {
     inactive: {backgroundColor: "rgba(0, 0, 0, 0)"},
     hover: {
@@ -80,10 +58,6 @@ export const sidebarItemVariants: Variants = {
     },
 };
 
-/**
- * ProgressBar — fill animates from 0→value; the companion shimmer overlay
- * slides left→right infinitely while the bar is active.
- */
 export const progressBarVariants: Variants = {
     idle: {
         backgroundPositionX: "0%",
@@ -103,10 +77,6 @@ export const progressBarVariants: Variants = {
     },
 };
 
-/**
- * Toast — spring-in from top-right, fade on dismiss. Apply via the
- * `react-toastify` `transition` prop (wrapped in a framer-motion adapter).
- */
 export const toastVariants: Variants = {
     enter: {
         x: "0%",
@@ -117,11 +87,6 @@ export const toastVariants: Variants = {
     exit: {opacity: 0, transition: {duration: 0.2, ease: standardEase}},
 };
 
-/**
- * DictationOverlay — scale-in mount, pulsing accent-glow border while
- * recording, fade-out on dismiss. Backdrop blur is applied via the style prop,
- * not via variants.
- */
 export const dictationOverlayVariants: Variants = {
     initial: {opacity: 0, scale: 0.9},
     enter: {
@@ -144,10 +109,6 @@ export const dictationOverlayVariants: Variants = {
     },
 };
 
-/**
- * Onboarding step — slide+fade between steps. Pair with `AnimatePresence`
- * and key the motion.div on the step id for correct enter/exit.
- */
 export const onboardingStepVariants: Variants = {
     enter: (direction: number) => ({
         opacity: 0,
@@ -165,10 +126,6 @@ export const onboardingStepVariants: Variants = {
     }),
 };
 
-/**
- * Page transition — wrap `<Routes>` in `<AnimatePresence>` and give each page
- * container these variants keyed on `location.pathname`.
- */
 export const pageTransitionVariants: Variants = {
     initial: {opacity: 0, y: 6},
     enter: {
@@ -183,21 +140,6 @@ export const pageTransitionVariants: Variants = {
     },
 };
 
-/**
- * ADR-013 reduced-motion fallbacks.
- *
- * `MotionConfig reducedMotion="user"` at the app root strips
- * transform/opacity animations automatically. These sibling variants cover
- * the cases framer does NOT strip — infinite `boxShadow` pulses on
- * ProgressBar and DictationOverlay — which would otherwise keep cycling for
- * users who asked for less motion.
- *
- * Consumer pattern:
- *   const prefersReducedMotion = useReducedMotion();
- *   const variants = prefersReducedMotion
- *     ? reducedProgressBarVariants
- *     : progressBarVariants;
- */
 
 export const reducedProgressBarVariants: Variants = {
     idle: {backgroundPositionX: "0%"},

@@ -15,11 +15,6 @@ using Mozgoslav.Application.Obsidian;
 
 namespace Mozgoslav.Infrastructure.Obsidian;
 
-/// <summary>
-/// ADR-019 §5.3 — aggregated connection + drift check. Never throws for probe
-/// failures; returns a single <see cref="VaultDiagnosticsReport"/> with
-/// severity-tagged chips + whitelisted <see cref="DiagnosticAction"/>s.
-/// </summary>
 public sealed class VaultDiagnosticsService : IVaultDiagnostics
 {
     private static readonly TimeSpan ExternalProbeTimeout = TimeSpan.FromSeconds(2);

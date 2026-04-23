@@ -12,13 +12,6 @@ using OpenAI.Chat;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// <see cref="ILlmProvider"/> for any OpenAI-compatible endpoint
-/// (LM Studio, Ollama's OpenAI adapter, llama.cpp HTTP server, etc.). Uses the
-/// official OpenAI .NET SDK; the base URL + API key + model come from
-/// <see cref="IAppSettings"/>. Network-level failures log a WARN and return an
-/// empty string so the pipeline falls back to the raw transcript (BC-013).
-/// </summary>
 public sealed class OpenAiCompatibleLlmProvider : ILlmProvider
 {
     private const float Temperature = 0.1f;

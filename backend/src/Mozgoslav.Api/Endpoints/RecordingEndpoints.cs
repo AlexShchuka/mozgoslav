@@ -24,11 +24,6 @@ public static class RecordingEndpoints
 
     private sealed record ActiveSession(string SessionId, string OutputPath, DateTime StartedAtUtc);
 
-    /// <summary>
-    /// In-memory bookkeeping for the currently-active native recording session.
-    /// We keep a single slot because the native helper does not support
-    /// multiplexing; attempting a concurrent start returns 409.
-    /// </summary>
     private static ActiveSession? _activeSession;
     private static readonly Lock ActiveSessionLock = new();
 

@@ -61,11 +61,6 @@ export function* acceptDeviceSaga(action: AcceptDeviceAction): SagaIterator {
     }
 }
 
-/**
- * Opens a long-lived SSE connection to /api/sync/events and forwards each
- * parsed frame into the store. Closes cleanly on STOP_EVENT_STREAM or when
- * the saga is cancelled (e.g., page unmount).
- */
 export function* syncEventStreamSaga(): SagaIterator {
     const channel: EventChannel<StreamMessage> = yield call(buildEventChannel);
     try {

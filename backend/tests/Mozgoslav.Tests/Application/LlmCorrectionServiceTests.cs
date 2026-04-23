@@ -15,11 +15,6 @@ using NSubstitute;
 
 namespace Mozgoslav.Tests.Application;
 
-/// <summary>
-/// Plan v0.8 Block 5 — the correction stage is transport-agnostic.
-/// Tests wire an NSubstitute <see cref="ILlmProvider"/> so we can assert
-/// chunking, prompt composition, and graceful fallback.
-/// </summary>
 [TestClass]
 public sealed class LlmCorrectionServiceTests
 {
@@ -116,7 +111,7 @@ public sealed class LlmCorrectionServiceTests
     [TestMethod]
     public void MergeChunks_TwoChunks_TrimsOverlapRegion()
     {
-        var first = "aaaaaaaaaaBBBBB"; // 15 chars total, 5 trailing to drop
+        var first = "aaaaaaaaaaBBBBB";
         var second = "CCCCCDDDDDDDDDD";
         var merged = LlmCorrectionService.MergeChunks([first, second], 5);
         merged.Should().Be("aaaaaaaaaaCCCCCDDDDDDDDDD");

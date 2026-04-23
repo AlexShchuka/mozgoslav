@@ -19,20 +19,6 @@ using DomainProfile = Mozgoslav.Domain.Entities.Profile;
 
 namespace Mozgoslav.Application.Services;
 
-/// <summary>
-/// In-memory state-machine for push-to-talk dictation sessions. One instance is
-/// a singleton that the Electron main process drives through the session
-/// lifecycle: <c>Start</c> → <c>PushAudioAsync</c> repeatedly → <c>StopAsync</c>.
-/// Partial transcripts flow through the per-session SSE channel that the
-/// overlay subscribes to. Sessions are short-lived and never persisted.
-/// <para>
-/// ADR-004 R5: every audio chunk is also mirrored to a raw PCM file
-/// (<c>dictation-{sessionId}.pcm</c>, float32 mono at the chunk's sample rate)
-/// inside <see cref="IAppSettings.DictationTempAudioPath"/>. On clean stop or
-/// cancel the file is deleted; if the app crashes the file is left behind so
-/// the user can recover audio that never reached the LLM.
-/// </para>
-/// </summary>
 public sealed class DictationSessionManager : IDictationSessionManager
 {
     private const string PcmFilePrefix = "dictation-";
@@ -400,11 +386,6 @@ public sealed class DictationSessionManager : IDictationSessionManager
         }
     }
 
-    /// <summary>
-    /// Pass-through iterator that writes every chunk's PCM samples to the
-    /// per-session crash-recovery buffer before yielding it to Whisper.
-    /// Buffer write errors are logged and do not abort the session.
-    /// </summary>
     private async IAsyncEnumerable<AudioChunk> TeeAudioToBufferAsync(
         IAsyncEnumerable<AudioChunk> source,
         SessionRuntime runtime,
@@ -505,15 +486,6 @@ public sealed class DictationSessionManager : IDictationSessionManager
         }
     }
 
-    /// <summary>
-    /// Assembles the <c>initial_prompt</c> (ADR-004 R1) that biases Whisper toward
-    /// domain-specific vocabulary. ADR-007 BC-030 / N3: when the active domain
-    /// <see cref="DomainProfile.TranscriptionPromptOverride"/> is non-empty it
-    /// wins over <see cref="IAppSettings.DictationVocabulary"/> — the profile
-    /// encodes the caller's deliberate hand-tuned biasing, the vocabulary list
-    /// is a global fallback. Returning <c>null</c> preserves the transcription
-    /// service's built-in default so an empty vocabulary is not a regression.
-    /// </summary>
     public static string? BuildInitialPrompt(DomainProfile? profile, IReadOnlyList<string>? vocabulary)
     {
         var overrideText = profile?.TranscriptionPromptOverride;
@@ -634,13 +606,6 @@ public sealed class DictationSessionManager : IDictationSessionManager
         public SemaphoreSlim PcmStartLock { get; }
         public bool PcmStreamStarted { get; set; }
         public Task? PcmForwardTask { get; set; }
-        /// <summary>
-        /// Domain profile whose <see cref="DomainProfile.TranscriptionPromptOverride"/>
-        /// (when non-empty) biases Whisper. Today the runtime always starts without a
-        /// profile (null), so the override is inert and <see cref="IAppSettings.DictationVocabulary"/>
-        /// still drives the prompt. Threading a real profile through <c>Start()</c> is
-        /// tracked for a follow-up slice.
-        /// </summary>
         public DomainProfile? Profile { get; set; }
 
         public void CloseAudioBuffer()

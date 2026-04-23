@@ -13,7 +13,6 @@ namespace Mozgoslav.Infrastructure.Persistence.EfMigrations
     [Migration("20260418070016_PostMergeSchemaCatchUp")]
     partial class PostMergeSchemaCatchUp
     {
-        /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618

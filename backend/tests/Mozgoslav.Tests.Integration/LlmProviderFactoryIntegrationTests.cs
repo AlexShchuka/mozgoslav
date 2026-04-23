@@ -9,12 +9,6 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// BC-036 — the composition root resolves <see cref="ILlmProviderFactory"/> and
-/// returns a provider whose <c>Kind</c> matches the persisted setting. This
-/// exercises the whole DI wiring: three <see cref="ILlmProvider"/> singletons,
-/// the factory, and the settings load path.
-/// </summary>
 [TestClass]
 public sealed class LlmProviderFactoryIntegrationTests
 {

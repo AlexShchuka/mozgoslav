@@ -2,15 +2,6 @@ import {FC, useEffect, useRef} from "react";
 
 import {Bar, MeterFill, MeterRoot, Peak} from "./AudioLevelMeter.style";
 
-/**
- * D2 — live RMS + peak meter reused by Dashboard (record button) and the
- * DictationOverlay. The component accepts a MediaStream and drives its own
- * AnalyserNode at ~50 ms intervals so the caller doesn't ship energy data
- * over the network.
- *
- * When `stream` is null/undefined the meter renders a flat bar — no AudioContext
- * is created so hot-swapping between recording sessions is O(1).
- */
 export interface AudioLevelMeterProps {
     readonly stream?: MediaStream | null;
     readonly height?: number;
@@ -19,7 +10,7 @@ export interface AudioLevelMeterProps {
 }
 
 const UPDATE_INTERVAL_MS = 50;
-const PEAK_FALL_PER_SEC = 1.5; // meter falls from peak 1.0 → 0.0 in ~670 ms
+const PEAK_FALL_PER_SEC = 1.5; 
 
 const AudioLevelMeter: FC<AudioLevelMeterProps> = ({stream, height = 8, ariaLabel, testId}) => {
     const rmsRef = useRef<HTMLDivElement | null>(null);
@@ -64,7 +55,7 @@ const AudioLevelMeter: FC<AudioLevelMeterProps> = ({stream, height = 8, ariaLabe
                 if (abs > peak) peak = abs;
             }
             const rms = Math.sqrt(sumSq / buffer.length);
-            const displayRms = Math.min(1, rms * 2); // amplify — speech rarely exceeds 0.5
+            const displayRms = Math.min(1, rms * 2); 
 
             const dtSec = (Date.now() - lastTickRef.current) / 1000;
             lastTickRef.current = Date.now();

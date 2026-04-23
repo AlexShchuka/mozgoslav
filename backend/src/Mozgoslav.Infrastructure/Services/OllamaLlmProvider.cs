@@ -13,11 +13,6 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// <see cref="ILlmProvider"/> for Ollama's native <c>/api/chat</c>
-/// endpoint. <c>stream=false</c> so the full response lands in one HTTP reply.
-/// Raw <see cref="HttpClient"/> (no SDK) to keep the dependency surface narrow.
-/// </summary>
 public sealed class OllamaLlmProvider : ILlmProvider
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)

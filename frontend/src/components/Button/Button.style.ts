@@ -22,12 +22,6 @@ const sizeStyles = {
 } satisfies Record<ButtonSize, ReturnType<typeof css>>;
 
 const variantStyles = {
-    /* Resting state is deliberately muted — tinted fill + accent border — so
-       primary affordances don't overwhelm the surrounding layout. Hover
-       switches to a solid accent fill without any glow shadow (eye-strain
-       feedback 2026-04-19): the affordance is unmistakable via the fill
-       change alone; a bright glow on top read as aggressive in list contexts
-       where several buttons sit close. */
     primary: css`
         background: ${({theme}) => theme.colors.accent.soft};
         color: ${({theme}) => theme.colors.accent.primary};
@@ -57,11 +51,6 @@ const variantStyles = {
             color: ${({theme}) => theme.colors.accent.primary};
         }
     `,
-    /* Same resting-muted / hover-solid pattern as primary, but with the error
-       palette. No glow shadow on hover (same eye-strain rationale). Tinted
-       fill is defined inline because the theme exposes only the solid
-       `error` colour; adding an `error.soft` token would require a theme
-       contract change for a single use-site. */
     danger: css`
         background: rgba(248, 113, 113, 0.12);
         color: ${({theme}) => theme.colors.error};
@@ -72,9 +61,6 @@ const variantStyles = {
             color: #fff;
         }
     `,
-    /* Confirmatory resting state — used for "already installed / already done"
-       affordances that should stay visible but not invite another click. Pair
-       with `disabled` on the element so pointer-events are off. */
     success: css`
         background: ${({theme}) => theme.colors.success};
         color: ${({theme}) => theme.colors.accent.contrast};

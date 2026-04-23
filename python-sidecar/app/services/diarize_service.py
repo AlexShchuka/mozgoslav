@@ -1,23 +1,3 @@
-"""Speaker diarization.
-
-Pipeline (per ``plan/v0.8/02-ml-sidecar-production.md §3.1``):
-
-1. Load the audio file (16 kHz mono float32). The C# backend feeds
-   WAVs already in the right shape; we still call ``librosa.load`` so
-   we tolerate MP3s and resample on the fly if the caller sent us
-   something exotic.
-2. Silero VAD → speech timestamps.
-3. For every segment ≥ ``_MIN_EMBED_SECONDS``, compute a Resemblyzer
-   ``VoiceEncoder`` embedding.
-4. Agglomerative clustering (cosine, ``distance_threshold=0.75``) →
-   speaker labels.
-5. Short segments (< ``_MIN_EMBED_SECONDS``) are glued to the nearest
-   cluster by time.
-
-Heavy imports (``silero_vad``, ``resemblyzer``, ``sklearn``, ``librosa``)
-are deferred to constructor time so unit tests can stub the service via
-a fake embedder without loading PyTorch.
-"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -37,20 +17,11 @@ _VAD_MIN_SILENCE_MS = 300
 
 
 class _Embedder(Protocol):
-    """Minimal subset of ``resemblyzer.VoiceEncoder`` used here.
-
-    Declared as a Protocol so tests can inject fakes without importing
-    PyTorch.
-    """
 
     def embed_utterance(self, wav: np.ndarray) -> np.ndarray: ...
 
 
 class DiarizeService:
-    """Production diarizer. Raises :class:`FileNotFoundError` when the
-    caller references a non-existent audio file, and
-    :class:`ValueError` when the file decoded to zero samples.
-    """
 
     def __init__(
         self,
@@ -100,7 +71,6 @@ class DiarizeService:
             num_speakers=len({int(label) for label in labels}) if labels else 0,
         )
 
-    # ---- internals --------------------------------------------------------
 
     def _vad_segments(self, wav: np.ndarray) -> list[tuple[float, float]]:
         import torch  # noqa: PLC0415
@@ -148,16 +118,8 @@ def _merge_short_into_nearest(
     long_segments: list[tuple[float, float]],
     long_labels: list[int],
 ) -> list[SpeakerSegment]:
-    """Attach short segments to the temporally nearest long segment.
-
-    Short segments (< :data:`_MIN_EMBED_SECONDS`) lack a reliable
-    embedding — instead of dropping them, we route them to whichever
-    long segment is closest in time so the caller still sees the full
-    speech timeline.
-    """
 
     if not long_segments:
-        # Fallback: single-speaker label for everything.
         return [
             SpeakerSegment(speaker="A", start=start, end=end)
             for start, end in all_segments
@@ -184,7 +146,6 @@ def _merge_short_into_nearest(
 
 
 def _label_name(label: int) -> str:
-    """``0 -> 'A'``, ``1 -> 'B'``, … ``26 -> 'AA'`` (tail is unlikely)."""
 
     if label < 26:
         return chr(ord("A") + label)

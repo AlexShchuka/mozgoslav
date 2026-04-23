@@ -316,13 +316,6 @@ app.whenReady().then(async () => {
     });
 });
 
-/**
- * Task #10 — swap the default dictation accelerator for the user-configured
- * one once the backend is reachable. Polls `/api/settings` with a short
- * back-off. When `dictationPushToTalk=true` (NEXT H1) we skip globalShortcut
- * entirely and forward the native helper's keyDown/keyUp events to the
- * backend instead, so the renderer can drive true push-to-talk via SSE.
- */
 const applyCustomHotkeyFromSettings = async (): Promise<void> => {
     const maxAttempts = 8;
     const delayMs = 750;
@@ -379,14 +372,6 @@ const applyCustomHotkeyFromSettings = async (): Promise<void> => {
     console.warn("[globalShortcut] Backend unreachable after 8 attempts — keeping default accelerator.");
 };
 
-/**
- * Probe + prompt Accessibility on the Electron parent process. macOS 13+
- * TCC inheritance means a trusted parent lets its spawned children (the
- * Swift helper we use for `NSEvent.addGlobalMonitorForEvents`) see input
- * events without a separate System Settings entry. Returns the current
- * trust state after the prompt call — callers usually don't read it,
- * they just want the side-effect of showing the dialog once.
- */
 const ensureParentAccessibility = (): boolean => {
     if (process.platform !== "darwin") return true;
     const trusted = systemPreferences.isTrustedAccessibilityClient(true);

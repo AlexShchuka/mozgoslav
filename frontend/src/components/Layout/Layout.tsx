@@ -66,9 +66,7 @@ const Layout: FC<LayoutProps> = ({children}) => {
             <Sidebar>
                 <SidebarSection>
                     <SidebarGroup>
-                        {/* Task L1 — one "Мозгослав" entry replaces Dashboard + Queue;
-                the Sparkles mark migrated here from the sidebar header for
-                a cleaner minimalist layout. */}
+                        {}
                         <NavItem to={ROUTES.home} icon={<Sparkles size={16}/>} onClick={onNavClick}>
                             {t("nav.home")}
                         </NavItem>

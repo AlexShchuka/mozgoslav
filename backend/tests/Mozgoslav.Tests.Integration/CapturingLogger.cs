@@ -5,12 +5,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// Records every rendered log message for one logger category. Used by
-/// <c>StartupLogTests</c> to assert "SQLite schema ensured" and "Seeded 3
-/// built-in profiles" are each emitted exactly once per host start-up
-/// (ADR-007 BC-052, bug 8).
-/// </summary>
 internal sealed class CapturingLogger<T> : ILogger<T>
 {
     private readonly ConcurrentQueue<string> _messages;

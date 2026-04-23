@@ -11,18 +11,6 @@ const ragApi = apiFactory.createRagApi();
 const backupApi = apiFactory.createBackupApi();
 const settingsApi = apiFactory.createSettingsApi();
 
-/**
- * Registers the app-wide command-palette actions via kbar. Called once from
- * the provider tree (see main.tsx). Kept as a hook — not a const array — so
- * we can pick up live translation changes and use react-router's navigate().
- *
- * Actions fall into two sections:
- *   - Navigation: one per sidebar route.
- *   - Quick actions: shortcuts for frequent workflows (new note, reindex, …).
- *
- * kbar handles the `Cmd+K` / `Ctrl+K` toggle cross-platform; no
- * manual `useHotkeys` plumbing needed.
- */
 export const useCommandPaletteActions = (): void => {
     const {t} = useTranslation();
     const navigate = useNavigate();

@@ -14,13 +14,6 @@ using Mozgoslav.Domain.Services;
 
 namespace Mozgoslav.Application.UseCases;
 
-/// <summary>
-/// Imports one or more audio files as Recordings and enqueues a ProcessingJob for each.
-/// Every call creates a fresh Recording row — duplicate imports of the same
-/// audio content produce distinct timeline entries (product decision
-/// 2026-04-19, meeting note). SHA-256 remains on the row for reference and
-/// future vault-level dedup; it is no longer unique at the DB level.
-/// </summary>
 public sealed class ImportRecordingUseCase
 {
     private readonly IRecordingRepository _recordings;

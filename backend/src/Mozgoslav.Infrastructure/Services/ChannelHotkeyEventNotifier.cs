@@ -10,12 +10,6 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// NEXT H1 — in-process fan-out for global hotkey press/release events.
-/// Mirrors <see cref="ChannelAudioDeviceChangeNotifier"/> down to the
-/// lifecycle semantics: every subscriber gets its own unbounded channel;
-/// every publish writes to all current subscribers.
-/// </summary>
 public sealed class ChannelHotkeyEventNotifier : IHotkeyEventNotifier, IDisposable
 {
     private readonly ConcurrentDictionary<Guid, Channel<HotkeyEvent>> _subscribers = new();

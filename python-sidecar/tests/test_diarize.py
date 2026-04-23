@@ -1,10 +1,3 @@
-"""Tests for ``app/services/diarize_service.py``.
-
-Strategy: inject fakes for the heavy stages (VAD + embedder) and
-exercise the clustering + short-segment glue logic on deterministic
-inputs. The real silero-vad / resemblyzer code path is covered end-to-
-end by the C# integration test that speaks to the running sidecar.
-"""
 from __future__ import annotations
 
 import wave
@@ -22,21 +15,12 @@ from app.services.diarize_service import (
 
 
 class _StubVad:
-    """Fake silero VAD that ignores the audio and replays a script."""
 
     def __init__(self, _script: list[tuple[float, float]]) -> None:
-        # Kept for symmetry; real scripting is threaded through
-        # ``_StubService`` below.
         self._script = _script
 
 
 class _StubEmbedder:
-    """Fake resemblyzer — returns a deterministic vector per frame.
-
-    The vector is a one-hot of the ``start_index`` so embeddings from
-    two different long segments cluster apart; identical segments
-    share the same vector and cluster together.
-    """
 
     def __init__(self, pattern: list[int]) -> None:
         self._pattern = iter(pattern)
@@ -51,13 +35,11 @@ class _StubEmbedder:
 def _build_service_with_script(
     *, vad_segments: list[tuple[float, float]], embed_pattern: list[int]
 ) -> DiarizeService:
-    """Build a DiarizeService with the VAD pre-scripted via subclass."""
 
     class _ScriptedService(DiarizeService):
         def _vad_segments(self, wav: np.ndarray) -> list[tuple[float, float]]:  # noqa: ARG002
             return list(vad_segments)
 
-    # ``ModelPaths`` is a required ctor arg but unused on the scripted path.
     from app.ml.model_paths import ModelPaths  # noqa: PLC0415
 
     paths = ModelPaths(Path("/tmp/definitely-missing"))
@@ -65,8 +47,6 @@ def _build_service_with_script(
 
 
 def _write_silent_wav(path: Path, duration_seconds: float = 3.0) -> None:
-    """Create a short silent PCM file — real audio content does not
-    matter because VAD is stubbed."""
 
     samples = np.zeros(int(16_000 * duration_seconds), dtype=np.int16)
     with wave.open(str(path), "wb") as w:
@@ -114,13 +94,11 @@ def test_diarize_short_segment_glued_to_nearest_long_cluster(tmp_path: Path) -> 
     audio = tmp_path / "sample.wav"
     _write_silent_wav(audio)
     service = _build_service_with_script(
-        vad_segments=[(0.0, 1.0), (1.1, 1.3), (1.5, 2.5)],  # middle is short
-        embed_pattern=[0, 3],  # only two long segments → two embeddings
+        vad_segments=[(0.0, 1.0), (1.1, 1.3), (1.5, 2.5)],  
+        embed_pattern=[0, 3],  
     )
     result = service.diarize(DiarizeRequest(audio_path=str(audio)))
     assert len(result.segments) == 3
-    # Short middle segment (mid 1.2) is closer to the first long seg (mid 0.5)
-    # than the second (mid 2.0), so it takes the first speaker.
     assert result.segments[1].speaker == result.segments[0].speaker
 
 
@@ -131,7 +109,6 @@ def test_diarize_raises_when_audio_file_missing(tmp_path: Path) -> None:
 
 
 def test_merge_short_into_nearest_uses_label_letters() -> None:
-    """Unit check for the pure helper — A/B/C mapping for small N."""
 
     segments = _merge_short_into_nearest(
         all_segments=[(0.0, 1.0), (2.0, 3.0)],
@@ -142,7 +119,6 @@ def test_merge_short_into_nearest_uses_label_letters() -> None:
 
 
 def test_label_name_wraps_after_z() -> None:
-    """Sanity check — unlikely in practice but the encoding is deterministic."""
 
     assert _label_name(0) == "A"
     assert _label_name(25) == "Z"

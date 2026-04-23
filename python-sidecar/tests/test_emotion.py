@@ -1,9 +1,3 @@
-"""Tests for ``app/services/emotion_service.py`` (``POST /api/emotion``).
-
-Tier-2 service — we exercise the absent-weights / 503 envelope path
-and the deterministic label-mapping helper
-(:func:`app.services.emotion_service._label_from_av`).
-"""
 from __future__ import annotations
 
 from pathlib import Path

@@ -5,10 +5,6 @@ using Mozgoslav.Domain.ValueObjects;
 
 namespace Mozgoslav.Application.Interfaces;
 
-/// <summary>
-/// Structured LLM output after a transcript is processed through a profile.
-/// Every collection is read-only — downstream consumers do not mutate the result.
-/// </summary>
 public sealed record LlmProcessingResult(
     string Summary,
     IReadOnlyList<string> KeyPoints,

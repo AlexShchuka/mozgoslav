@@ -2,15 +2,6 @@ import {EventEmitter} from "node:events";
 
 import type {HotkeyEvent} from "./types";
 
-/**
- * Subscribes to the global mouse + keyboard listener (`uiohook-napi`) and
- * emits `press` / `release` lifecycle events for the configured hotkey. The
- * orchestrator drives session start/stop off these events.
- *
- * Event is never "consumed" — the underlying system still sees the mouse-5
- * click and can forward-navigate as usual; the user opts out via macOS
- * System Preferences per ADR-002 D1.
- */
 export class HotkeyMonitor extends EventEmitter {
     private started = false;
     private uiohook: UiohookApi | null = null;

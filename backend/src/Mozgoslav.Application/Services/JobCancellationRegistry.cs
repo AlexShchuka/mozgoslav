@@ -6,11 +6,6 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Application.Services;
 
-/// <summary>
-/// ADR-015 — default in-process implementation of <see cref="IJobCancellationRegistry"/>.
-/// Registered as a singleton so the cancel endpoint and the background queue
-/// worker share the same map of active jobs.
-/// </summary>
 public sealed class JobCancellationRegistry : IJobCancellationRegistry
 {
     private readonly ConcurrentDictionary<Guid, CancellationTokenSource> _map = new();

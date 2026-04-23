@@ -8,10 +8,6 @@ using Mozgoslav.Infrastructure.Persistence;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// Spins up a throw-away SQLite file + EF Core context factory for a single test,
-/// creates the schema and cleans up on dispose. Use inside <c>await using</c>.
-/// </summary>
 internal sealed class TestDatabase : IAsyncDisposable, IDisposable
 {
     public string Path { get; }

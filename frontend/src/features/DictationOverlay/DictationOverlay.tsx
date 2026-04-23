@@ -9,17 +9,6 @@ interface DictationOverlayProps {
     readonly initialState?: DictationOverlayState;
 }
 
-/**
- * Renderer for the floating push-to-talk overlay window. Subscribes to the
- * `dictation:overlay-state` IPC channel that the main process sends through
- * the preload bridge, and draws:
- *   - a waveform (energy levels) while recording,
- *   - the live partial transcript centred horizontally,
- *   - a spinner during processing.
- *
- * The overlay never takes focus: the underlying target app keeps keyboard
- * input throughout the session.
- */
 const DictationOverlay: FC<DictationOverlayProps> = ({initialState}) => {
     const {t} = useTranslation();
     const [state, setState] = useState<DictationOverlayState>(

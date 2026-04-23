@@ -16,19 +16,6 @@ using NSubstitute;
 
 namespace Mozgoslav.Tests.Rag;
 
-/// <summary>
-/// ADR-005 — RagService end-to-end with the real bag-of-words embedding +
-/// in-memory index. Only the LLM port is faked, so we exercise chunking,
-/// embedding, retrieval and the LLM-unavailable fallback path.
-///
-/// Test list:
-///  - IndexAsync_Then_AnswerAsync_ReturnsRelevantCitations
-///  - AnswerAsync_WhenLlmAvailable_UsesLlmAnswer
-///  - AnswerAsync_WhenLlmUnavailable_FallsBackToCitationBundle
-///  - AnswerAsync_EmptyIndex_ReturnsNoMatchesAnswer
-///  - IndexAsync_ReindexingSameNote_ReplacesExistingChunks
-///  - AnswerAsync_LlmThrows_FallsBackGracefully
-/// </summary>
 [TestClass]
 public sealed class RagServiceTests
 {

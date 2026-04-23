@@ -15,12 +15,6 @@ using NSubstitute;
 
 namespace Mozgoslav.Tests.Application;
 
-/// <summary>
-/// TODO-1 backend half — <see cref="DictationSessionManager.Start"/> should
-/// accept an optional <c>source</c> tag ("mouse5" | "dashboard" | "global-hotkey")
-/// and persist it on the <c>DictationSession</c> entity for observability. A
-/// missing/null value is legacy behaviour and must stay compatible.
-/// </summary>
 [TestClass]
 public sealed class DictationSessionSourceTests
 {

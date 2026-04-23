@@ -30,13 +30,6 @@ interface ActiveSession {
     readonly sessionId: string;
     readonly recorder: MediaRecorder;
     readonly stream: MediaStream;
-    /**
-     * When true (Dashboard "Записать" button path), accumulated webm chunks
-     * are uploaded on stop so a Recording row is created and the full
-     * pipeline runs. When false (push-to-talk dictation hotkey), the session
-     * is ephemeral — finalised text is injected into the focused app and the
-     * audio is discarded.
-     */
     readonly persistOnStop: boolean;
 }
 
@@ -46,12 +39,6 @@ const notifyRecordingsChanged = (): void => {
     }
 };
 
-/**
- * Dashboard — record controls + audio-import surface. No more embedded
- * "recent recordings" list: the single unified HomeList below owns that
- * view (2026-04-19 meeting note — one list of files, not two views of the
- * same thing).
- */
 const Dashboard: FC = () => {
     const {t} = useTranslation();
     const [uploading, setUploading] = useState(false);
@@ -165,7 +152,7 @@ const Dashboard: FC = () => {
             };
             sessionRef.current = {sessionId, recorder, stream, persistOnStop};
             setActiveStream(stream);
-            recorder.start(250); // 250 ms chunks matches ADR-002 D9
+            recorder.start(250); 
             setRecordState("recording");
         } catch (err) {
             setRecordState("idle");

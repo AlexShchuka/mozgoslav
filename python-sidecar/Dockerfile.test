@@ -1,43 +1,16 @@
 # syntax=docker/dockerfile:1.7
-#
-# Test image for the Mozgoslav Python ML sidecar.
-#
-# Purpose: give the C# Testcontainers-based integration suite a running
-# sidecar that speaks the real HTTP contract without downloading the
-# Tier-2 audeering weights (which would add gigabytes to CI time).
-#
-# Contents:
-#   * Python 3.12 + every Tier-1 dep (silero-vad, resemblyzer, natasha).
-#   * `requirements.txt` minus `transformers` / `sentence-transformers`
-#     (the Tier-2 path is exercised via 503 envelopes in C# — no
-#     weights needed).
-#   * ffmpeg for audio decode if a test ever needs it.
-#
-# Usage from the C# test:
-#
-#     new ContainerBuilder()
-#         .WithImage("mozgoslav-sidecar-test")
-#         .WithPortBinding(5060, assignRandomHostPort: true)
-#         .WithWaitStrategy(Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(r => r.ForPort(5060).ForPath("/health")))
-#         .Build()
 FROM python:3.12-slim
 
-# ffmpeg is still optional in the current test set, but cheap to add
-# and matches the macOS/Linux runtime shape so other tests can rely on
-# it without a second image.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ffmpeg libsndfile1 \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy only the requirements first so Docker can cache the expensive
-# install step between iterations.
 COPY requirements-dev.txt .
 RUN pip install --no-cache-dir --upgrade pip \
  && pip install --no-cache-dir -r requirements-dev.txt
 
-# App source — copied last so source edits don't bust the ML layer.
 COPY app ./app
 
 ENV MOZGOSLAV_SIDECAR_HOST=0.0.0.0 \
@@ -45,9 +18,6 @@ ENV MOZGOSLAV_SIDECAR_HOST=0.0.0.0 \
     MOZGOSLAV_MODELS_DIR=/tmp/mozgoslav-models-empty \
     PYTHONUNBUFFERED=1
 
-# Create the empty models dir so the startup banner has something to
-# log. Tier-2 audeering endpoints will correctly return 503 because the
-# directory contains no config.json/weights.
 RUN mkdir -p /tmp/mozgoslav-models-empty
 
 EXPOSE 5060

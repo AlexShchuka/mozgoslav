@@ -1,4 +1,3 @@
-"""``POST /api/diarize`` — speaker diarization (Tier 1, always available)."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException

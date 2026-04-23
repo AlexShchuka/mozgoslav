@@ -4,14 +4,6 @@ import Foundation
 import AVFoundation
 #endif
 
-/// D3 — hot-plug microphone watcher. Observes
-/// `AVCaptureDevice.wasConnectedNotification` and
-/// `AVCaptureDevice.wasDisconnectedNotification`, and posts the refreshed
-/// device list (from an `AVCaptureDevice.DiscoverySession`) to the Electron
-/// loopback bridge so the backend can re-emit via SSE for the renderer.
-///
-/// On non-macOS build targets this is a no-op placeholder so the package
-/// still compiles for CI Swift-lint passes.
 public final class DeviceWatcher {
     public struct Payload: Codable {
         public let kind: String
@@ -25,9 +17,6 @@ public final class DeviceWatcher {
         public let isDefault: Bool
     }
 
-    /// Callback invoked whenever the device list changes. The owner is
-    /// responsible for forwarding the payload to the backend/bridge; keeping
-    /// that step out of this class makes it trivially unit-testable.
     public var onChange: ((Payload) -> Void)?
 
     private let isoFormatter: ISO8601DateFormatter

@@ -10,18 +10,6 @@ using Mozgoslav.Infrastructure.Rag;
 
 namespace Mozgoslav.Tests.Rag;
 
-/// <summary>
-/// ADR-005 D2 — brute-force cosine index. Focus on correctness of the
-/// state machine, not raw throughput (MVP targets a few thousand chunks).
-///
-/// Test list:
-///  - Upsert_ThenCount_Reflects
-///  - Search_ReturnsTopKOrderedByCosine
-///  - Search_MismatchedDimension_Skipped
-///  - RemoveByNote_DropsAllChunksOfThatNote
-///  - Search_OnEmptyIndex_ReturnsEmpty
-///  - Upsert_SameId_ReplacesPreviousChunk
-/// </summary>
 [TestClass]
 public sealed class InMemoryVectorIndexTests
 {

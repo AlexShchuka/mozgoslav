@@ -1,10 +1,3 @@
-"""Contract tests for ``POST /api/embed`` (ADR-007-shared.md §2.4).
-
-The deterministic bag-of-words backend is the only path executed in the
-dev/sandbox environment (PyTorch is not installed here). The real
-sentence-transformers path is implementation-ready for the user's macOS
-host and is guarded behind an ``ImportError``.
-"""
 from __future__ import annotations
 
 import math
@@ -21,17 +14,14 @@ from app.services.embed_service import (
 )
 
 
-# ---- Fixtures --------------------------------------------------------------
 
 
 @pytest.fixture
 def embed_client() -> TestClient:
-    """Scoped to this module so the embed backend cache does not leak."""
 
     return TestClient(create_app())
 
 
-# ---- HTTP contract ---------------------------------------------------------
 
 
 def test_embed_happy_path_returns_384_dim_l2_normalised(
@@ -79,11 +69,9 @@ def test_embed_missing_text_field_returns_422(embed_client: TestClient) -> None:
     assert res.status_code == 422
 
 
-# ---- Deterministic fallback ------------------------------------------------
 
 
 def test_embed_deterministic_bow_same_text_same_vector() -> None:
-    """The dev/sandbox path — identical input ⇒ identical output."""
 
     backend = DeterministicBoWBackend()
     v1 = backend.embed("repeatable input")
@@ -107,13 +95,6 @@ def test_embed_deterministic_bow_output_is_l2_normalised() -> None:
 
 
 def test_embed_deterministic_bow_empty_token_stream_returns_uniform_unit() -> None:
-    """Whitespace-only input never reaches the router, but guards the backend.
-
-    Calling the backend with a string that has no tokens exercises the
-    zero-norm branch of ``_l2_normalise`` which must still return a
-    well-formed unit vector instead of a zero vector (division-by-zero
-    would surface as a 500 otherwise — §3.4 in the per-agent ADR bans it).
-    """
 
     backend = DeterministicBoWBackend()
     vec = backend.embed("")
@@ -129,21 +110,15 @@ def test_embed_deterministic_bow_is_case_insensitive() -> None:
     assert lower == upper
 
 
-# ---- Default backend in the pod -------------------------------------------
 
 
 def test_default_backend_is_deterministic_in_pod() -> None:
-    """Confirms PyTorch really is absent — guards against silent install."""
 
-    # Clear the cache so the selection runs fresh against the live import
-    # graph — a sibling test that imported a stubbed ``torch`` could not
-    # otherwise be detected.
     default_backend.cache_clear()
     backend = default_backend()
     assert isinstance(backend, DeterministicBoWBackend)
 
 
-# ---- Normaliser invariant --------------------------------------------------
 
 
 def test_l2_normalise_zero_input_returns_unit_vector() -> None:
@@ -157,6 +132,5 @@ def test_l2_normalise_scales_nonzero_vector_to_unit_norm() -> None:
     vec = _l2_normalise([3.0, 4.0] + [0.0] * (DIM - 2))
     norm = math.sqrt(sum(v * v for v in vec))
     assert math.isclose(norm, 1.0, abs_tol=1e-5)
-    # 3/5 and 4/5 fall out of the normalisation.
     assert math.isclose(vec[0], 0.6, abs_tol=1e-6)
     assert math.isclose(vec[1], 0.8, abs_tol=1e-6)

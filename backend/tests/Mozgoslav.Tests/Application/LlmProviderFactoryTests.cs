@@ -15,11 +15,6 @@ using NSubstitute;
 
 namespace Mozgoslav.Tests.Application;
 
-/// <summary>
-/// TODO-3 / BC-036 — the factory routes runtime LLM calls to the provider
-/// whose <c>Kind</c> matches <see cref="IAppSettings.LlmProvider"/>. Unknown or
-/// empty values fall back to <c>openai_compatible</c> and emit a WARN log.
-/// </summary>
 [TestClass]
 public sealed class LlmProviderFactoryTests
 {

@@ -18,12 +18,6 @@ using NSubstitute;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// NEXT H1 — POST /_internal/hotkey/event forwards to
-/// <see cref="IHotkeyEventNotifier.PublishAsync"/> and the SSE endpoint
-/// /api/hotkey/stream re-emits to subscribers. Payload shape is press/release
-/// only — malformed kinds are 400.
-/// </summary>
 [TestClass]
 public sealed class HotkeyEventEndpointTests
 {

@@ -1,4 +1,3 @@
-"""``POST /api/ner`` — Russian named entity recognition (Tier 1)."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends

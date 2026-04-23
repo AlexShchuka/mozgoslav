@@ -1,10 +1,3 @@
-"""Tests for ``app/services/ner_service.py`` (``POST /api/ner``).
-
-Natasha is pure-Python — it ships its own model artefacts inside the
-pip package — so these tests exercise the real pipeline and validate
-the PER / ORG / LOC / date extraction contract on a known Russian
-sample.
-"""
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
@@ -20,8 +13,6 @@ def test_ner_extracts_person_and_location_from_russian_text() -> None:
     ))
 
     assert any("Иван" in name for name in result.people), result.people
-    # Natasha's normalize lemmatizes "Мариной" → "Марина" when morph
-    # tagger is wired in.
     assert any("Марин" in name for name in result.people), result.people
     assert any("Моск" in loc for loc in result.locations), result.locations
 

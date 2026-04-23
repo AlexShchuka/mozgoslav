@@ -59,22 +59,10 @@ const killZombieOnPort = async (port: number): Promise<void> => {
 };
 
 export interface BackendStartOptions {
-    /** Extra CLI args forwarded to the backend (e.g., ``--Mozgoslav:SyncthingBaseUrl=...``). */
     readonly extraArgs?: readonly string[];
-    /**
-     * Extra environment variables forwarded to the backend. Used to communicate
-     * the Electron internal loopback port (`Mozgoslav__AudioRecorder__ElectronBridgePort`,
-     * consumed via `IConfiguration`) to `AVFoundationAudioRecorder`.
-     */
     readonly extraEnv?: Readonly<Record<string, string>>;
 }
 
-/**
- * Attempts to spawn the bundled C# backend from the given userData directory.
- * If the binary is not present (e.g., during early development) — logs and
- * silently returns; the renderer will fall back to http://localhost:5050 that
- * the developer starts manually via `dotnet run`.
- */
 export const tryStartBackend = async (
     userDataDir: string,
     options: BackendStartOptions = {}

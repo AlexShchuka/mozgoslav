@@ -1,9 +1,3 @@
-/**
- * Shared types for the Electron-side dictation pipeline. The orchestrator
- * glues together the hotkey monitor, the native helper client, the backend
- * SSE subscription, the overlay window, and the tray. Every module exports
- * only what the orchestrator needs to wire them together.
- */
 
 export type DictationPhase = "idle" | "recording" | "processing" | "injecting" | "error";
 

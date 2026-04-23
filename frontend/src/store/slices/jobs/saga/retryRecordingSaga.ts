@@ -9,7 +9,6 @@ export function* retryRecordingSaga(action: RetryRecordingAction): SagaIterator 
     try {
         yield call([api, api.reprocess], action.payload.recordingId, action.payload.profileId);
     } catch {
-        // SSE will surface the new job; UI shows toast in S5 on terminal transition
     }
 }
 

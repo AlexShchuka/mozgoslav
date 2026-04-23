@@ -17,13 +17,6 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// Typed HTTP client wrapper over Syncthing's REST API (ADR-003 D3).
-/// Injected through <see cref="ISyncthingClient"/>. The base address, api-key
-/// and port are taken from the currently-running Syncthing instance managed by
-/// Electron; the Electron main process hands them to the backend via the
-/// <c>IAppSettings</c> snapshot once the lifecycle service has started.
-/// </summary>
 public sealed class SyncthingHttpClient : ISyncthingClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)

@@ -12,17 +12,6 @@ using Mozgoslav.Domain.Entities;
 
 namespace Mozgoslav.Application.Services;
 
-/// <summary>
-/// Plan v0.8 Block 5 §2.2 — a dedicated LLM pass that fixes transcription
-/// errors (homophones, proper-noun spellings, punctuation) without
-/// paraphrasing. Runs between regex filler cleanup and summarisation when
-/// the active <see cref="Profile.LlmCorrectionEnabled"/> flag is set.
-/// <para>
-/// Resilience: any LLM error (unreachable endpoint, empty response,
-/// exception) surfaces as a WARN log and returns the raw transcript
-/// unchanged — the pipeline never breaks because of a transient LLM issue.
-/// </para>
-/// </summary>
 public sealed class LlmCorrectionService
 {
     private const int ChunkChars = 6_000;

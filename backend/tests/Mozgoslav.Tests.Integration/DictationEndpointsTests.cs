@@ -8,13 +8,6 @@ using FluentAssertions;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// End-to-end tests for the /api/dictation/* surface. Whisper.net itself cannot
-/// run without a real model on disk, so these tests focus on the session
-/// lifecycle and the state machine observable through HTTP: start, duplicate
-/// start, push, cancel, 404 on unknown session. The full audio → text path is
-/// covered by unit tests with a fake streaming service.
-/// </summary>
 [TestClass]
 public sealed class DictationEndpointsTests
 {

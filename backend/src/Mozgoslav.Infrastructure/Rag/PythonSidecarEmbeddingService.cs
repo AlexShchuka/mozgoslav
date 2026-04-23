@@ -11,33 +11,6 @@ using Mozgoslav.Application.Rag;
 
 namespace Mozgoslav.Infrastructure.Rag;
 
-/// <summary>
-/// ADR-005 D3 / ADR-007-shared §2.4 production path — swaps
-/// <see cref="BagOfWordsEmbeddingService"/> for sentence-transformer vectors
-/// served by the Python sidecar on <c>POST /api/embed</c>. When the sidecar
-/// is unreachable (process not launched yet, user disabled it, port changed,
-/// …) we transparently degrade to an inner fallback
-/// <see cref="IEmbeddingService"/> so the RAG endpoint keeps working; the
-/// fallback is the same bag-of-words service the MVP ships with, so
-/// previously-indexed notes still match.
-/// </summary>
-/// <remarks>
-/// <para>
-/// The contract is the ADR-007-shared §2.4 single-text shape:
-/// <c>POST /api/embed { text }</c> → <c>{ embedding: number[], dim: int }</c>.
-/// The sidecar always returns an L2-normalised 384-float vector from
-/// <c>paraphrase-multilingual-MiniLM-L12-v2</c> (or the deterministic SHA-256
-/// BoW fallback when PyTorch is unavailable on the sidecar host).
-/// </para>
-/// <para>
-/// The service caches the first successful probe of the sidecar's
-/// <c>dim</c> so we never return mismatched-dimension vectors
-/// mid-session; if the sidecar's advertised dimension drifts (model
-/// swap), we log a warning and keep the first dimension until the process
-/// restarts. Dimension drift during a run would corrupt the vector
-/// index, so a restart is the safe boundary.
-/// </para>
-/// </remarks>
 public sealed class PythonSidecarEmbeddingService : IEmbeddingService
 {
     private readonly HttpClient _httpClient;
@@ -100,13 +73,6 @@ public sealed class PythonSidecarEmbeddingService : IEmbeddingService
         }
     }
 
-    /// <summary>
-    /// G2 — recognise every exception shape the sidecar path can produce when
-    /// the service is unavailable. Includes Polly's
-    /// <see cref="Polly.ExecutionRejectedException"/> (covers
-    /// <c>BrokenCircuitException</c> + timeout rejection) so circuit-breaker
-    /// trips degrade to bag-of-words instead of bubbling a 500 up to the API.
-    /// </summary>
     private static bool IsTransientSidecarOutage(Exception ex) =>
         ex is HttpRequestException
             or TaskCanceledException

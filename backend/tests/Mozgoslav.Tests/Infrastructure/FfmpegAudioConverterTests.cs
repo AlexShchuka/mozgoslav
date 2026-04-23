@@ -11,11 +11,6 @@ using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Tests.Infrastructure;
 
-/// <summary>
-/// ADR-011 step 8 — CliWrap-backed ffmpeg wrappers. Exercises input validation
-/// paths that do not require the ffmpeg binary to be on PATH; the happy path
-/// is covered by end-to-end tests that exist outside the sandboxed CI image.
-/// </summary>
 [TestClass]
 public sealed class FfmpegAudioConverterTests
 {

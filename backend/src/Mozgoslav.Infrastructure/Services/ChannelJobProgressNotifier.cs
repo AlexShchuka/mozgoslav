@@ -11,11 +11,6 @@ using Mozgoslav.Domain.Entities;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// In-process fan-out notifier: each SSE subscriber gets its own unbounded channel,
-/// and every publish writes to all current subscribers. Unsubscribing closes the
-/// subscriber's channel so enumerators complete cleanly.
-/// </summary>
 public sealed class ChannelJobProgressNotifier : IJobProgressNotifier, IDisposable
 {
     private readonly ConcurrentDictionary<Guid, Channel<ProcessingJob>> _subscribers = new();

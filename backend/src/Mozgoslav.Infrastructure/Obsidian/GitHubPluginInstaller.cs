@@ -16,14 +16,6 @@ using Mozgoslav.Application.Obsidian;
 
 namespace Mozgoslav.Infrastructure.Obsidian;
 
-/// <summary>
-/// ADR-019 §5.8 — downloads pinned plugin assets from GitHub releases, verifies
-/// SHA-256 against the shipped table, writes atomically into
-/// <c>&lt;vault&gt;/.obsidian/plugins/&lt;id&gt;/</c>, patches
-/// <c>community-plugins.json</c> without losing existing ids. Never writes an
-/// unverified byte: hash mismatch aborts the install and surfaces a
-/// <see cref="PluginInstallStatus.HashMismatch"/> result.
-/// </summary>
 public sealed class GitHubPluginInstaller : IPluginInstaller
 {
     public const string HttpClientName = "Mozgoslav.ObsidianPluginInstaller";
@@ -113,8 +105,8 @@ public sealed class GitHubPluginInstaller : IPluginInstaller
             if (Directory.Exists(stagingDir))
             {
                 try { Directory.Delete(stagingDir, recursive: true); }
-                catch (IOException) { /* best effort */ }
-                catch (UnauthorizedAccessException) { /* best effort */ }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
             }
         }
     }

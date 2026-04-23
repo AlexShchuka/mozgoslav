@@ -13,13 +13,6 @@ using Mozgoslav.Infrastructure.Rag;
 
 namespace Mozgoslav.Tests.Integration.Rag;
 
-/// <summary>
-/// G2 — <see cref="IEmbeddingService"/> DI wiring. When
-/// <c>Mozgoslav:PythonSidecar:BaseUrl</c> is set the sidecar-backed service
-/// must be the primary registration so sentence-transformer vectors beat the
-/// zero-dependency bag-of-words fallback in production. Absence of the key
-/// falls back to BoW-only for dev boxes that cannot host the sidecar.
-/// </summary>
 [TestClass]
 public sealed class EmbeddingServiceConfigurationTests
 {

@@ -4,7 +4,7 @@ macOS-first desktop second-brain. Electron + React UI ↔ ASP.NET Minimal API ba
 
 ## Rules (strict, global)
 
-1. Docs are organized by feature under `docs/features/<name>/` — each has `decisions/` (shipped architectural decisions) and optional `backlog.md`, `overview.md`. No central index files. No files that enumerate features.
+1. Docs are organized by feature under `docs/features/<name>/`. Each feature may have `decisions/` (shipped architectural decisions) and `backlog/` (one file per deferred item — retire an item by moving that file to `.archive/`). No central index files. No files that enumerate features.
 2. Decisions are robot-readable: compact bullets, YAML frontmatter, concept-level only. No prose, no narrative, no file paths in the body.
 3. `.archive/` is write-only scrap. Move superseded files in, flat. Never edit anything already inside.
 4. No comments in code. No XML `///` summaries. No TODO/FIXME in committed code. Name things clearly instead.
@@ -100,7 +100,7 @@ Frontend top-level:
 - New backend schema → update domain entities + `OnModelCreating`. Drop the local db on dev machines.
 - New frontend feature → use the plop generator. Never hand-write the scaffold.
 - New architectural decision → `docs/features/<feature>/decisions/<slug>.md` in robot style.
-- New deferred item → append to `docs/features/<feature>/backlog.md` as a single bullet with just enough context to decide.
+- New deferred item → `docs/features/<feature>/backlog/<slug>.md`, one concept per file. Move to `.archive/` when retired.
 
 ## Config & environment
 

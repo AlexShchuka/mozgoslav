@@ -1,9 +1,3 @@
-"""Tests for ``app/ml/model_paths.py``.
-
-The resolver is simple — exercise the branches that decide whether a
-Tier-2 model is "installed": valid HuggingFace-shaped directory vs
-missing directory vs directory without weights.
-"""
 from __future__ import annotations
 
 from pathlib import Path

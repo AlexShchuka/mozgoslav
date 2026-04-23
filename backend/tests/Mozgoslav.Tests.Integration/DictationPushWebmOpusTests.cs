@@ -26,15 +26,6 @@ using Mozgoslav.Infrastructure.Persistence;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// ADR-007 BC-004 / D4 — the Dashboard record button pushes Opus-in-WebM
-/// chunks to <c>/api/dictation/{sessionId}/push</c> with Content-Type
-/// <c>application/octet-stream</c>. The backend routes each chunk into the
-/// session's long-running ffmpeg decoder; only the first chunk carries the
-/// WebM EBML header, so the implementation has to hold stdin open across
-/// chunks. A one-shot decoder fails the follow-up chunks with exit code 183
-/// (invalid data) — this test pins the fix.
-/// </summary>
 [TestClass]
 public sealed class DictationPushWebmOpusTests
 {
@@ -124,11 +115,6 @@ public sealed class DictationPushWebmOpusTests
 
     public TestContext TestContext { get; set; } = null!;
 
-    /// <summary>
-    /// Fake <see cref="IStreamingTranscriptionService"/> that captures every
-    /// audio chunk the session manager forwards. Emits no partials so
-    /// <c>StopAsync</c> returns cleanly with empty text.
-    /// </summary>
     private sealed class CapturingStreamingService : IStreamingTranscriptionService
     {
         public List<AudioChunk> ReceivedChunks { get; } = [];

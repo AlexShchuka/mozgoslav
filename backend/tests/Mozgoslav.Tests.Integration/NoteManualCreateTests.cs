@@ -10,12 +10,6 @@ using Mozgoslav.Domain.Entities;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// ADR-007-shared §2.6 BC-022 — manual note creation endpoint.
-/// Contract:
-///   POST /api/notes { title?, body?, templateId? }
-///     → 201 Created + ProcessedNote (Source = Manual).
-/// </summary>
 [TestClass]
 public sealed class NoteManualCreateTests
 {

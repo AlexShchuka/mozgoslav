@@ -4,13 +4,6 @@ import {randomUUID} from "node:crypto";
 
 import type {AudioChunkPayload, FocusedTarget} from "./types";
 
-/**
- * Wraps the `mozgoslav-dictation-helper` Swift binary. Messages flow as
- * newline-delimited JSON-RPC on the child's stdin/stdout. The client exposes
- * three entry points: `start/stop` for mic capture, `injectText` for text
- * injection, `detectTarget` for focused-app introspection. Audio chunks are
- * surfaced as `"audio"` events on the emitter.
- */
 export class NativeHelperClient extends EventEmitter {
     private process: ChildProcess | null = null;
     private buffer = "";
@@ -76,13 +69,6 @@ export class NativeHelperClient extends EventEmitter {
         await this.send<object>("capture.stop", undefined);
     }
 
-    /**
-     * Plan v0.8 Block 3 §2.4 — start recording directly into a WAV file
-     * (distinct from the streaming `capture.start` used for live dictation).
-     * The helper echoes every audio callback into the given output path using
-     * AVAudioEngine + a resampler node to the 16 kHz mono format Whisper
-     * expects.
-     */
     async startFileCapture(outputPath: string, sessionId: string): Promise<void> {
         await this.send<object>("capture.startFile", {
             outputPath,
@@ -101,12 +87,6 @@ export class NativeHelperClient extends EventEmitter {
         return result;
     }
 
-    /**
-     * Plan v0.8 Block 3 §2.4 — single-shot permission probe. Returns the
-     * three macOS authorization states that gate the recording + dictation
-     * features (Onboarding Block 4 uses this to auto-advance the permissions
-     * card).
-     */
     async checkPermissions(): Promise<{
         microphone: "granted" | "denied" | "undetermined";
         accessibility: "granted" | "denied" | "undetermined";
@@ -128,7 +108,6 @@ export class NativeHelperClient extends EventEmitter {
         await this.send<object>("inject.text", {text, mode});
     }
 
-    /** NEXT H1 — start/stop the global push-to-talk hotkey monitor. */
     async startHotkey(accelerator: string): Promise<void> {
         await this.send<object>("hotkey.start", {accelerator});
     }

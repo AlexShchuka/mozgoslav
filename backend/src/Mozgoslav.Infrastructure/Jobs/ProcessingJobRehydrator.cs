@@ -6,29 +6,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using Mozgoslav.Application.Interfaces;
-using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Infrastructure.Jobs;
 
-/// <summary>
-/// ADR-011 step 6 — startup gate that replaces the legacy
-/// <c>QueueBackgroundService.ReconcileAsync</c> mechanism. On boot, every
-/// <see cref="ProcessingJob"/> row that is still in a non-terminal state is
-/// either
-/// (a) left as <see cref="JobStatus.Queued"/> and handed to Quartz as a fresh
-///     trigger, or
-/// (b) flipped from an in-flight state (<c>Transcribing</c>,
-///     <c>Correcting</c>, <c>Summarizing</c>, <c>Exporting</c>) back to
-///     <c>Queued</c> with <c>auto-requeued</c> error text, then handed to
-///     Quartz.
-/// <para>
-/// Runs after <see cref="Mozgoslav.Infrastructure.Seed.DatabaseInitializer"/>
-/// (migrations + settings) so the schema is already in place, and after the
-/// Quartz hosted service so the scheduler is live. The host registration order
-/// guarantees that sequence.
-/// </para>
-/// </summary>
 public sealed class ProcessingJobRehydrator : IHostedService
 {
     private static readonly JobStatus[] InFlightStatuses =

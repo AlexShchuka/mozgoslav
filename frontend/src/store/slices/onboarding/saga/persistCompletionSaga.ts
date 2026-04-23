@@ -4,11 +4,6 @@ import type {SagaIterator} from "redux-saga";
 import {COMPLETE_ONBOARDING, completionPersistFailed,} from "../actions";
 import {ONBOARDING_COMPLETE_STORAGE_KEY} from "../constants";
 
-/**
- * Persists the completion flag so the guard redirects away from /onboarding
- * on the next app boot. Failures are reported to the slice but do not roll
- * back the in-memory flag — the user has already clicked Apply.
- */
 export function* persistCompletionSaga(): SagaIterator {
     try {
         yield call(writeCompletionFlag);

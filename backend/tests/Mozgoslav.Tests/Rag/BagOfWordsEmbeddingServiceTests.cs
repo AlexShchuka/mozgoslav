@@ -8,14 +8,6 @@ using Mozgoslav.Infrastructure.Rag;
 
 namespace Mozgoslav.Tests.Rag;
 
-/// <summary>
-/// ADR-005 D3 — baseline embedding service. Properties we rely on:
-///  - vector dimension matches the configured size
-///  - identical text → identical vector (deterministic)
-///  - similar text produces similar vectors (higher cosine than unrelated)
-///  - empty/whitespace text → zero vector (never throws)
-///  - unicode / case is handled
-/// </summary>
 [TestClass]
 public sealed class BagOfWordsEmbeddingServiceTests
 {

@@ -3,11 +3,6 @@ using System.Diagnostics.Metrics;
 
 namespace Mozgoslav.Infrastructure.Observability;
 
-/// <summary>
-/// Central place for application metrics. Values here are exposed through the
-/// .NET meters pipeline (OpenTelemetry, dotnet-counters, etc.) — viewable in
-/// development via <c>dotnet-counters monitor --name Mozgoslav</c>.
-/// </summary>
 public sealed class MozgoslavMetrics : IDisposable
 {
     public const string MeterName = "Mozgoslav";

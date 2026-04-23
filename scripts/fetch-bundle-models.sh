@@ -1,13 +1,4 @@
 #!/usr/bin/env bash
-# Plan v0.8 Block 7 — fetch Tier-1 bundle models from the pinned GitHub Release.
-#
-# Idempotent: if every file in the manifest already exists with the correct
-# sha256 under frontend/build/bundle-models, the script exits 0 without touching
-# the network. On checksum mismatch or missing file we download from the
-# release asset and verify again.
-#
-# Must stay pure bash + curl + shasum so it works on both macOS (shuka's DMG
-# host) and Linux (GitHub Actions macos-latest runners use GNU shasum).
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -22,10 +13,6 @@ fi
 
 mkdir -p "${TARGET_DIR}"
 
-# Resolve the pinned release tag from the manifest. When the manifest
-# deliberately leaves the tag empty (dev boxes without a published bundle),
-# skip the fetch and warn — electron-builder will then ship an empty
-# bundle-models directory and the Onboarding Models step warns the user.
 TAG=$(python3 -c "import json,sys;m=json.load(open(sys.argv[1]));print(m.get('release_tag',''))" "${MANIFEST}")
 if [ -z "${TAG}" ]; then
   echo "[fetch-bundle-models] release_tag is empty in ${MANIFEST} — skipping fetch."
@@ -49,7 +36,6 @@ else
   exit 1
 fi
 
-# Iterate every entry in the manifest's "files" array.
 ENTRIES=$("${PYTHON_BIN}" -c "
 import json, sys
 m = json.load(open(sys.argv[1]))

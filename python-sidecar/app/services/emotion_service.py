@@ -1,14 +1,3 @@
-"""Emotion classification via the audeering MSP-dim model.
-
-Tier-2 service (per ADR-010 §2.3) — weights not bundled; the endpoint
-returns 503 until the user opts in.
-
-Model per ``plan/v0.8/02-ml-sidecar-production.md §3.4``:
-``audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim``. Outputs the
-three continuous dimensions of the MSP-dim benchmark: arousal, valence,
-dominance. We map them to a discrete label using the rule table from
-the plan, so the downstream note body has a one-word emotion tag.
-"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -29,7 +18,6 @@ _TARGET_SR = 16_000
 
 
 class EmotionService:
-    """Loads the audeering emotion model on first use."""
 
     def __init__(self, paths: ModelPaths) -> None:
         self._paths = paths
@@ -78,11 +66,9 @@ class EmotionService:
         with torch.no_grad():
             logits = self._model(**inputs).logits[0]
         values = logits.cpu().numpy()
-        # MSP-dim values come out in [0, 1]; clip defensively.
         arousal = float(np.clip(values[0], 0.0, 1.0))
         dominance = float(np.clip(values[1], 0.0, 1.0))
         valence = float(np.clip(values[2], 0.0, 1.0))
-        # Project to [-1, 1] to match the response schema.
         return (
             _to_signed(arousal),
             _to_signed(valence),
@@ -91,16 +77,11 @@ class EmotionService:
 
 
 def _to_signed(value: float) -> float:
-    """[0, 1] → [-1, 1] linear rescale."""
 
     return float(value * 2.0 - 1.0)
 
 
 def _label_from_av(*, arousal: float, valence: float) -> str:
-    """Four-quadrant Russell affect circumplex with a central neutral.
-
-    Ranges use the already-signed [-1, 1] values.
-    """
 
     if abs(arousal) < 0.2 and abs(valence) < 0.2:
         return "neutral"

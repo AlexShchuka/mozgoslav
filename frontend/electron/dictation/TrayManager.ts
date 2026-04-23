@@ -7,11 +7,6 @@ import {deflateSync} from "node:zlib";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/**
- * Menu-bar indicator for the dictation lifecycle. Colour encodes phase
- * (idle = grey, recording = red, processing = yellow, error = grey) matching
- * ADR-002 D6.
- */
 export class TrayManager {
     private tray: Tray | null = null;
 
@@ -106,8 +101,8 @@ function buildIhdrData(width: number, height: number): Buffer {
     const data = Buffer.alloc(13);
     data.writeUInt32BE(width, 0);
     data.writeUInt32BE(height, 4);
-    data.writeUInt8(8, 8); // bit depth
-    data.writeUInt8(6, 9); // colour type RGBA
+    data.writeUInt8(8, 8); 
+    data.writeUInt8(6, 9); 
     data.writeUInt8(0, 10);
     data.writeUInt8(0, 11);
     data.writeUInt8(0, 12);

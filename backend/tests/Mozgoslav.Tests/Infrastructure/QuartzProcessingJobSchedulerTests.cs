@@ -12,12 +12,6 @@ using Quartz;
 
 namespace Mozgoslav.Tests.Infrastructure;
 
-/// <summary>
-/// ADR-011 step 6 — QuartzProcessingJobScheduler schedules one-shot triggers
-/// that fire the recording pipeline. These tests spin up a RAMJobStore-backed
-/// scheduler in-process and assert ScheduleAsync creates the expected
-/// job + trigger identities.
-/// </summary>
 [TestClass]
 public sealed class QuartzProcessingJobSchedulerTests
 {

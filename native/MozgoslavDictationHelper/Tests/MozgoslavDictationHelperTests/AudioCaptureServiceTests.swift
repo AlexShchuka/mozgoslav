@@ -2,13 +2,6 @@ import XCTest
 
 @testable import MozgoslavDictationHelper
 
-/// Unit-test coverage for `AudioCaptureService` is intentionally narrow: the
-/// live-capture path is a thin wrapper around `AVAudioEngine` + `AVAudioSinkNode`
-/// and needs real audio hardware (granted microphone + active input device)
-/// to run, which CI runners do not reliably provide. What *is* safe to test
-/// here are the pure state-machine guards and public data shapes that don't
-/// touch Core Audio at all — if those regress silently the helper breaks the
-/// JSON-RPC contract with the Electron main process.
 final class AudioCaptureServiceTests: XCTestCase {
     func testInit_DoesNotCrash_OnHostWithoutAudioHardware() {
         _ = AudioCaptureService()

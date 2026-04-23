@@ -17,12 +17,6 @@ using NSubstitute;
 
 namespace Mozgoslav.Tests.Infrastructure;
 
-/// <summary>
-/// ADR-004 R8: the verifier polls Syncthing until healthy, then compares the
-/// reported versioning policy for each managed folder against the expected
-/// one. Drift logs a warning; missing folders log info; a matching policy is
-/// silent.
-/// </summary>
 [TestClass]
 public sealed class SyncthingVersioningVerifierTests
 {

@@ -18,22 +18,6 @@ using WireMock.Server;
 
 namespace Mozgoslav.Tests.Integration.Syncthing;
 
-/// <summary>
-/// ADR-003 D3: WireMock-backed contract test — covers every Syncthing REST
-/// endpoint our <see cref="SyncthingHttpClient"/> talks to.
-///
-/// Test list:
-///  - IsHealthyAsync_Get_SystemStatus_200_ReturnsTrue
-///  - GetLocalDeviceIdAsync_Get_SystemStatus_ReturnsMyID
-///  - GetStatusAsync_Get_ConfigFolders_And_DbStatus_MapsCompletion
-///  - GetStatusAsync_Get_SystemConnections_MapsDevices
-///  - StreamEventsAsync_Get_Events_YieldsParsedEnvelopes_And_TracksLastId
-///  - AcceptPendingDeviceAsync_Post_ClusterPendingDevices_WithBodyAndAutoAccept
-///  - ShutdownAsync_Post_SystemShutdown_Returns200
-///  - GetConfigAsync_Returns_RawJson
-///  - ReplaceConfigAsync_Put_SystemConfig_BodyForwardedVerbatim
-///  - ApiKeyHeader_IsAttached_ToEveryRequest
-/// </summary>
 [TestClass]
 public sealed class SyncthingHttpClientTests : IDisposable
 {

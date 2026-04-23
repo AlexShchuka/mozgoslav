@@ -3,10 +3,6 @@ import {useNavigate} from "react-router-dom";
 
 import {ROUTES} from "../constants/routes";
 
-/**
- * Binds the app-wide hotkeys. Cmd+K (command palette) is handled inside the
- * palette itself; this hook covers the rest.
- */
 export const useGlobalHotkeys = (): void => {
     const navigate = useNavigate();
 

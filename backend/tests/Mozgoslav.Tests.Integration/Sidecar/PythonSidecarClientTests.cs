@@ -15,15 +15,6 @@ using WireMock.Server;
 
 namespace Mozgoslav.Tests.Integration.Sidecar;
 
-/// <summary>
-/// Contract tests for <see cref="PythonSidecarClient"/>. WireMock fakes
-/// the python sidecar so we can assert on the wire shape (paths, JSON
-/// field names, 503 envelope handling) without paying the Docker image
-/// build cost on every test run.
-///
-/// End-to-end coverage against the real sidecar container lives in
-/// <see cref="SidecarContainerTests"/> (Docker-gated).
-/// </summary>
 [TestClass]
 public sealed class PythonSidecarClientTests : IDisposable
 {

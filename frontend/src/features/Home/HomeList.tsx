@@ -31,15 +31,6 @@ const toneFor = (status: ProcessingJob["status"] | null): BadgeTone => {
     return "accent";
 };
 
-/**
- * Unified home list — one row per Recording, ordered newest first. Each row
- * shows the recording's current pipeline state: if an active ProcessingJob
- * exists, the row renders the job's live progress bar and step; otherwise the
- * bar is 100% (Done-backed recording) or idle (recording awaiting processing).
- * Replaces the previous `/` screen which rendered Queue + NotesList as two
- * separate components — the merge removes the mental context switch for what
- * was always one timeline.
- */
 const HomeList: FC = () => {
     const {t} = useTranslation();
     const navigate = useNavigate();

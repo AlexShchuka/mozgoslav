@@ -27,21 +27,8 @@ public static class DictationEndpoints
         int SampleRate,
         double OffsetSeconds);
 
-    /// <summary>
-    /// Optional body forwarded to <see cref="IDictationSessionManager.Start"/>.
-    /// <c>source</c> tags the origin ("mouse5" | "dashboard" | "global-hotkey"),
-    /// <c>profileId</c> is reserved for the follow-up profile-threading slice.
-    /// Both fields are optional — legacy callers that send no body continue to
-    /// work unchanged.
-    /// </summary>
     public sealed record StartSessionRequest(string? Source, string? ProfileId);
 
-    /// <summary>
-    /// ADR-004 R2 — optional finalize payload. When the Electron main process
-    /// knows which app currently owns keyboard focus it forwards the macOS
-    /// bundle identifier here so the session manager can apply a per-app
-    /// correction profile to the polished transcript.
-    /// </summary>
     public sealed record StopSessionRequest(string? BundleId);
 
     public static IEndpointRouteBuilder MapDictationEndpoints(this IEndpointRouteBuilder endpoints)
@@ -203,12 +190,6 @@ public static class DictationEndpoints
         return endpoints;
     }
 
-    /// <summary>
-    /// Best-effort detection of a raw float32-LE PCM payload vs an encoded
-    /// container (WebM / Ogg / etc.). The native Electron dictation flow may
-    /// also hit this endpoint in the future; until then any non-PCM body is
-    /// routed through ffmpeg.
-    /// </summary>
     private static bool LooksLikeRawPcm(string? contentType, byte[] payload)
     {
         if (!string.IsNullOrWhiteSpace(contentType)

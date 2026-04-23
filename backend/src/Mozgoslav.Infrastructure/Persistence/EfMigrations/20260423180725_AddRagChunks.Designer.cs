@@ -14,7 +14,6 @@ namespace Mozgoslav.Infrastructure.Persistence.EfMigrations
     [Migration("20260423180725_AddRagChunks")]
     partial class AddRagChunks
     {
-        /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618

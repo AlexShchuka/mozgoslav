@@ -1,7 +1,3 @@
-"""Tests for the /api/cleanup endpoint and its service.
-
-Mirrors the behavioural expectations recorded in PYTHON-SIDECAR-SPEC §11.
-"""
 from __future__ import annotations
 
 import pytest
@@ -11,7 +7,6 @@ from app.models.schemas import CleanupLevel, CleanupRequest
 from app.services.cleanup_service import CleanupService
 
 
-# ---- Service-level tests ---------------------------------------------------
 
 
 @pytest.fixture()
@@ -51,7 +46,6 @@ def test_aggressive_removes_composite_fillers(service: CleanupService) -> None:
     assert result.cleaned == "всё готово"
 
 
-# ---- HTTP-level test -------------------------------------------------------
 
 
 def test_cleanup_endpoint_roundtrip(client: TestClient) -> None:

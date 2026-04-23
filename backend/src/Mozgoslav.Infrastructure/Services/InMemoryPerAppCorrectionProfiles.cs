@@ -5,18 +5,6 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// ADR-004 R2 MVP adapter for <see cref="IPerAppCorrectionProfiles"/>.
-///
-/// <para>
-/// Ships with a small, deliberately conservative set of built-in profiles for
-/// the apps we expect users to dictate into most often on macOS. The full
-/// end-user edit surface (a Profiles-style UI per bundle id, persisted to
-/// SQLite) is a follow-up ADR; this class keeps the integration point in
-/// place so the Swift helper's reported bundle id is not wasted while the UI
-/// catches up.
-/// </para>
-/// </summary>
 public sealed class InMemoryPerAppCorrectionProfiles : IPerAppCorrectionProfiles
 {
     private readonly Dictionary<string, PerAppCorrectionProfile> _profiles;

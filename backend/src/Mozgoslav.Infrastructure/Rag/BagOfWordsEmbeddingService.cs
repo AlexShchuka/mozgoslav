@@ -7,20 +7,6 @@ using Mozgoslav.Application.Rag;
 
 namespace Mozgoslav.Infrastructure.Rag;
 
-/// <summary>
-/// ADR-005 D3 MVP — deterministic, ML-free embedding: tokenise, lowercase,
-/// hash each token into a fixed-dimension bag, TF-weight by count, L2-
-/// normalise. Zero model downloads, zero external services, produces
-/// "embeddings" that are good enough for keyword-overlap retrieval over
-/// a personal note corpus.
-/// <para>
-/// This is explicitly the fallback: production builds should point
-/// <see cref="IEmbeddingService"/> at the Python sidecar's
-/// <c>/embed</c> endpoint (sentence-transformers) or a bundled ONNX copy
-/// of <c>all-MiniLM-L6-v2</c>. The bag-of-words baseline means RAG works
-/// out of the box before the user picks a heavier model.
-/// </para>
-/// </summary>
 public sealed class BagOfWordsEmbeddingService : IEmbeddingService
 {
     private const int DefaultDimensions = 256;
@@ -83,10 +69,6 @@ public sealed class BagOfWordsEmbeddingService : IEmbeddingService
         }
     }
 
-    /// <summary>
-    /// FNV-1a 32-bit hash — stable across runs / platforms, unlike
-    /// <see cref="string.GetHashCode()"/> which is randomised per process.
-    /// </summary>
     private static int StableHash(string s)
     {
         const uint FnvOffsetBasis = 2166136261u;

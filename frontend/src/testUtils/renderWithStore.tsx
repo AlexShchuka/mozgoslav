@@ -24,15 +24,6 @@ export interface RenderWithStoreResult extends RenderResult {
     readonly sagaMiddleware: SagaMiddleware;
 }
 
-/**
- * Renders a React tree with a real redux store, saga middleware, and the
- * default styled-components theme. Feature tests use this to exercise
- * container components end-to-end without re-building the provider chain in
- * every file.
- *
- * Pass `sagas` to run a subset of watchers (e.g. a single slice) — omit to
- * mount no sagas at all (state mutations via dispatch only).
- */
 export const renderWithStore = (
     ui: ReactElement,
     options: RenderWithStoreOptions = {},

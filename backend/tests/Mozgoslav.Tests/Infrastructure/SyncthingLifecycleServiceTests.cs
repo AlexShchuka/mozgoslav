@@ -15,12 +15,6 @@ using NSubstitute;
 
 namespace Mozgoslav.Tests.Infrastructure;
 
-/// <summary>
-/// ADR-007-phase2-backend §2.3 BC-048 / BC-049 — lifecycle service contract.
-/// These tests exercise the "no binary present" branch because the sandbox
-/// pod ships without a syncthing binary. The real-spawn / real-shutdown path
-/// is exercised by the Testcontainers integration tests (SyncStatusEndpoint).
-/// </summary>
 [TestClass]
 public sealed class SyncthingLifecycleServiceTests
 {

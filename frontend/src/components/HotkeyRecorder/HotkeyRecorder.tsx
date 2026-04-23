@@ -6,28 +6,14 @@ import Button from "../Button";
 import {Actions, Field, Hint, Placeholder, Root, Value} from "./HotkeyRecorder.style";
 
 export interface HotkeyRecorderProps {
-    /** Current Electron accelerator string, e.g. "CommandOrControl+Shift+Space". */
     value: string;
     onChange: (accelerator: string) => void;
-    /** Optional hint displayed under the recorder. */
     hint?: string;
-    /** Test id suffix so parent forms can scope queries. */
     testId?: string;
 }
 
 const MODIFIER_ORDER = ["CommandOrControl", "Alt", "Shift"] as const;
 
-/**
- * Task #10 — captures a keyboard combination from the user and reports it
- * as an Electron accelerator string (see
- * https://www.electronjs.org/docs/latest/api/accelerator). Focus the field
- * and press a combo — modifiers are normalised, the printable key is
- * uppercased, and special keys (Space/Arrow…) are mapped to Electron names.
- *
- * The recorder does NOT register the accelerator itself — the caller
- * persists it via Settings save, and the Electron main process picks it
- * up (bootstrap today; hot-reload is a follow-up).
- */
 const HotkeyRecorder: FC<HotkeyRecorderProps> = ({value, onChange, hint, testId = ""}) => {
     const {t} = useTranslation();
     const [recording, setRecording] = useState(false);
@@ -40,7 +26,7 @@ const HotkeyRecorder: FC<HotkeyRecorderProps> = ({value, onChange, hint, testId 
             ev.preventDefault();
             ev.stopPropagation();
             const accelerator = buildAccelerator(ev);
-            if (!accelerator) return; // only modifiers held — wait for the real key
+            if (!accelerator) return; 
             onChange(accelerator);
             setRecording(false);
         },

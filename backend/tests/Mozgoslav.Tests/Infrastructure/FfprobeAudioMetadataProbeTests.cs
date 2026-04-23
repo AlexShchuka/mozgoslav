@@ -11,11 +11,6 @@ using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Tests.Infrastructure;
 
-/// <summary>
-/// Task #19 — verifies ffprobe returns the real duration for a bundled
-/// 2-second sine WAV. Test is skipped on hosts without ffprobe so CI still
-/// runs; the service itself also degrades gracefully to TimeSpan.Zero.
-/// </summary>
 [TestClass]
 public sealed class FfprobeAudioMetadataProbeTests
 {

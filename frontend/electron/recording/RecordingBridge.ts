@@ -4,17 +4,6 @@ import type {AddressInfo} from "node:net";
 
 import {NativeHelperClient} from "../dictation/NativeHelperClient";
 
-/**
- * Block 3 (.archive/docs/v0.8-release/03-mac-native-recorder.md §2.3). The backend talks to
- * Electron over a tiny loopback HTTP endpoint so the AVFoundation-native
- * recorder lives inside the Swift helper — there is exactly one helper
- * instance per Electron host, and exactly one hotkey / AX-permission prompt.
- *
- * The bridge intentionally stays minimal: it maps three endpoints to the
- * helper's JSON-RPC and nothing else. On non-macOS hosts the bridge is never
- * started (the backend will register `PlatformUnsupportedAudioRecorder` and
- * the renderer hides the record button via `/api/audio/capabilities`).
- */
 export interface RecordingSession {
     readonly id: string;
     readonly outputPath: string;

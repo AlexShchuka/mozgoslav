@@ -1,14 +1,5 @@
 import Foundation
 
-/// D1 — structured file log for dictation handoff diagnostics.
-///
-/// Writes newline-delimited JSON-ish entries to a per-session log file under
-/// `~/Library/Logs/Mozgoslav/helper-YYYYMMDD.log`. The backend side of the
-/// handoff logs the same `outputPath` / size pair via Serilog so a D1 repro
-/// can be correlated end-to-end (Swift helper start → AVAudioFile stop →
-/// Electron bridge → backend stop → ImportRecordingUseCase).
-///
-/// Failures are swallowed — logging must never block the capture path.
 public final class FileLog {
     public static let shared = FileLog()
 

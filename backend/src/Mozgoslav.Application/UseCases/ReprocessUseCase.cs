@@ -11,12 +11,6 @@ using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Application.UseCases;
 
-/// <summary>
-/// Re-processes an existing Recording through a different Profile without
-/// re-running STT. Takes the latest Transcript and produces a new ProcessedNote
-/// with a bumped version number, preserving the source audio and all prior
-/// interpretations.
-/// </summary>
 public sealed class ReprocessUseCase
 {
     private readonly IRecordingRepository _recordings;

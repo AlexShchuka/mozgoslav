@@ -26,7 +26,7 @@ public sealed class FileMarkdownExporterTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_vaultRoot, recursive: true); } catch (IOException) { /* best effort */ } catch (UnauthorizedAccessException) { /* best effort */ }
+        try { Directory.Delete(_vaultRoot, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
     [TestMethod]

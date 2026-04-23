@@ -1,10 +1,3 @@
-"""Request/response schemas for every sidecar endpoint.
-
-Contracts intentionally mirror the ones described in
-``docs/original-idea/PYTHON-SIDECAR-SPEC.md``. The brief for this scaffold
-requires JSON everywhere (no multipart uploads yet), so audio inputs are
-carried as on-disk paths addressed by the local C# backend.
-"""
 from __future__ import annotations
 
 from enum import Enum
@@ -12,7 +5,6 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
-# ---- Diarization -----------------------------------------------------------
 
 
 class DiarizeRequest(BaseModel):
@@ -32,7 +24,6 @@ class DiarizeResponse(BaseModel):
     num_speakers: int = Field(..., ge=0)
 
 
-# ---- Gender ----------------------------------------------------------------
 
 
 class GenderRequest(BaseModel):
@@ -44,7 +35,6 @@ class GenderResponse(BaseModel):
     confidence: float = Field(..., ge=0.0, le=1.0)
 
 
-# ---- Emotion ---------------------------------------------------------------
 
 
 class EmotionRequest(BaseModel):
@@ -58,7 +48,6 @@ class EmotionResponse(BaseModel):
     dominance: float = Field(..., ge=-1.0, le=1.0)
 
 
-# ---- NER -------------------------------------------------------------------
 
 
 class NerRequest(BaseModel):
@@ -72,7 +61,6 @@ class NerResponse(BaseModel):
     dates: list[str] = Field(default_factory=list)
 
 
-# ---- Cleanup ---------------------------------------------------------------
 
 
 class CleanupLevel(str, Enum):
@@ -90,7 +78,6 @@ class CleanupResponse(BaseModel):
     cleaned: str
 
 
-# ---- Embeddings ------------------------------------------------------------
 
 
 class EmbedRequest(BaseModel):

@@ -6,13 +6,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Mozgoslav.Application.Obsidian;
 
-/// <summary>
-/// ADR-019 §5.1 — state-machine reconciler. Accepts the desired vault state
-/// (<see cref="VaultProvisioningSpec"/>), drives <see cref="IVaultDriver"/> +
-/// <see cref="IPluginInstaller"/> in a fixed order, and returns the fresh
-/// <see cref="VaultDiagnosticsReport"/>. Idempotent: running twice against a
-/// converged vault reports zero writes and a green report.
-/// </summary>
 public sealed class VaultSidecarOrchestrator
 {
     private readonly IVaultDriver _driver;
@@ -35,7 +28,6 @@ public sealed class VaultSidecarOrchestrator
         _logger = logger;
     }
 
-    /// <summary>Drives the idempotent apply → install → bootstrap → diagnose pipeline.</summary>
     public async Task<VaultDiagnosticsReport> ApplyAsync(VaultProvisioningSpec spec, CancellationToken ct)
     {
         _logger.LogInformation("Obsidian sidecar: applying {FileCount} bootstrap files to {Vault}",

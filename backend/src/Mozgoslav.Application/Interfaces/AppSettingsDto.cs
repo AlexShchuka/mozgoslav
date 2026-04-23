@@ -2,11 +2,6 @@ using System.Collections.Generic;
 
 namespace Mozgoslav.Application.Interfaces;
 
-/// <summary>
-/// Snapshot of all persisted application settings. Immutable — updates are produced
-/// via record <c>with</c> expressions and then persisted through
-/// <see cref="IAppSettings.SaveAsync"/>.
-/// </summary>
 public sealed record AppSettingsDto(
     string VaultPath,
     string LlmProvider,

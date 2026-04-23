@@ -2,22 +2,6 @@ import {type ChildProcess, spawn} from "node:child_process";
 import {existsSync, readFileSync} from "node:fs";
 import path from "node:path";
 
-/**
- * ADR-003 D5 — child-process manager for the bundled Syncthing binary.
- *
- * Lifecycle:
- *   1. Resolve the platform-specific binary from ``resources/syncthing/``
- *      (dev) or ``process.resourcesPath`` (packaged).
- *   2. Spawn ``syncthing serve --no-browser --no-restart --home=<home>``.
- *   3. Poll ``<home>/config.xml`` until Syncthing emits it on first run
- *      (usually within ~500 ms); parse the ``apikey`` and the GUI listen
- *      address. These become the base URL + header the backend uses.
- *   4. Forward the pair to the caller so it can pass them to the backend
- *      as ``--Mozgoslav:SyncthingBaseUrl`` / ``--Mozgoslav:SyncthingApiKey``.
- *   5. On ``stop()``: send SIGTERM; Syncthing writes config + exits
- *      cleanly. We also do a best-effort ``/rest/system/shutdown`` first
- *      so the API key auth path is exercised on shutdown.
- */
 
 const DEFAULT_READY_TIMEOUT_MS = 15_000;
 const POLL_INTERVAL_MS = 100;

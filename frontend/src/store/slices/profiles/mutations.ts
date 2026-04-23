@@ -3,10 +3,6 @@ import type {ProfilesState} from "./types";
 
 type ByIdPatch = Pick<ProfilesState, "profiles" | "order">;
 
-/**
- * Reducer helpers — keep list + map in sync. A new profile lands at the end
- * of `order`; re-saves replace the existing entry without changing position.
- */
 export const toOrdered = (profiles: readonly Profile[]): ByIdPatch => {
     const byId: Record<string, Profile> = {};
     const order: string[] = [];

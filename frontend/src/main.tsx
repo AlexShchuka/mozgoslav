@@ -22,10 +22,7 @@ createRoot(rootElement).render(
     <StrictMode>
         <Provider store={store}>
             <MozgoslavThemeProvider>
-                {/* ADR-013 — respect OS reduced-motion preference globally. framer-motion
-            strips transform/opacity animations when `reducedMotion="user"` and
-            the user enabled it in system settings. Non-framer CSS animations are
-            covered by GlobalStyle.ts @media (prefers-reduced-motion: reduce). */}
+                {}
                 <MotionConfig reducedMotion="user">
                     <HashRouter>
                         <App/>

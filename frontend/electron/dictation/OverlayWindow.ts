@@ -12,12 +12,6 @@ const CURSOR_OFFSET_X = 20;
 const CURSOR_OFFSET_Y = 20;
 const FADE_MS = 500;
 
-/**
- * Lazy floating overlay window. Created on first show, reused afterwards.
- * Positioned next to the cursor on the same display (Wispr Flow style) with
- * clamping to keep the whole rect on-screen. Non-focusable and transparent so
- * the user never loses focus in the underlying target app.
- */
 export class OverlayWindow {
     private window: BrowserWindow | null = null;
     private hideTimer: NodeJS.Timeout | null = null;

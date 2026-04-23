@@ -18,7 +18,7 @@ import {
 } from "./ProfileEditor.style";
 
 export interface ProfileEditorProps {
-    profile: Profile | null; // null for create
+    profile: Profile | null; 
     isOpen: boolean;
     onClose: () => void;
     onSave: (draft: ProfileDraft) => void | Promise<void>;

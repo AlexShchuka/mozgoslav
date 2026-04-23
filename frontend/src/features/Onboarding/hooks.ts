@@ -6,10 +6,6 @@ const healthApi = apiFactory.createHealthApi();
 const obsidianApi = apiFactory.createObsidianApi();
 const dictationApi = apiFactory.createDictationApi();
 
-/**
- * Plan v0.8 Block 4 §3.1 — LLM health poller. Runs at a 3 s cadence while
- * the caller is on the LLM card; stops on unmount or detection flip.
- */
 export const useLlmDetection = (enabled: boolean): { reachable: boolean } => {
     const [reachable, setReachable] = useState(false);
 
@@ -35,10 +31,6 @@ export const useLlmDetection = (enabled: boolean): { reachable: boolean } => {
     return {reachable};
 };
 
-/**
- * Plan v0.8 Block 4 §3.1 — Obsidian vault autodetect. Single poll on mount +
- * every 5 seconds while the caller is on the Obsidian card.
- */
 export const useObsidianDetection = (
     enabled: boolean,
 ): { detected: Array<{ path: string; name: string }>; loaded: boolean } => {
@@ -75,10 +67,6 @@ export interface AudioCapabilities {
     permissionsRequired: string[];
 }
 
-/**
- * Plan v0.8 Block 4 §3.1 — permission / capability probe. Single poll on
- * mount + 2 s cadence while the user is on the permissions card.
- */
 export const useAudioPermissions = (
     enabled: boolean,
 ): { capabilities: AudioCapabilities | null; loaded: boolean } => {

@@ -4,59 +4,6 @@ import Foundation
 import AVFoundation
 #endif
 
-/// Captures audio from the default input and emits 16 kHz mono float32 PCM
-/// chunks — the format Whisper.net consumes directly on the backend side.
-///
-/// ## Graph for live dictation streaming
-///
-///     engine.inputNode ──▶ mixer ──▶ sink
-///     (any SR, any ch)        (16 kHz, mono)   (AVAudioSinkNode → onAudioChunk)
-///
-/// The mixer is Apple's sanctioned way to combine channel down-mixing and
-/// sample-rate conversion in a single graph pass:
-///
-///   * Channel downmix — a bare `AVAudioConverter` without an explicit
-///     `AudioChannelLayout`/`channelMap` picks channel 0 when converting
-///     N→1, and on macOS *aggregate* input devices (e.g. «камера +
-///     наушники») channel 0 is often a silent loopback/monitor channel —
-///     the real microphone lives on a higher index. The mixer sums every
-///     input channel instead, so the signal survives no matter which
-///     sub-device is carrying it.
-///   * Resampling — handled by the mixer's internal resampler.
-///
-/// An `AVAudioSinkNode` is attached downstream of the mixer because a
-/// mixer without a terminal output connection fails `engine.start()` with
-/// Core Audio `-10868` (`kAudioUnitErr_FormatNotSupported`) — the engine
-/// cannot negotiate the mixer's output format without a downstream node
-/// to pin it. The sink also keeps the captured signal out of the system
-/// output entirely, so there's no loopback path.
-///
-/// `engine.prepare()` runs before `engine.start()` to avoid the
-/// intermittent macOS bug where the first few input buffers arrive silent
-/// on certain Core Audio configurations.
-///
-/// ## Graph for file capture (recordings)
-///
-///     engine.inputNode ──tap(inputFormat)──▶ per-session AVAudioConverter → AVAudioFile
-///
-/// File capture stays on a direct tap on the input node with the native
-/// format plus a per-session converter — that path is not affected by the
-/// aggregate-channel downmix issue (recordings run through a normal
-/// device lifecycle) and deliberately stays out of the streaming graph so
-/// the two lifecycles don't interfere.
-///
-/// On non-macOS platforms (CI linting, unit-test host) the service is a
-/// no-op placeholder — the helper binary itself only runs on macOS so
-/// this never ships.
-///
-/// References:
-///   * https://developer.apple.com/documentation/avfaudio/avaudiomixernode
-///   * https://developer.apple.com/documentation/avfaudio/avaudiosinknode
-///   * https://github.com/AudioKit/AudioKit/issues/2130 — AVAudioEngine
-///     aggregate-device limitations that motivated this pattern.
-///   * https://developer.apple.com/forums/thread/771048 — zero-samples
-///     diagnosis checklist (sandbox `Audio Input` entitlement is still
-///     required when the helper ships inside a sandboxed DMG).
 public final class AudioCaptureService {
     public struct Chunk {
         public let samples: [Float]

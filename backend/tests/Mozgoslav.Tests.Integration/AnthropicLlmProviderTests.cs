@@ -19,11 +19,6 @@ using WireMock.Server;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// Contract-level coverage for <c>AnthropicLlmProvider</c> against a WireMock-hosted
-/// Messages API. Tests the happy path (response content extraction) and graceful
-/// degradation on HTTP errors / timeouts per ADR-007.
-/// </summary>
 [TestClass]
 public sealed class AnthropicLlmProviderTests
 {
@@ -69,7 +64,7 @@ public sealed class AnthropicLlmProviderTests
             .RespondWith(Response.Create()
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody(/*lang=json,strict*/
+                .WithBody(
                     """
                     {
                       "id": "msg_01",
@@ -114,7 +109,7 @@ public sealed class AnthropicLlmProviderTests
             .RespondWith(Response.Create()
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody(/*lang=json,strict*/
+                .WithBody(
                     """{"content":[{"type":"text","text":"ok"}]}"""));
 
         await _provider.ChatAsync("sys", "user", CancellationToken.None);

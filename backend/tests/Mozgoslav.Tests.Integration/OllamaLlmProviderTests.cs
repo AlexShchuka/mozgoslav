@@ -19,11 +19,6 @@ using WireMock.Server;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// Contract-level coverage for <c>OllamaLlmProvider</c> against a WireMock-hosted
-/// <c>/api/chat</c> endpoint. Covers happy path (extracts <c>message.content</c>)
-/// and graceful error fallback.
-/// </summary>
 [TestClass]
 public sealed class OllamaLlmProviderTests
 {
@@ -69,7 +64,7 @@ public sealed class OllamaLlmProviderTests
             .RespondWith(Response.Create()
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody(/*lang=json,strict*/
+                .WithBody(
                     """
                     {
                       "model": "qwen2.5:14b",
@@ -112,7 +107,7 @@ public sealed class OllamaLlmProviderTests
             .RespondWith(Response.Create()
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody(/*lang=json,strict*/
+                .WithBody(
                     """{"message":{"role":"assistant","content":"ok"},"done":true}"""));
 
         await _provider.ChatAsync("sys", "user", CancellationToken.None);

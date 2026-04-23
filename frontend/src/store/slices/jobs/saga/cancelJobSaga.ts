@@ -9,7 +9,6 @@ export function* cancelJobSaga(action: CancelJobAction): SagaIterator {
     try {
         yield call([api, api.cancel], action.payload.jobId);
     } catch {
-        // SSE will surface the actual job state; no local optimistic update needed
     }
 }
 

@@ -16,28 +16,6 @@ using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Tests.Integration.Sidecar;
 
-/// <summary>
-/// End-to-end contract tests against the real python sidecar running in
-/// Docker. Exercises the Tier-1 endpoints (diarize, ner — always 200)
-/// and the Tier-2 503 envelope (gender, emotion — no weights in the test
-/// image).
-///
-/// The image is built from <c>python-sidecar/Dockerfile.test</c>, which
-/// installs every Tier-1 dep but <b>not</b> the audeering weights. Tests
-/// are skipped with an Inconclusive result when Docker is not available
-/// — the sandbox runner installs it, macOS-latest GitHub Actions runner
-/// does not by default.
-///
-/// Test list:
-///  - Ner_RealSidecar_ExtractsRussianEntities
-///  - Diarize_RealSidecar_FileMissing_Returns404
-///  - Gender_WhenModelAbsent_Returns503WithTypedEnvelope
-///  - Emotion_WhenModelAbsent_Returns503WithTypedEnvelope
-///
-/// The class initialises a single container once per test run (the
-/// ~2 GB torch install happens inside the image build; amortised
-/// across all tests in the class).
-/// </summary>
 [TestClass]
 public sealed class SidecarContainerTests
 {
@@ -62,7 +40,7 @@ public sealed class SidecarContainerTests
                 .WithDockerfileDirectory(Path.Combine(repoRoot, "python-sidecar"))
                 .WithDockerfile("Dockerfile.test")
                 .WithName(ImageTag)
-                .WithCleanUp(false)     // keep the layer cache between runs
+                .WithCleanUp(false)
                 .Build();
 
             await image.CreateAsync();
@@ -93,7 +71,7 @@ public sealed class SidecarContainerTests
         if (_container is not null)
         {
             try { await _container.DisposeAsync(); }
-            catch (Exception) { /* best effort */ }
+            catch (Exception) { }
         }
     }
 

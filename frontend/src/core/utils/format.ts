@@ -1,16 +1,5 @@
 const PENDING_PLACEHOLDER = "—";
 
-/**
- * Formats a duration string returned by the backend (expected ISO 8601 "hh:mm:ss"
- * or total-seconds number as string) into a human-readable `M:SS` / `H:MM:SS` form.
- *
- * Task #18 — when the backend hasn't populated Duration yet (fresh import,
- * transcription not finished, TimeSpan.Zero on the wire as "00:00:00") we
- * now return the em-dash placeholder instead of a lying "0:00". Task #19
- * tracks the root fix (ffprobe at import).
- *
- * Returns the original input if it cannot be parsed.
- */
 export const formatDuration = (raw: string): string => {
     if (!raw) {
         return PENDING_PLACEHOLDER;

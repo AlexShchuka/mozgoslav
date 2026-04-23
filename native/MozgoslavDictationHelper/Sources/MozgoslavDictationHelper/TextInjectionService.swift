@@ -9,27 +9,7 @@ import ApplicationServices
 import AppKit
 #endif
 
-/// Writes a string into whatever app currently owns the keyboard focus.
-///
-/// Three backends — listed in preferred order for `auto` mode:
-///  - `CGEventPost(kCGHIDEventTap, …)` synthesizes Unicode keyboard events.
-///    Fast (~1-5 ms / char), works in any native-Cocoa app.
-///  - `AXUIElement + AXSetValue(kAXValueAttribute, …)` writes the string
-///    directly into the focused element. Slower (~10-30 ms / char) but the
-///    only reliable path for Electron apps that swallow raw HID events.
-///  - `NSPasteboard + ⌘V` (ADR-004 R3) — last-resort path when both above
-///    misbehave. Touches the user's clipboard history so we save & restore
-///    the previous clipboard contents around the injection.
-///
-/// Strategy selection is made by `InjectionStrategySelector` based on the
-/// focused app's bundle id, so this class stays a narrow executor.
-/// AX injection guards itself with a timeout (ADR-004 R3) and falls back to
-/// the clipboard path on hang so the dictation UI never freezes waiting for
-/// a misbehaving app to respond to `AXUIElementSetAttributeValue`.
 public final class TextInjectionService {
-    /// Wall-clock budget for a single AX injection call. Values larger than
-    /// ~500 ms feel broken to the user; AX calls that take that long are
-    /// almost always a sign of a non-responsive focused app.
     public static let accessibilityTimeoutSeconds: Double = 0.5
 
     public init() {}

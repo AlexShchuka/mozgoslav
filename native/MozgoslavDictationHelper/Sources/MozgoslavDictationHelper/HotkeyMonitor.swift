@@ -4,22 +4,9 @@ import Foundation
 import AppKit
 #endif
 
-/// NEXT H1 — global keyDown / keyUp monitor for the configured dictation
-/// hotkey. Emits "press" when the user pushes the combination and "release"
-/// when they let go — the renderer subscribes via SSE
-/// (`/api/hotkey/stream`) and drives the Dashboard record lifecycle in true
-/// push-to-talk semantics (Electron's `globalShortcut` has no keyUp signal).
-///
-/// Implemented with `NSEvent.addGlobalMonitorForEvents` — requires the user
-/// to grant Accessibility permission to Mozgoslav in System Settings
-/// (same permission we already require for text injection). On non-macOS
-/// builds this is a compile-only no-op.
-///
-/// UNVERIFIED ON MAC — compiled via SwiftPM in Linux CI, but the
-/// accessibility-gated behaviour needs a real macOS run to confirm.
 public final class HotkeyMonitor {
     public struct Payload: Codable {
-        public let kind: String // "press" | "release"
+        public let kind: String 
         public let accelerator: String
         public let observedAt: String
     }
@@ -42,9 +29,6 @@ public final class HotkeyMonitor {
         self.isoFormatter = iso
     }
 
-    /// Start monitoring. `accelerator` is the Electron-style string, e.g.
-    /// "CommandOrControl+Shift+Space". An empty string disables the monitor
-    /// (callers use this for the toggle-only code path).
     public func start(accelerator: String) {
         stop()
         let trimmed = accelerator.trimmingCharacters(in: .whitespaces)

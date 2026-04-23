@@ -6,18 +6,6 @@ using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Tests.Application;
 
-/// <summary>
-/// Test list (ADR-003 D5 — SSE/long-poll event parser):
-///  - ParseBatch_FolderCompletion_MapsPayload
-///  - ParseBatch_DeviceConnected_And_Disconnected_SetConnectedFlag
-///  - ParseBatch_PendingDevicesChanged_MapsAddedEntries
-///  - ParseBatch_ItemFinished_WithConflictPath_SetsFileConflict
-///  - ParseBatch_ItemFinished_WithoutConflictPath_NoFileConflictSet
-///  - ParseBatch_UnknownType_PassesThroughWithRawJson
-///  - ParseBatch_MalformedEntry_IsSilentlySkipped
-///  - Parse_NonObjectInput_ReturnsNull
-///  - ParseBatch_EmptyArray_ReturnsEmpty
-/// </summary>
 [TestClass]
 public sealed class SyncthingSseEventParserTests
 {

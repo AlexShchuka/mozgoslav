@@ -4,10 +4,6 @@ import Foundation
 import AppKit
 #endif
 
-/// Small lookup for "what app currently has keyboard focus?" — returns both
-/// bundle id (for strategy selection) and user-visible name (for logging).
-/// On non-macOS hosts returns nil values so that the helper still links for
-/// Swift Package test targets.
 public final class FocusedAppDetector {
     public struct Result {
         public let bundleId: String?

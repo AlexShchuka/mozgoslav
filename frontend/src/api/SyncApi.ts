@@ -3,11 +3,6 @@ import axios, {AxiosInstance} from "axios";
 import {API_ENDPOINTS, BACKEND_URL} from "../constants/api";
 import type {SyncPairingPayload, SyncStatusSnapshot,} from "../store/slices/sync/types";
 
-/**
- * Thin typed client for the /api/sync/* endpoints exposed by the backend.
- * The SSE stream is consumed directly by the saga via {@link createSyncEventSource}
- * — wrapping `EventSource` in an axios call buys nothing and complicates retry.
- */
 export class SyncApi {
     private readonly client: AxiosInstance;
 

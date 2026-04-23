@@ -20,10 +20,6 @@ using Mozgoslav.Infrastructure.Seed;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// ADR-007 BC-052 / bug 8 — verifies startup log lines are emitted exactly
-/// once and not duplicated by captive-dependency scope blow-up.
-/// </summary>
 [TestClass]
 public sealed class StartupLogTests
 {

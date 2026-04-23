@@ -52,15 +52,6 @@ export interface MockApiBundle {
 
 const jestFn = <T = unknown>(): jest.Mock => jest.fn<Promise<T>, unknown[]>();
 
-/**
- * Returns a cohesive bundle of mocked per-domain API clients plus an
- * `ApiFactory` that hands each one out. Tests jest.mock("../api", () =>
- * createMockApi()) and then reach into `.notesApi` etc. to arrange behaviour.
- *
- * Typing comes from the real API classes — adding/removing a method in a
- * real client breaks the compile step of any test that references the
- * missing member, so drift is caught at build time rather than runtime.
- */
 export const createMockApi = (): MockApiBundle => {
     const backupApi = {
         list: jestFn(),

@@ -7,7 +7,7 @@ export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
     label?: string;
     hint?: string;
     error?: string;
-    sensitive?: boolean; // password-reveal toggle
+    sensitive?: boolean; 
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(

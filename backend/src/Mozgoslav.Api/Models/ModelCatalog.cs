@@ -4,13 +4,6 @@ using System.Linq;
 
 namespace Mozgoslav.Api.Models;
 
-/// <summary>
-/// Publicly-hosted models Mozgoslav can download. Per ADR-010, entries
-/// are split between Tier 1 (bundled) and Tier 2 (user-opt-in downloads).
-/// Download URLs point at HuggingFace so users can verify the source; the
-/// GitHub-Releases-pinned bundle URL is used only by
-/// <c>frontend/scripts/fetch-bundle-models.sh</c> at DMG build time.
-/// </summary>
 public static class ModelCatalog
 {
     public static IReadOnlyList<CatalogEntry> All { get; } =

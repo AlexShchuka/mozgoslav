@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-# ADR-019 §6.1 — sync obsidian-vault-bootstrap source repo into
-# backend/src/Mozgoslav.Infrastructure/Resources/ObsidianBootstrap/
-# and regenerate manifest.json. The MSBuild target
-# GenerateObsidianBootstrapManifest also regenerates manifest.json on
-# every build, so running this script is only required when the source
-# bootstrap tree changes. CI does not call this script.
 
 set -euo pipefail
 
@@ -24,8 +18,6 @@ rsync -av --delete \
     --exclude 'pinned-plugins.json' \
     "$SRC/" "$DST/"
 
-# .gitkeep placeholders for empty directories that rsync would otherwise
-# materialise as empty — embedded resources require files.
 for d in archive ideas insights people questions tasks; do
     if [ -d "$DST/$d" ] && [ -z "$(ls -A "$DST/$d")" ]; then
         : > "$DST/$d/.gitkeep"

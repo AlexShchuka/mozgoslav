@@ -14,16 +14,6 @@ using Mozgoslav.Infrastructure.Platform;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// Wraps the <c>ffmpeg</c> binary to convert arbitrary audio files into the format
-/// Whisper expects: 16 kHz, mono, PCM WAV. Output is written to the app temp dir
-/// and reused by the transcription step before being cleaned up.
-/// <para>
-/// ADR-011 step 8 — built on <see cref="Cli"/> (CliWrap) so the process lifetime,
-/// stderr capture, and exit-code handling are provided by the library instead of
-/// hand-rolled <c>ProcessStartInfo</c> plumbing.
-/// </para>
-/// </summary>
 public sealed class FfmpegAudioConverter : IAudioConverter
 {
     private const string FfmpegExecutable = "ffmpeg";

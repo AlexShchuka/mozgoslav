@@ -4,10 +4,6 @@ using System.Linq;
 
 namespace Mozgoslav.Application.Obsidian;
 
-/// <summary>
-/// ADR-019 §5.3 — single aggregated diagnostics payload. Only source of truth
-/// for "is Obsidian connected" across the backend + frontend.
-/// </summary>
 public sealed record VaultDiagnosticsReport(
     Guid SnapshotId,
     VaultPathCheck Vault,

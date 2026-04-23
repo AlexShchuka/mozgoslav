@@ -33,10 +33,6 @@ public sealed class AVFoundationAudioRecorder : IAudioRecorder
     {
     }
 
-    /// <summary>
-    /// Test-friendly constructor with explicit port. Production code wires
-    /// through <see cref="IOptions{AudioRecorderOptions}"/>.
-    /// </summary>
     public AVFoundationAudioRecorder(
         HttpClient http,
         ILogger<AVFoundationAudioRecorder> logger,

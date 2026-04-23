@@ -11,14 +11,6 @@ using Mozgoslav.Infrastructure.Platform;
 
 namespace Mozgoslav.Api.Controllers;
 
-/// <summary>
-/// Logs surface for the renderer (ADR-007 D5 / BC-042 / BC-043, bug 9).
-/// The rest of the backend is Minimal API by convention; Logs is the single
-/// MVC controller — a deliberate, explicit exception rather than a policy
-/// (see ADR-007 §3 D5 and <c>LogsEndpoints</c> deletion note). Points at
-/// <see cref="AppPaths.Logs"/> so the file list always matches what Serilog
-/// writes.
-/// </summary>
 [ApiController]
 [Route("api/logs")]
 public sealed class LogsController : ControllerBase

@@ -1,23 +1,5 @@
 // ============================================================
-// split-and-label.js — Templater user script
-//
-// Размещение: <Vault>/_system/scripts/split-and-label.js
-// Папка указывается в Templater → Settings → User Script Folder Location
-//
-// Использование (из template-файла):
-//   <% await tp.user.split_and_label(tp) %>
-//
-// Зависимости в vault:
-//   _system/prompts/split-and-label-prompt.md   <- системный промпт с {{CORRECTIONS}} и {{INPUT_TEXT}}
-//   _system/corrections.md                       <- словарь voice-to-text правок (опц.)
-//   _system/flagged.md                           <- автодополняется непонятными словами
-//
-// Зависимости вне vault:
-//   LM Studio с включённым CORS на http://localhost:1234/v1
-//   Загружена чат-модель (имя ниже подкорректируй)
-// ============================================================
 
-// === НАСТРОЙКИ — подгони под себя ===
 const CONFIG = {
   LM_STUDIO_URL:    'http://localhost:1234/v1/chat/completions',
   MODEL_NAME:       'qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2',
@@ -26,7 +8,6 @@ const CONFIG = {
   CORRECTIONS_PATH: '_system/corrections.md',
   FLAGGED_PATH:     '_system/flagged.md',
   ARCHIVE_FOLDER:   'archive',
-  // Маппинг: лейбл (как LLM выдаёт в H2) -> папка vault
   FOLDERS: {
     'ИДЕЯ':    'ideas',
     'ИНСАЙТ':  'insights',
@@ -36,7 +17,6 @@ const CONFIG = {
   }
 };
 
-// === Вспомогательные функции ===
 const slugify = (s) => s
   .toLowerCase()
   .replace(/[^a-zа-я0-9\s-]/g, '')
@@ -71,7 +51,6 @@ const appendToFile = async (path, content) => {
   }
 };
 
-// === Вызов LM Studio ===
 async function callLLM(prompt) {
   const res = await fetch(CONFIG.LM_STUDIO_URL, {
     method: 'POST',
@@ -90,7 +69,6 @@ async function callLLM(prompt) {
   return text;
 }
 
-// === Парсинг ответа LLM в блоки ===
 function parseBlocks(llmOutput) {
   return llmOutput
     .split(/\n(?=## )/)
@@ -98,7 +76,6 @@ function parseBlocks(llmOutput) {
     .filter(b => b.startsWith('## '));
 }
 
-// === Главная функция ===
 module.exports = async function(tp) {
   const currentFile = tp.config.target_file;
   if (!currentFile) {
@@ -107,14 +84,12 @@ module.exports = async function(tp) {
   }
   const currentContent = await app.vault.read(currentFile);
 
-  // Промпт обязателен
   const promptTemplate = await readOrEmpty(CONFIG.PROMPT_PATH);
   if (!promptTemplate) {
     new Notice(`split-and-label: не найден промпт ${CONFIG.PROMPT_PATH}`, 5000);
     return;
   }
 
-  // Словарь — опционален
   const corrections = (await readOrEmpty(CONFIG.CORRECTIONS_PATH)) || '(пусто)';
 
   const fullPrompt = promptTemplate
@@ -148,7 +123,6 @@ module.exports = async function(tp) {
     const body = block.replace(/^## .*\n?/, '').trim();
     if (!body) { skipped++; continue; }
 
-    // FLAGGED — append в общий файл
     if (label === 'FLAGGED') {
       const date = window.moment().format('YYYY-MM-DD HH:mm');
       const append = `\n## ${date} — из ${currentFile.basename}\n${body}\n`;
@@ -157,7 +131,6 @@ module.exports = async function(tp) {
       continue;
     }
 
-    // Обычный блок — отдельный файл
     const folder = CONFIG.FOLDERS[label];
     if (!folder) { skipped++; continue; }
 
@@ -180,9 +153,6 @@ module.exports = async function(tp) {
     created++;
   }
 
-  // Оригинал НЕ архивируется автоматически — перенеси руками в archive/
-  // после проверки созданных файлов. Автоархивация раньше приводила к потере
-  // данных если LLM отдал пустой/сломанный ответ.
 
   new Notice(
     `split-and-label: создано ${created}, пропущено ${skipped}, в flagged ${flaggedCount}. Оригинал оставлен на месте — перенеси в ${CONFIG.ARCHIVE_FOLDER}/ руками после ревью.`,

@@ -1,4 +1,3 @@
-"""``POST /api/gender`` — audeering age-gender (Tier 2, 503 when absent)."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException

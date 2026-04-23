@@ -12,9 +12,6 @@ import ApplicationServices
 import AppKit
 #endif
 
-/// macOS permission probes for the Onboarding wizard (plan/v0.8/04-onboarding-slim.md §3).
-/// Returns one of "granted" / "denied" / "undetermined" so the UI can branch
-/// without re-implementing the Apple API surface.
 public enum PermissionProbe {
     public static func microphoneStatus() -> String {
         #if canImport(AVFoundation)
@@ -53,11 +50,6 @@ public enum PermissionProbe {
         #endif
     }
 
-    /// Triggers the native macOS Accessibility prompt via
-    /// `AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt: true])`.
-    /// Returns the post-call trust state. If the user already denied once,
-    /// macOS suppresses further prompts — callers should follow up with
-    /// `openAccessibilitySettings()`.
     public static func requestAccessibility() -> Bool {
         #if canImport(ApplicationServices)
         let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
@@ -68,10 +60,6 @@ public enum PermissionProbe {
         #endif
     }
 
-    /// Invokes `IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)` to show the
-    /// native Input Monitoring prompt. Resolved dynamically — same reason as
-    /// `IOHIDCheckAccess`: stay compatible with SDKs that don't surface the
-    /// symbol at build time. Falls back to `false` when unavailable.
     public static func requestInputMonitoring() -> Bool {
         #if canImport(ApplicationServices)
         guard let fn = IOHIDRequestAccess else { return false }
@@ -81,8 +69,6 @@ public enum PermissionProbe {
         #endif
     }
 
-    /// Escape hatch for the re-prompt-suppressed case — deeplinks the user
-    /// straight into System Settings → Privacy → Accessibility.
     public static func openAccessibilitySettings() {
         #if canImport(AppKit) && os(macOS)
         guard let url = URL(
@@ -92,7 +78,6 @@ public enum PermissionProbe {
         #endif
     }
 
-    /// Same escape hatch for Input Monitoring.
     public static func openInputMonitoringSettings() {
         #if canImport(AppKit) && os(macOS)
         guard let url = URL(

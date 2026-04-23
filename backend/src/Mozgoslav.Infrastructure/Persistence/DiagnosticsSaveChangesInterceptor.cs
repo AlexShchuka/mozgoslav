@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -14,19 +13,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Mozgoslav.Infrastructure.Persistence;
 
-/// <summary>
-/// EF Core interceptor that dumps the full ChangeTracker state + caller stack
-/// whenever <c>SaveChanges</c> throws. Exists purely to diagnose the
-/// <c>NullReferenceException</c> in <c>StateManager.CascadeChanges</c> whose
-/// default EF Core diagnostic log strips every application frame and gives no
-/// hint about which entity / which repository call triggered the save.
-/// <para>
-/// Cost: one <see cref="StackTrace"/> capture + one entries walk per
-/// failing save. Happy path is untouched. Keep installed until the root cause
-/// is found and stable for a release; remove or gate behind
-/// <c>Mozgoslav:DbDiagnostics:Enabled</c> afterwards.
-/// </para>
-/// </summary>
 public sealed class DiagnosticsSaveChangesInterceptor : SaveChangesInterceptor
 {
     private const int MaxValuePreview = 256;

@@ -12,11 +12,6 @@ export interface RenderWithRouterOptions {
     readonly renderOptions?: Omit<RenderOptions, "wrapper">;
 }
 
-/**
- * Renders a React tree wrapped in `MemoryRouter` (with optional initial
- * entries) and the default styled-components theme. Combine with
- * `renderWithStore` by nesting the store/Provider around the result.
- */
 export const renderWithRouter = (
     ui: ReactElement,
     options: RenderWithRouterOptions = {},

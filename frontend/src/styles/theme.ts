@@ -1,17 +1,5 @@
 import "styled-components";
 
-/**
- * Mozgoslav design tokens (ADR-013).
- *
- * Palette drawn from the Logi Options+ 2026 language: deep near-black-blue
- * base, a single cyan/mint accent, motion used as action hinting rather than
- * decoration.
- *
- * Consumers MUST address tokens through the nested paths
- * (`colors.accent.primary`, `colors.bg.elevated2`, `motion.duration.fast`, …)
- * — there are no flat-string aliases. Motion variants live in
- * `styles/motion.ts` and wrap framer-motion props around these tokens.
- */
 export interface MotionSpringTokens {
     type: "spring";
     stiffness: number;

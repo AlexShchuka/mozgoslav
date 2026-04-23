@@ -19,17 +19,6 @@ export interface OrchestratorOptions {
     readonly overlayEnabled: boolean;
 }
 
-/**
- * Top-level driver for the push-to-talk dictation pipeline. The flow:
- *
- * 1. user presses hotkey → open overlay, tell helper to start capture, call
- *    backend `/api/dictation/start`, start SSE subscription.
- * 2. helper emits audio chunks → forwarded to backend `/api/dictation/push/{id}`.
- * 3. backend emits partials → overlay text updates.
- * 4. user releases hotkey → stop capture, call backend `/api/dictation/stop/{id}`,
- *    helper injects the final text, overlay fades out.
- * 5. user cancels (e.g. ESC) → backend `/api/dictation/cancel/{id}`, no injection.
- */
 export class DictationOrchestrator {
     private readonly hotkey: HotkeyMonitor;
     private readonly helper: NativeHelperClient;
@@ -107,11 +96,6 @@ export class DictationOrchestrator {
         this.sseController?.abort();
     }
 
-    /**
-     * NEXT H1 — start the helper's global keyboard monitor for the configured
-     * Electron accelerator (orthogonal to the mouse-5 / keycode press-to-talk
-     * path above; this one is gated by AppSettings.DictationPushToTalk).
-     */
     async startKeyboardHotkey(accelerator: string): Promise<void> {
         await this.helper.startHotkey(accelerator);
     }

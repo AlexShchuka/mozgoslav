@@ -1,11 +1,5 @@
 import styled from "styled-components";
 
-/**
- * U2 — kbar-powered command palette styled with ADR-013 tokens. All colours,
- * typography, radii, spacing and motion durations come from the theme so
- * light/dark switching is automatic. Fixed-pixel values only survive where
- * no token applies (shadow offsets, backdrop blur radius, hint chip padding).
- */
 
 export const Backdrop = styled.div`
     position: fixed;

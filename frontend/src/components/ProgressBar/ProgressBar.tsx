@@ -3,7 +3,7 @@ import {FC} from "react";
 import {Fill, Label, Shimmer, Track, Wrapper} from "./ProgressBar.style";
 
 export interface ProgressBarProps {
-    value: number; // 0..100
+    value: number; 
     label?: string;
     status?: "active" | "success" | "error" | "idle";
     showPercent?: boolean;

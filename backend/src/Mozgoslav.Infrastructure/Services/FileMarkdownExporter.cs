@@ -13,12 +13,6 @@ using Mozgoslav.Domain.Entities;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// Writes a <see cref="ProcessedNote"/> as a Markdown file inside the Obsidian vault.
-/// The filename is <c>{date}-{topic}-{profile}.md</c>, with a numeric suffix when a
-/// file with the same name already exists (so reprocess runs never overwrite older
-/// notes silently).
-/// </summary>
 public sealed class FileMarkdownExporter : IMarkdownExporter
 {
     private static readonly Regex InvalidFileChars = new(@"[\\/:*?""<>|]+", RegexOptions.Compiled);

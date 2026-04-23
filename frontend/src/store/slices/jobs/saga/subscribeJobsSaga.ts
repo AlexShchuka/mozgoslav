@@ -33,7 +33,6 @@ export const createJobsChannel = (): EventChannel<ProcessingJob> =>
             try {
                 emit(JSON.parse(event.data) as ProcessingJob);
             } catch {
-                // ignore malformed payloads — server contract guarantees JSON
             }
         };
         source.addEventListener("job", onMessage as EventListener);

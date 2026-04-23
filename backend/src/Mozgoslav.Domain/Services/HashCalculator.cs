@@ -6,9 +6,6 @@ using System.Threading.Tasks;
 
 namespace Mozgoslav.Domain.Services;
 
-/// <summary>
-/// Deterministic SHA-256 hashing used for idempotent Recording import.
-/// </summary>
 public static class HashCalculator
 {
     public static async Task<string> Sha256Async(string filePath, CancellationToken ct = default)

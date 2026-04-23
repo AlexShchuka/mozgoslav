@@ -9,17 +9,6 @@ using Mozgoslav.Application.Rag;
 
 namespace Mozgoslav.Infrastructure.Rag;
 
-/// <summary>
-/// ADR-005 D2 MVP — brute-force cosine-similarity search over an in-memory
-/// dictionary. Good for a few thousand chunks on a laptop (the typical
-/// personal note corpus); anything larger should swap in the
-/// <c>sqlite-vss</c>-backed index (follow-up ADR).
-/// <para>
-/// Thread-safe via <see cref="ConcurrentDictionary{TKey,TValue}"/> for
-/// upserts; the read-side enumerates a snapshot so concurrent upserts
-/// during a search never throw.
-/// </para>
-/// </summary>
 public sealed class InMemoryVectorIndex : IVectorIndex
 {
     private readonly ConcurrentDictionary<string, NoteChunk> _chunks = new(StringComparer.Ordinal);

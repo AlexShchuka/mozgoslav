@@ -60,7 +60,7 @@ const AppShell: FC = () => {
                             </OnboardingCompleteGuard>
                         }
                     />
-                    {/* Task L1 — keep /queue bookmarks alive by redirecting to /home. */}
+                    {}
                     <Route
                         path={ROUTES.queue}
                         element={<Navigate to={ROUTES.home} replace/>}

@@ -10,11 +10,6 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// D3 — in-process fan-out notifier for audio-device hot-plug events. Mirrors
-/// <see cref="ChannelJobProgressNotifier"/>: every subscriber gets its own
-/// unbounded channel; every publish writes to all current subscribers.
-/// </summary>
 public sealed class ChannelAudioDeviceChangeNotifier : IAudioDeviceChangeNotifier, IDisposable
 {
     private readonly ConcurrentDictionary<Guid, Channel<AudioDeviceChangePayload>> _subscribers = new();
