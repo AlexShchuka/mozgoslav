@@ -125,6 +125,7 @@ public sealed class WhisperNetTranscriptionService
         var chunksPassedVad = 0;
         var partialsEmitted = 0;
         double peakRms = 0;
+        var firstChunkLogged = false;
 
         try
         {
@@ -159,11 +160,38 @@ public sealed class WhisperNetTranscriptionService
                 }
 
                 chunksPassedVad++;
-                _logger.LogDebug("[CHUNK] idx={ChunksReceived} samples={Length} rms={Rms:F4} vad_pass=true",
-                    chunksReceived, chunk.Samples.Length, peakRms);
+
+                // Track sample range on the first VAD-passed chunk for debugging
+                if (!firstChunkLogged && chunk.Samples.Length > 0)
+                {
+                    var min = chunk.Samples[0];
+                    var max = chunk.Samples[0];
+                    for (var i = 1; i < chunk.Samples.Length; i++)
+                    {
+                        var s = chunk.Samples[i];
+                        if (s < min) min = s;
+                        if (s > max) max = s;
+                    }
+                    _logger.LogInformation(
+                        "[SAMPLES] First VAD-passed: length={Length} min={Min:F4} max={Max:F4}",
+                        chunk.Samples.Length, min, max);
+                    firstChunkLogged = true;
+                }
+
+                if (chunk.Samples.Length > 0)
+                {
+                    var sum = 0.0;
+                    for (var i = 0; i < chunk.Samples.Length; i++)
+                    {
+                        var s = chunk.Samples[i];
+                        sum += s * s;
+                    }
+
+                    var rms = Math.Sqrt(sum / chunk.Samples.Length);
+                    if (rms > peakRms) peakRms = rms;
+                }
 
                 buffer.AddRange(chunk.Samples);
-                samplesSinceLastEmit += chunk.Samples.Length;
                 totalSamples += chunk.Samples.Length;
 
                 if (buffer.Count > maxBufferSamples)
