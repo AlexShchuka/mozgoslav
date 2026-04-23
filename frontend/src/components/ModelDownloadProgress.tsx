@@ -1,120 +1,116 @@
-import {FC, useEffect, useState} from "react";
-import {useTranslation} from "react-i18next";
+import { FC, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import styled from "styled-components";
 
 import ProgressBar from "./ProgressBar";
 import Button from "./Button";
-import {API_ENDPOINTS, BACKEND_URL} from "../constants/api";
+import { API_ENDPOINTS, BACKEND_URL } from "../constants/api";
 
 export interface ModelDownloadProgressProps {
-    downloadId: string;
-    label?: string;
-    onCancel?: (downloadId: string) => void;
-    onComplete?: (downloadId: string) => void;
+  downloadId: string;
+  label?: string;
+  onCancel?: (downloadId: string) => void;
+  onComplete?: (downloadId: string) => void;
 }
 
 interface DownloadFrame {
-    downloadId: string;
-    totalBytes: number;
-    receivedBytes: number;
-    status: "pending" | "downloading" | "done" | "failed";
-    error?: string | null;
+  downloadId: string;
+  totalBytes: number;
+  receivedBytes: number;
+  status: "pending" | "downloading" | "done" | "failed";
+  error?: string | null;
 }
 
 const Root = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: ${({theme}) => theme.space(2)};
-    padding: ${({theme}) => theme.space(3)};
-    border: 1px solid ${({theme}) => theme.colors.border.subtle};
-    border-radius: ${({theme}) => theme.radii.md};
-    background: ${({theme}) => theme.colors.bg.elevated2};
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.space(2)};
+  padding: ${({ theme }) => theme.space(3)};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
+  border-radius: ${({ theme }) => theme.radii.md};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
 `;
 
 const Meta = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: ${({theme}) => theme.space(2)};
-    font-size: ${({theme}) => theme.font.size.sm};
-    color: ${({theme}) => theme.colors.text.secondary};
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: ${({ theme }) => theme.space(2)};
+  font-size: ${({ theme }) => theme.font.size.sm};
+  color: ${({ theme }) => theme.colors.text.secondary};
 `;
 
 const formatMb = (bytes: number): string =>
-    bytes > 0 ? `${(bytes / (1024 * 1024)).toFixed(1)} МБ` : "—";
+  bytes > 0 ? `${(bytes / (1024 * 1024)).toFixed(1)} МБ` : "—";
 
 const ModelDownloadProgress: FC<ModelDownloadProgressProps> = ({
-                                                                   downloadId,
-                                                                   label,
-                                                                   onCancel,
-                                                                   onComplete,
-                                                               }) => {
-    const {t} = useTranslation();
-    const [frame, setFrame] = useState<DownloadFrame | null>(null);
-    const [closed, setClosed] = useState(false);
+  downloadId,
+  label,
+  onCancel,
+  onComplete,
+}) => {
+  const { t } = useTranslation();
+  const [frame, setFrame] = useState<DownloadFrame | null>(null);
+  const [closed, setClosed] = useState(false);
 
-    useEffect(() => {
-        const url = `${BACKEND_URL}${API_ENDPOINTS.modelsDownloadStream}?downloadId=${encodeURIComponent(downloadId)}`;
-        const source = new EventSource(url);
-        const handle = (ev: MessageEvent) => {
-            try {
-                const parsed = JSON.parse(ev.data) as DownloadFrame;
-                setFrame(parsed);
-                if (parsed.status === "done") {
-                    onComplete?.(parsed.downloadId);
-                    source.close();
-                    setClosed(true);
-                }
-                if (parsed.status === "failed") {
-                    source.close();
-                    setClosed(true);
-                }
-            } catch {
-            }
-        };
-        source.addEventListener("progress", handle);
-        source.onmessage = handle;
-        source.onerror = () => {
-        };
-        return () => {
-            source.close();
-            setClosed(true);
-        };
-    }, [downloadId, onComplete]);
+  useEffect(() => {
+    const url = `${BACKEND_URL}${API_ENDPOINTS.modelsDownloadStream}?downloadId=${encodeURIComponent(downloadId)}`;
+    const source = new EventSource(url);
+    const handle = (ev: MessageEvent) => {
+      try {
+        const parsed = JSON.parse(ev.data) as DownloadFrame;
+        setFrame(parsed);
+        if (parsed.status === "done") {
+          onComplete?.(parsed.downloadId);
+          source.close();
+          setClosed(true);
+        }
+        if (parsed.status === "failed") {
+          source.close();
+          setClosed(true);
+        }
+      } catch {}
+    };
+    source.addEventListener("progress", handle);
+    source.onmessage = handle;
+    source.onerror = () => {};
+    return () => {
+      source.close();
+      setClosed(true);
+    };
+  }, [downloadId, onComplete]);
 
-    if (closed && !frame) return null;
+  if (closed && !frame) return null;
 
-    const pct =
-        frame && frame.totalBytes > 0
-            ? Math.round((frame.receivedBytes / frame.totalBytes) * 100)
-            : 0;
-    const errored = frame?.status === "failed";
+  const pct =
+    frame && frame.totalBytes > 0 ? Math.round((frame.receivedBytes / frame.totalBytes) * 100) : 0;
+  const errored = frame?.status === "failed";
 
-    return (
-        <Root data-testid={`model-download-${downloadId}`}>
-            <Meta>
-                <span>{label ?? t("models.download")}</span>
-                <span>
+  return (
+    <Root data-testid={`model-download-${downloadId}`}>
+      <Meta>
+        <span>{label ?? t("models.download")}</span>
+        <span>
           {frame ? `${formatMb(frame.receivedBytes)} / ${formatMb(frame.totalBytes)}` : "…"}
         </span>
-            </Meta>
-            <ProgressBar
-                value={pct}
-                status={errored ? "error" : frame?.status === "done" ? "success" : "active"}
-                indeterminate={!frame || frame.totalBytes === 0}
-                label={errored ? (frame?.error ?? t("common.error")) : undefined}
-            />
-            {onCancel && frame?.status !== "done" && (
-                <Button
-                    variant="ghost"
-                    data-testid={`model-download-cancel-${downloadId}`}
-                    onClick={() => onCancel(downloadId)}
-                >
-                    {t("common.cancel")}
-                </Button>
-            )}
-        </Root>
-    );
+      </Meta>
+      <ProgressBar
+        value={pct}
+        status={errored ? "error" : frame?.status === "done" ? "success" : "active"}
+        indeterminate={!frame || frame.totalBytes === 0}
+        label={errored ? (frame?.error ?? t("common.error")) : undefined}
+      />
+      {onCancel && frame?.status !== "done" && (
+        <Button
+          variant="ghost"
+          data-testid={`model-download-cancel-${downloadId}`}
+          onClick={() => onCancel(downloadId)}
+        >
+          {t("common.cancel")}
+        </Button>
+      )}
+    </Root>
+  );
 };
 
 export default ModelDownloadProgress;

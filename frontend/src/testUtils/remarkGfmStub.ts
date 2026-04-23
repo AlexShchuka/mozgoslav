@@ -1,3 +1,2 @@
-const remarkGfmStub = (): void => {
-};
+const remarkGfmStub = (): void => {};
 export default remarkGfmStub;

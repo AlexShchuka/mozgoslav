@@ -105,8 +105,8 @@ public sealed class GitHubPluginInstaller : IPluginInstaller
             if (Directory.Exists(stagingDir))
             {
                 try { Directory.Delete(stagingDir, recursive: true); }
-                catch (IOException) { }
-                catch (UnauthorizedAccessException) { }
+                catch (IOException ex) { _logger.LogWarning(ex, "Failed to clean staging dir {Dir}", stagingDir); }
+                catch (UnauthorizedAccessException ex) { _logger.LogWarning(ex, "Access denied cleaning staging dir {Dir}", stagingDir); }
             }
         }
     }

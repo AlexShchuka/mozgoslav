@@ -10,51 +10,49 @@
 export type OnboardingPlatform = "macos" | "linux" | "windows" | "other";
 
 export const detectPlatform = (): OnboardingPlatform => {
-    if (typeof navigator === "undefined") {
-        return "other";
-    }
-    const platform = (navigator.platform ?? "").toLowerCase();
-    if (platform.includes("mac")) {
-        return "macos";
-    }
-    if (platform.includes("win")) {
-        return "windows";
-    }
-    if (platform.includes("linux")) {
-        return "linux";
-    }
+  if (typeof navigator === "undefined") {
     return "other";
+  }
+  const platform = (navigator.platform ?? "").toLowerCase();
+  if (platform.includes("mac")) {
+    return "macos";
+  }
+  if (platform.includes("win")) {
+    return "windows";
+  }
+  if (platform.includes("linux")) {
+    return "linux";
+  }
+  return "other";
 };
 
 export type OnboardingStepKey =
-    | "welcome"
-    | "tryItNow"
-    | "models"
-    | "llm"
-    | "obsidian"
-    | "mic"
-    | "dictation"
-    | "ready";
+  | "welcome"
+  | "tryItNow"
+  | "models"
+  | "llm"
+  | "obsidian"
+  | "mic"
+  | "dictation"
+  | "ready";
 
 const ALL_STEPS: readonly OnboardingStepKey[] = [
-    "welcome",
-    "tryItNow",
-    "models",
-    "llm",
-    "obsidian",
-    "mic",
-    "dictation",
-    "ready",
+  "welcome",
+  "tryItNow",
+  "models",
+  "llm",
+  "obsidian",
+  "mic",
+  "dictation",
+  "ready",
 ];
 
-export const stepsForPlatform = (
-    platform: OnboardingPlatform,
-): readonly OnboardingStepKey[] => {
-    if (platform === "macos") {
-        return ALL_STEPS;
-    }
-    return ALL_STEPS.filter((step) => step !== "mic" && step !== "dictation");
+export const stepsForPlatform = (platform: OnboardingPlatform): readonly OnboardingStepKey[] => {
+  if (platform === "macos") {
+    return ALL_STEPS;
+  }
+  return ALL_STEPS.filter((step) => step !== "mic" && step !== "dictation");
 };
 
 export const isRequiredStep = (step: OnboardingStepKey): boolean =>
-    step === "welcome" || step === "tryItNow" || step === "models" || step === "ready";
+  step === "welcome" || step === "tryItNow" || step === "models" || step === "ready";

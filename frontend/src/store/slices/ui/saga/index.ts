@@ -1,4 +1,3 @@
-import type {SagaIterator} from "redux-saga";
+import type { SagaIterator } from "redux-saga";
 
-export function* watchUiSagas(): SagaIterator {
-}
+export function* watchUiSagas(): SagaIterator {}

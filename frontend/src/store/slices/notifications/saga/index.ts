@@ -1,1 +1,1 @@
-export {showNotification, watchNotificationsSagas} from "./notificationsSaga";
+export { showNotification, watchNotificationsSagas } from "./notificationsSaga";

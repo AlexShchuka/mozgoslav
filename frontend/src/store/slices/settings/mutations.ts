@@ -1,24 +1,24 @@
-import type {AppSettings} from "../../../domain/Settings";
-import type {SettingsState} from "./types";
+import type { AppSettings } from "../../../domain/Settings";
+import type { SettingsState } from "./types";
 
 export const markLlmProbing = (state: SettingsState): SettingsState => ({
-    ...state,
-    llmProbe: {probing: true},
+  ...state,
+  llmProbe: { probing: true },
 });
 
 export const settleLlmProbing = (state: SettingsState): SettingsState => ({
-    ...state,
-    llmProbe: {probing: false},
+  ...state,
+  llmProbe: { probing: false },
 });
 
 export const applyLoaded = (state: SettingsState, settings: AppSettings): SettingsState => ({
-    ...state,
-    settings,
-    isLoading: false,
+  ...state,
+  settings,
+  isLoading: false,
 });
 
 export const applySaved = (state: SettingsState, settings: AppSettings): SettingsState => ({
-    ...state,
-    settings,
-    isSaving: false,
+  ...state,
+  settings,
+  isSaving: false,
 });

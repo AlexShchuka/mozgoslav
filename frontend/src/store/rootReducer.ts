@@ -1,43 +1,43 @@
-import {combineReducers} from "redux";
-import type {RecordingState} from "./slices/recording";
-import {recordingReducer} from "./slices/recording";
-import type {SyncState} from "./slices/sync";
-import {syncReducer} from "./slices/sync";
-import type {RagState} from "./slices/rag";
-import {ragReducer} from "./slices/rag";
-import type {ProfilesState} from "./slices/profiles";
-import {profilesReducer} from "./slices/profiles";
-import type {SettingsState} from "./slices/settings";
-import {settingsReducer} from "./slices/settings";
-import type {ObsidianState} from "./slices/obsidian";
-import {obsidianReducer} from "./slices/obsidian";
-import type {OnboardingState} from "./slices/onboarding";
-import {onboardingReducer} from "./slices/onboarding";
-import type {UiState} from "./slices/ui";
-import {uiReducer} from "./slices/ui";
-import type {JobsState} from "./slices/jobs";
-import {jobsReducer} from "./slices/jobs";
+import { combineReducers } from "redux";
+import type { RecordingState } from "./slices/recording";
+import { recordingReducer } from "./slices/recording";
+import type { SyncState } from "./slices/sync";
+import { syncReducer } from "./slices/sync";
+import type { RagState } from "./slices/rag";
+import { ragReducer } from "./slices/rag";
+import type { ProfilesState } from "./slices/profiles";
+import { profilesReducer } from "./slices/profiles";
+import type { SettingsState } from "./slices/settings";
+import { settingsReducer } from "./slices/settings";
+import type { ObsidianState } from "./slices/obsidian";
+import { obsidianReducer } from "./slices/obsidian";
+import type { OnboardingState } from "./slices/onboarding";
+import { onboardingReducer } from "./slices/onboarding";
+import type { UiState } from "./slices/ui";
+import { uiReducer } from "./slices/ui";
+import type { JobsState } from "./slices/jobs";
+import { jobsReducer } from "./slices/jobs";
 
 export const rootReducer = combineReducers({
-    recording: recordingReducer,
-    sync: syncReducer,
-    rag: ragReducer,
-    profiles: profilesReducer,
-    settings: settingsReducer,
-    obsidian: obsidianReducer,
-    onboarding: onboardingReducer,
-    ui: uiReducer,
-    jobs: jobsReducer,
+  recording: recordingReducer,
+  sync: syncReducer,
+  rag: ragReducer,
+  profiles: profilesReducer,
+  settings: settingsReducer,
+  obsidian: obsidianReducer,
+  onboarding: onboardingReducer,
+  ui: uiReducer,
+  jobs: jobsReducer,
 });
 
 export interface GlobalState {
-    recording: RecordingState;
-    sync: SyncState;
-    rag: RagState;
-    profiles: ProfilesState;
-    settings: SettingsState;
-    obsidian: ObsidianState;
-    onboarding: OnboardingState;
-    ui: UiState;
-    jobs: JobsState;
+  recording: RecordingState;
+  sync: SyncState;
+  rag: RagState;
+  profiles: ProfilesState;
+  settings: SettingsState;
+  obsidian: ObsidianState;
+  onboarding: OnboardingState;
+  ui: UiState;
+  jobs: JobsState;
 }

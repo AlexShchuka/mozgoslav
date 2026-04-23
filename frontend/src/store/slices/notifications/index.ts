@@ -1,2 +1,2 @@
 export * from "./actions";
-export {watchNotificationsSagas} from "./saga";
+export { watchNotificationsSagas } from "./saga";
