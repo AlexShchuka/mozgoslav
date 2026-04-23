@@ -26,6 +26,7 @@ public final class AudioCaptureService {
     private var converter: AVAudioConverter?
     private var startedAt: Date?
     private var isRunning = false
+    private var firstChunkLogged = false
     private let targetSampleRate: Double = 16_000
     #endif
 
@@ -40,8 +41,12 @@ public final class AudioCaptureService {
                 message: "Audio streaming cannot start while \(fileSessions.count) file-capture session(s) are active."
             )
         }
+        firstChunkLogged = false
         let input = engine.inputNode
         let inputFormat = input.outputFormat(forBus: 0)
+        FileLog.shared.info(
+            "AudioCaptureService: start inputFormat sampleRate=\(inputFormat.sampleRate) channels=\(inputFormat.channelCount) interleaved=\(inputFormat.isInterleaved)"
+        )
 
         guard let targetFormat = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
@@ -250,6 +255,22 @@ public final class AudioCaptureService {
         var samples = [Float](repeating: 0, count: frameCount)
         for i in 0..<frameCount {
             samples[i] = channelData[i]
+        }
+
+        if !firstChunkLogged && frameCount > 0 {
+            var sumSq: Double = 0
+            var minV: Float = samples[0]
+            var maxV: Float = samples[0]
+            for v in samples {
+                sumSq += Double(v) * Double(v)
+                if v < minV { minV = v }
+                if v > maxV { maxV = v }
+            }
+            let rms = (sumSq / Double(frameCount)).squareRoot()
+            FileLog.shared.info(
+                "AudioCaptureService: first chunk emitted frames=\(frameCount) rms=\(rms) min=\(minV) max=\(maxV) inputSR=\(buffer.format.sampleRate) outputSR=\(Int(targetFormat.sampleRate))"
+            )
+            firstChunkLogged = true
         }
 
         let offsetMs: Int

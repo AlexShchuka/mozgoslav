@@ -143,7 +143,8 @@ public sealed class WhisperNetTranscriptionService
         var chunksPassedVad = 0;
         var partialsEmitted = 0;
         double peakRms = 0;
-        var firstChunkLogged = false;
+        var firstReceivedLogged = false;
+        var firstVadPassedLogged = false;
 
         try
         {
@@ -166,6 +167,15 @@ public sealed class WhisperNetTranscriptionService
                 logger.LogDebug("[STREAM] Chunk #{ChunksReceived}: {Length} samples, RMS={Rms:F4}",
                     chunksReceived, chunk.Samples.Length, rms);
 
+                if (!firstReceivedLogged)
+                {
+                    var (rxMin, rxMax) = chunk.Samples.Length > 0 ? MinMax(chunk.Samples) : (0f, 0f);
+                    logger.LogInformation(
+                        "[SAMPLES] First received: length={Length} rms={Rms:F5} min={Min:F4} max={Max:F4} sampleRate={SampleRate}",
+                        chunk.Samples.Length, rms, rxMin, rxMax, chunk.SampleRate);
+                    firstReceivedLogged = true;
+                }
+
                 if (!vad.ContainsSpeech(chunk))
                 {
                     continue;
@@ -173,7 +183,7 @@ public sealed class WhisperNetTranscriptionService
 
                 chunksPassedVad++;
 
-                if (!firstChunkLogged && chunk.Samples.Length > 0)
+                if (!firstVadPassedLogged && chunk.Samples.Length > 0)
                 {
                     var (min, max) = MinMax(chunk.Samples);
                     logger.LogInformation(
@@ -187,7 +197,7 @@ public sealed class WhisperNetTranscriptionService
                             min, max);
                     }
 
-                    firstChunkLogged = true;
+                    firstVadPassedLogged = true;
                 }
 
                 buffer.AddRange(chunk.Samples);
@@ -293,6 +303,13 @@ public sealed class WhisperNetTranscriptionService
             logger.LogInformation(
                 "Streaming transcription ended: chunks={ChunksReceived} vadPassed={ChunksPassedVad} partials={PartialsEmitted} peakRms={PeakRms:F5} committedChars={CommittedChars}",
                 chunksReceived, chunksPassedVad, partialsEmitted, peakRms, committed.Length);
+
+            if (chunksReceived > 0 && peakRms < 0.0005)
+            {
+                logger.LogWarning(
+                    "Streaming received {ChunksReceived} chunk(s) but peak RMS was {PeakRms:F5} — upstream audio looks silent. Check the mic helper: captured samples never reached non-zero amplitude.",
+                    chunksReceived, peakRms);
+            }
         }
     }
 
@@ -392,9 +409,11 @@ public sealed class WhisperNetTranscriptionService
             return string.Empty;
         }
 
+        var inputRms = ComputeRms(samples);
+        var (inputMin, inputMax) = MinMax(samples);
         _logger.LogInformation(
-            "One-shot dictation transcription start: {Samples} samples (~{DurationMs} ms)",
-            samples.Length, samples.Length * 1000L / StreamSampleRate);
+            "One-shot dictation transcription start: {Samples} samples (~{DurationMs} ms) rms={Rms:F5} min={Min:F4} max={Max:F4}",
+            samples.Length, samples.Length * 1000L / StreamSampleRate, inputRms, inputMin, inputMax);
 
 #pragma warning disable IDISP001
         var whisperFactory = GetOrCreateFactory();
@@ -414,7 +433,18 @@ public sealed class WhisperNetTranscriptionService
         }
 
         var result = string.Join(" ", parts).Trim();
-        _logger.LogInformation("One-shot dictation transcription done: {Chars} chars", result.Length);
+        var preview = result.Length <= 120 ? result : string.Concat(result.AsSpan(0, 120), "…");
+        _logger.LogInformation(
+            "One-shot dictation transcription done: {Chars} chars text=\"{Preview}\"",
+            result.Length, preview);
+
+        if (result.Length >= 10 && inputRms < 0.0005)
+        {
+            _logger.LogWarning(
+                "One-shot produced {Chars} chars on near-silent input (rms={Rms:F5}); Whisper is likely hallucinating from the initial prompt. Check the upstream audio source.",
+                result.Length, inputRms);
+        }
+
         return result;
     }
 
