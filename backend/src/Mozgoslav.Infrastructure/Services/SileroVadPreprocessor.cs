@@ -36,16 +36,22 @@ public sealed class SileroVadPreprocessor : IVadPreprocessor
 
         if (chunk.Samples.Length < MinSamples)
         {
-            _logger.LogDebug("[VAD] Reject: too short ({Length} samples, need >= {Min})",
-                chunk.Samples.Length, MinSamples);
+            _logger.LogDebug(
+                "[VAD] Reject: too short ({Length} samples, need >= {Min})",
+                chunk.Samples.Length,
+                MinSamples);
             return false;
         }
 
         var rms = ComputeRms(chunk.Samples);
         var isSpeech = rms >= RmsThreshold;
 
-        _logger.LogDebug("[VAD] Chunk={Length} samples RMS={Rms:F5} threshold={Thresh:F5} speech={IsSpeech}",
-            chunk.Samples.Length, rms, RmsThreshold, isSpeech);
+        _logger.LogDebug(
+            "[VAD] Chunk={Length} samples RMS={Rms:F5} threshold={Thresh:F5} speech={IsSpeech}",
+            chunk.Samples.Length,
+            rms,
+            RmsThreshold,
+            isSpeech);
 
         if (isSpeech)
         {
@@ -55,7 +61,8 @@ public sealed class SileroVadPreprocessor : IVadPreprocessor
         var modelPath = _settings.VadModelPath;
         if (!string.IsNullOrEmpty(modelPath) && !File.Exists(modelPath))
         {
-            _logger.LogDebug("[VAD] Silero VAD model missing at {Path}, using energy gate only",
+            _logger.LogDebug(
+                "[VAD] Silero VAD model missing at {Path}, using energy gate only",
                 modelPath);
         }
 
