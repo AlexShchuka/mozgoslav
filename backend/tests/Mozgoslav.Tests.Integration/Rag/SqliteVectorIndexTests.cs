@@ -29,24 +29,12 @@ namespace Mozgoslav.Tests.Integration.Rag;
 [TestClass]
 public sealed class SqliteVectorIndexTests
 {
-    private TestDatabase _db = null!;
-
-    [TestInitialize]
-    public void Setup()
-    {
-        _db = new TestDatabase();
-    }
-
-    [TestCleanup]
-    public void Cleanup()
-    {
-        _db.Dispose();
-    }
-
     [TestMethod]
     public async Task Upsert_And_Count_Roundtrip()
     {
-        await using var sut = new SqliteVectorIndex(_db.ConnectionString);
+        await using var db = new TestDatabase();
+        await using var sut = new SqliteVectorIndex(db.ConnectionString);
+
         await sut.UpsertAsync(Chunk("a", 0.1f, 0.2f), CancellationToken.None);
         await sut.UpsertAsync(Chunk("b", 0.3f, 0.4f), CancellationToken.None);
 
@@ -56,7 +44,9 @@ public sealed class SqliteVectorIndexTests
     [TestMethod]
     public async Task Upsert_SameId_Replaces()
     {
-        await using var sut = new SqliteVectorIndex(_db.ConnectionString);
+        await using var db = new TestDatabase();
+        await using var sut = new SqliteVectorIndex(db.ConnectionString);
+
         await sut.UpsertAsync(Chunk("a", 0.1f, 0.2f, text: "old"), CancellationToken.None);
         await sut.UpsertAsync(Chunk("a", 0.5f, 0.6f, text: "new"), CancellationToken.None);
 
@@ -69,9 +59,11 @@ public sealed class SqliteVectorIndexTests
     [TestMethod]
     public async Task RemoveByNote_DeletesAllChunksForThatNote()
     {
-        await using var sut = new SqliteVectorIndex(_db.ConnectionString);
+        await using var db = new TestDatabase();
+        await using var sut = new SqliteVectorIndex(db.ConnectionString);
         var noteA = Guid.NewGuid();
         var noteB = Guid.NewGuid();
+
         await sut.UpsertAsync(Chunk("a1", 0.1f, 0.2f, noteId: noteA), CancellationToken.None);
         await sut.UpsertAsync(Chunk("a2", 0.3f, 0.4f, noteId: noteA), CancellationToken.None);
         await sut.UpsertAsync(Chunk("b1", 0.5f, 0.6f, noteId: noteB), CancellationToken.None);
@@ -86,7 +78,9 @@ public sealed class SqliteVectorIndexTests
     [TestMethod]
     public async Task Search_Returns_TopK_Ordered_By_Cosine()
     {
-        await using var sut = new SqliteVectorIndex(_db.ConnectionString);
+        await using var db = new TestDatabase();
+        await using var sut = new SqliteVectorIndex(db.ConnectionString);
+
         await sut.UpsertAsync(Chunk("exact", 1f, 0f), CancellationToken.None);
         await sut.UpsertAsync(Chunk("close", 0.9f, 0.1f), CancellationToken.None);
         await sut.UpsertAsync(Chunk("far", 0f, 1f), CancellationToken.None);
@@ -102,7 +96,9 @@ public sealed class SqliteVectorIndexTests
     [TestMethod]
     public async Task Search_SkipsDimensionMismatch()
     {
-        await using var sut = new SqliteVectorIndex(_db.ConnectionString);
+        await using var db = new TestDatabase();
+        await using var sut = new SqliteVectorIndex(db.ConnectionString);
+
         await sut.UpsertAsync(Chunk("two-dim", 0.1f, 0.2f), CancellationToken.None);
         await sut.UpsertAsync(new NoteChunk("three-dim", Guid.NewGuid(), "t", [0.1f, 0.2f, 0.3f]), CancellationToken.None);
 
@@ -114,20 +110,25 @@ public sealed class SqliteVectorIndexTests
     [TestMethod]
     public async Task Search_EmptyIndex_ReturnsEmpty()
     {
-        await using var sut = new SqliteVectorIndex(_db.ConnectionString);
+        await using var db = new TestDatabase();
+        await using var sut = new SqliteVectorIndex(db.ConnectionString);
+
         var hits = await sut.SearchAsync([0.1f, 0.2f], 5, CancellationToken.None);
+
         hits.Should().BeEmpty();
     }
 
     [TestMethod]
     public async Task Persistence_SurvivesInstanceReopen()
     {
-        await using (var first = new SqliteVectorIndex(_db.ConnectionString))
+        await using var db = new TestDatabase();
+
+        await using (var first = new SqliteVectorIndex(db.ConnectionString))
         {
             await first.UpsertAsync(Chunk("a", 0.1f, 0.2f), CancellationToken.None);
         }
 
-        await using var second = new SqliteVectorIndex(_db.ConnectionString);
+        await using var second = new SqliteVectorIndex(db.ConnectionString);
         second.Count.Should().Be(1);
         var hits = await second.SearchAsync([0.1f, 0.2f], 1, CancellationToken.None);
         hits.Should().ContainSingle().Which.Chunk.Id.Should().Be("a");
