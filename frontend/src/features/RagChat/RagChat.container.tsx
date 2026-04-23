@@ -1,4 +1,4 @@
-import {FC, useCallback, useEffect, useState} from "react";
+import {FC, useCallback, useEffect, useMemo, useState} from "react";
 import {connect} from "react-redux";
 import {bindActionCreators, type Dispatch} from "redux";
 import {useNavigate} from "react-router-dom";
@@ -12,8 +12,6 @@ import type {GlobalState} from "../../store";
 import {noteRoute} from "../../constants/routes";
 import RagChat from "./RagChat";
 import type {RagIndexStatus} from "./types";
-
-const ragApi = apiFactory.createRagApi();
 
 interface StateProps {
     readonly messages: readonly RagMessage[];
@@ -42,6 +40,7 @@ type Wired = StateProps & DispatchProps;
 const RagChatContainer: FC<Wired> = (props) => {
     const navigate = useNavigate();
     const {t} = useTranslation();
+    const ragApi = useMemo(() => apiFactory.createRagApi(), []);
     const [status, setStatus] = useState<RagIndexStatus | null>(null);
     const [isReindexing, setIsReindexing] = useState(false);
 
@@ -52,7 +51,7 @@ const RagChatContainer: FC<Wired> = (props) => {
         } catch {
             setStatus(null);
         }
-    }, []);
+    }, [ragApi]);
 
     useEffect(() => {
         void refreshStatus();
@@ -76,7 +75,7 @@ const RagChatContainer: FC<Wired> = (props) => {
         } finally {
             setIsReindexing(false);
         }
-    }, [isReindexing, refreshStatus, t]);
+    }, [isReindexing, ragApi, refreshStatus, t]);
 
     return (
         <RagChat
