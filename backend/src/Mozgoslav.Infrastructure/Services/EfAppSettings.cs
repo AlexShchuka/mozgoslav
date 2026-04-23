@@ -62,6 +62,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     public string SyncthingObsidianVaultPath => Snapshot.SyncthingObsidianVaultPath;
     public string SyncthingApiKey => Snapshot.SyncthingApiKey;
     public string SyncthingBaseUrl => Snapshot.SyncthingBaseUrl;
+    public bool ObsidianFeatureEnabled => Snapshot.ObsidianFeatureEnabled;
     public AppSettingsDto Snapshot { get; private set; } = AppSettingsDto.Defaults;
 
     public async Task<AppSettingsDto> LoadAsync(CancellationToken ct)
@@ -103,7 +104,8 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             SyncthingObsidianVaultPath: map.GetValueOrDefault(Keys.SyncthingObsidianVaultPath, defaults.SyncthingObsidianVaultPath),
             SyncthingApiKey: map.GetValueOrDefault(Keys.SyncthingApiKey, defaults.SyncthingApiKey),
             SyncthingBaseUrl: map.GetValueOrDefault(Keys.SyncthingBaseUrl, defaults.SyncthingBaseUrl),
-            DictationPushToTalk: ParseBool(map, Keys.DictationPushToTalk, defaults.DictationPushToTalk));
+            DictationPushToTalk: ParseBool(map, Keys.DictationPushToTalk, defaults.DictationPushToTalk),
+            ObsidianFeatureEnabled: ParseObsidianFeatureEnabled(map));
 
         await _lock.WaitAsync(ct);
         try { Snapshot = dto; }
@@ -151,6 +153,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             (Keys.SyncthingApiKey, dto.SyncthingApiKey),
             (Keys.SyncthingBaseUrl, dto.SyncthingBaseUrl),
             (Keys.DictationPushToTalk, BoolToString(dto.DictationPushToTalk)),
+            (Keys.ObsidianFeatureEnabled, BoolToString(dto.ObsidianFeatureEnabled)),
         };
 
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
@@ -186,6 +189,16 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
 
     private static bool ParseBool(IReadOnlyDictionary<string, string> map, string key, bool fallback) =>
         map.TryGetValue(key, out var raw) && bool.TryParse(raw, out var value) ? value : fallback;
+
+    private static bool ParseObsidianFeatureEnabled(IReadOnlyDictionary<string, string> map)
+    {
+        if (map.TryGetValue(Keys.ObsidianFeatureEnabled, out var raw) && bool.TryParse(raw, out var explicitValue))
+        {
+            return explicitValue;
+        }
+        var vaultPath = map.GetValueOrDefault(Keys.VaultPath);
+        return !string.IsNullOrWhiteSpace(vaultPath);
+    }
 
     private static string BoolToString(bool value) =>
         value ? "true" : "false";
@@ -271,5 +284,6 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         public const string SyncthingObsidianVaultPath = "syncthing_obsidian_vault_path";
         public const string SyncthingApiKey = "syncthing_api_key";
         public const string SyncthingBaseUrl = "syncthing_base_url";
+        public const string ObsidianFeatureEnabled = "obsidian_feature_enabled";
     }
 }

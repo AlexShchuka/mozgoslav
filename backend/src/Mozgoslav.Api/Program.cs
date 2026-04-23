@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 
@@ -13,12 +14,14 @@ using Microsoft.Extensions.Logging;
 
 using Mozgoslav.Api.Endpoints;
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Application.Obsidian;
 using Mozgoslav.Application.Rag;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Application.UseCases;
 using Mozgoslav.Infrastructure.Configuration;
 using Mozgoslav.Infrastructure.Jobs;
 using Mozgoslav.Infrastructure.Observability;
+using Mozgoslav.Infrastructure.Obsidian;
 using Mozgoslav.Infrastructure.Persistence;
 using Mozgoslav.Infrastructure.Platform;
 using Mozgoslav.Infrastructure.Rag;
@@ -209,6 +212,12 @@ try
             },
         });
     builder.Services.AddScoped<IObsidianRestClient, ObsidianRestApiClient>();
+    builder.Services.AddSingleton<IVaultBootstrapProvider, EmbeddedVaultBootstrap>();
+    builder.Services.AddScoped<IVaultDriver, FileSystemVaultDriver>();
+    builder.Services.AddHttpClient(GitHubPluginInstaller.HttpClientName);
+    builder.Services.AddScoped<IPluginInstaller, GitHubPluginInstaller>();
+    builder.Services.AddScoped<IVaultDiagnostics, VaultDiagnosticsService>();
+    builder.Services.AddSingleton<IReadOnlyList<PluginInstallSpec>>(_ => PinnedPluginsLoader.LoadFromEmbeddedResource());
     builder.Services.AddSingleton<ModelDownloadService>();
     builder.Services.AddSingleton<IModelDownloadCoordinator, ModelDownloadCoordinator>();
     builder.Services.AddSingleton<BackupService>();
