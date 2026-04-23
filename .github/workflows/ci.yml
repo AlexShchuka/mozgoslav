@@ -11,23 +11,76 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Secret scan first so if a PAT / key slipped past the lefthook pre-push the
-  # build fails fast, before burning minutes on backend/frontend matrices.
+
   gitleaks:
-    name: Gitleaks (secret scan)
+    name: Wave 1 — secret scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          # fetch-depth: 0 lets gitleaks diff the full branch history on PRs,
-          # matching what the local pre-push hook sees.
           fetch-depth: 0
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  uncomment:
+    name: Wave 1 — comment strip check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install uncomment
+        run: pip install 'uncomment==3.0.2'
+      - name: Verify no comments remain
+        run: |
+          set -euo pipefail
+          report=$(mktemp)
+          uncomment --dry-run --remove-todo --remove-fixme --remove-doc \
+            backend frontend/src frontend/electron python-sidecar native scripts \
+            | tee "$report"
+          if grep -q '^Modified:' "$report"; then
+            echo "::error::uncomment would strip comments from the files listed above. Run 'uncomment --remove-todo --remove-fixme --remove-doc ...' locally."
+            exit 1
+          fi
+
+  lint:
+    name: Wave 1 — lint and format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: dotnet restore
+        run: dotnet restore backend/Mozgoslav.sln -maxcpucount:1
+      - name: dotnet format whitespace (verify)
+        run: dotnet format whitespace backend/Mozgoslav.sln --verify-no-changes --no-restore --verbosity minimal
+      - name: Install frontend deps
+        run: cd frontend && npm ci
+      - name: ESLint
+        run: cd frontend && npm run lint
+      - name: Prettier (check)
+        run: cd frontend && npx prettier --check "src/**/*.{ts,tsx,css}" "electron/**/*.ts"
+      - name: Install python lint tools
+        run: pip install 'ruff>=0.5' 'black>=24.0'
+      - name: Ruff
+        run: cd python-sidecar && ruff check .
+      - name: Black (check)
+        run: cd python-sidecar && black --check .
+
   backend:
-    name: Backend (.NET ${{ matrix.os }})
+    name: Wave 2 — backend (.NET ${{ matrix.os }})
+    needs: [ gitleaks, uncomment, lint ]
     strategy:
       fail-fast: false
       matrix:
@@ -38,10 +91,6 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      # ffmpeg powers FfmpegPcmDecoder (decodes Opus-in-WebM dictation chunks
-      # into 16 kHz float32 mono PCM) and FfmpegAudioConverter. Integration
-      # tests exercise the real binary — installing it explicitly keeps CI
-      # deterministic across runner image updates.
       - name: Install ffmpeg (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
@@ -56,7 +105,8 @@ jobs:
         run: dotnet test backend/Mozgoslav.sln -maxcpucount:1 --no-build --nologo --verbosity normal
 
   frontend:
-    name: Frontend (${{ matrix.os }})
+    name: Wave 2 — frontend (${{ matrix.os }})
+    needs: [ gitleaks, uncomment, lint ]
     strategy:
       fail-fast: false
       matrix:
@@ -73,15 +123,14 @@ jobs:
         run: cd frontend && npm ci
       - name: Typecheck
         run: cd frontend && npm run typecheck
-      - name: Lint
-        run: cd frontend && npm run lint
       - name: Test
         run: cd frontend && npm test -- --watchAll=false
       - name: Build
         run: cd frontend && WATCHPACK_POLLING=true npm run build
 
   python:
-    name: Python sidecar (${{ matrix.os }})
+    name: Wave 2 — python sidecar (${{ matrix.os }})
+    needs: [ gitleaks, uncomment, lint ]
     strategy:
       fail-fast: false
       matrix:
@@ -98,21 +147,13 @@ jobs:
           python -m venv .venv
           source .venv/bin/activate
           pip install --upgrade pip
-          # requirements-dev.txt is intentionally a lighter superset of
-          # requirements.txt (no transformers / no sentence-transformers).
-          # Tier-2 endpoints are covered via ModelNotAvailableError paths;
-          # the heavy production wheels ship only in the DMG bundle.
           pip install -r requirements-dev.txt
-      - name: Ruff
-        run: cd python-sidecar && source .venv/bin/activate && ruff check .
       - name: Pytest
         run: cd python-sidecar && source .venv/bin/activate && pytest
 
   dictation-helper:
-    name: Dictation helper (macOS Swift)
-    # The helper links AppKit / AVFoundation / ApplicationServices (macOS-only),
-    # so we only build and test it on a macOS runner. Core JSON-RPC / strategy
-    # logic still has unit coverage on the same runner.
+    name: Wave 2 — dictation helper (macOS Swift)
+    needs: [ gitleaks, uncomment, lint ]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
