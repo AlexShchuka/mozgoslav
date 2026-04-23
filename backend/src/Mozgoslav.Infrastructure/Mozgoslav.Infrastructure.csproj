@@ -11,6 +11,9 @@
         <ProjectReference Include="..\Mozgoslav.Domain\Mozgoslav.Domain.csproj"/>
     </ItemGroup>
     <ItemGroup>
+        <EmbeddedResource Include="Resources\ObsidianBootstrap\**\*"/>
+    </ItemGroup>
+    <ItemGroup>
         <PackageReference Include="Dapper"/>
         <PackageReference Include="Microsoft.Data.Sqlite"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore"/>

@@ -1,0 +1,18 @@
+{
+    "comment": "ADR-019 §5.9 — write-policy classification for every shipped bootstrap file. Overwrite: shipped artefact, restore-on-drift. CreateIfMissing: shipped artefact, never clobber user edits. UserOwned: user-maintained, classify against empty baseline.",
+    "policies": [
+        { "path": "_system/corrections.md",                 "policy": "UserOwned" },
+        { "path": "_system/flagged.md",                     "policy": "CreateIfMissing" },
+        { "path": "_system/prompts/split-and-label-prompt.md", "policy": "Overwrite" },
+        { "path": "_system/scripts/split_and_label.js",     "policy": "Overwrite" },
+        { "path": "_system/templates/split-and-label.md",   "policy": "Overwrite" },
+        { "path": "_inbox/test.md",                         "policy": "CreateIfMissing" },
+        { "path": "archive/.gitkeep",                       "policy": "CreateIfMissing" },
+        { "path": "ideas/.gitkeep",                         "policy": "CreateIfMissing" },
+        { "path": "insights/.gitkeep",                      "policy": "CreateIfMissing" },
+        { "path": "people/.gitkeep",                        "policy": "CreateIfMissing" },
+        { "path": "questions/.gitkeep",                     "policy": "CreateIfMissing" },
+        { "path": "tasks/.gitkeep",                         "policy": "CreateIfMissing" },
+        { "path": "README.md",                              "policy": "Overwrite" }
+    ]
+}
