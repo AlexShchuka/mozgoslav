@@ -40,13 +40,13 @@ public sealed class WhisperNetTranscriptionService
     : ITranscriptionService, IStreamingTranscriptionService
 {
     internal const string CacheKey = "whisper.factory";
+    internal const int StreamSampleRate = 16_000;
+    internal const int StreamWindowMs = 300;
+    internal const int StreamMaxBufferSeconds = 15;
     private const int BeamSize = 5;
     private const int StreamBeamSize = 1;
     private const string DefaultPrompt =
         "Мысли вслух, встречи, диалоги, рассуждения. Запятые, точки, тире, вопросительные и восклицательные знаки: так, ведь, вот — именно.";
-    private const int StreamSampleRate = 16_000;
-    private const int StreamWindowMs = 300;
-    private const int StreamMaxBufferSeconds = 15;
     private static readonly TimeSpan MinSlidingExpiration = TimeSpan.FromMinutes(1);
 
     private readonly IVadPreprocessor _vad;
@@ -99,11 +99,11 @@ public sealed class WhisperNetTranscriptionService
         return segments;
     }
 
-    public async IAsyncEnumerable<PartialTranscript> TranscribeStreamAsync(
+    public IAsyncEnumerable<PartialTranscript> TranscribeStreamAsync(
         IAsyncEnumerable<AudioChunk> chunks,
         string language,
         string? initialPrompt,
-        [EnumeratorCancellation] CancellationToken ct)
+        CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(chunks);
 
@@ -114,6 +114,24 @@ public sealed class WhisperNetTranscriptionService
 #pragma warning disable IDISP001
         var whisperFactory = GetOrCreateFactory();
 #pragma warning restore IDISP001
+
+        return StreamCoreAsync(
+            chunks,
+            _vad,
+            (samples, token) => TranscribeBufferAsync(whisperFactory, samples, language, initialPrompt, token),
+            RefreshFactoryCache,
+            _logger,
+            ct);
+    }
+
+    internal static async IAsyncEnumerable<PartialTranscript> StreamCoreAsync(
+        IAsyncEnumerable<AudioChunk> chunks,
+        IVadPreprocessor vad,
+        Func<float[], CancellationToken, Task<string>> transcribe,
+        Action? onEmitWindow,
+        ILogger logger,
+        [EnumeratorCancellation] CancellationToken ct)
+    {
         var buffer = new List<float>();
         var samplesSinceLastEmit = 0;
         var totalSamples = 0L;
@@ -132,8 +150,6 @@ public sealed class WhisperNetTranscriptionService
             await foreach (var chunk in chunks.WithCancellation(ct))
             {
                 chunksReceived++;
-                _logger.LogDebug("[STREAM] Chunk #{ChunksReceived}: {Length} samples, RMS={Rms:F4}",
-                    chunksReceived, chunk.Samples.Length, peakRms);
 
                 if (chunk.SampleRate != StreamSampleRate)
                 {
@@ -141,71 +157,58 @@ public sealed class WhisperNetTranscriptionService
                         $"Streaming expects {StreamSampleRate} Hz mono samples, got {chunk.SampleRate} Hz");
                 }
 
-                if (chunk.Samples.Length > 0)
+                var rms = ComputeRms(chunk.Samples);
+                if (rms > peakRms)
                 {
-                    var sum = 0.0;
-                    for (var i = 0; i < chunk.Samples.Length; i++)
-                    {
-                        var s = chunk.Samples[i];
-                        sum += s * s;
-                    }
-
-                    var rms = Math.Sqrt(sum / chunk.Samples.Length);
-                    if (rms > peakRms) peakRms = rms;
+                    peakRms = rms;
                 }
 
-                if (!_vad.ContainsSpeech(chunk))
+                logger.LogDebug("[STREAM] Chunk #{ChunksReceived}: {Length} samples, RMS={Rms:F4}",
+                    chunksReceived, chunk.Samples.Length, rms);
+
+                if (!vad.ContainsSpeech(chunk))
                 {
                     continue;
                 }
 
                 chunksPassedVad++;
 
-                // Track sample range on the first VAD-passed chunk for debugging
                 if (!firstChunkLogged && chunk.Samples.Length > 0)
                 {
-                    var min = chunk.Samples[0];
-                    var max = chunk.Samples[0];
-                    for (var i = 1; i < chunk.Samples.Length; i++)
-                    {
-                        var s = chunk.Samples[i];
-                        if (s < min) min = s;
-                        if (s > max) max = s;
-                    }
-                    _logger.LogInformation(
+                    var (min, max) = MinMax(chunk.Samples);
+                    logger.LogInformation(
                         "[SAMPLES] First VAD-passed: length={Length} min={Min:F4} max={Max:F4}",
                         chunk.Samples.Length, min, max);
+
+                    if (min < -1.01f || max > 1.01f)
+                    {
+                        logger.LogWarning(
+                            "[SAMPLES] Out-of-range samples (min={Min:F4} max={Max:F4}); Whisper expects normalized [-1, 1] floats, upstream is sending un-normalized audio.",
+                            min, max);
+                    }
+
                     firstChunkLogged = true;
                 }
 
-                if (chunk.Samples.Length > 0)
-                {
-                    var sum = 0.0;
-                    for (var i = 0; i < chunk.Samples.Length; i++)
-                    {
-                        var s = chunk.Samples[i];
-                        sum += s * s;
-                    }
-
-                    var rms = Math.Sqrt(sum / chunk.Samples.Length);
-                    if (rms > peakRms) peakRms = rms;
-                }
-
                 buffer.AddRange(chunk.Samples);
+                samplesSinceLastEmit += chunk.Samples.Length;
                 totalSamples += chunk.Samples.Length;
 
                 if (buffer.Count > maxBufferSamples)
                 {
                     var snapshot = buffer.ToArray();
-                    var committedText = await TranscribeBufferAsync(whisperFactory, snapshot, language, initialPrompt, ct);
+                    var committedText = await transcribe(snapshot, ct);
                     if (!string.IsNullOrWhiteSpace(committedText))
                     {
-                        if (committed.Length > 0) committed.Append(' ');
+                        if (committed.Length > 0)
+                        {
+                            committed.Append(' ');
+                        }
                         committed.Append(committedText.Trim());
                     }
                     buffer.Clear();
                     samplesSinceLastEmit = 0;
-                    _logger.LogInformation(
+                    logger.LogInformation(
                         "Stream commit: buffer cap reached, committed chars={Chars}, total committed={TotalChars}",
                         committedText?.Length ?? 0, committed.Length);
                     continue;
@@ -214,29 +217,28 @@ public sealed class WhisperNetTranscriptionService
                 if (samplesSinceLastEmit >= windowSamples)
                 {
                     samplesSinceLastEmit = 0;
-                    _ = _cache.TryGetValue(CacheKey, out _);
+                    onEmitWindow?.Invoke();
                     var prevBufferSize = buffer.Count;
                     var snapshot = buffer.ToArray();
-                    var text = await TranscribeBufferAsync(whisperFactory, snapshot, language, initialPrompt, ct);
+                    var text = await transcribe(snapshot, ct);
 
-                    _logger.LogDebug("[EMIT] Window reached. Buffer size: {PrevSize}, samples: {Samples}",
+                    logger.LogDebug("[EMIT] Window reached. Buffer size: {PrevSize}, samples: {Samples}",
                         prevBufferSize, snapshot.Length);
-
-                    _logger.LogDebug("[TRANSCRIBE] Input: {Length} samples → Output: \"{Text}\"",
+                    logger.LogDebug("[TRANSCRIBE] Input: {Length} samples → Output: \"{Text}\"",
                         snapshot.Length, text);
 
                     if (!string.IsNullOrWhiteSpace(text))
                     {
-                        if (committed.Length > 0) committed.Append(' ');
+                        if (committed.Length > 0)
+                        {
+                            committed.Append(' ');
+                        }
                         committed.Append(text.Trim());
                     }
 
                     buffer.Clear();
 
-                    var emitted = committed.Length > 0
-                        ? $"{committed}".Trim()
-                        : string.Empty;
-
+                    var emitted = committed.Length > 0 ? committed.ToString().Trim() : string.Empty;
                     if (!string.IsNullOrWhiteSpace(emitted))
                     {
                         partialsEmitted++;
@@ -245,7 +247,7 @@ public sealed class WhisperNetTranscriptionService
                             Timestamp: TimeSpan.FromSeconds((double)totalSamples / StreamSampleRate));
                     }
 
-                    _logger.LogDebug("[EMIT] Cleared buffer. Previous size: {PrevSize}, committed chars: {Committed}",
+                    logger.LogDebug("[EMIT] Cleared buffer. Previous size: {PrevSize}, committed chars: {Committed}",
                         prevBufferSize, committed.Length);
                 }
             }
@@ -253,23 +255,23 @@ public sealed class WhisperNetTranscriptionService
             if (buffer.Count > 0)
             {
                 var tail = buffer.ToArray();
-                var text = await TranscribeBufferAsync(whisperFactory, tail, language, initialPrompt, ct);
+                var text = await transcribe(tail, ct);
 
-                _logger.LogDebug("[TRANSCRIBE] Tail: {Length} samples → Output: \"{Text}\"",
+                logger.LogDebug("[TRANSCRIBE] Tail: {Length} samples → Output: \"{Text}\"",
                     tail.Length, text ?? "(empty)");
 
                 if (!string.IsNullOrWhiteSpace(text))
                 {
-                    if (committed.Length > 0) committed.Append(' ');
+                    if (committed.Length > 0)
+                    {
+                        committed.Append(' ');
+                    }
                     committed.Append(text.Trim());
                 }
 
                 buffer.Clear();
 
-                var emitted = committed.Length > 0
-                    ? $"{committed}".Trim()
-                    : string.Empty;
-
+                var emitted = committed.Length > 0 ? committed.ToString().Trim() : string.Empty;
                 if (!string.IsNullOrWhiteSpace(emitted))
                 {
                     partialsEmitted++;
@@ -288,10 +290,57 @@ public sealed class WhisperNetTranscriptionService
         }
         finally
         {
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Streaming transcription ended: chunks={ChunksReceived} vadPassed={ChunksPassedVad} partials={PartialsEmitted} peakRms={PeakRms:F5} committedChars={CommittedChars}",
                 chunksReceived, chunksPassedVad, partialsEmitted, peakRms, committed.Length);
         }
+    }
+
+    private static double ComputeRms(float[] samples)
+    {
+        if (samples.Length == 0)
+        {
+            return 0;
+        }
+
+        double sum = 0;
+        for (var i = 0; i < samples.Length; i++)
+        {
+            var s = samples[i];
+            sum += s * s;
+        }
+        return Math.Sqrt(sum / samples.Length);
+    }
+
+    private static (float Min, float Max) MinMax(float[] samples)
+    {
+        var min = samples[0];
+        var max = samples[0];
+        for (var i = 1; i < samples.Length; i++)
+        {
+            var s = samples[i];
+            if (s < min)
+            {
+                min = s;
+            }
+            if (s > max)
+            {
+                max = s;
+            }
+        }
+        return (min, max);
+    }
+
+    private void RefreshFactoryCache()
+    {
+        if (_cache.TryGetValue(CacheKey, out _))
+        {
+            return;
+        }
+
+#pragma warning disable IDISP001, IDISP004
+        _ = GetOrCreateFactory();
+#pragma warning restore IDISP001, IDISP004
     }
 
     private WhisperFactory GetOrCreateFactory()
@@ -350,7 +399,7 @@ public sealed class WhisperNetTranscriptionService
 #pragma warning disable IDISP001
         var whisperFactory = GetOrCreateFactory();
 #pragma warning restore IDISP001
-        _ = _cache.TryGetValue(CacheKey, out _);
+        RefreshFactoryCache();
 
         await using var processor = BuildProcessor(whisperFactory, language, initialPrompt, BeamSize);
 
