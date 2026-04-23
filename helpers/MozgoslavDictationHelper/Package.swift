@@ -26,5 +26,10 @@ let package = Package(
             dependencies: ["DictationHelperCore"],
             path: "Tests/DictationHelperCoreTests"
         ),
+        .testTarget(
+            name: "MozgoslavDictationHelperTests",
+            dependencies: ["MozgoslavDictationHelper"],
+            path: "Tests/MozgoslavDictationHelperTests"
+        ),
     ]
 )
