@@ -130,6 +130,10 @@ _logger.LogDebug("Transcription parameters: language={Lang}, prompt={Prompt}", l
             await foreach (var chunk in chunks.WithCancellation(ct))
             {
                 chunksReceived++;
+                
+                _logger.LogDebug("[STREAM] Chunk #{ChunksReceived}: {Length} samples, RMS={Rms:F4}", 
+                    chunksReceived, chunk.Samples.Length, peakRms);
+
                 if (chunk.SampleRate != StreamSampleRate)
                 {
                     throw new InvalidOperationException(
@@ -154,6 +158,9 @@ _logger.LogDebug("Transcription parameters: language={Lang}, prompt={Prompt}", l
                 }
                 chunksPassedVad++;
 
+                _logger.LogDebug("[CHUNK] idx={ChunksReceived} samples={Length} rms={Rms:F4} vad_pass=true", 
+                    chunksReceived, chunk.Samples.Length, peakRms);
+                
                 buffer.AddRange(chunk.Samples);
                 samplesSinceLastEmit += chunk.Samples.Length;
                 totalSamples += chunk.Samples.Length;
@@ -179,18 +186,38 @@ _logger.LogDebug("Transcription parameters: language={Lang}, prompt={Prompt}", l
                 {
                     samplesSinceLastEmit = 0;
                     _ = _cache.TryGetValue(CacheKey, out _);
+                    var prevBufferSize = buffer.Count;
                     var snapshot = buffer.ToArray();
                     var text = await TranscribeBufferAsync(whisperFactory, snapshot, language, initialPrompt, ct);
-                    if (!string.IsNullOrWhiteSpace(text) || committed.Length > 0)
+
+                    _logger.LogDebug("[EMIT] Window reached. Buffer size: {PrevSize}, samples: {Samples}", 
+                        prevBufferSize, snapshot.Length);
+
+                    if (!string.IsNullOrWhiteSpace(text))
                     {
-                        var emitted = committed.Length > 0
-                            ? $"{committed} {text}".Trim()
-                            : text;
+                        _logger.LogDebug("[TRANSCRIBE] Input: {Length} samples → Output: \"{Text}\"", 
+                            snapshot.Length, text ?? "(empty)");
+
+                        if (committed.Length > 0) committed.Append(' ');
+                        committed.Append(text.Trim());
+                    }
+
+                    buffer.Clear();
+
+                    var emitted = committed.Length > 0
+                        ? $"{committed}".Trim()
+                        : string.Empty;
+                    
+                    if (!string.IsNullOrWhiteSpace(emitted))
+                    {
                         partialsEmitted++;
                         yield return new PartialTranscript(
                             Text: emitted,
                             Timestamp: TimeSpan.FromSeconds((double)totalSamples / StreamSampleRate));
                     }
+
+                    _logger.LogDebug("[EMIT] Cleared buffer. Previous size: {PrevSize}, committed chars: {Committed}", 
+                        prevBufferSize, committed.Length);
                 }
             }
 
@@ -198,11 +225,24 @@ _logger.LogDebug("Transcription parameters: language={Lang}, prompt={Prompt}", l
             {
                 var tail = buffer.ToArray();
                 var text = await TranscribeBufferAsync(whisperFactory, tail, language, initialPrompt, ct);
-                if (!string.IsNullOrWhiteSpace(text) || committed.Length > 0)
+
+                _logger.LogDebug("[TRANSCRIBE] Tail: {Length} samples → Output: \"{Text}\"", 
+                    tail.Length, text ?? "(empty)");
+
+                if (!string.IsNullOrWhiteSpace(text))
                 {
-                    var emitted = committed.Length > 0
-                        ? $"{committed} {text}".Trim()
-                        : text;
+                    if (committed.Length > 0) committed.Append(' ');
+                    committed.Append(text.Trim());
+                }
+
+                buffer.Clear();
+
+                var emitted = committed.Length > 0
+                    ? $"{committed}".Trim()
+                    : string.Empty;
+
+                if (!string.IsNullOrWhiteSpace(emitted))
+                {
                     partialsEmitted++;
                     yield return new PartialTranscript(
                         Text: emitted,
