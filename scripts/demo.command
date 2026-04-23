@@ -94,6 +94,10 @@ else
   echo "  ✓ frontend node_modules up to date"
 fi
 
+if command -v lefthook >/dev/null 2>&1; then
+  (cd "$REPO_ROOT" && lefthook install >/dev/null 2>&1 || true)
+fi
+
 echo ""
 
 # Backend
