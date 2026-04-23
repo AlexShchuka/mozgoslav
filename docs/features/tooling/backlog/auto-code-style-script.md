@@ -7,4 +7,4 @@ Scope:
 - run `dotnet format`, `eslint --fix`, `prettier --write`, `ruff --fix` + `black`.
 - optional `swift-format` when installed.
 
-Complements `lefthook.yml`, which runs the same formatters but only on staged files at commit time. The new script is an explicit, whole-repo invocation.
+Complements lefthook (`.github/lefthook.yml`), which runs the same formatters but only on staged files at commit time. The new script is an explicit, whole-repo invocation.
