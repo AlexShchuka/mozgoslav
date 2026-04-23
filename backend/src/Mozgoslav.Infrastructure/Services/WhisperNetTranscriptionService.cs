@@ -108,7 +108,8 @@ public sealed class WhisperNetTranscriptionService
         ArgumentNullException.ThrowIfNull(chunks);
 
         _logger.LogInformation("Starting streaming transcription");
-_logger.LogDebug("Transcription parameters: language={Lang}, prompt={Prompt}", language, initialPrompt ?? "<none>");
+        _logger.LogDebug("Transcription parameters: language={Lang}, prompt={Prompt}",
+            language, initialPrompt ?? "<none>");
 
 #pragma warning disable IDISP001
         var whisperFactory = GetOrCreateFactory();
@@ -130,8 +131,7 @@ _logger.LogDebug("Transcription parameters: language={Lang}, prompt={Prompt}", l
             await foreach (var chunk in chunks.WithCancellation(ct))
             {
                 chunksReceived++;
-                
-                _logger.LogDebug("[STREAM] Chunk #{ChunksReceived}: {Length} samples, RMS={Rms:F4}", 
+                _logger.LogDebug("[STREAM] Chunk #{ChunksReceived}: {Length} samples, RMS={Rms:F4}",
                     chunksReceived, chunk.Samples.Length, peakRms);
 
                 if (chunk.SampleRate != StreamSampleRate)
@@ -142,12 +142,13 @@ _logger.LogDebug("Transcription parameters: language={Lang}, prompt={Prompt}", l
 
                 if (chunk.Samples.Length > 0)
                 {
-                    double sum = 0;
-                    for (int i = 0; i < chunk.Samples.Length; i++)
+                    var sum = 0.0;
+                    for (var i = 0; i < chunk.Samples.Length; i++)
                     {
                         var s = chunk.Samples[i];
                         sum += s * s;
                     }
+
                     var rms = Math.Sqrt(sum / chunk.Samples.Length);
                     if (rms > peakRms) peakRms = rms;
                 }
@@ -156,11 +157,11 @@ _logger.LogDebug("Transcription parameters: language={Lang}, prompt={Prompt}", l
                 {
                     continue;
                 }
-                chunksPassedVad++;
 
-                _logger.LogDebug("[CHUNK] idx={ChunksReceived} samples={Length} rms={Rms:F4} vad_pass=true", 
+                chunksPassedVad++;
+                _logger.LogDebug("[CHUNK] idx={ChunksReceived} samples={Length} rms={Rms:F4} vad_pass=true",
                     chunksReceived, chunk.Samples.Length, peakRms);
-                
+
                 buffer.AddRange(chunk.Samples);
                 samplesSinceLastEmit += chunk.Samples.Length;
                 totalSamples += chunk.Samples.Length;
@@ -190,14 +191,14 @@ _logger.LogDebug("Transcription parameters: language={Lang}, prompt={Prompt}", l
                     var snapshot = buffer.ToArray();
                     var text = await TranscribeBufferAsync(whisperFactory, snapshot, language, initialPrompt, ct);
 
-                    _logger.LogDebug("[EMIT] Window reached. Buffer size: {PrevSize}, samples: {Samples}", 
+                    _logger.LogDebug("[EMIT] Window reached. Buffer size: {PrevSize}, samples: {Samples}",
                         prevBufferSize, snapshot.Length);
+
+                    _logger.LogDebug("[TRANSCRIBE] Input: {Length} samples → Output: \"{Text}\"",
+                        snapshot.Length, text);
 
                     if (!string.IsNullOrWhiteSpace(text))
                     {
-                        _logger.LogDebug("[TRANSCRIBE] Input: {Length} samples → Output: \"{Text}\"", 
-                            snapshot.Length, text ?? "(empty)");
-
                         if (committed.Length > 0) committed.Append(' ');
                         committed.Append(text.Trim());
                     }
@@ -207,7 +208,7 @@ _logger.LogDebug("Transcription parameters: language={Lang}, prompt={Prompt}", l
                     var emitted = committed.Length > 0
                         ? $"{committed}".Trim()
                         : string.Empty;
-                    
+
                     if (!string.IsNullOrWhiteSpace(emitted))
                     {
                         partialsEmitted++;
@@ -216,7 +217,7 @@ _logger.LogDebug("Transcription parameters: language={Lang}, prompt={Prompt}", l
                             Timestamp: TimeSpan.FromSeconds((double)totalSamples / StreamSampleRate));
                     }
 
-                    _logger.LogDebug("[EMIT] Cleared buffer. Previous size: {PrevSize}, committed chars: {Committed}", 
+                    _logger.LogDebug("[EMIT] Cleared buffer. Previous size: {PrevSize}, committed chars: {Committed}",
                         prevBufferSize, committed.Length);
                 }
             }
@@ -226,7 +227,7 @@ _logger.LogDebug("Transcription parameters: language={Lang}, prompt={Prompt}", l
                 var tail = buffer.ToArray();
                 var text = await TranscribeBufferAsync(whisperFactory, tail, language, initialPrompt, ct);
 
-                _logger.LogDebug("[TRANSCRIBE] Tail: {Length} samples → Output: \"{Text}\"", 
+                _logger.LogDebug("[TRANSCRIBE] Tail: {Length} samples → Output: \"{Text}\"",
                     tail.Length, text ?? "(empty)");
 
                 if (!string.IsNullOrWhiteSpace(text))
