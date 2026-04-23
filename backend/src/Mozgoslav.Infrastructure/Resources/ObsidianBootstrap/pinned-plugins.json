@@ -1,0 +1,28 @@
+{
+    "comment": "ADR-019 §5.8 — pinned plugin releases. Tag + per-asset SHA-256 verified via two consecutive `curl -L | sha256sum` runs producing identical hashes. Bump via a follow-up ADR addendum; never edit by hand without re-verifying the hashes.",
+    "verifiedAtUtc": "2026-04-23T00:00:00Z",
+    "plugins": [
+        {
+            "id": "templater-obsidian",
+            "owner": "SilentVoid13",
+            "repo": "Templater",
+            "tag": "2.19.3",
+            "assets": [
+                { "name": "main.js",       "sha256": "4727FCBADD91D6C5097727B4C16D531F590A379659DCD817FDEF9BE9D3786B98", "dest": "main.js" },
+                { "name": "manifest.json", "sha256": "37C5715B07F5EDADDBB2E8E5A7E88CDBE0885F9E1C11E168DB396F5987BD07B6", "dest": "manifest.json" },
+                { "name": "styles.css",    "sha256": "F7D4EE5BD4EC1D032EDA1F4E1DA481E713C57AF964EC1E55D31494F086068D1E", "dest": "styles.css", "optional": true }
+            ]
+        },
+        {
+            "id": "obsidian-local-rest-api",
+            "owner": "coddingtonbear",
+            "repo": "obsidian-local-rest-api",
+            "tag": "3.6.1",
+            "assets": [
+                { "name": "main.js",       "sha256": "EF3E73AA0DD5B045F3F469D59CF7A5A6AED709270D86F87D6C84A0405661B2BE", "dest": "main.js" },
+                { "name": "manifest.json", "sha256": "7FC49418529247A33C985EE889D5A358F12ECED1BD2FE3CB08D9ABB81D93889D", "dest": "manifest.json" },
+                { "name": "styles.css",    "sha256": "9C11D47320384A9AF97CA67E78384F9BFE1B46510D611DE3E7C8507425D20DFB", "dest": "styles.css", "optional": true }
+            ]
+        }
+    ]
+}
