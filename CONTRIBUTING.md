@@ -44,7 +44,7 @@ Install once:
 
 ```bash
 brew install lefthook
-cd mozgoslav && lefthook -c .github/lefthook.yml install
+cd mozgoslav && lefthook install
 ```
 
 Pre-commit runs `dotnet format`, `eslint --fix`, `prettier --write`, `ruff --fix + black` on staged files, plus `gitleaks` if present.
