@@ -1,4 +1,4 @@
-name: build
+name: ci
 
 on:
   push:
@@ -7,13 +7,13 @@ on:
     branches: [ main ]
 
 concurrency:
-  group: build-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
 
-  checks:
-    name: Checks
+  verify:
+    name: verify / checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,8 +41,8 @@ jobs:
           fi
 
   backend:
-    name: Backend
-    needs: checks
+    name: build / backend
+    needs: verify
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -61,8 +61,8 @@ jobs:
         run: dotnet test backend/Mozgoslav.sln -maxcpucount:1 --no-build --nologo --verbosity normal
 
   frontend:
-    name: Frontend
-    needs: checks
+    name: build / frontend
+    needs: verify
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -84,9 +84,9 @@ jobs:
       - name: Build
         run: cd frontend && WATCHPACK_POLLING=true npm run build
 
-  sidecar:
-    name: Python sidecar
-    needs: checks
+  python:
+    name: build / python
+    needs: verify
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -108,8 +108,8 @@ jobs:
         run: cd python-sidecar && source .venv/bin/activate && pytest
 
   native:
-    name: Native helper
-    needs: checks
+    name: build / native
+    needs: verify
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
