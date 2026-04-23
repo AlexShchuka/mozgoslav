@@ -182,3 +182,55 @@ Extending a stub: add pkg to `requirements.txt` → implement service → wire r
 3. `backend/src/Mozgoslav.Api/Endpoints/DictationEndpoints.cs` — HTTP endpoints
 4. `backend/src/Mozgoslav.Application/Services/DictationSessionManager.cs` — session manager
 5. `backend/src/Mozgoslav.Infrastructure/Services/WhisperNetTranscriptionService.cs` — transcription engine (one-shot + streaming)
+
+## Planned feature — OpenCode integration (ADR-020 … ADR-023)
+
+Proposed, not yet implemented. Everything here is forward-declared so agents
+working on the feature land in consistent places.
+
+- **ADR-020** — architecture + UX shape. Two sidebar entries: "OpenCode"
+  (full-window `xterm.js`) and "OpenCode Settings". Renderer ↔ Electron main
+  ↔ backend split.
+- **ADR-021** — binary provisioning. On-demand download from
+  Mozgoslav-owned GitHub release, sha256-pinned, installed under
+  `~/Library/Application Support/mozgoslav/opencode/bin/`. Reuses
+  `ModelDownloadService` primitives.
+- **ADR-022** — PTY ownership. `node-pty` in Electron main, byte pipe to
+  `xterm.js` via the `contextBridge`. Backend does not handle raw bytes.
+- **ADR-023** — settings surface. Domain records persisted into the
+  existing SQLite `settings` table (no new tables); secrets referenced by
+  `*Ref` keys and resolved only at config-file render time; managed
+  `opencode.json` + `mcp.json` written atomically to
+  `~/Library/Application Support/mozgoslav/opencode/config/` with mode `0600`.
+
+Planned endpoints (under `Api/Endpoints/OpencodeEndpoints.cs`, registered in
+`Program.cs` via `MapOpencodeEndpoints()`):
+
+```
+/api/opencode/status     /api/opencode/runtime    /api/opencode/settings
+/api/opencode/events     POST /api/opencode/install   POST /api/opencode/update
+POST /_internal/opencode/lifecycle   (Electron → backend)
+```
+
+Planned module layout:
+
+```
+frontend/electron/opencode/        OpencodeProcess.ts, runtimeClient.ts, types.ts
+frontend/src/features/OpenCode/    OpenCode.tsx + OpenCodeSettings.tsx (container/presentational)
+frontend/src/api/OpencodeApi.ts
+frontend/src/store/slices/opencode/ actions/reducer/mutations/selectors/saga (recording slice is reference)
+backend/src/Mozgoslav.Infrastructure/Services/
+    OpencodeInstaller.cs
+    OpencodeRuntimeService.cs
+    OpencodeSettingsService.cs
+    OpencodeConfigRenderer.cs
+backend/src/Mozgoslav.Infrastructure/Resources/OpencodeCatalog.json
+```
+
+Privacy rules stay identical to the dictation / Obsidian features: no
+telemetry, CSP unchanged, secrets in SQLite behind `<Input sensitive />`,
+OpenCode's outbound network traffic is user-configured only.
+
+Deferred scope: multi-session tabs, server/attach mode, MCP discovery UI,
+system-opencode override, per-project settings, Keychain-backed secrets,
+native React chat UI. All tracked under `ADR-014 → OpenCode` (items O1…O7).

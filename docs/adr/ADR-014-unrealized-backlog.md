@@ -9,7 +9,8 @@
 
 - **Active queue** → [`NEXT.md`](NEXT.md) (critical + quick wins, то что делаем сейчас).
 - **Post-v1.0 release-engineering** → [`POSTRELEASE.md`](POSTRELEASE.md) (DMG auto-update, Linux/Windows builds).
-- **Новые архитектурные решения** → `ADR-016` (RAG chat history persistence), `ADR-017` (/metrics Prometheus).
+- **Новые архитектурные решения** → `ADR-016` (RAG chat history persistence), `ADR-017` (/metrics Prometheus),
+  `ADR-020` / `ADR-021` / `ADR-022` / `ADR-023` (OpenCode integration).
 - **Cancelled** → [
   `.archive/docs/backlog-cancelled-2026-04-18.md`](../../.archive/docs/backlog-cancelled-2026-04-18.md) (что решили не
   делать + почему).
@@ -70,6 +71,36 @@
 
 **Оценка:** M, дизайн + интеграция, пол-дня.
 
+## OpenCode (deferred from ADR-020 / ADR-021 / ADR-022 / ADR-023)
+
+- **O1 Server / attach mode.** Run `opencode serve` once per machine and let
+  multiple clients connect over a local API. V1 is single local subprocess.
+  Worth revisiting when `opencode` server mode is stable and we want shared
+  sessions across tabs / windows.
+- **O2 Multi-session tabs.** Two+ concurrent OpenCode sessions inside one
+  Mozgoslav window, each bound to a different project path. Needs a session
+  manager on Electron main (PTY pool) and a tab strip UI. Low priority until
+  we have telemetry that people want it.
+- **O3 MCP discovery / install UI.** ADR-023 ships a JSON editor for MCP
+  servers. A richer UI (browse registry, one-click install, per-server
+  permissions) is a separate feature track.
+- **O4 "Use system opencode" override.** ADR-021 mandates a Mozgoslav-owned
+  binary under app-data. A power-user toggle that points at `$(which
+  opencode)` instead is useful but widens the support surface (unknown
+  version, unknown config). Revisit with actual user demand.
+- **O5 Per-project OpenCode settings.** ADR-023 stores one profile in
+  SQLite. Per-project overrides (different model, different MCP list per
+  folder) need a project registry and a settings merge order. Open a new
+  ADR if we pick it up.
+- **O6 Keychain-backed secrets for OpenCode.** Today the LLM / GitHub tokens
+  live in SQLite `settings`. Moving them to Keychain via the Swift helper
+  would match macOS norms for secret storage. Needs a contract between
+  backend and helper (the helper today only speaks dictation).
+- **O7 Native React chat UI over OpenCode event stream.** Replace the
+  terminal with a Mozgoslav-native chat. Blocked on OpenCode exposing a
+  stable structured event protocol and on us deciding the churn is worth
+  the branding win.
+
 ## Backend (ADR-011 deferred items)
 
 - **B1 Quartz.NET AdoJobStore/SQLite swap.** ADR-011 §1 deviation. Сейчас durable business state живёт в таблице
@@ -93,4 +124,4 @@
 - Баги → GitHub Issues (или `NEXT.md#Critical` если блокер релиза).
 - Рефакторинг без изменения поведения → архивные ADR-011 / ADR-012 в `.archive/adrs/`.
 - Post-v1.0 release-engineering → `POSTRELEASE.md`.
-- Активные architectural decisions → новые ADR под своим номером (следующий свободный — 018).
+- Активные architectural decisions → новые ADR под своим номером (следующий свободный — 024).
