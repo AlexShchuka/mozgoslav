@@ -52,26 +52,13 @@ public static class ObsidianEndpoints
         endpoints.MapPost("/api/obsidian/export-all", async (
             IObsidianExportService service,
             IAppSettings settings,
-            IVaultDiagnostics diagnostics,
             CancellationToken ct) =>
         {
-            if (!settings.ObsidianFeatureEnabled)
-            {
-                return FeatureDisabledResult();
-            }
             if (string.IsNullOrWhiteSpace(settings.VaultPath))
             {
                 return BadRequestWithActions("vault-not-configured",
                     "Open Settings → Obsidian and run the first-run wizard.",
                     [DiagnosticAction.OpenOnboarding]);
-            }
-            var report = await diagnostics.RunAsync(ct);
-            var missingPlugins = report.Plugins.Where(p => !p.Ok && !p.Optional).ToList();
-            if (missingPlugins.Count > 0)
-            {
-                return BadRequestWithActions("plugins-missing",
-                    $"{missingPlugins.Count} Obsidian plugin(s) are missing or disabled — run 'Reinstall plugins' before exporting.",
-                    [DiagnosticAction.ReinstallPlugins]);
             }
             try
             {
