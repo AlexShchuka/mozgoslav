@@ -1,21 +1,36 @@
 import {FC, useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {toast} from "react-toastify";
-import {CheckCircle2, Circle, FolderTree, LayoutTemplate, UploadCloud} from "lucide-react";
+import {
+    AlertTriangle,
+    CheckCircle2,
+    Circle,
+    FolderTree,
+    LayoutTemplate,
+    RefreshCw,
+    ShieldCheck,
+    UploadCloud,
+} from "lucide-react";
 
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import {AppSettings, DEFAULT_SETTINGS} from "../../domain/Settings";
+import type {CheckSeverity} from "../../api/ObsidianApi";
 import type {ObsidianProps} from "./types";
 import {
     BulkButtonRow,
+    DiagnosticsChip,
+    DiagnosticsChipMessage,
+    DiagnosticsChipTitle,
+    DiagnosticsGrid,
+    EmptyStateBanner,
     FolderGrid,
     FolderHint,
     FolderItem,
     PageRoot,
     PageTitle,
     Subtitle,
-    VaultRow
+    VaultRow,
 } from "./Obsidian.style";
 
 const PRESET_FOLDERS = [
@@ -32,11 +47,19 @@ const Obsidian: FC<ObsidianProps> = ({
                                          isBulkExporting,
                                          isApplyingLayout,
                                          isSetupInProgress,
+                                         diagnostics,
+                                         isDiagnosticsLoading,
+                                         diagnosticsError,
+                                         isReapplyingBootstrap,
+                                         isReinstallingPlugins,
                                          onLoadSettings,
                                          onSaveSettings,
                                          onSetup,
                                          onBulkExport,
                                          onApplyLayout,
+                                         onFetchDiagnostics,
+                                         onReapplyBootstrap,
+                                         onReinstallPlugins,
                                      }) => {
     const {t} = useTranslation();
     const [settings, setSettings] = useState<AppSettings>(loadedSettings ?? DEFAULT_SETTINGS);
@@ -47,6 +70,10 @@ const Obsidian: FC<ObsidianProps> = ({
     useEffect(() => {
         onLoadSettings();
     }, [onLoadSettings]);
+
+    useEffect(() => {
+        onFetchDiagnostics();
+    }, [onFetchDiagnostics]);
 
     useEffect(() => {
         if (loadedSettings) setSettings(loadedSettings);
@@ -82,12 +109,24 @@ const Obsidian: FC<ObsidianProps> = ({
 
     const selectedArray = useMemo(() => Array.from(selected), [selected]);
 
+    const vaultMissing = !settings.vaultPath;
+
     return (
         <PageRoot>
             <div>
                 <PageTitle>{t("obsidian.title")}</PageTitle>
                 <Subtitle>{t("obsidian.setupHint")}</Subtitle>
             </div>
+
+            {vaultMissing && (
+                <EmptyStateBanner data-testid="obsidian-empty-state">
+                    <AlertTriangle size={18}/>
+                    <div>
+                        <strong>{t("obsidian.emptyState.vault-not-configured")}</strong>
+                        <FolderHint>{t("obsidian.emptyState.vaultHint")}</FolderHint>
+                    </div>
+                </EmptyStateBanner>
+            )}
 
             <Card title={t("settings.fields.vaultPath")}>
                 <VaultRow>
@@ -157,8 +196,97 @@ const Obsidian: FC<ObsidianProps> = ({
                     </Button>
                 </div>
             </Card>
+
+            <Card
+                title={t("obsidian.diagnostics.title")}
+                subtitle={t("obsidian.diagnostics.subtitle")}
+            >
+                <BulkButtonRow>
+                    <Button
+                        variant="secondary"
+                        leftIcon={<RefreshCw size={16}/>}
+                        isLoading={isDiagnosticsLoading}
+                        onClick={onFetchDiagnostics}
+                        data-testid="obsidian-refresh-diagnostics"
+                    >
+                        {t("obsidian.diagnostics.refresh")}
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        leftIcon={<ShieldCheck size={16}/>}
+                        isLoading={isReapplyingBootstrap}
+                        disabled={!settings.vaultPath}
+                        onClick={onReapplyBootstrap}
+                        data-testid="obsidian-reapply-bootstrap"
+                    >
+                        {t("obsidian.diagnostics.reapplyBootstrap")}
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        leftIcon={<LayoutTemplate size={16}/>}
+                        isLoading={isReinstallingPlugins}
+                        disabled={!settings.vaultPath}
+                        onClick={onReinstallPlugins}
+                        data-testid="obsidian-reinstall-plugins"
+                    >
+                        {t("obsidian.diagnostics.reinstallPlugins")}
+                    </Button>
+                </BulkButtonRow>
+                {diagnosticsError && (
+                    <FolderHint data-testid="obsidian-diagnostics-error">
+                        {diagnosticsError}
+                    </FolderHint>
+                )}
+                {diagnostics && (
+                    <DiagnosticsGrid data-testid="obsidian-diagnostics-grid">
+                        <Chip
+                            label={t("obsidian.diagnostics.vault")}
+                            severity={diagnostics.vault.severity}
+                            message={diagnostics.vault.message}
+                        />
+                        {diagnostics.plugins.map((plugin) => (
+                            <Chip
+                                key={plugin.pluginId}
+                                label={plugin.pluginId}
+                                severity={plugin.severity}
+                                message={plugin.message}
+                            />
+                        ))}
+                        <Chip
+                            label={t("obsidian.diagnostics.templater")}
+                            severity={diagnostics.templater.severity}
+                            message={diagnostics.templater.message}
+                        />
+                        <Chip
+                            label={t("obsidian.diagnostics.bootstrap")}
+                            severity={diagnostics.bootstrap.severity}
+                            message={diagnostics.bootstrap.message}
+                        />
+                        <Chip
+                            label={t("obsidian.diagnostics.restApi")}
+                            severity={diagnostics.restApi.severity}
+                            message={diagnostics.restApi.message}
+                        />
+                        <Chip
+                            label={t("obsidian.diagnostics.lmStudio")}
+                            severity={diagnostics.lmStudio.severity}
+                            message={diagnostics.lmStudio.message}
+                        />
+                    </DiagnosticsGrid>
+                )}
+            </Card>
         </PageRoot>
     );
 };
+
+const Chip: FC<{ label: string; severity: CheckSeverity; message: string }> = ({label, severity, message}) => (
+    <DiagnosticsChip $severity={severity} data-testid={`obsidian-chip-${severity}`}>
+        <DiagnosticsChipTitle>
+            {severity === "Ok" ? <CheckCircle2 size={16}/> : <AlertTriangle size={16}/>}
+            {label}
+        </DiagnosticsChipTitle>
+        <DiagnosticsChipMessage>{message}</DiagnosticsChipMessage>
+    </DiagnosticsChip>
+);
 
 export default Obsidian;

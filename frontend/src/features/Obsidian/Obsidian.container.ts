@@ -5,8 +5,16 @@ import type {GlobalState} from "../../store";
 import {
     applyLayout,
     bulkExport,
+    fetchDiagnostics,
+    reapplyBootstrap,
+    reinstallPlugins,
+    selectObsidianDiagnostics,
+    selectObsidianDiagnosticsError,
+    selectObsidianDiagnosticsLoading,
     selectObsidianIsApplyingLayout,
     selectObsidianIsBulkExporting,
+    selectObsidianIsReapplyingBootstrap,
+    selectObsidianIsReinstallingPlugins,
     selectObsidianIsSetupInProgress,
     setupObsidian,
 } from "../../store/slices/obsidian";
@@ -19,6 +27,11 @@ const mapStateToProps = (state: GlobalState): ObsidianStateProps => ({
     isBulkExporting: selectObsidianIsBulkExporting(state),
     isApplyingLayout: selectObsidianIsApplyingLayout(state),
     isSetupInProgress: selectObsidianIsSetupInProgress(state),
+    diagnostics: selectObsidianDiagnostics(state),
+    isDiagnosticsLoading: selectObsidianDiagnosticsLoading(state),
+    diagnosticsError: selectObsidianDiagnosticsError(state),
+    isReapplyingBootstrap: selectObsidianIsReapplyingBootstrap(state),
+    isReinstallingPlugins: selectObsidianIsReinstallingPlugins(state),
 });
 
 const mapDispatchToProps = (dispatch: Dispatch): ObsidianDispatchProps =>
@@ -29,6 +42,9 @@ const mapDispatchToProps = (dispatch: Dispatch): ObsidianDispatchProps =>
             onSetup: setupObsidian,
             onBulkExport: bulkExport,
             onApplyLayout: applyLayout,
+            onFetchDiagnostics: fetchDiagnostics,
+            onReapplyBootstrap: reapplyBootstrap,
+            onReinstallPlugins: reinstallPlugins,
         },
         dispatch,
     );

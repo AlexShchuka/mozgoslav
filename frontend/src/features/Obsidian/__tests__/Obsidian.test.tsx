@@ -48,7 +48,7 @@ describe("Obsidian — first-class tab (BC-025 / Bug 22)", () => {
     });
 
     it("Obsidian_SyncAll_CallsBulkExport", async () => {
-        mockApi.obsidianApi.bulkExport.mockResolvedValue({exportedCount: 3});
+        mockApi.obsidianApi.bulkExport.mockResolvedValue({exportedCount: 3, skippedCount: 0, failures: []});
 
         renderObsidian();
 

@@ -80,3 +80,54 @@ export const BulkButtonRow = styled.div`
     gap: ${({theme}) => theme.space(2)};
     flex-wrap: wrap;
 `;
+
+export const DiagnosticsGrid = styled.div`
+    display: grid;
+    gap: ${({theme}) => theme.space(2)};
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+`;
+
+export const DiagnosticsChip = styled.div<{ $severity: "Ok" | "Advisory" | "Warning" | "Error" }>`
+    display: flex;
+    flex-direction: column;
+    gap: ${({theme}) => theme.space(1)};
+    padding: ${({theme}) => theme.space(3)};
+    background: ${({theme}) => theme.colors.bg.elevated2};
+    border: 1px solid ${({theme, $severity}) => {
+        switch ($severity) {
+            case "Ok": return theme.colors.accent.primary;
+            case "Advisory": return theme.colors.border.subtle;
+            case "Warning": return theme.colors.warning;
+            case "Error": return theme.colors.error;
+            default: return theme.colors.border.subtle;
+        }
+    }};
+    border-radius: ${({theme}) => theme.radii.md};
+    font-size: ${({theme}) => theme.font.size.sm};
+    color: ${({theme}) => theme.colors.text.primary};
+`;
+
+export const DiagnosticsChipTitle = styled.strong`
+    display: flex;
+    align-items: center;
+    gap: ${({theme}) => theme.space(1)};
+    font-size: ${({theme}) => theme.font.size.md};
+    color: ${({theme}) => theme.colors.text.primary};
+`;
+
+export const DiagnosticsChipMessage = styled.span`
+    font-size: ${({theme}) => theme.font.size.sm};
+    color: ${({theme}) => theme.colors.text.secondary};
+    line-height: 1.4;
+`;
+
+export const EmptyStateBanner = styled.div`
+    display: flex;
+    align-items: center;
+    gap: ${({theme}) => theme.space(3)};
+    padding: ${({theme}) => theme.space(3)};
+    background: ${({theme}) => theme.colors.bg.elevated2};
+    border: 1px solid ${({theme}) => theme.colors.border.subtle};
+    border-radius: ${({theme}) => theme.radii.md};
+    color: ${({theme}) => theme.colors.text.primary};
+`;
