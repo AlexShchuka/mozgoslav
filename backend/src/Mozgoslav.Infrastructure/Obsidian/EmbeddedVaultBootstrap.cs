@@ -1,9 +1,10 @@
-#pragma warning disable IDISP004
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,6 +21,8 @@ namespace Mozgoslav.Infrastructure.Obsidian;
 public sealed class EmbeddedVaultBootstrap : IVaultBootstrapProvider
 {
     private const string ManifestResourceKey = "Mozgoslav.Infrastructure.Resources.ObsidianBootstrap.manifest.json";
+    private static readonly JsonSerializerOptions ManifestJson = new(JsonSerializerDefaults.Web);
+
     private readonly Assembly _assembly;
     private readonly Lazy<IReadOnlyList<BootstrapManifestEntry>> _manifest;
 
@@ -40,37 +43,46 @@ public sealed class EmbeddedVaultBootstrap : IVaultBootstrapProvider
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(embeddedResourceKey);
         ct.ThrowIfCancellationRequested();
-        return Task.FromResult(RequireResourceStream(embeddedResourceKey));
+        var bytes = ReadResourceBytes(embeddedResourceKey);
+        return Task.FromResult<Stream>(new MemoryStream(bytes, writable: false));
     }
 
     private IReadOnlyList<BootstrapManifestEntry> LoadManifest()
     {
-        using var stream = RequireResourceStream(ManifestResourceKey);
-        using var doc = JsonDocument.Parse(stream);
-        var files = doc.RootElement.GetProperty("files");
-        var entries = new List<BootstrapManifestEntry>(files.GetArrayLength());
-        foreach (var entry in files.EnumerateArray())
+        var bytes = ReadResourceBytes(ManifestResourceKey);
+        var dto = JsonSerializer.Deserialize<ManifestDto>(bytes, ManifestJson)
+            ?? throw new InvalidDataException("Bootstrap manifest.json failed to deserialize");
+        var entries = new List<BootstrapManifestEntry>(dto.Files.Count);
+        foreach (var file in dto.Files)
         {
-            var vaultRelativePath = entry.GetProperty("vaultRelativePath").GetString()
-                ?? throw new InvalidDataException("manifest.json entry missing vaultRelativePath");
-            var resourceKey = entry.GetProperty("embeddedResourceKey").GetString()
-                ?? throw new InvalidDataException("manifest.json entry missing embeddedResourceKey");
-            var sha = entry.GetProperty("sha256").GetString()
-                ?? throw new InvalidDataException("manifest.json entry missing sha256");
-            var policyName = entry.GetProperty("writePolicy").GetString()
-                ?? throw new InvalidDataException("manifest.json entry missing writePolicy");
-            if (!Enum.TryParse<WritePolicy>(policyName, ignoreCase: true, out var policy))
+            if (!Enum.TryParse<WritePolicy>(file.WritePolicy, ignoreCase: true, out var policy))
             {
-                throw new InvalidDataException($"manifest.json entry has unknown writePolicy '{policyName}'");
+                throw new InvalidDataException($"manifest.json entry has unknown writePolicy '{file.WritePolicy}'");
             }
-            entries.Add(new BootstrapManifestEntry(vaultRelativePath, resourceKey, sha, policy));
+            entries.Add(new BootstrapManifestEntry(file.VaultRelativePath, file.EmbeddedResourceKey, file.Sha256, policy));
         }
         return entries;
     }
 
-    private Stream RequireResourceStream(string key)
+    private byte[] ReadResourceBytes(string key)
     {
-        var stream = _assembly.GetManifestResourceStream(key);
-        return stream ?? throw new FileNotFoundException($"Embedded bootstrap resource not found: {key}");
+        var names = _assembly.GetManifestResourceNames();
+        if (!names.Contains(key))
+        {
+            throw new FileNotFoundException($"Embedded bootstrap resource not found: {key}");
+        }
+        using var stream = _assembly.GetManifestResourceStream(key)!;
+        using var buffer = new MemoryStream();
+        stream.CopyTo(buffer);
+        return buffer.ToArray();
     }
+
+    private sealed record ManifestDto(
+        [property: JsonPropertyName("files")] IReadOnlyList<ManifestFileDto> Files);
+
+    private sealed record ManifestFileDto(
+        [property: JsonPropertyName("vaultRelativePath")] string VaultRelativePath,
+        [property: JsonPropertyName("embeddedResourceKey")] string EmbeddedResourceKey,
+        [property: JsonPropertyName("sha256")] string Sha256,
+        [property: JsonPropertyName("writePolicy")] string WritePolicy);
 }
