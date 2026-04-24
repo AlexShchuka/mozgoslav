@@ -61,6 +61,7 @@ const killZombieOnPort = async (port: number): Promise<void> => {
 };
 
 export interface BackendStartOptions {
+  readonly resourcesRoot?: string;
   readonly extraArgs?: readonly string[];
   readonly extraEnv?: Readonly<Record<string, string>>;
 }
@@ -69,10 +70,17 @@ export const tryStartBackend = async (
   userDataDir: string,
   options: BackendStartOptions = {}
 ): Promise<void> => {
-  const candidatePaths = [
+  const candidatePaths: string[] = [];
+  if (options.resourcesRoot) {
+    candidatePaths.push(
+      path.join(options.resourcesRoot, "backend", BACKEND_BINARY_NAME),
+      path.join(options.resourcesRoot, "backend", `${BACKEND_BINARY_NAME}.exe`)
+    );
+  }
+  candidatePaths.push(
     path.join(userDataDir, "backend", BACKEND_BINARY_NAME),
-    path.join(userDataDir, "backend", `${BACKEND_BINARY_NAME}.exe`),
-  ];
+    path.join(userDataDir, "backend", `${BACKEND_BINARY_NAME}.exe`)
+  );
 
   const binaryPath = candidatePaths.find((p) => existsSync(p));
 

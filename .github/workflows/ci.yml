@@ -222,8 +222,18 @@ jobs:
 
   commitlint:
     name: validate / commitlint
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
+      - name: Lint PR title (source of the squash-merge commit message)
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          subjectPattern: ^.{1,100}$
+          subjectPatternError: |
+            PR title subject must be between 1 and 100 characters (header-max-length=100).
+          wip: true
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -241,12 +251,49 @@ jobs:
       - name: Install (only on cache miss)
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: cd frontend && npm ci
-      - name: Lint commit messages in PR
-        if: github.event_name == 'pull_request'
+      - name: Lint in-PR commits (hygiene for the squash audit trail)
+        continue-on-error: true
         run: cd frontend && npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
-      - name: Lint commit messages on push
-        if: github.event_name == 'push'
-        run: cd frontend && npx commitlint --from HEAD~1 --to HEAD
+
+  backlog-guard:
+    name: validate / backlog-guard
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Refuse new backlog or bugs markdown files
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          added=$(git diff --name-only --diff-filter=A "$BASE_SHA" "$HEAD_SHA" \
+            | grep -E '^docs/features/[^/]+/(backlog|bugs)/.*\.md$' || true)
+          if [ -n "$added" ]; then
+            echo "::error::Backlog and bugs live as GitHub Issues now. Open an Issue instead of adding:"
+            echo "$added" | sed 's/^/  - /'
+            exit 1
+          fi
+      - name: Enforce decision file closes archived backlog moves
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          archived=$(git diff --name-only --diff-filter=A "$BASE_SHA" "$HEAD_SHA" \
+            | grep -E '^\.archive/.*\.md$' || true)
+          if [ -z "$archived" ]; then
+            exit 0
+          fi
+          decisions=$(git diff --name-only --diff-filter=A "$BASE_SHA" "$HEAD_SHA" \
+            | grep -E '^docs/features/[^/]+/decisions/.*\.md$' || true)
+          if [ -z "$decisions" ]; then
+            echo "::warning::PR archives markdown under .archive/ without publishing a new decision file."
+            echo "::warning::Architectural initiatives must close with a robot-style decision under docs/features/<feature>/decisions/."
+            echo "::warning::If the archive is a pure retire (no architecture shipped), ignore this warning."
+          fi
 
   native:
     name: build & tests / native (macos-latest)

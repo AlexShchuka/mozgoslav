@@ -48,3 +48,11 @@ cd native/MozgoslavDictationHelper && swift build -c release && swift test
 ```
 
 Unused `using` directives are enforced via `dotnet build -warnaserror` (analyzer IDE0005). Codestyle is enforced via `dotnet format`. Comments, TODO, FIXME and docstrings are banned — `uncomment` above catches drift.
+
+## PR title
+
+Squash-merge is the only merge mode; the PR title becomes the commit message. CI lints the title against Conventional Commits (`amannn/action-semantic-pull-request`). Header ≤ 100 chars. Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`. Breaking changes: `feat(scope)!: ...`.
+
+## Push (humans only)
+
+The repo's `pre-push` lefthook refuses pushes unless `MOZGOSLAV_HUMAN_PUSH=1` is set. AI coding agents are not authorised to push; they open branches locally, a human runs `MOZGOSLAV_HUMAN_PUSH=1 git push -u origin <branch>`.

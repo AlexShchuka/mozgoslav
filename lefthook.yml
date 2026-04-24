@@ -51,6 +51,13 @@ commit-msg:
 
 pre-push:
   commands:
+    human-only:
+      run: |
+        if [ "${MOZGOSLAV_HUMAN_PUSH:-}" != "1" ]; then
+          echo "lefthook: push blocked — MOZGOSLAV_HUMAN_PUSH=1 must be set by a human operator."
+          echo "lefthook: AI agents are not permitted to push; open a PR from a local branch via a human session."
+          exit 1
+        fi
     gitleaks:
       run: |
         if command -v gitleaks >/dev/null 2>&1; then

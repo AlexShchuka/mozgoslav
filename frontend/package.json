@@ -14,7 +14,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"electron/**/*.ts\"",
     "plop": "plop",
     "build:helper:mac": "swift build -c release --package-path ../native/MozgoslavDictationHelper && chmod +x ../native/MozgoslavDictationHelper/.build/arm64-apple-macosx/release/mozgoslav-dictation-helper",
-    "dist:mac": "bash ../scripts/fetch-bundle-models.sh && npm run build && npm run build:helper:mac && electron-builder --mac",
+    "dist:mac": "bash ../scripts/fetch-bundle-models.sh && bash ../scripts/publish-backend-osx.sh && npm run build && npm run build:helper:mac && electron-builder --mac",
     "knip": "knip",
     "check-styles": "stylelint \"src/**/*.{ts,tsx}\"",
     "check-translations": "node scripts/check-translations.mjs",

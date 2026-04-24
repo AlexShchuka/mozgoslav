@@ -86,3 +86,4 @@ Package.resolved
 # ---- Generated at build time ----
 backend/src/Mozgoslav.Infrastructure/Resources/ObsidianBootstrap/manifest.json
 backend/Mozgoslav.Api.json
+frontend/resources/backend/
