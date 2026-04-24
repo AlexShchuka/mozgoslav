@@ -222,6 +222,7 @@ jobs:
 
   commitlint:
     name: validate / commitlint
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -241,12 +242,16 @@ jobs:
       - name: Install (only on cache miss)
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: cd frontend && npm ci
-      - name: Lint commit messages in PR
-        if: github.event_name == 'pull_request'
+      - name: Lint PR title (source of the squash-merge commit message)
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+          echo "PR title: $PR_TITLE"
+          printf '%s\n' "$PR_TITLE" | (cd frontend && npx commitlint)
+      - name: Lint in-PR commits (hygiene for the squash audit trail)
+        continue-on-error: true
         run: cd frontend && npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
-      - name: Lint commit messages on push
-        if: github.event_name == 'push'
-        run: cd frontend && npx commitlint --from HEAD~1 --to HEAD
 
   native:
     name: build & tests / native (macos-latest)

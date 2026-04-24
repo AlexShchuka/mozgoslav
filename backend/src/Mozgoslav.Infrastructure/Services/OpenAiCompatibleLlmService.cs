@@ -56,6 +56,40 @@ public sealed class OpenAiCompatibleLlmService : ILlmService
         }
     }
 
+    public async Task<IReadOnlyList<string>> ListAvailableModelsAsync(CancellationToken ct)
+    {
+        try
+        {
+            using var client = _httpClientFactory.CreateClient("llm");
+            using var probeCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            probeCts.CancelAfter(TimeSpan.FromSeconds(5));
+            using var response = await client.GetAsync(
+                new Uri(new Uri(_settings.LlmEndpoint), "/v1/models"), probeCts.Token);
+            if (!response.IsSuccessStatusCode)
+            {
+                return [];
+            }
+            await using var stream = await response.Content.ReadAsStreamAsync(probeCts.Token);
+            var payload = await JsonSerializer.DeserializeAsync<OpenAiModelsEnvelope>(stream, JsonOptions, probeCts.Token);
+            return payload?.Data?.Select(m => m.Id).Where(id => !string.IsNullOrWhiteSpace(id)).ToList() ?? [];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "LLM model catalogue fetch failed");
+            return [];
+        }
+    }
+
+    private sealed class OpenAiModelsEnvelope
+    {
+        [JsonPropertyName("data")] public List<OpenAiModelEntry> Data { get; init; } = [];
+    }
+
+    private sealed class OpenAiModelEntry
+    {
+        [JsonPropertyName("id")] public string Id { get; init; } = string.Empty;
+    }
+
     public async Task<LlmProcessingResult> ProcessAsync(string transcript, string systemPrompt, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(systemPrompt);

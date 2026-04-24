@@ -13,19 +13,19 @@ const tones = {
   `,
   success: css`
     color: ${({ theme }) => theme.colors.success};
-    background: rgb(16, 185, 129, 0.14);
+    background: ${({ theme }) => theme.colors.successSoft};
   `,
   warning: css`
     color: ${({ theme }) => theme.colors.warning};
-    background: rgb(245, 158, 11, 0.14);
+    background: ${({ theme }) => theme.colors.warningSoft};
   `,
   error: css`
     color: ${({ theme }) => theme.colors.error};
-    background: rgb(239, 68, 68, 0.14);
+    background: ${({ theme }) => theme.colors.errorSoft};
   `,
   info: css`
     color: ${({ theme }) => theme.colors.info};
-    background: rgb(59, 130, 246, 0.14);
+    background: ${({ theme }) => theme.colors.infoSoft};
   `,
 } satisfies Record<BadgeTone, ReturnType<typeof css>>;
 

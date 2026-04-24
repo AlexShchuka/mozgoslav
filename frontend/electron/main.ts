@@ -176,6 +176,7 @@ app.whenReady().then(async () => {
   }
 
   await tryStartBackend(userDataDir, {
+    resourcesRoot: process.resourcesPath ?? path.join(__dirname, ".."),
     extraArgs: backendExtraArgs,
     extraEnv: recorderEnv,
   });

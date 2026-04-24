@@ -32,10 +32,16 @@ export interface Theme {
       glow: string;
     };
     success: string;
+    successSoft: string;
     warning: string;
+    warningSoft: string;
+    warningBorder: string;
     error: string;
+    errorSoft: string;
     info: string;
+    infoSoft: string;
     focusRing: string;
+    overlayBackdrop: string;
   };
   radii: { sm: string; md: string; lg: string; full: string };
   space: (n: number) => string;
@@ -127,10 +133,16 @@ export const darkTheme: Theme = {
     text: darkText,
     accent: darkAccent,
     success: "#29fcc3",
+    successSoft: "rgba(16, 185, 129, 0.14)",
     warning: "#fbbf24",
+    warningSoft: "rgba(251, 191, 36, 0.08)",
+    warningBorder: "rgba(251, 191, 36, 0.3)",
     error: "#f87171",
+    errorSoft: "rgba(248, 113, 113, 0.14)",
     info: "#60a5fa",
+    infoSoft: "rgba(59, 130, 246, 0.14)",
     focusRing: "rgba(41, 252, 195, 0.5)",
+    overlayBackdrop: "rgba(10, 12, 18, 0.55)",
   },
   radii: sharedRadii,
   space: (n) => `${n * 4}px`,
@@ -182,10 +194,16 @@ export const lightTheme: Theme = {
     text: lightText,
     accent: lightAccent,
     success: "#0bd4cd",
+    successSoft: "rgba(16, 185, 129, 0.14)",
     warning: "#f59e0b",
+    warningSoft: "rgba(245, 158, 11, 0.08)",
+    warningBorder: "rgba(245, 158, 11, 0.3)",
     error: "#ef4444",
+    errorSoft: "rgba(239, 68, 68, 0.14)",
     info: "#3b82f6",
+    infoSoft: "rgba(59, 130, 246, 0.14)",
     focusRing: "rgba(11, 212, 205, 0.5)",
+    overlayBackdrop: "rgba(15, 23, 42, 0.55)",
   },
   radii: sharedRadii,
   space: (n) => `${n * 4}px`,

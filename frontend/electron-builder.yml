@@ -28,6 +28,12 @@ mac:
     NSMicrophoneUsageDescription: Mozgoslav records dictation audio captured through your microphone.
     NSSupportsAutomaticGraphicsSwitching: true
   extraResources:
+    # Self-contained .NET 10 backend published by scripts/publish-backend-osx.sh
+    # before electron-builder runs. Removes the .NET runtime dependency from
+    # the target machine.
+    - from: resources/backend
+      to: backend
+      filter: [ "**/*" ]
     # Plan v0.8 Block 7 — Tier-1 bundle models. Populated by
     # scripts/fetch-bundle-models.sh before electron-builder runs.
     - from: build/bundle-models

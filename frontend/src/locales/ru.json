@@ -63,7 +63,9 @@
     "hint": "Запусти backend: `dotnet run` в папке backend/"
   },
   "sidebar": {
-    "restartOnboarding": "Заново пройти онбординг"
+    "restartOnboarding": "Заново пройти онбординг",
+    "collapse": "Свернуть панель",
+    "expand": "Развернуть панель"
   },
   "home": {
     "listTitle": "Записи",

@@ -13,6 +13,7 @@ import { setThemeMode } from "../../styles/ThemeProvider";
 import SyncPairing from "../SyncPairing";
 import type { SettingsProps } from "./types";
 import {
+  CheckboxRow,
   FormGrid,
   PageRoot,
   PageTitle,
@@ -231,7 +232,7 @@ const Settings: FC<SettingsProps> = ({
                 testId="dictation"
               />
             </div>
-            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <CheckboxRow>
               <input
                 type="checkbox"
                 data-testid="settings-dictation-push-to-talk"
@@ -239,7 +240,7 @@ const Settings: FC<SettingsProps> = ({
                 onChange={(e) => update("dictationPushToTalk", e.target.checked)}
               />
               <span>{t("settings.fields.dictationPushToTalk")}</span>
-            </label>
+            </CheckboxRow>
           </FormGrid>
         </Card>
       )}

@@ -1,0 +1,68 @@
+name: Bug
+description: A defect in shipped behaviour. One issue per defect.
+title: "[feature] short-slug"
+labels:
+  - type/bug
+body:
+  - type: dropdown
+    id: feature
+    attributes:
+      label: Feature area
+      description: Scope label (the label `feature/<value>` will be applied automatically).
+      options:
+        - api
+        - dictation
+        - distribution
+        - meetings
+        - observability
+        - obsidian
+        - opencode
+        - persistence
+        - profiles
+        - rag
+        - recording
+        - sync
+        - testing
+        - tooling
+        - ui
+    validations:
+      required: true
+
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behaviour
+      description: What actually happens. Include error text / screenshot / log slice verbatim.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal repro
+      description: Numbered steps. Empty-state / first-run / post-update must be noted when relevant.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      placeholder: v0.x.y or git SHA
+
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      placeholder: macOS 15.x arm64

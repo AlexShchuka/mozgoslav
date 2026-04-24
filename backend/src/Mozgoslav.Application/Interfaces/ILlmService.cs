@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,4 +12,6 @@ public interface ILlmService
         CancellationToken ct);
 
     Task<bool> IsAvailableAsync(CancellationToken ct);
+
+    Task<IReadOnlyList<string>> ListAvailableModelsAsync(CancellationToken ct);
 }

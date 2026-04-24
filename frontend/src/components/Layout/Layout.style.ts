@@ -1,20 +1,27 @@
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 
-export const LayoutRoot = styled.div`
+const SIDEBAR_WIDTH_EXPANDED = "240px";
+const SIDEBAR_WIDTH_COLLAPSED = "64px";
+
+export const LayoutRoot = styled.div<{ $collapsed?: boolean }>`
   display: grid;
 
-  /* Row 1: draggable TitleBar (44 px). Row 2: sidebar + main content. */
-  grid-template: 44px 1fr / 240px 1fr;
+  grid-template:
+    44px 1fr /
+    ${({ $collapsed }) => ($collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED)} 1fr;
   height: 100vh;
   background: ${({ theme }) => theme.colors.bg.base};
+  transition: grid-template-columns ${({ theme }) => theme.motion.duration.fast};
 `;
 
-export const Sidebar = styled.aside`
+export const Sidebar = styled.aside<{ $collapsed?: boolean }>`
   display: flex;
   flex-direction: column;
-  padding: ${({ theme }) => theme.space(4)};
+  padding: ${({ theme, $collapsed }) =>
+    $collapsed ? `${theme.space(4)} ${theme.space(2)}` : theme.space(4)};
   background: ${({ theme }) => theme.colors.bg.elevated2};
   border-right: 1px solid ${({ theme }) => theme.colors.border.subtle};
+  overflow: hidden;
 `;
 
 export const Brand = styled.div`
@@ -55,15 +62,15 @@ export const SidebarGroup = styled.div`
   gap: ${({ theme }) => theme.space(0.5)};
 `;
 
-export const SidebarItem = styled.a`
+export const SidebarItem = styled.a<{ $collapsed?: boolean }>`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.space(2.5)};
-  padding: ${({ theme }) => `${theme.space(2)} ${theme.space(2.5)}`};
+  padding: ${({ theme, $collapsed }) =>
+    $collapsed ? theme.space(2) : `${theme.space(2)} ${theme.space(2.5)}`};
+  justify-content: ${({ $collapsed }) => ($collapsed ? "center" : "flex-start")};
   border-radius: ${({ theme }) => theme.radii.md};
 
-  /* Sidebar body copy is one step larger than generic body text for
-       navigation readability; 16px isn't in the token scale, inline on purpose. */
   font-size: 16px;
   color: ${({ theme }) => theme.colors.text.secondary};
   text-decoration: none;
@@ -80,6 +87,14 @@ export const SidebarItem = styled.a`
     background: ${({ theme }) => theme.colors.accent.soft};
     color: ${({ theme }) => theme.colors.accent.primary};
   }
+
+  ${({ $collapsed }) =>
+    $collapsed &&
+    css`
+      & > span[data-nav-label] {
+        display: none;
+      }
+    `}
 `;
 
 export const SidebarIconSlot = styled.span`
@@ -90,22 +105,37 @@ export const SidebarIconSlot = styled.span`
   flex-shrink: 0;
 `;
 
-export const SidebarFooter = styled.div`
+export const SidebarFooter = styled.div<{ $collapsed?: boolean }>`
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: ${({ $collapsed }) => ($collapsed ? "center" : "space-between")};
   gap: ${({ theme }) => theme.space(2)};
   padding-top: ${({ theme }) => theme.space(3)};
   border-top: 1px solid ${({ theme }) => theme.colors.border.subtle};
   font-size: ${({ theme }) => theme.font.size.xs};
   color: ${({ theme }) => theme.colors.text.secondary};
   -webkit-app-region: no-drag;
+
+  ${({ $collapsed }) =>
+    $collapsed &&
+    css`
+      flex-direction: column;
+      gap: ${({ theme }) => theme.space(1.5)};
+    `}
 `;
 
-export const SidebarStatus = styled.span`
+export const SidebarStatus = styled.span<{ $collapsed?: boolean }>`
   display: inline-flex;
   align-items: center;
   gap: ${({ theme }) => theme.space(2)};
+
+  ${({ $collapsed }) =>
+    $collapsed &&
+    css`
+      & > span[data-status-label] {
+        display: none;
+      }
+    `}
 `;
 
 export const HelpButton = styled.button`
@@ -136,6 +166,8 @@ export const HelpButton = styled.button`
   }
 `;
 
+export const CollapseButton = styled(HelpButton)``;
+
 export const StatusDot = styled.span<{ $ok: boolean }>`
   width: 8px;
   height: 8px;
@@ -165,6 +197,6 @@ export const BackendStatusBanner = styled.div<{ $isOk: boolean }>`
   padding: ${({ theme }) => `${theme.space(2.5)} ${theme.space(5)}`};
   font-size: ${({ theme }) => theme.font.size.sm};
   color: ${({ theme }) => theme.colors.warning};
-  background: rgb(245, 158, 11, 0.08);
-  border-bottom: 1px solid rgb(245, 158, 11, 0.3);
+  background: ${({ theme }) => theme.colors.warningSoft};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.warningBorder};
 `;
