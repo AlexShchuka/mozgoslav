@@ -1,6 +1,8 @@
 import { FC, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { KBarProvider } from "kbar";
+import { useDispatch } from "react-redux";
+import type { Action, Dispatch } from "redux";
 
 import { Layout } from "./components/Layout";
 import Home from "./features/Home";
@@ -20,6 +22,7 @@ import { useGlobalHotkeys } from "./hooks/useGlobalHotkeys";
 import { ROUTES } from "./constants/routes";
 import { GLOBAL_HOTKEY_REDISPATCH_EVENT } from "./constants/events";
 import { OnboardingCompleteGuard } from "./guards";
+import { dictationCancelRequested } from "./store/slices/dictation";
 
 const OVERLAY_ROUTE = "/dictation-overlay";
 
@@ -28,6 +31,15 @@ const AppShell: FC = () => {
   useCommandPaletteActions();
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch<Dispatch<Action>>();
+
+  useEffect(() => {
+    const bridge = typeof window !== "undefined" ? window.mozgoslav : undefined;
+    if (!bridge?.onOverlayCancelRequest) return;
+    return bridge.onOverlayCancelRequest(() => {
+      dispatch(dictationCancelRequested());
+    });
+  }, [dispatch]);
 
   useEffect(() => {
     const bridge = typeof window !== "undefined" ? window.mozgoslav : undefined;

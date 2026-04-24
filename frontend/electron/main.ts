@@ -286,6 +286,12 @@ app.whenReady().then(async () => {
     }
   );
 
+  ipcMain.on("dictation:cancel-request", () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("dictation:cancel-from-overlay");
+    }
+  });
+
   ipcMain.handle("sync:listConflicts", async (_event, folderPath: string) => {
     try {
       const walked = await walkForConflicts(folderPath);

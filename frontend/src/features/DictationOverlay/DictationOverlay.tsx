@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
 import {
+  CancelButton,
   OverlayRoot,
   PartialText,
   PhaseLabel,
@@ -65,6 +66,17 @@ const DictationOverlay: FC<DictationOverlayProps> = ({ initialState }) => {
           {state.partialText || placeholderFor(state.phase, t)}
         </PartialText>
       </TextColumn>
+      {state.phase === "recording" && (
+        <CancelButton
+          data-testid="dictation-overlay-cancel"
+          onClick={() => {
+            const api = (window as unknown as MozgoslavOverlayApi).mozgoslavOverlay;
+            api?.cancelDictation();
+          }}
+        >
+          {t("dictation.cancel")}
+        </CancelButton>
+      )}
       {state.phase === "processing" && <Spinner data-testid="dictation-overlay-spinner" />}
     </OverlayRoot>
   );
@@ -94,6 +106,7 @@ const placeholderFor = (phase: DictationOverlayPhase, t: TFunction): string => {
 interface MozgoslavOverlayApi {
   mozgoslavOverlay?: {
     onStateChange: (listener: (state: DictationOverlayState) => void) => () => void;
+    cancelDictation: () => void;
   };
 }
 
