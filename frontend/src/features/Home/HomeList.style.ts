@@ -23,6 +23,7 @@ export const HomeListScroll = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.space(3)};
+
   /* Padding-right reserves space for the scrollbar so rows don't jump when
        one appears. */
   padding-right: ${({ theme }) => theme.space(1)};
@@ -39,7 +40,7 @@ export const RowTop = styled.div`
 export const RowTitle = styled.div`
   font-weight: ${({ theme }) => theme.font.weight.semibold};
   color: ${({ theme }) => theme.colors.text.primary};
-  word-break: break-word;
+  overflow-wrap: anywhere;
 `;
 
 export const RowMeta = styled.div`

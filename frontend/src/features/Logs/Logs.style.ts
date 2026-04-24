@@ -34,5 +34,5 @@ export const LogPre = styled.pre`
   font-size: ${({ theme }) => theme.font.size.xs};
   color: ${({ theme }) => theme.colors.text.secondary};
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 `;

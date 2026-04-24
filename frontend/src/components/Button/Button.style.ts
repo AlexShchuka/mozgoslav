@@ -52,7 +52,7 @@ const variantStyles = {
     }
   `,
   danger: css`
-    background: rgba(248, 113, 113, 0.12);
+    background: rgb(248, 113, 113, 0.12);
     color: ${({ theme }) => theme.colors.error};
     border: 1px solid ${({ theme }) => theme.colors.error};
 

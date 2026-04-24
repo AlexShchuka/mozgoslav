@@ -2,6 +2,7 @@ import styled from "styled-components";
 
 export const LayoutRoot = styled.div`
   display: grid;
+
   /* Row 1: draggable TitleBar (44 px). Row 2: sidebar + main content. */
   grid-template: 44px 1fr / 240px 1fr;
   height: 100vh;
@@ -60,6 +61,7 @@ export const SidebarItem = styled.a`
   gap: ${({ theme }) => theme.space(2.5)};
   padding: ${({ theme }) => `${theme.space(2)} ${theme.space(2.5)}`};
   border-radius: ${({ theme }) => theme.radii.md};
+
   /* Sidebar body copy is one step larger than generic body text for
        navigation readability; 16px isn't in the token scale, inline on purpose. */
   font-size: 16px;
@@ -163,6 +165,6 @@ export const BackendStatusBanner = styled.div<{ $isOk: boolean }>`
   padding: ${({ theme }) => `${theme.space(2.5)} ${theme.space(5)}`};
   font-size: ${({ theme }) => theme.font.size.sm};
   color: ${({ theme }) => theme.colors.warning};
-  background: rgba(245, 158, 11, 0.08);
-  border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+  background: rgb(245, 158, 11, 0.08);
+  border-bottom: 1px solid rgb(245, 158, 11, 0.3);
 `;

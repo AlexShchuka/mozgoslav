@@ -67,8 +67,18 @@ jobs:
         run: dotnet format backend/Mozgoslav.sln --verify-no-changes --no-restore --verbosity minimal
       - name: Build
         run: dotnet build backend/Mozgoslav.sln -maxcpucount:1 --no-restore -warnaserror
-      - name: Test
-        run: dotnet test backend/Mozgoslav.sln -maxcpucount:1 --no-build --nologo --verbosity normal
+      - name: Test (with coverage)
+        run: dotnet test backend/Mozgoslav.sln -maxcpucount:1 --no-build --nologo --verbosity normal --collect:"XPlat Code Coverage" --results-directory backend/coverage
+      - name: Upload backend coverage
+        if: runner.os == 'Linux' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage/
+          retention-days: 7
+      - name: OpenAPI schema in sync
+        if: runner.os == 'Linux'
+        run: git diff --exit-code backend/openapi.json || (echo "::error::backend/openapi.json out of sync with build output. Rebuild backend and commit the regenerated file."; exit 1)
 
   frontend:
     name: build / frontend (${{ matrix.os }})
@@ -94,10 +104,21 @@ jobs:
       - name: Knip (dead code / unused deps — advisory)
         continue-on-error: true
         run: cd frontend && npm run knip
+      - name: Stylelint
+        run: cd frontend && npm run check-styles
+      - name: Translation parity (ru.json vs en.json vs code)
+        run: cd frontend && npm run check-translations
       - name: Prettier (check)
         run: cd frontend && npx prettier --check "src/**/*.{ts,tsx,css}" "electron/**/*.ts"
-      - name: Test
-        run: cd frontend && npm test -- --watchAll=false
+      - name: Test (with coverage)
+        run: cd frontend && npm test -- --watchAll=false --coverage
+      - name: Upload frontend coverage
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          retention-days: 7
       - name: Build
         run: cd frontend && WATCHPACK_POLLING=true npm run build
 
@@ -127,6 +148,26 @@ jobs:
         run: cd python-sidecar && source .venv/bin/activate && black --check .
       - name: Pytest
         run: cd python-sidecar && source .venv/bin/activate && pytest
+
+  commitlint:
+    name: verify / commitlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - run: cd frontend && npm ci
+      - name: Lint commit messages in PR
+        if: github.event_name == 'pull_request'
+        run: cd frontend && npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
+      - name: Lint commit messages on push
+        if: github.event_name == 'push'
+        run: cd frontend && npx commitlint --from HEAD~1 --to HEAD
 
   native:
     name: build / native

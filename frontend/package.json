@@ -2,7 +2,7 @@
   "name": "mozgoslav",
   "version": "0.1.0",
   "private": true,
-  "description": "Mozgoslav \u2014 local desktop second brain for conversations",
+  "description": "Mozgoslav — local desktop second brain for conversations",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
@@ -15,7 +15,9 @@
     "plop": "plop",
     "build:helper:mac": "swift build -c release --package-path ../native/MozgoslavDictationHelper && chmod +x ../native/MozgoslavDictationHelper/.build/arm64-apple-macosx/release/mozgoslav-dictation-helper",
     "dist:mac": "bash ../scripts/fetch-bundle-models.sh && npm run build && npm run build:helper:mac && electron-builder --mac",
-    "knip": "knip"
+    "knip": "knip",
+    "check-styles": "stylelint \"src/**/*.{ts,tsx}\"",
+    "check-translations": "node scripts/check-translations.mjs"
   },
   "dependencies": {
     "axios": "1.15.2",
@@ -41,6 +43,8 @@
     "uiohook-napi": "1.5.5"
   },
   "devDependencies": {
+    "@commitlint/cli": "20.5.0",
+    "@commitlint/config-conventional": "20.5.0",
     "@eslint/js": "9.39.4",
     "@testing-library/dom": "10.4.1",
     "@testing-library/jest-dom": "6.9.1",
@@ -63,8 +67,11 @@
     "jest-environment-jsdom": "30.3.0",
     "knip": "6.6.2",
     "plop": "4.0.5",
+    "postcss-styled-syntax": "0.7.1",
     "prettier": "3.8.3",
     "redux-saga-test-plan": "4.0.6",
+    "stylelint": "17.9.0",
+    "stylelint-config-standard": "40.0.0",
     "ts-jest": "29.4.9",
     "typescript": "6.0.3",
     "vite": "7.3.2",

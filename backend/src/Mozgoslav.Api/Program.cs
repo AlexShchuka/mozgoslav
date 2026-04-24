@@ -312,12 +312,14 @@ try
     builder.Services.AddHostedService<SyncthingLifecycleService>();
 
     builder.Services.AddControllers();
+    builder.Services.AddOpenApi();
 
     var app = builder.Build();
 
     app.UseSerilogRequestLogging();
     app.UseCors(DevelopmentCorsPolicy);
 
+    app.MapOpenApi();
     app.MapControllers();
 
     app.MapHealthEndpoints();

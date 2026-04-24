@@ -1,0 +1,60 @@
+name: auto-style-fix
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  autofix:
+    if: >
+      github.event.pull_request.head.repo.full_name == github.repository
+      && !contains(github.event.pull_request.title, '[no-autofix]')
+      && !contains(github.event.head_commit.message, '[no-autofix]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Python formatters
+        run: pip install 'ruff==0.15.11' 'black==26.3.1'
+      - name: Frontend install
+        run: cd frontend && npm ci
+      - name: dotnet format whitespace
+        run: dotnet format whitespace backend/Mozgoslav.sln --verbosity minimal
+        continue-on-error: true
+      - name: prettier --write
+        run: cd frontend && npx prettier --write "src/**/*.{ts,tsx,css,md,json}" "electron/**/*.ts"
+        continue-on-error: true
+      - name: ruff --fix
+        run: cd python-sidecar && ruff check --fix .
+        continue-on-error: true
+      - name: black
+        run: cd python-sidecar && black .
+        continue-on-error: true
+      - name: Commit autofixes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "mozgoslav-autofix[bot]"
+            git config user.email "mozgoslav-autofix@users.noreply.github.com"
+            git add -A
+            git commit -m "style: apply auto-format fixes [no-autofix]"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          else
+            echo "no format drift"
+          fi

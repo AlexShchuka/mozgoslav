@@ -20,6 +20,11 @@ pre-commit:
       glob: "python-sidecar/**/*.py"
       run: cd python-sidecar && ruff check --fix {staged_files} && black {staged_files}
       stage_fixed: true
+    stylelint:
+      glob: "frontend/src/**/*.{ts,tsx}"
+      root: frontend
+      run: npx stylelint --fix {staged_files}
+      stage_fixed: true
     # gitleaks: block secrets (PAT / API keys / .env payload) from reaching the
     # commit. Scans only the staged slice so it stays sub-second. Skips quietly
     # if the binary is absent — `brew install gitleaks` to enable locally.
@@ -35,6 +40,11 @@ pre-commit:
 # secret scan across the whole push diff, in case something sneaked in via
 # --no-verify, commits amended outside lefthook, or branches pulled from
 # elsewhere.
+commit-msg:
+  commands:
+    commitlint:
+      run: cd frontend && npx commitlint --edit {1}
+
 pre-push:
   commands:
     gitleaks:

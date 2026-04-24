@@ -30,4 +30,22 @@ module.exports = {
     },
     moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json"],
     testPathIgnorePatterns: ["/node_modules/", "/dist/", "/dist-electron/", "/release/"],
+    collectCoverageFrom: [
+        "src/**/*.{ts,tsx}",
+        "!src/**/*.d.ts",
+        "!src/**/__tests__/**",
+        "!src/testUtils/**",
+        "!src/main.tsx",
+        "!src/i18n/**",
+    ],
+    coverageReporters: ["text-summary", "lcov"],
+    coverageDirectory: "coverage",
+    coverageThreshold: {
+        global: {
+            lines: 70,
+            statements: 70,
+            branches: 50,
+            functions: 62,
+        },
+    },
 };
