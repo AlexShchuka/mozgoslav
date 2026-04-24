@@ -7,17 +7,15 @@ namespace Mozgoslav.Tests.Integration;
 
 public abstract class IntegrationTestsBase : IDisposable
 {
-    private ApiFactory _factory = null!;
-
     public TestContext TestContext { get; set; } = null!;
 
-    protected ApiFactory Factory => _factory;
+    protected ApiFactory Factory { get; private set; } = null!;
 
     [TestInitialize]
-    public void BaseInit() => _factory = new ApiFactory();
+    public void BaseInit() => Factory = new ApiFactory();
 
     [TestCleanup]
-    public void BaseCleanup() => _factory.Dispose();
+    public void BaseCleanup() => Factory.Dispose();
 
     public void Dispose()
     {
@@ -29,14 +27,14 @@ public abstract class IntegrationTestsBase : IDisposable
     {
         if (disposing)
         {
-            _factory?.Dispose();
+            Factory.Dispose();
         }
     }
 
-    protected HttpClient CreateClient() => _factory.CreateClient();
+    protected HttpClient CreateClient() => Factory.CreateClient();
 
     protected T GetRequiredService<T>() where T : notnull
-        => _factory.Services.GetRequiredService<T>();
+        => Factory.Services.GetRequiredService<T>();
 
-    protected IServiceScope CreateScope() => _factory.Services.CreateScope();
+    protected IServiceScope CreateScope() => Factory.Services.CreateScope();
 }
