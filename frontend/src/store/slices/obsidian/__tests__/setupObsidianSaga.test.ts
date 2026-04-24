@@ -1,30 +1,21 @@
 import { expectSaga } from "redux-saga-test-plan";
-import * as matchers from "redux-saga-test-plan/matchers";
-import { throwError } from "redux-saga-test-plan/providers";
 
 import { notifyError, notifySuccess } from "../../notifications";
 import { setupObsidian, setupObsidianDone } from "../actions";
 import { obsidianReducer } from "../reducer";
 import { setupObsidianSaga } from "../saga/setupObsidianSaga";
-import type { ObsidianSetupReport } from "../types";
 
-jest.mock("../../../../api", () => {
-  const obsidianStub = {
-    applyLayout: jest.fn(),
-    bulkExport: jest.fn(),
-    setup: jest.fn(),
-  };
-  return {
-    apiFactory: { createObsidianApi: () => obsidianStub },
-    __obsidianStub: obsidianStub,
-  };
-});
+jest.mock("../../../../api/graphqlClient", () => ({
+  graphqlClient: { request: jest.fn() },
+  getGraphqlWsClient: jest.fn(() => ({
+    subscribe: jest.fn(() => () => {}),
+    dispose: jest.fn(),
+  })),
+}));
 
-const obsidianStub = (
-  jest.requireMock("../../../../api") as {
-    __obsidianStub: { applyLayout: jest.Mock; bulkExport: jest.Mock; setup: jest.Mock };
-  }
-).__obsidianStub;
+import { graphqlClient } from "../../../../api/graphqlClient";
+
+const mockedRequest = graphqlClient.request as jest.Mock;
 
 const dispatch = (action: unknown) => action as Parameters<typeof obsidianReducer>[1];
 
@@ -32,10 +23,15 @@ describe("setupObsidianSaga", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("emits notifySuccess + SETUP_OBSIDIAN_DONE on happy path", async () => {
-    const report: ObsidianSetupReport = { createdPaths: ["/a", "/b", "/c"] };
+    mockedRequest.mockResolvedValueOnce({
+      setupObsidian: {
+        errors: [],
+        report: { createdPaths: ["/a", "/b", "/c"] },
+      },
+    });
+
     const result = await expectSaga(setupObsidianSaga, setupObsidian("/tmp/vault"))
       .withReducer(obsidianReducer)
-      .provide([[matchers.call.fn(obsidianStub.setup), report]])
       .put(
         notifySuccess({
           messageKey: "obsidian.setupSuccess",
@@ -48,10 +44,33 @@ describe("setupObsidianSaga", () => {
     expect(result.storeState.isSetupInProgress).toBe(false);
   });
 
-  it("emits notifyError + SETUP_OBSIDIAN_DONE on throw", async () => {
+  it("emits notifyError + SETUP_OBSIDIAN_DONE on API error in payload", async () => {
+    mockedRequest.mockResolvedValueOnce({
+      setupObsidian: {
+        errors: [{ message: "vault not found" }],
+        report: null,
+      },
+    });
+
     const result = await expectSaga(setupObsidianSaga, setupObsidian("/tmp/vault"))
       .withReducer(obsidianReducer)
-      .provide([[matchers.call.fn(obsidianStub.setup), throwError(new Error("nope"))]])
+      .put(
+        notifyError({
+          messageKey: "errors.genericErrorWithMessage",
+          params: { message: "vault not found" },
+        })
+      )
+      .put(setupObsidianDone())
+      .run();
+
+    expect(result.storeState.isSetupInProgress).toBe(false);
+  });
+
+  it("emits notifyError + SETUP_OBSIDIAN_DONE on throw", async () => {
+    mockedRequest.mockRejectedValueOnce(new Error("nope"));
+
+    const result = await expectSaga(setupObsidianSaga, setupObsidian("/tmp/vault"))
+      .withReducer(obsidianReducer)
       .put(
         notifyError({
           messageKey: "errors.genericErrorWithMessage",

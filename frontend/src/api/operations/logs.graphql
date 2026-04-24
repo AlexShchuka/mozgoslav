@@ -1,0 +1,15 @@
+query QueryLogs {
+  logs {
+    fileName
+    sizeBytes
+    lastModifiedUtc
+  }
+}
+
+query QueryLogTail($file: String, $lines: Int!) {
+  logTail(file: $file, lines: $lines) {
+    file
+    lines
+    totalLines
+  }
+}
