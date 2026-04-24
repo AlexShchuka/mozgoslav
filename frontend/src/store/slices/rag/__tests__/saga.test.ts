@@ -1,8 +1,21 @@
 import { expectSaga } from "redux-saga-test-plan";
 
-import { askFailure, askPending, askQuestion, askSuccess } from "../actions";
+import {
+  askFailure,
+  askPending,
+  askQuestion,
+  askSuccess,
+  loadRagStatus,
+  loadRagStatusFailure,
+  loadRagStatusSuccess,
+  reindexRag,
+  reindexRagFailure,
+  reindexRagSuccess,
+} from "../actions";
 import { ragReducer } from "../reducer";
 import { askQuestionSaga } from "../saga";
+import { loadRagStatusSaga } from "../saga/loadRagStatusSaga";
+import { reindexRagSaga } from "../saga/reindexRagSaga";
 import type { RagMessage } from "../types";
 
 jest.mock("../../../../api/graphqlClient", () => ({
@@ -95,5 +108,114 @@ describe("rag saga — askQuestion", () => {
     const assistant = state.messages.find((m) => m.id === "a1")!;
     expect(assistant.state).toBe("error");
     expect(assistant.content).toBe("blown up");
+  });
+});
+
+describe("rag saga — loadRagStatus", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("puts LOAD_STATUS_SUCCESS with status on happy path", async () => {
+    mockedRequest.mockResolvedValueOnce({
+      ragStatus: { embeddedNotes: 10, chunks: 50 },
+    });
+
+    const result = await expectSaga(loadRagStatusSaga)
+      .withReducer(ragReducer)
+      .dispatch(loadRagStatus())
+      .run();
+
+    const storeState = result.storeState;
+    expect(storeState.status).toEqual({ embeddedNotes: 10, chunks: 50 });
+    expect(storeState.isLoadingStatus).toBe(false);
+  });
+
+  it("puts LOAD_STATUS_FAILURE and clears isLoadingStatus on error", async () => {
+    mockedRequest.mockRejectedValueOnce(new Error("timeout"));
+
+    const result = await expectSaga(loadRagStatusSaga)
+      .withReducer(ragReducer)
+      .dispatch(loadRagStatus())
+      .run();
+
+    const storeState = result.storeState;
+    expect(storeState.status).toBeNull();
+    expect(storeState.isLoadingStatus).toBe(false);
+  });
+
+  it("reducer — LOAD_RAG_STATUS sets isLoadingStatus true", () => {
+    const state = ragReducer(undefined, dispatch(loadRagStatus()));
+    expect(state.isLoadingStatus).toBe(true);
+  });
+
+  it("reducer — LOAD_RAG_STATUS_SUCCESS sets status and clears flag", () => {
+    const seeded = ragReducer(undefined, dispatch(loadRagStatus()));
+    const state = ragReducer(
+      seeded,
+      dispatch(loadRagStatusSuccess({ embeddedNotes: 5, chunks: 20 }))
+    );
+    expect(state.status).toEqual({ embeddedNotes: 5, chunks: 20 });
+    expect(state.isLoadingStatus).toBe(false);
+  });
+
+  it("reducer — LOAD_RAG_STATUS_FAILURE clears flag and preserves prior status", () => {
+    const withStatus = ragReducer(
+      undefined,
+      dispatch(loadRagStatusSuccess({ embeddedNotes: 5, chunks: 20 }))
+    );
+    const state = ragReducer(withStatus, dispatch(loadRagStatusFailure("err")));
+    expect(state.status).toEqual({ embeddedNotes: 5, chunks: 20 });
+    expect(state.isLoadingStatus).toBe(false);
+  });
+});
+
+describe("rag saga — reindexRag", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("puts REINDEX_SUCCESS and notifySuccess on happy path", async () => {
+    mockedRequest.mockResolvedValueOnce({
+      ragReindex: { embeddedNotes: 42, chunks: 200, errors: [] },
+    });
+
+    const result = await expectSaga(reindexRagSaga)
+      .withReducer(ragReducer)
+      .dispatch(reindexRag())
+      .run();
+
+    const storeState = result.storeState;
+    expect(storeState.isReindexing).toBe(false);
+    expect(storeState.lastReindexCount).toBe(42);
+  });
+
+  it("puts REINDEX_FAILURE and clears isReindexing on error", async () => {
+    mockedRequest.mockRejectedValueOnce(new Error("reindex failed"));
+
+    const result = await expectSaga(reindexRagSaga)
+      .withReducer(ragReducer)
+      .dispatch(reindexRag())
+      .run();
+
+    const storeState = result.storeState;
+    expect(storeState.isReindexing).toBe(false);
+    expect(storeState.lastReindexCount).toBeNull();
+  });
+
+  it("reducer — REINDEX_RAG sets isReindexing true", () => {
+    const state = ragReducer(undefined, dispatch(reindexRag()));
+    expect(state.isReindexing).toBe(true);
+  });
+
+  it("reducer — REINDEX_RAG_SUCCESS sets lastReindexCount and clears flag", () => {
+    const seeded = ragReducer(undefined, dispatch(reindexRag()));
+    const state = ragReducer(seeded, dispatch(reindexRagSuccess(77)));
+    expect(state.lastReindexCount).toBe(77);
+    expect(state.isReindexing).toBe(false);
+  });
+
+  it("reducer — REINDEX_RAG_FAILURE clears isReindexing without altering lastReindexCount", () => {
+    const withCount = ragReducer(undefined, dispatch(reindexRagSuccess(5)));
+    const seeded = ragReducer(withCount, dispatch(reindexRag()));
+    const state = ragReducer(seeded, dispatch(reindexRagFailure("boom")));
+    expect(state.isReindexing).toBe(false);
+    expect(state.lastReindexCount).toBe(5);
   });
 });

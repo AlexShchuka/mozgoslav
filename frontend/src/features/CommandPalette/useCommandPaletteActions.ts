@@ -1,20 +1,27 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
+import type { Action as ReduxAction, Dispatch } from "redux";
 import { Action, useRegisterActions } from "kbar";
-import { toast } from "react-toastify";
 
-import { graphqlClient } from "../../api/graphqlClient";
-import {
-  MutationCreateBackupDocument,
-  MutationRagReindexDocument,
-  QuerySettingsDocument,
-} from "../../api/gql/graphql";
+import { createBackup } from "../../store/slices/backups";
+import { loadSettings, selectSettings } from "../../store/slices/settings";
+import { reindexRag } from "../../store/slices/rag";
+import { notifyInfo } from "../../store/slices/notifications";
 import { ROUTES } from "../../constants/routes";
 
 export const useCommandPaletteActions = (): void => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const dispatch = useDispatch<Dispatch<ReduxAction>>();
+  const settings = useSelector(selectSettings);
+
+  useEffect(() => {
+    if (!settings) {
+      dispatch(loadSettings());
+    }
+  }, [dispatch, settings]);
 
   const actions = useMemo<Action[]>(() => {
     const navigation: Action[] = [
@@ -107,12 +114,7 @@ export const useCommandPaletteActions = (): void => {
         keywords: "reindex rag embeddings vector refresh",
         section: t("commandPalette.sections.quick"),
         perform: () => {
-          void graphqlClient
-            .request(MutationRagReindexDocument)
-            .then((data) =>
-              toast.success(t("rag.reindexedToast", { count: data.ragReindex.embeddedNotes }))
-            )
-            .catch((err) => toast.error(err instanceof Error ? err.message : String(err)));
+          dispatch(reindexRag());
         },
       },
       {
@@ -121,10 +123,7 @@ export const useCommandPaletteActions = (): void => {
         keywords: "backup create snapshot archive",
         section: t("commandPalette.sections.quick"),
         perform: () => {
-          void graphqlClient
-            .request(MutationCreateBackupDocument)
-            .then(() => toast.success(t("commandPalette.actions.backupStarted")))
-            .catch((err) => toast.error(err instanceof Error ? err.message : String(err)));
+          dispatch(createBackup());
         },
       },
       {
@@ -137,28 +136,22 @@ export const useCommandPaletteActions = (): void => {
             typeof window !== "undefined"
               ? (window as Window & typeof globalThis).mozgoslav
               : undefined;
-          void (async () => {
-            try {
-              const data = await graphqlClient.request(QuerySettingsDocument);
-              if (!data.settings.vaultPath) {
-                toast.info(t("commandPalette.actions.vaultMissing"));
-                return;
-              }
-              if (!bridge) {
-                toast.info(t("commandPalette.actions.bridgeMissing"));
-                return;
-              }
-              await bridge.openPath(data.settings.vaultPath);
-            } catch (err) {
-              toast.error(err instanceof Error ? err.message : String(err));
-            }
-          })();
+          if (!settings || !settings.vaultPath) {
+            dispatch(loadSettings());
+            dispatch(notifyInfo({ messageKey: "commandPalette.actions.vaultMissing" }));
+            return;
+          }
+          if (!bridge) {
+            dispatch(notifyInfo({ messageKey: "commandPalette.actions.bridgeMissing" }));
+            return;
+          }
+          void bridge.openPath(settings.vaultPath);
         },
       },
     ];
 
     return [...navigation, ...quick];
-  }, [navigate, t]);
+  }, [navigate, t, dispatch, settings]);
 
   useRegisterActions(actions, [actions]);
 };
