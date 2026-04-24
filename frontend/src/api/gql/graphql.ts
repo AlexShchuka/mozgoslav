@@ -103,6 +103,11 @@ export type BooleanOperationFilterInput = {
   neq?: InputMaybe<Scalars["Boolean"]["input"]>;
 };
 
+export type CancelJobPayload = {
+  __typename?: "CancelJobPayload";
+  errors: Array<IUserError>;
+};
+
 export enum CleanupLevel {
   Aggressive = "AGGRESSIVE",
   Light = "LIGHT",
@@ -163,6 +168,11 @@ export type DownloadModelPayload = {
   errors: Array<IUserError>;
 };
 
+export type EnqueueJobInput = {
+  profileId: Scalars["UUID"]["input"];
+  recordingId: Scalars["UUID"]["input"];
+};
+
 export type HealthStatus = {
   __typename?: "HealthStatus";
   status: Scalars["String"]["output"];
@@ -198,6 +208,52 @@ export type IntOperationFilterInput = {
   nin?: InputMaybe<Array<InputMaybe<Scalars["Int"]["input"]>>>;
   nlt?: InputMaybe<Scalars["Int"]["input"]>;
   nlte?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+export type JobPayload = {
+  __typename?: "JobPayload";
+  errors: Array<IUserError>;
+  job?: Maybe<ProcessingJob>;
+};
+
+export enum JobStatus {
+  Cancelled = "CANCELLED",
+  Correcting = "CORRECTING",
+  Done = "DONE",
+  Exporting = "EXPORTING",
+  Failed = "FAILED",
+  Queued = "QUEUED",
+  Summarizing = "SUMMARIZING",
+  Transcribing = "TRANSCRIBING",
+}
+
+export type JobStatusOperationFilterInput = {
+  eq?: InputMaybe<JobStatus>;
+  in?: InputMaybe<Array<JobStatus>>;
+  neq?: InputMaybe<JobStatus>;
+  nin?: InputMaybe<Array<JobStatus>>;
+};
+
+/** A connection to a list of items. */
+export type JobsConnection = {
+  __typename?: "JobsConnection";
+  /** A list of edges. */
+  edges?: Maybe<Array<JobsEdge>>;
+  /** A flattened list of the nodes. */
+  nodes?: Maybe<Array<ProcessingJob>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars["Int"]["output"];
+};
+
+/** An edge in a connection. */
+export type JobsEdge = {
+  __typename?: "JobsEdge";
+  /** A cursor for use in pagination. */
+  cursor: Scalars["String"]["output"];
+  /** The item at the end of the edge. */
+  node: ProcessingJob;
 };
 
 export type KeyValuePairOfStringAndString = {
@@ -276,10 +332,12 @@ export enum ModelTier {
 
 export type MutationType = {
   __typename?: "MutationType";
+  cancelJob: CancelJobPayload;
   createProfile: ProfilePayload;
   deleteProfile: ProfilePayload;
   downloadModel: DownloadModelPayload;
   duplicateProfile: ProfilePayload;
+  enqueueJob: JobPayload;
   exportNote: NotePayload;
   importRecordings: ImportRecordingsPayload;
   reprocessRecording: RecordingPayload;
@@ -288,6 +346,10 @@ export type MutationType = {
   updateProfile: ProfilePayload;
   updateSettings: UpdateSettingsPayload;
   uploadRecordings: ImportRecordingsPayload;
+};
+
+export type MutationTypeCancelJobArgs = {
+  id: Scalars["UUID"]["input"];
 };
 
 export type MutationTypeCreateProfileArgs = {
@@ -304,6 +366,10 @@ export type MutationTypeDownloadModelArgs = {
 
 export type MutationTypeDuplicateProfileArgs = {
   id: Scalars["UUID"]["input"];
+};
+
+export type MutationTypeEnqueueJobArgs = {
+  input: EnqueueJobInput;
 };
 
 export type MutationTypeExportNoteArgs = {
@@ -475,6 +541,54 @@ export type ProcessedNoteSortInput = {
   version?: InputMaybe<SortEnumType>;
 };
 
+export type ProcessingJob = Node & {
+  __typename?: "ProcessingJob";
+  cancelRequested: Scalars["Boolean"]["output"];
+  createdAt: Scalars["DateTime"]["output"];
+  currentStep?: Maybe<Scalars["String"]["output"]>;
+  errorMessage?: Maybe<Scalars["String"]["output"]>;
+  finishedAt?: Maybe<Scalars["DateTime"]["output"]>;
+  id: Scalars["ID"]["output"];
+  profileId: Scalars["UUID"]["output"];
+  progress: Scalars["Int"]["output"];
+  recordingId: Scalars["UUID"]["output"];
+  startedAt?: Maybe<Scalars["DateTime"]["output"]>;
+  status: JobStatus;
+  userHint?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type ProcessingJobFilterInput = {
+  and?: InputMaybe<Array<ProcessingJobFilterInput>>;
+  cancelRequested?: InputMaybe<BooleanOperationFilterInput>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  currentStep?: InputMaybe<StringOperationFilterInput>;
+  errorMessage?: InputMaybe<StringOperationFilterInput>;
+  finishedAt?: InputMaybe<DateTimeOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  or?: InputMaybe<Array<ProcessingJobFilterInput>>;
+  profileId?: InputMaybe<UuidOperationFilterInput>;
+  progress?: InputMaybe<IntOperationFilterInput>;
+  recordingId?: InputMaybe<UuidOperationFilterInput>;
+  startedAt?: InputMaybe<DateTimeOperationFilterInput>;
+  status?: InputMaybe<JobStatusOperationFilterInput>;
+  userHint?: InputMaybe<StringOperationFilterInput>;
+};
+
+export type ProcessingJobSortInput = {
+  cancelRequested?: InputMaybe<SortEnumType>;
+  createdAt?: InputMaybe<SortEnumType>;
+  currentStep?: InputMaybe<SortEnumType>;
+  errorMessage?: InputMaybe<SortEnumType>;
+  finishedAt?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  profileId?: InputMaybe<SortEnumType>;
+  progress?: InputMaybe<SortEnumType>;
+  recordingId?: InputMaybe<SortEnumType>;
+  startedAt?: InputMaybe<SortEnumType>;
+  status?: InputMaybe<SortEnumType>;
+  userHint?: InputMaybe<SortEnumType>;
+};
+
 export type Profile = Node & {
   __typename?: "Profile";
   autoTags: Array<Scalars["String"]["output"]>;
@@ -499,7 +613,10 @@ export type ProfilePayload = {
 
 export type QueryType = {
   __typename?: "QueryType";
+  activeJobs: Array<ProcessingJob>;
   health: HealthStatus;
+  job?: Maybe<ProcessingJob>;
+  jobs?: Maybe<JobsConnection>;
   llmHealth: LlmHealthStatus;
   meta: MetaInfo;
   models: Array<ModelEntry>;
@@ -514,6 +631,19 @@ export type QueryType = {
   recording?: Maybe<Recording>;
   recordings?: Maybe<RecordingsConnection>;
   settings: AppSettingsDto;
+};
+
+export type QueryTypeJobArgs = {
+  id: Scalars["UUID"]["input"];
+};
+
+export type QueryTypeJobsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
+  order?: InputMaybe<Array<ProcessingJobSortInput>>;
+  where?: InputMaybe<ProcessingJobFilterInput>;
 };
 
 export type QueryTypeNodeArgs = {
@@ -683,6 +813,7 @@ export type StringOperationFilterInput = {
 
 export type SubscriptionType = {
   __typename?: "SubscriptionType";
+  jobProgress: ProcessingJob;
   modelDownloadProgress: ModelDownloadProgressEvent;
 };
 
@@ -805,6 +936,87 @@ export type QueryMetaQuery = {
     assemblyVersion: string;
     commit: string;
     buildDate: string;
+  };
+};
+
+export type QueryActiveJobsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QueryActiveJobsQuery = {
+  __typename?: "QueryType";
+  activeJobs: Array<{
+    __typename?: "ProcessingJob";
+    id: string;
+    recordingId: string;
+    profileId: string;
+    status: JobStatus;
+    progress: number;
+    currentStep?: string | null;
+    errorMessage?: string | null;
+    userHint?: string | null;
+    createdAt: string;
+    startedAt?: string | null;
+    finishedAt?: string | null;
+  }>;
+};
+
+export type MutationEnqueueJobMutationVariables = Exact<{
+  input: EnqueueJobInput;
+}>;
+
+export type MutationEnqueueJobMutation = {
+  __typename?: "MutationType";
+  enqueueJob: {
+    __typename?: "JobPayload";
+    job?: {
+      __typename?: "ProcessingJob";
+      id: string;
+      recordingId: string;
+      profileId: string;
+      status: JobStatus;
+    } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationCancelJobMutationVariables = Exact<{
+  id: Scalars["UUID"]["input"];
+}>;
+
+export type MutationCancelJobMutation = {
+  __typename?: "MutationType";
+  cancelJob: {
+    __typename?: "CancelJobPayload";
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type SubscriptionJobProgressSubscriptionVariables = Exact<{ [key: string]: never }>;
+
+export type SubscriptionJobProgressSubscription = {
+  __typename?: "SubscriptionType";
+  jobProgress: {
+    __typename?: "ProcessingJob";
+    id: string;
+    recordingId: string;
+    profileId: string;
+    status: JobStatus;
+    progress: number;
+    currentStep?: string | null;
+    errorMessage?: string | null;
+    userHint?: string | null;
+    createdAt: string;
+    startedAt?: string | null;
+    finishedAt?: string | null;
   };
 };
 
@@ -1452,6 +1664,196 @@ export const QueryMetaDocument = {
     },
   ],
 } as unknown as DocumentNode<QueryMetaQuery, QueryMetaQueryVariables>;
+export const QueryActiveJobsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryActiveJobs" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "activeJobs" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "recordingId" } },
+                { kind: "Field", name: { kind: "Name", value: "profileId" } },
+                { kind: "Field", name: { kind: "Name", value: "status" } },
+                { kind: "Field", name: { kind: "Name", value: "progress" } },
+                { kind: "Field", name: { kind: "Name", value: "currentStep" } },
+                { kind: "Field", name: { kind: "Name", value: "errorMessage" } },
+                { kind: "Field", name: { kind: "Name", value: "userHint" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+                { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryActiveJobsQuery, QueryActiveJobsQueryVariables>;
+export const MutationEnqueueJobDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationEnqueueJob" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "input" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "EnqueueJobInput" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "enqueueJob" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: { kind: "Variable", name: { kind: "Name", value: "input" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "job" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "recordingId" } },
+                      { kind: "Field", name: { kind: "Name", value: "profileId" } },
+                      { kind: "Field", name: { kind: "Name", value: "status" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationEnqueueJobMutation, MutationEnqueueJobMutationVariables>;
+export const MutationCancelJobDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationCancelJob" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "cancelJob" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationCancelJobMutation, MutationCancelJobMutationVariables>;
+export const SubscriptionJobProgressDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "subscription",
+      name: { kind: "Name", value: "SubscriptionJobProgress" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "jobProgress" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "recordingId" } },
+                { kind: "Field", name: { kind: "Name", value: "profileId" } },
+                { kind: "Field", name: { kind: "Name", value: "status" } },
+                { kind: "Field", name: { kind: "Name", value: "progress" } },
+                { kind: "Field", name: { kind: "Name", value: "currentStep" } },
+                { kind: "Field", name: { kind: "Name", value: "errorMessage" } },
+                { kind: "Field", name: { kind: "Name", value: "userHint" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+                { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  SubscriptionJobProgressSubscription,
+  SubscriptionJobProgressSubscriptionVariables
+>;
 export const QueryModelsDocument = {
   kind: "Document",
   definitions: [

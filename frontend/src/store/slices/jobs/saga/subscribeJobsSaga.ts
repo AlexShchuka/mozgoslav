@@ -1,10 +1,11 @@
-import { eventChannel, type EventChannel, type Task } from "redux-saga";
-import { call, cancel, cancelled, fork, put, take, takeLatest } from "redux-saga/effects";
+import { cancel, cancelled, fork, put, take, takeLatest } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
+import type { Task, EventChannel } from "redux-saga";
 
-import { apiFactory } from "../../../../api";
-import { API_ENDPOINTS, BACKEND_URL } from "../../../../constants/api";
-import type { ProcessingJob } from "../../../../domain/ProcessingJob";
+import type { QueryActiveJobsQuery, SubscriptionJobProgressSubscription } from "../../../../api/gql/graphql";
+import { QueryActiveJobsDocument, SubscriptionJobProgressDocument } from "../../../../api/gql/graphql";
+import { gqlRequest, gqlSubscriptionChannel } from "../../../saga/graphql";
+import { mapGqlJob } from "../jobMapper";
 import {
   SUBSCRIBE_JOBS,
   UNSUBSCRIBE_JOBS,
@@ -15,38 +16,14 @@ import {
   jobsStreamOpened,
 } from "../actions";
 
-type EventSourceFactory = (url: string) => EventSource;
-
-const defaultEventSourceFactory: EventSourceFactory = (url) => new EventSource(url);
-
-let eventSourceFactory: EventSourceFactory = defaultEventSourceFactory;
-
-export const __setEventSourceFactoryForTests = (factory: EventSourceFactory | null): void => {
-  eventSourceFactory = factory ?? defaultEventSourceFactory;
-};
-
-export const createJobsChannel = (): EventChannel<ProcessingJob> =>
-  eventChannel<ProcessingJob>((emit) => {
-    const url = `${BACKEND_URL}${API_ENDPOINTS.jobsStream}`;
-    const source = eventSourceFactory(url);
-    const onMessage = (event: MessageEvent): void => {
-      try {
-        emit(JSON.parse(event.data) as ProcessingJob);
-      } catch {}
-    };
-    source.addEventListener("job", onMessage as EventListener);
-    return () => {
-      source.removeEventListener("job", onMessage as EventListener);
-      source.close();
-    };
-  });
-
-function* consumeChannel(channel: EventChannel<ProcessingJob>): SagaIterator {
+function* consumeChannel(
+  channel: EventChannel<SubscriptionJobProgressSubscription>
+): SagaIterator {
   try {
     yield put(jobsStreamOpened());
     while (true) {
-      const job: ProcessingJob = yield take(channel);
-      yield put(jobUpdated(job));
+      const data: SubscriptionJobProgressSubscription = yield take(channel);
+      yield put(jobUpdated(mapGqlJob(data.jobProgress)));
     }
   } finally {
     if (yield cancelled()) {
@@ -57,15 +34,18 @@ function* consumeChannel(channel: EventChannel<ProcessingJob>): SagaIterator {
 }
 
 export function* subscribeJobsSaga(): SagaIterator {
-  const api = apiFactory.createJobsApi();
   try {
-    const seed: ProcessingJob[] = yield call([api, api.listActive]);
-    yield put(jobsSeeded(seed));
+    const result = (yield* gqlRequest(QueryActiveJobsDocument, {})) as QueryActiveJobsQuery;
+    const jobs = (result.activeJobs ?? []).map(mapGqlJob);
+    yield put(jobsSeeded(jobs));
   } catch (error) {
     yield put(jobsSeedFailed(error instanceof Error ? error.message : String(error)));
   }
 
-  const channel: EventChannel<ProcessingJob> = yield call(createJobsChannel);
+  const channel: EventChannel<SubscriptionJobProgressSubscription> = gqlSubscriptionChannel(
+    SubscriptionJobProgressDocument,
+    {}
+  );
   const consumer: Task = yield fork(consumeChannel, channel);
 
   try {

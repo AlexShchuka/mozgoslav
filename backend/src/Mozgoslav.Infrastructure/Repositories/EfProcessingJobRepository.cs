@@ -46,6 +46,11 @@ public sealed class EfProcessingJobRepository : IProcessingJobRepository
             .OrderByDescending(j => j.CreatedAt)
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<ProcessingJob>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken ct) =>
+        await _db.ProcessingJobs.AsNoTracking()
+            .Where(j => ids.Contains(j.Id))
+            .ToListAsync(ct);
+
     public async Task<IReadOnlyList<ProcessingJob>> GetByRecordingIdAsync(Guid recordingId, CancellationToken ct) =>
         await _db.ProcessingJobs.AsNoTracking()
             .Where(j => j.RecordingId == recordingId)

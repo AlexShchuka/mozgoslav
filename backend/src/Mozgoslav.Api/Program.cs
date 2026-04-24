@@ -13,8 +13,9 @@ using Microsoft.Extensions.Logging;
 
 using Mozgoslav.Api.Endpoints;
 using Mozgoslav.Api.GraphQL;
-using Mozgoslav.Api.Services;
+using Mozgoslav.Api.GraphQL.Jobs;
 using Mozgoslav.Api.GraphQL.SchemaExport;
+using Mozgoslav.Api.Services;
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Obsidian;
 using Mozgoslav.Application.Rag;
@@ -315,6 +316,7 @@ try
     builder.Services.AddHostedService<ProcessingJobRehydrator>();
     builder.Services.AddHostedService<SyncthingVersioningVerifier>();
     builder.Services.AddHostedService<SyncthingLifecycleService>();
+    builder.Services.AddHostedService<JobProgressBridge>();
 
     builder.Services.AddMozgoslavGraphQL(builder.Environment);
 

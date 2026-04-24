@@ -57,6 +57,10 @@ type AppSettingsDto {
   obsidianFeatureEnabled: Boolean!
 }
 
+type CancelJobPayload {
+  errors: [IUserError!]!
+}
+
 type ConflictError implements IUserError {
   code: String!
   message: String!
@@ -75,6 +79,31 @@ type HealthStatus {
 type ImportRecordingsPayload {
   recordings: [Recording!]!
   errors: [IUserError!]!
+}
+
+type JobPayload {
+  job: ProcessingJob
+  errors: [IUserError!]!
+}
+
+"A connection to a list of items."
+type JobsConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [JobsEdge!]
+  "A flattened list of the nodes."
+  nodes: [ProcessingJob!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type JobsEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: ProcessingJob!
 }
 
 type KeyValuePairOfStringAndString {
@@ -127,6 +156,8 @@ type MutationType {
   startRecording(outputPath: String): StartRecordingPayload! @cost(weight: "10")
   stopRecording(sessionId: String!): StopRecordingPayload! @cost(weight: "10")
   exportNote(id: UUID!): NotePayload! @cost(weight: "10")
+  enqueueJob(input: EnqueueJobInput!): JobPayload! @cost(weight: "10")
+  cancelJob(id: UUID!): CancelJobPayload! @cost(weight: "10")
 }
 
 type NotFoundError implements IUserError {
@@ -197,6 +228,21 @@ type ProcessedNote implements Node {
   createdAt: DateTime!
 }
 
+type ProcessingJob implements Node {
+  id: ID!
+  recordingId: UUID!
+  profileId: UUID!
+  status: JobStatus!
+  progress: Int!
+  currentStep: String
+  errorMessage: String
+  userHint: String
+  createdAt: DateTime!
+  startedAt: DateTime
+  finishedAt: DateTime
+  cancelRequested: Boolean!
+}
+
 type Profile implements Node {
   id: ID!
   name: String!
@@ -233,6 +279,9 @@ type QueryType {
   recording(id: UUID!): Recording @cost(weight: "10")
   notes("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: ProcessedNoteFilterInput @cost(weight: "10") order: [ProcessedNoteSortInput!] @cost(weight: "10")): NotesConnection @listSize(assumedSize: 200, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 25, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
   note(id: UUID!): ProcessedNote @cost(weight: "10")
+  jobs("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: ProcessingJobFilterInput @cost(weight: "10") order: [ProcessingJobSortInput!] @cost(weight: "10")): JobsConnection @listSize(assumedSize: 200, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 25, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  activeJobs: [ProcessingJob!]! @cost(weight: "10")
+  job(id: UUID!): ProcessingJob @cost(weight: "10")
 }
 
 type Recording implements Node {
@@ -286,6 +335,7 @@ type StopRecordingPayload {
 
 type SubscriptionType {
   modelDownloadProgress(downloadId: String!): ModelDownloadProgressEvent!
+  jobProgress: ProcessingJob!
 }
 
 type UnavailableError implements IUserError {
@@ -358,6 +408,11 @@ input DateTimeOperationFilterInput {
   nlte: DateTime @cost(weight: "10")
 }
 
+input EnqueueJobInput {
+  recordingId: UUID!
+  profileId: UUID!
+}
+
 input ImportRecordingsInput {
   filePaths: [String!]!
   profileId: UUID
@@ -376,6 +431,13 @@ input IntOperationFilterInput {
   nlt: Int @cost(weight: "10")
   lte: Int @cost(weight: "10")
   nlte: Int @cost(weight: "10")
+}
+
+input JobStatusOperationFilterInput {
+  eq: JobStatus @cost(weight: "10")
+  neq: JobStatus @cost(weight: "10")
+  in: [JobStatus!] @cost(weight: "10")
+  nin: [JobStatus!] @cost(weight: "10")
 }
 
 input KeyValuePairOfStringAndStringInput {
@@ -446,6 +508,38 @@ input ProcessedNoteSortInput {
   exportedToVault: SortEnumType @cost(weight: "10")
   vaultPath: SortEnumType @cost(weight: "10")
   createdAt: SortEnumType @cost(weight: "10")
+}
+
+input ProcessingJobFilterInput {
+  and: [ProcessingJobFilterInput!]
+  or: [ProcessingJobFilterInput!]
+  id: UuidOperationFilterInput
+  recordingId: UuidOperationFilterInput
+  profileId: UuidOperationFilterInput
+  status: JobStatusOperationFilterInput
+  progress: IntOperationFilterInput
+  currentStep: StringOperationFilterInput
+  errorMessage: StringOperationFilterInput
+  userHint: StringOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+  startedAt: DateTimeOperationFilterInput
+  finishedAt: DateTimeOperationFilterInput
+  cancelRequested: BooleanOperationFilterInput
+}
+
+input ProcessingJobSortInput {
+  id: SortEnumType @cost(weight: "10")
+  recordingId: SortEnumType @cost(weight: "10")
+  profileId: SortEnumType @cost(weight: "10")
+  status: SortEnumType @cost(weight: "10")
+  progress: SortEnumType @cost(weight: "10")
+  currentStep: SortEnumType @cost(weight: "10")
+  errorMessage: SortEnumType @cost(weight: "10")
+  userHint: SortEnumType @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+  startedAt: SortEnumType @cost(weight: "10")
+  finishedAt: SortEnumType @cost(weight: "10")
+  cancelRequested: SortEnumType @cost(weight: "10")
 }
 
 input RecordingFilterInput {
@@ -598,6 +692,17 @@ enum ConversationType {
   IDEA
   PERSONAL
   OTHER
+}
+
+enum JobStatus {
+  QUEUED
+  TRANSCRIBING
+  CORRECTING
+  SUMMARIZING
+  EXPORTING
+  DONE
+  FAILED
+  CANCELLED
 }
 
 enum ModelKind {

@@ -3,6 +3,7 @@ using HotChocolate.Execution.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mozgoslav.Api.GraphQL.Health;
+using Mozgoslav.Api.GraphQL.Jobs;
 using Mozgoslav.Api.GraphQL.Models;
 using Mozgoslav.Api.GraphQL.Notes;
 using Mozgoslav.Api.GraphQL.Profiles;
@@ -23,6 +24,7 @@ internal static class QueryRegistration
             .AddTypeExtension<ProfileQueryType>()
             .AddTypeExtension<ModelQueryType>()
             .AddTypeExtension<RecordingQueryType>()
-            .AddTypeExtension<NoteQueryType>();
+            .AddTypeExtension<NoteQueryType>()
+            .AddTypeExtension<JobQueryType>();
     }
 }

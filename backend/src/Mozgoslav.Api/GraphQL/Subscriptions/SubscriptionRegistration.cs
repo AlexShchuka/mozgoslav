@@ -2,6 +2,7 @@ using HotChocolate.Execution.Configuration;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Mozgoslav.Api.GraphQL.Jobs;
 using Mozgoslav.Api.GraphQL.Models;
 
 namespace Mozgoslav.Api.GraphQL.Subscriptions;
@@ -13,6 +14,7 @@ internal static class SubscriptionRegistration
     {
         return builder
             .AddSubscriptionType<SubscriptionType>()
-            .AddTypeExtension<ModelSubscriptionType>();
+            .AddTypeExtension<ModelSubscriptionType>()
+            .AddTypeExtension<JobSubscriptionType>();
     }
 }

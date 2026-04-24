@@ -1,0 +1,55 @@
+query QueryActiveJobs {
+  activeJobs {
+    id
+    recordingId
+    profileId
+    status
+    progress
+    currentStep
+    errorMessage
+    userHint
+    createdAt
+    startedAt
+    finishedAt
+  }
+}
+
+mutation MutationEnqueueJob($input: EnqueueJobInput!) {
+  enqueueJob(input: $input) {
+    job {
+      id
+      recordingId
+      profileId
+      status
+    }
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationCancelJob($id: UUID!) {
+  cancelJob(id: $id) {
+    errors {
+      code
+      message
+    }
+  }
+}
+
+subscription SubscriptionJobProgress {
+  jobProgress {
+    id
+    recordingId
+    profileId
+    status
+    progress
+    currentStep
+    errorMessage
+    userHint
+    createdAt
+    startedAt
+    finishedAt
+  }
+}
