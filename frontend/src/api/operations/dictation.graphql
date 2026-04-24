@@ -15,8 +15,8 @@ query QueryDictationStatus($sessionId: UUID!) {
   }
 }
 
-mutation MutationDictationStart($source: String) {
-  dictationStart(source: $source) {
+mutation MutationDictationStart($source: String, $recordingId: UUID) {
+  dictationStart(source: $source, recordingId: $recordingId) {
     sessionId
     source
     errors {

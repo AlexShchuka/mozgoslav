@@ -81,6 +81,7 @@ public sealed class DictationSessionSourceTests
             Settings,
             PerAppProfiles,
             PcmStream,
+            Substitute.For<IRecordingPartialsNotifier>(),
             NullLogger<DictationSessionManager>.Instance);
     }
 

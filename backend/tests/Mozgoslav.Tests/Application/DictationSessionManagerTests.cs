@@ -453,6 +453,7 @@ public sealed class DictationSessionManagerTests
             Settings,
             PerAppProfiles,
             PcmStream,
+            Substitute.For<IRecordingPartialsNotifier>(),
             NullLogger<DictationSessionManager>.Instance);
 
         public FakeStreamingService ArrangeEmptyStream()

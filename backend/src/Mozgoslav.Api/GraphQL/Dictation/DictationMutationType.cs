@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Mozgoslav.Api.GraphQL.Errors;
 using Mozgoslav.Api.GraphQL.Mutations;
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Api.GraphQL.Dictation;
 
@@ -20,6 +21,7 @@ public sealed class DictationMutationType
 {
     public async Task<DictationStartPayload> DictationStart(
         string? source,
+        Guid? recordingId,
         [Service] IDictationSessionManager manager,
         [Service] ITopicEventSender sender,
         [Service] ILogger<DictationMutationType> logger,
@@ -27,8 +29,12 @@ public sealed class DictationMutationType
     {
         try
         {
-            var session = manager.Start(source);
-            _ = ForwardPartialsAsync(session.Id, manager, sender, logger, ct);
+            var kind = recordingId.HasValue ? DictationSessionKind.Longform : DictationSessionKind.Dictation;
+            var session = manager.Start(source, kind, recordingId);
+            if (kind == DictationSessionKind.Dictation)
+            {
+                _ = ForwardPartialsAsync(session.Id, manager, sender, logger, ct);
+            }
             return new DictationStartPayload(session.Id, session.Source, []);
         }
         catch (InvalidOperationException ex)
