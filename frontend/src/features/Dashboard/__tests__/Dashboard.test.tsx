@@ -14,7 +14,8 @@ type SubscriptionSink<T> = {
 };
 
 let audioDeviceSink: SubscriptionSink<unknown> | null = null;
-let mockRequest: jest.Mock;
+// eslint-disable-next-line no-var -- jest.mock factories run before `let` is initialised; `var` keeps hoisting semantics
+var mockRequest: jest.Mock;
 
 jest.mock("../../../api/graphqlClient", () => {
   mockRequest = jest.fn();
