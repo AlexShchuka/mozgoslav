@@ -14,4 +14,5 @@ public interface IProfileRepository
     Task<Profile?> TryGetDefaultAsync(CancellationToken ct);
     Task<IReadOnlyList<Profile>> GetAllAsync(CancellationToken ct);
     Task UpdateAsync(Profile profile, CancellationToken ct);
+    Task DeleteAsync(Guid id, CancellationToken ct);
 }

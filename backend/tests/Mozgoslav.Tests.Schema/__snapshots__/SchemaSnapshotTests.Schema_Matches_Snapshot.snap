@@ -9,6 +9,11 @@ interface IUserError {
   message: String!
 }
 
+"The node interface is implemented by entities that have a global unique identifier."
+interface Node {
+  id: ID!
+}
+
 type AppSettingsDto {
   vaultPath: String!
   llmProvider: String!
@@ -74,6 +79,10 @@ type MetaInfo {
 
 type MutationType {
   updateSettings(input: UpdateSettingsInput!): UpdateSettingsPayload! @cost(weight: "10")
+  createProfile(input: CreateProfileInput!): ProfilePayload! @cost(weight: "10")
+  updateProfile(id: UUID! input: CreateProfileInput!): ProfilePayload! @cost(weight: "10")
+  deleteProfile(id: UUID!): ProfilePayload! @cost(weight: "10")
+  duplicateProfile(id: UUID!): ProfilePayload! @cost(weight: "10")
 }
 
 type NotFoundError implements IUserError {
@@ -83,11 +92,37 @@ type NotFoundError implements IUserError {
   resourceId: String!
 }
 
+type Profile implements Node {
+  id: ID!
+  name: String!
+  systemPrompt: String!
+  transcriptionPromptOverride: String!
+  outputTemplate: String!
+  cleanupLevel: CleanupLevel!
+  exportFolder: String!
+  autoTags: [String!]!
+  isDefault: Boolean!
+  isBuiltIn: Boolean!
+  glossary: [String!]!
+  llmCorrectionEnabled: Boolean!
+}
+
+type ProfilePayload {
+  profile: Profile
+  errors: [IUserError!]!
+}
+
 type QueryType {
+  "Fetches an object given its ID."
+  node("ID of the object." id: ID!): Node @cost(weight: "10")
+  "Lookup nodes by a list of IDs."
+  nodes("The list of node IDs." ids: [ID!]!): [Node]! @cost(weight: "10")
   health: HealthStatus!
   llmHealth: LlmHealthStatus! @cost(weight: "10")
   meta: MetaInfo!
   settings: AppSettingsDto! @cost(weight: "10")
+  profiles: [Profile!]! @cost(weight: "10")
+  profile(id: UUID!): Profile @cost(weight: "10")
 }
 
 type SubscriptionType {
@@ -108,6 +143,18 @@ type ValidationError implements IUserError {
   code: String!
   message: String!
   field: String!
+}
+
+input CreateProfileInput {
+  name: String!
+  systemPrompt: String!
+  outputTemplate: String!
+  cleanupLevel: CleanupLevel!
+  exportFolder: String!
+  autoTags: [String!]!
+  glossary: [String!]!
+  llmCorrectionEnabled: Boolean!
+  isDefault: Boolean!
 }
 
 input KeyValuePairOfStringAndStringInput {
@@ -152,5 +199,16 @@ input UpdateSettingsInput {
   obsidianFeatureEnabled: Boolean! = false
 }
 
+enum CleanupLevel {
+  NONE
+  LIGHT
+  AGGRESSIVE
+}
+
 "The purpose of the `cost` directive is to define a `weight` for GraphQL types, fields, and arguments. Static analysis can use these weights when calculating the overall cost of a query or response."
 directive @cost("The `weight` argument defines what value to add to the overall cost for every appearance, or possible appearance, of a type, field, argument, etc." weight: String!) on SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM | INPUT_FIELD_DEFINITION
+
+"The `@specifiedBy` directive is used within the type system definition language to provide a URL for specifying the behavior of custom scalar definitions."
+directive @specifiedBy("The specifiedBy URL points to a human-readable specification. This field will only read a result for scalar types." url: String!) on SCALAR
+
+scalar UUID @specifiedBy(url: "https:\/\/tools.ietf.org\/html\/rfc4122")

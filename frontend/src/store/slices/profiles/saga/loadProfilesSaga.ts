@@ -1,15 +1,16 @@
-import { call, put, takeLatest } from "redux-saga/effects";
+import { put, takeLatest } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 
-import { apiFactory } from "../../../../api";
-import type { Profile } from "../../../../domain/Profile";
+import type { QueryProfilesQuery } from "../../../../api/gql/graphql";
+import { QueryProfilesDocument } from "../../../../api/gql/graphql";
+import { gqlRequest } from "../../../saga/graphql";
 import { LOAD_PROFILES, loadProfilesFailure, loadProfilesSuccess } from "../actions";
+import { mapGqlProfile } from "./profileMapper";
 
 export function* loadProfilesSaga(): SagaIterator {
-  const profilesApi = apiFactory.createProfilesApi();
   try {
-    const profiles: Profile[] = yield call([profilesApi, profilesApi.list]);
-    yield put(loadProfilesSuccess(profiles));
+    const result = (yield* gqlRequest(QueryProfilesDocument, {})) as QueryProfilesQuery;
+    yield put(loadProfilesSuccess(result.profiles.map(mapGqlProfile)));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     yield put(loadProfilesFailure(message));

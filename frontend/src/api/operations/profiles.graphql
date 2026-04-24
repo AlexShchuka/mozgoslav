@@ -1,0 +1,97 @@
+query QueryProfiles {
+  profiles {
+    id
+    name
+    systemPrompt
+    transcriptionPromptOverride
+    outputTemplate
+    cleanupLevel
+    exportFolder
+    autoTags
+    isDefault
+    isBuiltIn
+    glossary
+    llmCorrectionEnabled
+  }
+}
+
+mutation MutationCreateProfile($input: CreateProfileInput!) {
+  createProfile(input: $input) {
+    profile {
+      id
+      name
+      systemPrompt
+      transcriptionPromptOverride
+      outputTemplate
+      cleanupLevel
+      exportFolder
+      autoTags
+      isDefault
+      isBuiltIn
+      glossary
+      llmCorrectionEnabled
+    }
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationUpdateProfile($id: UUID! $input: CreateProfileInput!) {
+  updateProfile(id: $id input: $input) {
+    profile {
+      id
+      name
+      systemPrompt
+      transcriptionPromptOverride
+      outputTemplate
+      cleanupLevel
+      exportFolder
+      autoTags
+      isDefault
+      isBuiltIn
+      glossary
+      llmCorrectionEnabled
+    }
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationDeleteProfile($id: UUID!) {
+  deleteProfile(id: $id) {
+    profile {
+      id
+    }
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationDuplicateProfile($id: UUID!) {
+  duplicateProfile(id: $id) {
+    profile {
+      id
+      name
+      systemPrompt
+      transcriptionPromptOverride
+      outputTemplate
+      cleanupLevel
+      exportFolder
+      autoTags
+      isDefault
+      isBuiltIn
+      glossary
+      llmCorrectionEnabled
+    }
+    errors {
+      code
+      message
+    }
+  }
+}

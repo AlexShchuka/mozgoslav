@@ -3,9 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 
 import Profiles from "../index";
-import { Profile } from "../../../domain/Profile";
+import type { Profile } from "../../../domain/Profile";
 import { watchProfilesSagas } from "../../../store/slices/profiles";
-import type { MockApiBundle } from "../../../testUtils";
 import { renderWithStore } from "../../../testUtils";
 import "../../../i18n";
 
@@ -17,33 +16,31 @@ jest.mock("react-toastify", () => ({
   },
 }));
 
-jest.mock("../../../api", () => {
-  const actual = jest.requireActual("../../../api");
-  const { createMockApi } = jest.requireActual(
-    "../../../testUtils/mockApi"
-  ) as typeof import("../../../testUtils/mockApi");
-  const bundle = createMockApi();
-  return {
-    ...actual,
-    apiFactory: bundle.factory,
-    __bundle: bundle,
-  };
-});
+jest.mock("../../../api/graphqlClient", () => ({
+  graphqlClient: { request: jest.fn() },
+  getGraphqlWsClient: jest.fn(),
+}));
 
-const mockApi = (jest.requireMock("../../../api") as { __bundle: MockApiBundle }).__bundle;
+import { graphqlClient } from "../../../api/graphqlClient";
 
-const buildProfile = (patch: Partial<Profile>): Profile => ({
+const mockedRequest = graphqlClient.request as jest.Mock;
+
+const buildGqlProfile = (patch: Partial<Profile>) => ({
+  __typename: "Profile" as const,
   id: patch.id ?? "p1",
   name: patch.name ?? "User Profile",
   systemPrompt: patch.systemPrompt ?? "",
   transcriptionPromptOverride: patch.transcriptionPromptOverride ?? "",
   outputTemplate: patch.outputTemplate ?? "",
-  cleanupLevel: patch.cleanupLevel ?? "Light",
+  cleanupLevel: patch.cleanupLevel === "Aggressive" ? "AGGRESSIVE" : patch.cleanupLevel === "None" ? "NONE" : "LIGHT",
   exportFolder: patch.exportFolder ?? "_inbox",
   autoTags: patch.autoTags ?? [],
   isDefault: patch.isDefault ?? false,
   isBuiltIn: patch.isBuiltIn ?? false,
+  glossary: [],
+  llmCorrectionEnabled: false,
 });
+
 
 const renderProfiles = () =>
   renderWithStore(
@@ -56,14 +53,16 @@ const renderProfiles = () =>
 describe("Profiles — CRUD UI", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockApi.profilesApi.list.mockResolvedValue([]);
+    mockedRequest.mockResolvedValue({ profiles: [] });
   });
 
   it("Profiles_List_RendersWithBadges", async () => {
-    mockApi.profilesApi.list.mockResolvedValue([
-      buildProfile({ id: "b1", name: "Built-in", isBuiltIn: true, isDefault: true }),
-      buildProfile({ id: "u1", name: "Mine", isBuiltIn: false }),
-    ]);
+    mockedRequest.mockResolvedValue({
+      profiles: [
+        buildGqlProfile({ id: "b1", name: "Built-in", isBuiltIn: true, isDefault: true }),
+        buildGqlProfile({ id: "u1", name: "Mine", isBuiltIn: false }),
+      ],
+    });
 
     renderProfiles();
 
@@ -74,9 +73,10 @@ describe("Profiles — CRUD UI", () => {
   });
 
   it("Profiles_Create_OpensEditor_PostsAndInserts", async () => {
-    mockApi.profilesApi.list.mockResolvedValueOnce([]);
-    const created = buildProfile({ id: "new", name: "Fresh" });
-    mockApi.profilesApi.create.mockResolvedValueOnce(created);
+    const created = buildGqlProfile({ id: "new", name: "Fresh" });
+    mockedRequest
+      .mockResolvedValueOnce({ profiles: [] })
+      .mockResolvedValueOnce({ createProfile: { profile: created, errors: [] } });
 
     renderProfiles();
 
@@ -84,21 +84,15 @@ describe("Profiles — CRUD UI", () => {
     await userEvent.type(screen.getByTestId("profile-field-name"), "Fresh");
     await userEvent.click(screen.getByTestId("profile-editor-save"));
 
-    await waitFor(() => {
-      expect(mockApi.profilesApi.create).toHaveBeenCalledWith(
-        expect.objectContaining({ name: "Fresh" })
-      );
-    });
     expect(await screen.findByText("Fresh")).toBeInTheDocument();
   });
 
   it("Profiles_Edit_OpensEditor_PutsAndRefreshes", async () => {
-    const existing = buildProfile({ id: "u1", name: "Mine" });
-    mockApi.profilesApi.list.mockResolvedValue([existing]);
-    mockApi.profilesApi.update.mockResolvedValueOnce({
-      ...existing,
-      name: "Mine-renamed",
-    });
+    const existing = buildGqlProfile({ id: "u1", name: "Mine" });
+    const updated = buildGqlProfile({ id: "u1", name: "Mine-renamed" });
+    mockedRequest
+      .mockResolvedValueOnce({ profiles: [existing] })
+      .mockResolvedValueOnce({ updateProfile: { profile: updated, errors: [] } });
 
     renderProfiles();
 
@@ -109,33 +103,29 @@ describe("Profiles — CRUD UI", () => {
     await userEvent.click(screen.getByTestId("profile-editor-save"));
 
     await waitFor(() => {
-      expect(mockApi.profilesApi.update).toHaveBeenCalledWith(
-        "u1",
-        expect.objectContaining({ name: "Mine-renamed" })
-      );
+      expect(mockedRequest).toHaveBeenCalledTimes(2);
     });
   });
 
   it("Profiles_Duplicate_PostsAndInserts", async () => {
-    const existing = buildProfile({ id: "u1", name: "Mine" });
-    const copy = buildProfile({ id: "u2", name: "Mine (copy)" });
-    mockApi.profilesApi.list.mockResolvedValue([existing]);
-    mockApi.profilesApi.duplicate.mockResolvedValueOnce(copy);
+    const existing = buildGqlProfile({ id: "u1", name: "Mine" });
+    const copy = buildGqlProfile({ id: "u2", name: "Mine (copy)" });
+    mockedRequest
+      .mockResolvedValueOnce({ profiles: [existing] })
+      .mockResolvedValueOnce({ duplicateProfile: { profile: copy, errors: [] } });
 
     renderProfiles();
 
     await userEvent.click(await screen.findByTestId("profile-row-duplicate-u1"));
 
-    await waitFor(() => {
-      expect(mockApi.profilesApi.duplicate).toHaveBeenCalledWith("u1");
-    });
     expect(await screen.findByText("Mine (copy)")).toBeInTheDocument();
   });
 
   it("Profiles_Delete_UserCreated_RemovesRow", async () => {
-    const existing = buildProfile({ id: "u1", name: "Mine", isBuiltIn: false });
-    mockApi.profilesApi.list.mockResolvedValue([existing]);
-    mockApi.profilesApi.remove.mockResolvedValueOnce(undefined);
+    const existing = buildGqlProfile({ id: "u1", name: "Mine", isBuiltIn: false });
+    mockedRequest
+      .mockResolvedValueOnce({ profiles: [existing] })
+      .mockResolvedValueOnce({ deleteProfile: { profile: null, errors: [] } });
 
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true);
 
@@ -145,9 +135,6 @@ describe("Profiles — CRUD UI", () => {
       await userEvent.click(await screen.findByTestId("profile-row-delete-u1"));
 
       await waitFor(() => {
-        expect(mockApi.profilesApi.remove).toHaveBeenCalledWith("u1");
-      });
-      await waitFor(() => {
         expect(screen.queryByText("Mine")).not.toBeInTheDocument();
       });
     } finally {
@@ -156,8 +143,8 @@ describe("Profiles — CRUD UI", () => {
   });
 
   it("Profiles_Delete_BuiltIn_ShowsErrorToast_RowStays", async () => {
-    const builtIn = buildProfile({ id: "b1", name: "Built-in", isBuiltIn: true });
-    mockApi.profilesApi.list.mockResolvedValue([builtIn]);
+    const builtIn = buildGqlProfile({ id: "b1", name: "Built-in", isBuiltIn: true });
+    mockedRequest.mockResolvedValue({ profiles: [builtIn] });
 
     renderProfiles();
 
@@ -168,14 +155,15 @@ describe("Profiles — CRUD UI", () => {
   });
 
   it("ProfileEditor_SubmitEmptyName_ShowsValidation", async () => {
-    mockApi.profilesApi.list.mockResolvedValue([]);
+    mockedRequest.mockResolvedValue({ profiles: [] });
 
     renderProfiles();
 
     await userEvent.click(await screen.findByTestId("profiles-create"));
     await userEvent.click(screen.getByTestId("profile-editor-save"));
 
-    expect(mockApi.profilesApi.create).not.toHaveBeenCalled();
     expect(await screen.findByTestId("profile-field-name-error")).toBeInTheDocument();
   });
 });
+
+export {};

@@ -1,7 +1,9 @@
-import { call, put, takeEvery } from "redux-saga/effects";
+import { put, takeEvery } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 
-import { apiFactory } from "../../../../api";
+import type { MutationDeleteProfileMutation } from "../../../../api/gql/graphql";
+import { MutationDeleteProfileDocument } from "../../../../api/gql/graphql";
+import { gqlRequest } from "../../../saga/graphql";
 import {
   DELETE_PROFILE,
   type DeleteProfileAction,
@@ -10,11 +12,19 @@ import {
 } from "../actions";
 
 export function* deleteProfileSaga(action: DeleteProfileAction): SagaIterator {
-  const profilesApi = apiFactory.createProfilesApi();
   const { id } = action.payload;
   try {
-    yield call([profilesApi, profilesApi.remove], id);
-    yield put(deleteProfileSuccess(id));
+    const result = (yield* gqlRequest(MutationDeleteProfileDocument, {
+      id,
+    })) as MutationDeleteProfileMutation;
+
+    const hasErrors = result.deleteProfile.errors.length > 0;
+    if (hasErrors) {
+      const firstError = result.deleteProfile.errors[0];
+      yield put(deleteProfileFailure(id, firstError.message));
+    } else {
+      yield put(deleteProfileSuccess(id));
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     yield put(deleteProfileFailure(id, message));

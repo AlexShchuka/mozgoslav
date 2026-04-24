@@ -1,21 +1,31 @@
-import { call, put, takeEvery } from "redux-saga/effects";
+import { put, takeEvery } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 
-import { apiFactory } from "../../../../api";
-import type { Profile } from "../../../../domain/Profile";
+import type { MutationDuplicateProfileMutation } from "../../../../api/gql/graphql";
+import { MutationDuplicateProfileDocument } from "../../../../api/gql/graphql";
+import { gqlRequest } from "../../../saga/graphql";
 import {
   DUPLICATE_PROFILE,
   type DuplicateProfileAction,
   duplicateProfileFailure,
   duplicateProfileSuccess,
 } from "../actions";
+import { mapGqlProfile } from "./profileMapper";
 
 export function* duplicateProfileSaga(action: DuplicateProfileAction): SagaIterator {
-  const profilesApi = apiFactory.createProfilesApi();
   const { id } = action.payload;
   try {
-    const copy: Profile = yield call([profilesApi, profilesApi.duplicate], id);
-    yield put(duplicateProfileSuccess(copy));
+    const result = (yield* gqlRequest(MutationDuplicateProfileDocument, {
+      id,
+    })) as MutationDuplicateProfileMutation;
+
+    const dto = result.duplicateProfile.profile;
+    if (dto) {
+      yield put(duplicateProfileSuccess(mapGqlProfile(dto)));
+    } else {
+      const firstError = result.duplicateProfile.errors[0];
+      yield put(duplicateProfileFailure(id, firstError?.message ?? "Duplicate failed"));
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     yield put(duplicateProfileFailure(id, message));

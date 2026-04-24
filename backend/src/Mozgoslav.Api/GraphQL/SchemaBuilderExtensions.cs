@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using Mozgoslav.Api.GraphQL.Mutations;
+using Mozgoslav.Api.GraphQL.Profiles;
 using Mozgoslav.Api.GraphQL.Queries;
 using Mozgoslav.Api.GraphQL.Subscriptions;
 
@@ -13,10 +14,12 @@ internal static class SchemaBuilderExtensions
     {
         var builder = services
             .AddGraphQLServer()
+            .AddGlobalObjectIdentification()
             .AddMozgoslavQueries()
             .AddMozgoslavMutations()
             .AddMozgoslavSubscriptions()
             .AddMozgoslavTypes()
+            .AddTypeExtension<ProfileType>()
             .AddFiltering()
             .AddSorting()
             .AddProjections()

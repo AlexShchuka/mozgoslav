@@ -18,6 +18,7 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean };
   Int: { input: number; output: number };
   Float: { input: number; output: number };
+  UUID: { input: string; output: string };
 };
 
 export type AppSettingsDto = {
@@ -58,10 +59,28 @@ export type AppSettingsDto = {
   whisperThreads: Scalars["Int"]["output"];
 };
 
+export enum CleanupLevel {
+  Aggressive = "AGGRESSIVE",
+  Light = "LIGHT",
+  None = "NONE",
+}
+
 export type ConflictError = IUserError & {
   __typename?: "ConflictError";
   code: Scalars["String"]["output"];
   message: Scalars["String"]["output"];
+};
+
+export type CreateProfileInput = {
+  autoTags: Array<Scalars["String"]["input"]>;
+  cleanupLevel: CleanupLevel;
+  exportFolder: Scalars["String"]["input"];
+  glossary: Array<Scalars["String"]["input"]>;
+  isDefault: Scalars["Boolean"]["input"];
+  llmCorrectionEnabled: Scalars["Boolean"]["input"];
+  name: Scalars["String"]["input"];
+  outputTemplate: Scalars["String"]["input"];
+  systemPrompt: Scalars["String"]["input"];
 };
 
 export type HealthStatus = {
@@ -101,11 +120,37 @@ export type MetaInfo = {
 
 export type MutationType = {
   __typename?: "MutationType";
+  createProfile: ProfilePayload;
+  deleteProfile: ProfilePayload;
+  duplicateProfile: ProfilePayload;
+  updateProfile: ProfilePayload;
   updateSettings: UpdateSettingsPayload;
+};
+
+export type MutationTypeCreateProfileArgs = {
+  input: CreateProfileInput;
+};
+
+export type MutationTypeDeleteProfileArgs = {
+  id: Scalars["UUID"]["input"];
+};
+
+export type MutationTypeDuplicateProfileArgs = {
+  id: Scalars["UUID"]["input"];
+};
+
+export type MutationTypeUpdateProfileArgs = {
+  id: Scalars["UUID"]["input"];
+  input: CreateProfileInput;
 };
 
 export type MutationTypeUpdateSettingsArgs = {
   input: UpdateSettingsInput;
+};
+
+/** The node interface is implemented by entities that have a global unique identifier. */
+export type Node = {
+  id: Scalars["ID"]["output"];
 };
 
 export type NotFoundError = IUserError & {
@@ -116,12 +161,52 @@ export type NotFoundError = IUserError & {
   resourceKind: Scalars["String"]["output"];
 };
 
+export type Profile = Node & {
+  __typename?: "Profile";
+  autoTags: Array<Scalars["String"]["output"]>;
+  cleanupLevel: CleanupLevel;
+  exportFolder: Scalars["String"]["output"];
+  glossary: Array<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  isBuiltIn: Scalars["Boolean"]["output"];
+  isDefault: Scalars["Boolean"]["output"];
+  llmCorrectionEnabled: Scalars["Boolean"]["output"];
+  name: Scalars["String"]["output"];
+  outputTemplate: Scalars["String"]["output"];
+  systemPrompt: Scalars["String"]["output"];
+  transcriptionPromptOverride: Scalars["String"]["output"];
+};
+
+export type ProfilePayload = {
+  __typename?: "ProfilePayload";
+  errors: Array<IUserError>;
+  profile?: Maybe<Profile>;
+};
+
 export type QueryType = {
   __typename?: "QueryType";
   health: HealthStatus;
   llmHealth: LlmHealthStatus;
   meta: MetaInfo;
+  /** Fetches an object given its ID. */
+  node?: Maybe<Node>;
+  /** Lookup nodes by a list of IDs. */
+  nodes: Array<Maybe<Node>>;
+  profile?: Maybe<Profile>;
+  profiles: Array<Profile>;
   settings: AppSettingsDto;
+};
+
+export type QueryTypeNodeArgs = {
+  id: Scalars["ID"]["input"];
+};
+
+export type QueryTypeNodesArgs = {
+  ids: Array<Scalars["ID"]["input"]>;
+};
+
+export type QueryTypeProfileArgs = {
+  id: Scalars["UUID"]["input"];
 };
 
 export type SubscriptionType = {
@@ -209,6 +294,142 @@ export type QueryMetaQuery = {
     assemblyVersion: string;
     commit: string;
     buildDate: string;
+  };
+};
+
+export type QueryProfilesQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QueryProfilesQuery = {
+  __typename?: "QueryType";
+  profiles: Array<{
+    __typename?: "Profile";
+    id: string;
+    name: string;
+    systemPrompt: string;
+    transcriptionPromptOverride: string;
+    outputTemplate: string;
+    cleanupLevel: CleanupLevel;
+    exportFolder: string;
+    autoTags: Array<string>;
+    isDefault: boolean;
+    isBuiltIn: boolean;
+    glossary: Array<string>;
+    llmCorrectionEnabled: boolean;
+  }>;
+};
+
+export type MutationCreateProfileMutationVariables = Exact<{
+  input: CreateProfileInput;
+}>;
+
+export type MutationCreateProfileMutation = {
+  __typename?: "MutationType";
+  createProfile: {
+    __typename?: "ProfilePayload";
+    profile?: {
+      __typename?: "Profile";
+      id: string;
+      name: string;
+      systemPrompt: string;
+      transcriptionPromptOverride: string;
+      outputTemplate: string;
+      cleanupLevel: CleanupLevel;
+      exportFolder: string;
+      autoTags: Array<string>;
+      isDefault: boolean;
+      isBuiltIn: boolean;
+      glossary: Array<string>;
+      llmCorrectionEnabled: boolean;
+    } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationUpdateProfileMutationVariables = Exact<{
+  id: Scalars["UUID"]["input"];
+  input: CreateProfileInput;
+}>;
+
+export type MutationUpdateProfileMutation = {
+  __typename?: "MutationType";
+  updateProfile: {
+    __typename?: "ProfilePayload";
+    profile?: {
+      __typename?: "Profile";
+      id: string;
+      name: string;
+      systemPrompt: string;
+      transcriptionPromptOverride: string;
+      outputTemplate: string;
+      cleanupLevel: CleanupLevel;
+      exportFolder: string;
+      autoTags: Array<string>;
+      isDefault: boolean;
+      isBuiltIn: boolean;
+      glossary: Array<string>;
+      llmCorrectionEnabled: boolean;
+    } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationDeleteProfileMutationVariables = Exact<{
+  id: Scalars["UUID"]["input"];
+}>;
+
+export type MutationDeleteProfileMutation = {
+  __typename?: "MutationType";
+  deleteProfile: {
+    __typename?: "ProfilePayload";
+    profile?: { __typename?: "Profile"; id: string } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationDuplicateProfileMutationVariables = Exact<{
+  id: Scalars["UUID"]["input"];
+}>;
+
+export type MutationDuplicateProfileMutation = {
+  __typename?: "MutationType";
+  duplicateProfile: {
+    __typename?: "ProfilePayload";
+    profile?: {
+      __typename?: "Profile";
+      id: string;
+      name: string;
+      systemPrompt: string;
+      transcriptionPromptOverride: string;
+      outputTemplate: string;
+      cleanupLevel: CleanupLevel;
+      exportFolder: string;
+      autoTags: Array<string>;
+      isDefault: boolean;
+      isBuiltIn: boolean;
+      glossary: Array<string>;
+      llmCorrectionEnabled: boolean;
+    } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
   };
 };
 
@@ -394,6 +615,346 @@ export const QueryMetaDocument = {
     },
   ],
 } as unknown as DocumentNode<QueryMetaQuery, QueryMetaQueryVariables>;
+export const QueryProfilesDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryProfiles" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "profiles" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+                { kind: "Field", name: { kind: "Name", value: "systemPrompt" } },
+                { kind: "Field", name: { kind: "Name", value: "transcriptionPromptOverride" } },
+                { kind: "Field", name: { kind: "Name", value: "outputTemplate" } },
+                { kind: "Field", name: { kind: "Name", value: "cleanupLevel" } },
+                { kind: "Field", name: { kind: "Name", value: "exportFolder" } },
+                { kind: "Field", name: { kind: "Name", value: "autoTags" } },
+                { kind: "Field", name: { kind: "Name", value: "isDefault" } },
+                { kind: "Field", name: { kind: "Name", value: "isBuiltIn" } },
+                { kind: "Field", name: { kind: "Name", value: "glossary" } },
+                { kind: "Field", name: { kind: "Name", value: "llmCorrectionEnabled" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryProfilesQuery, QueryProfilesQueryVariables>;
+export const MutationCreateProfileDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationCreateProfile" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "input" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "CreateProfileInput" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createProfile" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: { kind: "Variable", name: { kind: "Name", value: "input" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "profile" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      { kind: "Field", name: { kind: "Name", value: "systemPrompt" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "transcriptionPromptOverride" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "outputTemplate" } },
+                      { kind: "Field", name: { kind: "Name", value: "cleanupLevel" } },
+                      { kind: "Field", name: { kind: "Name", value: "exportFolder" } },
+                      { kind: "Field", name: { kind: "Name", value: "autoTags" } },
+                      { kind: "Field", name: { kind: "Name", value: "isDefault" } },
+                      { kind: "Field", name: { kind: "Name", value: "isBuiltIn" } },
+                      { kind: "Field", name: { kind: "Name", value: "glossary" } },
+                      { kind: "Field", name: { kind: "Name", value: "llmCorrectionEnabled" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationCreateProfileMutation, MutationCreateProfileMutationVariables>;
+export const MutationUpdateProfileDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationUpdateProfile" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "input" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "CreateProfileInput" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "updateProfile" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: { kind: "Variable", name: { kind: "Name", value: "input" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "profile" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      { kind: "Field", name: { kind: "Name", value: "systemPrompt" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "transcriptionPromptOverride" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "outputTemplate" } },
+                      { kind: "Field", name: { kind: "Name", value: "cleanupLevel" } },
+                      { kind: "Field", name: { kind: "Name", value: "exportFolder" } },
+                      { kind: "Field", name: { kind: "Name", value: "autoTags" } },
+                      { kind: "Field", name: { kind: "Name", value: "isDefault" } },
+                      { kind: "Field", name: { kind: "Name", value: "isBuiltIn" } },
+                      { kind: "Field", name: { kind: "Name", value: "glossary" } },
+                      { kind: "Field", name: { kind: "Name", value: "llmCorrectionEnabled" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationUpdateProfileMutation, MutationUpdateProfileMutationVariables>;
+export const MutationDeleteProfileDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationDeleteProfile" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "deleteProfile" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "profile" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [{ kind: "Field", name: { kind: "Name", value: "id" } }],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationDeleteProfileMutation, MutationDeleteProfileMutationVariables>;
+export const MutationDuplicateProfileDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationDuplicateProfile" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "duplicateProfile" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "profile" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      { kind: "Field", name: { kind: "Name", value: "systemPrompt" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "transcriptionPromptOverride" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "outputTemplate" } },
+                      { kind: "Field", name: { kind: "Name", value: "cleanupLevel" } },
+                      { kind: "Field", name: { kind: "Name", value: "exportFolder" } },
+                      { kind: "Field", name: { kind: "Name", value: "autoTags" } },
+                      { kind: "Field", name: { kind: "Name", value: "isDefault" } },
+                      { kind: "Field", name: { kind: "Name", value: "isBuiltIn" } },
+                      { kind: "Field", name: { kind: "Name", value: "glossary" } },
+                      { kind: "Field", name: { kind: "Name", value: "llmCorrectionEnabled" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationDuplicateProfileMutation,
+  MutationDuplicateProfileMutationVariables
+>;
 export const QuerySettingsDocument = {
   kind: "Document",
   definitions: [
