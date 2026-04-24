@@ -1,7 +1,9 @@
-import { call, put, takeLatest } from "redux-saga/effects";
+import { put, takeLatest } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 
-import { apiFactory } from "../../../api";
+import { QueryRagDocument } from "../../../api/gql/graphql";
+import type { QueryRagQuery } from "../../../api/gql/graphql";
+import { gqlRequest } from "../../saga/graphql";
 import {
   ASK_QUESTION,
   askFailure,
@@ -31,8 +33,22 @@ export function* askQuestionSaga(action: AskQuestionAction): SagaIterator {
   yield put(askPending(userMessage, pendingAssistantId));
 
   try {
-    const ragApi = apiFactory.createRagApi();
-    const answer: RagAnswer = yield call([ragApi, ragApi.query], question, topK);
+    const data = (yield* gqlRequest(QueryRagDocument, { question, topK })) as QueryRagQuery;
+    const result = data.ragQuery;
+    if (!result) {
+      yield put(askFailure(pendingAssistantId, "No result returned"));
+      return;
+    }
+    const answer: RagAnswer = {
+      answer: result.answer,
+      citations: result.citations.map((c) => ({
+        noteId: c.noteId,
+        chunkId: c.segmentId,
+        text: c.text,
+        score: 0,
+      })),
+      llmAvailable: result.llmAvailable,
+    };
     yield put(askSuccess(pendingAssistantId, answer));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

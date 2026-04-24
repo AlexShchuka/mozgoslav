@@ -1,35 +1,21 @@
 import { expectSaga } from "redux-saga-test-plan";
-import * as matchers from "redux-saga-test-plan/matchers";
-import { throwError } from "redux-saga-test-plan/providers";
 
-import type { RagAnswer } from "../../../../domain/Rag";
 import { askFailure, askPending, askQuestion, askSuccess } from "../actions";
 import { ragReducer } from "../reducer";
 import { askQuestionSaga } from "../saga";
 import type { RagMessage } from "../types";
 
-jest.mock("../../../../api", () => {
-  const actual = jest.requireActual("../../../../api");
-  const ragStub = {
-    query: jest.fn(),
-    reindex: jest.fn(),
-  };
-  return {
-    ...actual,
-    apiFactory: {
-      ...actual.apiFactory,
-      createRagApi: () => ragStub,
-    },
-    __ragStub: ragStub,
-  };
-});
+jest.mock("../../../../api/graphqlClient", () => ({
+  graphqlClient: { request: jest.fn() },
+  getGraphqlWsClient: jest.fn(() => ({
+    subscribe: jest.fn(() => () => {}),
+    dispose: jest.fn(),
+  })),
+}));
 
-const ragStub = (jest.requireMock("../../../../api") as { __ragStub: Record<string, jest.Mock> })
-  .__ragStub;
+import { graphqlClient } from "../../../../api/graphqlClient";
 
-const api = {
-  ragQuery: ragStub.query,
-};
+const mockedRequest = graphqlClient.request as jest.Mock;
 
 const dispatch = (action: unknown) => action as Parameters<typeof ragReducer>[1];
 
@@ -46,16 +32,16 @@ describe("rag saga — askQuestion", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("puts ASK_PENDING then ASK_SUCCESS on happy path, keeping citations", async () => {
-    const answer: RagAnswer = {
-      answer: "Short answer.",
-      llmAvailable: true,
-      citations: [{ noteId: "n1", chunkId: "c1", text: "quoted text", score: 0.91 }],
-    };
-    api.ragQuery.mockResolvedValueOnce(answer);
+    mockedRequest.mockResolvedValueOnce({
+      ragQuery: {
+        answer: "Short answer.",
+        llmAvailable: true,
+        citations: [{ noteId: "n1", segmentId: "c1", text: "quoted text" }],
+      },
+    });
 
     const result = await expectSaga(askQuestionSaga, askQuestion("What?"))
       .withReducer(ragReducer)
-      .provide([[matchers.call.fn(api.ragQuery), answer]])
       .run();
 
     const storeState = result.storeState;
@@ -70,9 +56,10 @@ describe("rag saga — askQuestion", () => {
   });
 
   it("puts ASK_FAILURE on error and keeps the user message in history", async () => {
+    mockedRequest.mockRejectedValueOnce(new Error("network down"));
+
     const result = await expectSaga(askQuestionSaga, askQuestion("Boom"))
       .withReducer(ragReducer)
-      .provide([[matchers.call.fn(api.ragQuery), throwError(new Error("network down"))]])
       .run();
 
     const storeState = result.storeState;
