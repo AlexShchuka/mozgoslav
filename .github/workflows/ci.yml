@@ -224,19 +224,7 @@ jobs:
     name: validate / commitlint
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: read
-      statuses: write
     steps:
-      - name: Lint PR title (source of the squash-merge commit message)
-        uses: amannn/action-semantic-pull-request@v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          subjectPattern: ^.{1,100}$
-          subjectPatternError: |
-            PR title subject must be between 1 and 100 characters (header-max-length=100).
-          wip: true
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -254,6 +242,13 @@ jobs:
       - name: Install (only on cache miss)
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: cd frontend && npm ci
+      - name: Lint PR title (source of the squash-merge commit message)
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+          echo "PR title: $PR_TITLE"
+          printf '%s\n' "$PR_TITLE" | (cd frontend && npx commitlint)
       - name: Lint in-PR commits (hygiene for the squash audit trail)
         continue-on-error: true
         run: cd frontend && npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
