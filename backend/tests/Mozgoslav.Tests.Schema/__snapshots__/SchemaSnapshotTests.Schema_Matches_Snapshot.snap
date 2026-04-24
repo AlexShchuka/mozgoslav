@@ -1,4 +1,4 @@
-schema {
+﻿schema {
   query: QueryType
   mutation: MutationType
   subscription: SubscriptionType
@@ -409,6 +409,7 @@ type QueryType {
   llmHealth: LlmHealthStatus! @cost(weight: "10")
   meta: MetaInfo!
   settings: AppSettingsDto! @cost(weight: "10")
+  llmModels: [String!]! @cost(weight: "10")
   profiles: [Profile!]! @cost(weight: "10")
   profile(id: UUID!): Profile @cost(weight: "10")
   models: [ModelEntry!]!
