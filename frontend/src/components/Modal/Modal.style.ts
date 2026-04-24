@@ -3,7 +3,7 @@ import styled from "styled-components";
 export const Backdrop = styled.div`
   position: fixed;
   inset: 0;
-  background: rgb(10, 12, 18, 0.55);
+  background: ${({ theme }) => theme.colors.overlayBackdrop};
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;

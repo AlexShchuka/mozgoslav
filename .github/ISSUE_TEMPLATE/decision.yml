@@ -1,0 +1,59 @@
+name: Architectural decision (shipped)
+description: Robot-style record of a shipped architectural change — concept-level, no file paths.
+title: "[feature] decision-slug"
+labels:
+  - type/decision
+body:
+  - type: dropdown
+    id: feature
+    attributes:
+      label: Feature area
+      description: Scope label (the label `feature/<value>` will be applied automatically).
+      options:
+        - api
+        - dictation
+        - distribution
+        - meetings
+        - observability
+        - obsidian
+        - opencode
+        - persistence
+        - profiles
+        - rag
+        - recording
+        - sync
+        - testing
+        - tooling
+        - ui
+    validations:
+      required: true
+
+  - type: textarea
+    id: decision
+    attributes:
+      label: Decision
+      description: Single bullet that captures the shipped choice.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Forces and constraints that shaped the decision.
+    validations:
+      required: true
+
+  - type: textarea
+    id: consequences
+    attributes:
+      label: Consequences
+      description: Bullets. What this decision enables, forbids, and defers.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives rejected
+      description: Optional. Table or bullets — `alt → reason`.

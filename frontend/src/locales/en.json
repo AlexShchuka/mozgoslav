@@ -63,7 +63,9 @@
     "hint": "Start the backend: `dotnet run` inside backend/"
   },
   "sidebar": {
-    "restartOnboarding": "Restart onboarding"
+    "restartOnboarding": "Restart onboarding",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar"
   },
   "home": {
     "listTitle": "Recordings",

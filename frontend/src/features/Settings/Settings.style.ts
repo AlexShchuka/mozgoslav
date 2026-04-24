@@ -100,3 +100,11 @@ export const Toolbar = styled.div`
   justify-content: flex-end;
   gap: ${({ theme }) => theme.space(2)};
 `;
+
+export const CheckboxRow = styled.label`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.space(2)};
+  font-size: ${({ theme }) => theme.font.size.sm};
+  color: ${({ theme }) => theme.colors.text.primary};
+`;

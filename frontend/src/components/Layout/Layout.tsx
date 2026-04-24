@@ -12,12 +12,15 @@ import {
   HelpCircle,
   ListTree,
   MessageSquare,
+  PanelLeftClose,
+  PanelLeftOpen,
   RefreshCw,
   Settings,
   Sparkles,
 } from "lucide-react";
 
 import { useBackendHealth } from "../../hooks/useBackendHealth";
+import { useSidebarCollapsed } from "../../hooks/useSidebarCollapsed";
 import { ROUTES } from "../../constants/routes";
 import {
   completeOnboarding,
@@ -27,6 +30,7 @@ import {
 import TitleBar from "../TitleBar";
 import {
   BackendStatusBanner,
+  CollapseButton,
   Content,
   HelpButton,
   LayoutRoot,
@@ -52,6 +56,7 @@ const Layout: FC<LayoutProps> = ({ children }) => {
   const dispatch = useDispatch<Dispatch<Action>>();
   const onboardingCompleted = useSelector(selectOnboardingCompleted);
   const isHealthy = health.status === "ok";
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed();
 
   const onRestartOnboarding = () => {
     dispatch(resetOnboarding());
@@ -64,53 +69,101 @@ const Layout: FC<LayoutProps> = ({ children }) => {
     }
   }, [dispatch, onboardingCompleted]);
 
+  const collapseLabel = collapsed ? t("sidebar.expand") : t("sidebar.collapse");
+
   return (
-    <LayoutRoot>
+    <LayoutRoot $collapsed={collapsed}>
       <TitleBar />
-      <Sidebar>
+      <Sidebar $collapsed={collapsed}>
         <SidebarSection>
           <SidebarGroup>
-            {}
-            <NavItem to={ROUTES.home} icon={<Sparkles size={16} />} onClick={onNavClick}>
+            <NavItem
+              to={ROUTES.home}
+              icon={<Sparkles size={16} />}
+              collapsed={collapsed}
+              onClick={onNavClick}
+            >
               {t("nav.home")}
             </NavItem>
-            <NavItem to={ROUTES.notes} icon={<Brain size={16} />} onClick={onNavClick}>
+            <NavItem
+              to={ROUTES.notes}
+              icon={<Brain size={16} />}
+              collapsed={collapsed}
+              onClick={onNavClick}
+            >
               {t("nav.notes")}
             </NavItem>
-            <NavItem to={ROUTES.rag} icon={<MessageSquare size={16} />} onClick={onNavClick}>
+            <NavItem
+              to={ROUTES.rag}
+              icon={<MessageSquare size={16} />}
+              collapsed={collapsed}
+              onClick={onNavClick}
+            >
               {t("nav.rag")}
             </NavItem>
           </SidebarGroup>
 
           <SidebarGroup>
-            <NavItem to={ROUTES.profiles} icon={<ListTree size={16} />} onClick={onNavClick}>
+            <NavItem
+              to={ROUTES.profiles}
+              icon={<ListTree size={16} />}
+              collapsed={collapsed}
+              onClick={onNavClick}
+            >
               {t("nav.profiles")}
             </NavItem>
-            <NavItem to={ROUTES.models} icon={<Database size={16} />} onClick={onNavClick}>
+            <NavItem
+              to={ROUTES.models}
+              icon={<Database size={16} />}
+              collapsed={collapsed}
+              onClick={onNavClick}
+            >
               {t("nav.models")}
             </NavItem>
-            <NavItem to={ROUTES.obsidian} icon={<FolderTree size={16} />} onClick={onNavClick}>
+            <NavItem
+              to={ROUTES.obsidian}
+              icon={<FolderTree size={16} />}
+              collapsed={collapsed}
+              onClick={onNavClick}
+            >
               {t("nav.obsidian")}
             </NavItem>
-            <NavItem to={ROUTES.sync} icon={<RefreshCw size={16} />} onClick={onNavClick}>
+            <NavItem
+              to={ROUTES.sync}
+              icon={<RefreshCw size={16} />}
+              collapsed={collapsed}
+              onClick={onNavClick}
+            >
               {t("nav.sync")}
             </NavItem>
           </SidebarGroup>
 
           <SidebarGroup>
-            <NavItem to={ROUTES.settings} icon={<Settings size={16} />} onClick={onNavClick}>
+            <NavItem
+              to={ROUTES.settings}
+              icon={<Settings size={16} />}
+              collapsed={collapsed}
+              onClick={onNavClick}
+            >
               {t("nav.settings")}
             </NavItem>
-            <NavItem to={ROUTES.backup} icon={<Archive size={16} />} onClick={onNavClick}>
+            <NavItem
+              to={ROUTES.backup}
+              icon={<Archive size={16} />}
+              collapsed={collapsed}
+              onClick={onNavClick}
+            >
               {t("nav.backup")}
             </NavItem>
           </SidebarGroup>
         </SidebarSection>
 
-        <SidebarFooter>
-          <SidebarStatus>
+        <SidebarFooter $collapsed={collapsed}>
+          <SidebarStatus $collapsed={collapsed} title={t("backendHealth.online")}>
             <StatusDot $ok={isHealthy} />
-            {isHealthy ? t("backendHealth.online") : t("backendHealth.offline")}
+            <span data-status-label>
+              {isHealthy ? t("backendHealth.online") : t("backendHealth.offline")}
+            </span>
           </SidebarStatus>
           <HelpButton
             type="button"
@@ -121,6 +174,15 @@ const Layout: FC<LayoutProps> = ({ children }) => {
           >
             <HelpCircle size={18} />
           </HelpButton>
+          <CollapseButton
+            type="button"
+            aria-label={collapseLabel}
+            title={collapseLabel}
+            onClick={toggleCollapsed}
+            data-testid="sidebar-collapse-toggle"
+          >
+            {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+          </CollapseButton>
         </SidebarFooter>
       </Sidebar>
       <Content>
@@ -142,13 +204,21 @@ interface NavItemProps {
   to: string;
   icon: ReactNode;
   children: ReactNode;
+  collapsed: boolean;
   onClick?: () => void;
 }
 
-const NavItem: FC<NavItemProps> = ({ to, icon, children, onClick }) => (
-  <SidebarItem as={NavLink} to={to} end onClick={onClick}>
+const NavItem: FC<NavItemProps> = ({ to, icon, children, collapsed, onClick }) => (
+  <SidebarItem
+    as={NavLink}
+    to={to}
+    end
+    $collapsed={collapsed}
+    title={collapsed && typeof children === "string" ? children : undefined}
+    onClick={onClick}
+  >
     <SidebarIconSlot>{icon}</SidebarIconSlot>
-    <span>{children}</span>
+    <span data-nav-label>{children}</span>
   </SidebarItem>
 );
 
