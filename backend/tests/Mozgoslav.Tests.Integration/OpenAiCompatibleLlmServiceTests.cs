@@ -31,11 +31,12 @@ public sealed class OpenAiCompatibleLlmServiceTests : IDisposable
     private OpenAiCompatibleLlmService _service = null!;
 
     [TestInitialize]
-    public void Init()
+    public async Task Init()
     {
         _httpClient = new HttpClient();
         _stubFactory = new StubHttpClientFactory(_httpClient);
         _server = WireMockServer.Start();
+        using var warmup = await _httpClient.GetAsync(_server.Urls[0] + "/__warmup");
         _settings = Substitute.For<IAppSettings>();
         _settings.LlmProvider.Returns("openai_compatible");
         _settings.LlmEndpoint.Returns(_server.Urls[0]);
