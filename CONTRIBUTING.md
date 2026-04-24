@@ -1,90 +1,80 @@
 # Contributing to Mozgoslav
 
-Human onboarding and the workflow contract. Operating rules for autonomous agents live in `CLAUDE.md` / `AGENTS.md`. If you are an AI agent, start there.
+Human onboarding. Agent operating rules live in `AGENTS.md` (canonical) / `CLAUDE.md` (symlink).
 
 ## Requirements
 
 | Component | Version |
-|-----------|---------|
-| macOS | 14+ (Apple Silicon) for `.dmg` builds and CoreML. Linux is fine for backend / sidecar dev. |
+|---|---|
+| macOS | 14+ (Apple Silicon) for `.dmg` builds and CoreML. Linux fine for backend / sidecar dev. |
 | .NET SDK | 10.0+ |
 | Node.js | 24+ |
 | Python | 3.11+ |
 | Swift | 6.0+ (ships with Xcode 16) |
 | ffmpeg | any |
-| lefthook | `brew install lefthook` |
+| lefthook | `brew install lefthook && lefthook install` |
 | gitleaks | `brew install gitleaks` (optional — lefthook skips if absent) |
 
-## One-shot setup
+## Run
 
 ```bash
-lefthook install
 ./scripts/demo.command
 ```
 
-`demo.command` boots backend + python sidecar + Electron UI. First run bootstraps everything; subsequent runs only reinstall when lockfiles change. Ctrl+C kills the whole stack.
+Boots backend + python sidecar + Electron UI. First run bootstraps everything; subsequent runs only reinstall when lockfiles change. Ctrl+C kills the whole stack.
 
-## Before you commit
+## Local gate (matches CI)
 
-Run the same gates CI runs — pushing without these is a regression risk.
-
-**Auto-format first**, then verify. CI runs `--verify-no-changes` / `--check` and fails without diff context:
+Auto-format first, then verify. CI runs `--verify-no-changes` / `--check` and fails without diff context.
 
 ```bash
 dotnet format backend/Mozgoslav.sln --verbosity minimal
 cd frontend && npx prettier --write "src/**/*.{ts,tsx,css}" "electron/**/*.ts" && cd ..
 ```
 
-Then the gates (the same ones CI runs):
+Then:
 
 ```bash
 scripts/check-encoding.sh
-uncomment --dry-run --remove-todo --remove-fixme --remove-doc backend frontend/src frontend/electron python-sidecar native scripts
+uncomment --dry-run --remove-todo --remove-fixme --remove-doc \
+  backend frontend/src frontend/electron python-sidecar native scripts
 
 dotnet format backend/Mozgoslav.sln --verify-no-changes --verbosity minimal
 dotnet build  backend/Mozgoslav.sln -maxcpucount:1 -warnaserror
-dotnet test   backend/tests/Mozgoslav.Tests/Mozgoslav.Tests.csproj             --settings backend/UnitTests.runsettings -maxcpucount:1
-dotnet test   backend/tests/Mozgoslav.Tests.Integration/Mozgoslav.Tests.Integration.csproj --settings backend/IntegrationTests.runsettings -maxcpucount:1
+dotnet test   backend/tests/Mozgoslav.Tests/Mozgoslav.Tests.csproj \
+  --settings backend/UnitTests.runsettings -maxcpucount:1
+dotnet test   backend/tests/Mozgoslav.Tests.Integration/Mozgoslav.Tests.Integration.csproj \
+  --settings backend/IntegrationTests.runsettings -maxcpucount:1
 
-cd frontend && npm run typecheck && npm run lint && npm run check-styles && npm run check-translations \
-  && npx prettier --check "src/**/*.{ts,tsx,css}" "electron/**/*.ts" && npm test -- --watchAll=false
+cd frontend && npm run typecheck && npm run lint && npm run check-styles \
+  && npm run check-translations \
+  && npx prettier --check "src/**/*.{ts,tsx,css}" "electron/**/*.ts" \
+  && npm test -- --watchAll=false
 cd python-sidecar && ruff check . && black --check . && pytest -q
 cd native/MozgoslavDictationHelper && swift build -c release && swift test
 ```
 
-Unused `using` directives are enforced by `dotnet build -warnaserror` (IDE0005). Codestyle is enforced by `dotnet format`. Comments, TODO, FIXME, and docstrings are banned — `uncomment` above catches drift.
-
 ## PR workflow
 
-- **Branching**: `<username>/<kebab-slug>` off `main`. One logical change per branch.
-- **Squash-merge only**; the PR title becomes the commit message.
-- **PR title must pass Conventional Commits** (CI runs `commitlint` against `github.event.pull_request.title`).
-  - Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`.
-  - Header ≤ 100 characters. Scope optional but preferred: `feat(settings): …`.
-  - Breaking changes: `feat(scope)!: …`.
-- **PR body**: what changed, why, risk, test plan. No motivation essays — bullets.
-- **CI must be green** before review. `backlog-guard` will reject PRs that add `**/backlog/*.md` or `**/bugs/*.md`.
+- Branch `<username>/<kebab-slug>` off `main`; one logical change per branch.
+- Squash-merge only. PR title becomes the commit message.
+- PR title is linted against `@commitlint/config-conventional` (`validate / commitlint` in CI). Header ≤ 100 chars. Types: `feat fix docs style refactor perf test build ci chore`. Breaking: `feat(scope)!: …`.
+- PR body: bullets — what / why / risk / test plan. No motivation essays.
 
-## Issue workflow
+## Issues
 
-Backlog / bugs / shipped decisions live as GitHub Issues. Open via the YAML forms under `.github/ISSUE_TEMPLATE/`:
+Open new Issues via `.github/ISSUE_TEMPLATE/{backlog,bug,decision}.yml`. Labels `feature/<name>` + `type/{backlog|bug|decision}` are applied from the form; do not open blank Issues.
 
-- **Backlog item** — deferred work. Template fills `type/backlog` + feature scope.
-- **Bug** — concrete defect. Template fills `type/bug`.
-- **Shipped decision** — robot-style record of an architectural change (concept-level, no file paths). Template fills `type/decision`.
+## Push (humans only)
 
-New Issues should not be ad-hoc — use the forms so the label contract stays consistent with CI guards and agent tooling.
-
-## Push protocol (human-only)
-
-The repo's `pre-push` lefthook refuses pushes unless `MOZGOSLAV_HUMAN_PUSH=1` is set. This is defence-in-depth against AI agents pushing unreviewed work. Push from a terminal where a human is watching:
+The repo's `pre-push` lefthook refuses pushes unless `MOZGOSLAV_HUMAN_PUSH=1` is set. Push from a terminal a human is watching:
 
 ```bash
 MOZGOSLAV_HUMAN_PUSH=1 git push -u origin <branch>
 ```
 
-AI agents must never push; they open local branches and hand over to a human for the `git push` step.
+AI agents never push. They open local branches and hand over to a human for the push step.
 
 ## Release
 
-Tagging `v*.*.*` triggers `.github/workflows/release.yml` — builds a self-contained macOS arm64 `.dmg` (bundled backend, models, syncthing, dictation helper) and attaches it to the GitHub Release. Code-signing and notarization are off until Apple Developer ID secrets land (`MAC_CERT_P12_BASE64` et al.); users see a Gatekeeper warning on first launch of unsigned builds.
+Tagging `v*.*.*` triggers `.github/workflows/release.yml` — builds a self-contained macOS arm64 `.dmg` (bundled backend, models, syncthing, dictation helper) and attaches it to the GitHub Release. Signing + notarization are off until `MAC_CERT_P12_BASE64` / `APPLE_API_KEY_BASE64` / `APPLE_API_KEY_ID` / `APPLE_API_ISSUER_ID` / `MAC_CERT_PASSWORD` / `KEYCHAIN_PASSWORD` land in GitHub Secrets; users see a Gatekeeper warning on first launch of unsigned builds.

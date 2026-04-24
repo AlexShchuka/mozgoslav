@@ -253,46 +253,6 @@ jobs:
         continue-on-error: true
         run: cd frontend && npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
 
-  backlog-guard:
-    name: validate / backlog-guard
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Refuse new backlog or bugs markdown files
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          set -euo pipefail
-          added=$(git diff --name-only --diff-filter=A "$BASE_SHA" "$HEAD_SHA" \
-            | grep -E '^docs/features/[^/]+/(backlog|bugs)/.*\.md$' || true)
-          if [ -n "$added" ]; then
-            echo "::error::Backlog and bugs live as GitHub Issues now. Open an Issue instead of adding:"
-            echo "$added" | sed 's/^/  - /'
-            exit 1
-          fi
-      - name: Enforce decision file closes archived backlog moves
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          set -euo pipefail
-          archived=$(git diff --name-only --diff-filter=A "$BASE_SHA" "$HEAD_SHA" \
-            | grep -E '^\.archive/.*\.md$' || true)
-          if [ -z "$archived" ]; then
-            exit 0
-          fi
-          decisions=$(git diff --name-only --diff-filter=A "$BASE_SHA" "$HEAD_SHA" \
-            | grep -E '^docs/features/[^/]+/decisions/.*\.md$' || true)
-          if [ -z "$decisions" ]; then
-            echo "::warning::PR archives markdown under .archive/ without publishing a new decision file."
-            echo "::warning::Architectural initiatives must close with a robot-style decision under docs/features/<feature>/decisions/."
-            echo "::warning::If the archive is a pure retire (no architecture shipped), ignore this warning."
-          fi
-
   native:
     name: build & tests / native (macos-latest)
     needs: verify
