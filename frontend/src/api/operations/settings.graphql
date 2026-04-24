@@ -1,0 +1,89 @@
+query QuerySettings {
+  settings {
+    vaultPath
+    llmProvider
+    llmEndpoint
+    llmModel
+    llmApiKey
+    obsidianApiHost
+    obsidianApiToken
+    whisperModelPath
+    vadModelPath
+    language
+    themeMode
+    whisperThreads
+    dictationEnabled
+    dictationHotkeyType
+    dictationMouseButton
+    dictationKeyboardHotkey
+    dictationLanguage
+    dictationWhisperModelId
+    dictationCaptureSampleRate
+    dictationLlmPolish
+    dictationInjectMode
+    dictationOverlayEnabled
+    dictationOverlayPosition
+    dictationSoundFeedback
+    dictationVocabulary
+    dictationModelUnloadMinutes
+    dictationTempAudioPath
+    dictationAppProfiles {
+      key
+      value
+    }
+    dictationPushToTalk
+    syncthingEnabled
+    syncthingObsidianVaultPath
+    syncthingApiKey
+    syncthingBaseUrl
+    obsidianFeatureEnabled
+  }
+}
+
+mutation MutationUpdateSettings($input: UpdateSettingsInput!) {
+  updateSettings(input: $input) {
+    settings {
+      vaultPath
+      llmProvider
+      llmEndpoint
+      llmModel
+      llmApiKey
+      obsidianApiHost
+      obsidianApiToken
+      whisperModelPath
+      vadModelPath
+      language
+      themeMode
+      whisperThreads
+      dictationEnabled
+      dictationHotkeyType
+      dictationMouseButton
+      dictationKeyboardHotkey
+      dictationLanguage
+      dictationWhisperModelId
+      dictationCaptureSampleRate
+      dictationLlmPolish
+      dictationInjectMode
+      dictationOverlayEnabled
+      dictationOverlayPosition
+      dictationSoundFeedback
+      dictationVocabulary
+      dictationModelUnloadMinutes
+      dictationTempAudioPath
+      dictationAppProfiles {
+        key
+        value
+      }
+      dictationPushToTalk
+      syncthingEnabled
+      syncthingObsidianVaultPath
+      syncthingApiKey
+      syncthingBaseUrl
+      obsidianFeatureEnabled
+    }
+    errors {
+      code
+      message
+    }
+  }
+}

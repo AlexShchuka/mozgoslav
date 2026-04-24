@@ -4,9 +4,61 @@ schema {
   subscription: SubscriptionType
 }
 
+interface IUserError {
+  code: String!
+  message: String!
+}
+
+type AppSettingsDto {
+  vaultPath: String!
+  llmProvider: String!
+  llmEndpoint: String!
+  llmModel: String!
+  llmApiKey: String!
+  obsidianApiHost: String!
+  obsidianApiToken: String!
+  whisperModelPath: String!
+  vadModelPath: String!
+  language: String!
+  themeMode: String!
+  whisperThreads: Int!
+  dictationEnabled: Boolean!
+  dictationHotkeyType: String!
+  dictationMouseButton: Int!
+  dictationKeyboardHotkey: String!
+  dictationLanguage: String!
+  dictationWhisperModelId: String!
+  dictationCaptureSampleRate: Int!
+  dictationLlmPolish: Boolean!
+  dictationInjectMode: String!
+  dictationOverlayEnabled: Boolean!
+  dictationOverlayPosition: String!
+  dictationSoundFeedback: Boolean!
+  dictationVocabulary: [String!]!
+  dictationModelUnloadMinutes: Int!
+  dictationTempAudioPath: String!
+  dictationAppProfiles: [KeyValuePairOfStringAndString!]!
+  syncthingEnabled: Boolean!
+  syncthingObsidianVaultPath: String!
+  syncthingApiKey: String!
+  syncthingBaseUrl: String!
+  dictationPushToTalk: Boolean!
+  obsidianFeatureEnabled: Boolean!
+}
+
+type ConflictError implements IUserError {
+  code: String!
+  message: String!
+}
+
 type HealthStatus {
   status: String!
   time: String!
+}
+
+type KeyValuePairOfStringAndString {
+  key: String!
+  value: String!
 }
 
 type LlmHealthStatus {
@@ -21,17 +73,83 @@ type MetaInfo {
 }
 
 type MutationType {
-  placeholder: Boolean!
+  updateSettings(input: UpdateSettingsInput!): UpdateSettingsPayload! @cost(weight: "10")
+}
+
+type NotFoundError implements IUserError {
+  code: String!
+  message: String!
+  resourceKind: String!
+  resourceId: String!
 }
 
 type QueryType {
   health: HealthStatus!
   llmHealth: LlmHealthStatus! @cost(weight: "10")
   meta: MetaInfo!
+  settings: AppSettingsDto! @cost(weight: "10")
 }
 
 type SubscriptionType {
   placeholder: Boolean!
+}
+
+type UnavailableError implements IUserError {
+  code: String!
+  message: String!
+}
+
+type UpdateSettingsPayload {
+  settings: AppSettingsDto
+  errors: [IUserError!]!
+}
+
+type ValidationError implements IUserError {
+  code: String!
+  message: String!
+  field: String!
+}
+
+input KeyValuePairOfStringAndStringInput {
+  key: String!
+  value: String!
+}
+
+input UpdateSettingsInput {
+  vaultPath: String!
+  llmProvider: String!
+  llmEndpoint: String!
+  llmModel: String!
+  llmApiKey: String!
+  obsidianApiHost: String!
+  obsidianApiToken: String!
+  whisperModelPath: String!
+  vadModelPath: String!
+  language: String!
+  themeMode: String!
+  whisperThreads: Int!
+  dictationEnabled: Boolean!
+  dictationHotkeyType: String!
+  dictationMouseButton: Int!
+  dictationKeyboardHotkey: String!
+  dictationLanguage: String!
+  dictationWhisperModelId: String!
+  dictationCaptureSampleRate: Int!
+  dictationLlmPolish: Boolean!
+  dictationInjectMode: String!
+  dictationOverlayEnabled: Boolean!
+  dictationOverlayPosition: String!
+  dictationSoundFeedback: Boolean!
+  dictationVocabulary: [String!]!
+  dictationModelUnloadMinutes: Int!
+  dictationTempAudioPath: String!
+  dictationAppProfiles: [KeyValuePairOfStringAndStringInput!]!
+  syncthingEnabled: Boolean!
+  syncthingObsidianVaultPath: String!
+  syncthingApiKey: String!
+  syncthingBaseUrl: String!
+  dictationPushToTalk: Boolean! = true
+  obsidianFeatureEnabled: Boolean! = false
 }
 
 "The purpose of the `cost` directive is to define a `weight` for GraphQL types, fields, and arguments. Static analysis can use these weights when calculating the overall cost of a query or response."

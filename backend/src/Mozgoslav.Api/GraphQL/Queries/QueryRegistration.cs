@@ -3,6 +3,7 @@ using HotChocolate.Execution.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mozgoslav.Api.GraphQL.Health;
+using Mozgoslav.Api.GraphQL.Settings;
 
 namespace Mozgoslav.Api.GraphQL.Queries;
 
@@ -13,6 +14,7 @@ internal static class QueryRegistration
     {
         return builder
             .AddQueryType<QueryType>()
-            .AddTypeExtension<HealthQueryType>();
+            .AddTypeExtension<HealthQueryType>()
+            .AddTypeExtension<SettingsQueryType>();
     }
 }
