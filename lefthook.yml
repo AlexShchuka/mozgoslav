@@ -25,6 +25,10 @@ pre-commit:
       root: frontend
       run: npx stylelint --fix {staged_files}
       stage_fixed: true
+    translation-parity:
+      glob: "frontend/{src/locales/{ru,en}.json,src/**/*.{ts,tsx}}"
+      root: frontend
+      run: npm run check-translations
     # gitleaks: block secrets (PAT / API keys / .env payload) from reaching the
     # commit. Scans only the staged slice so it stays sub-second. Skips quietly
     # if the binary is absent — `brew install gitleaks` to enable locally.

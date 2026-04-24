@@ -67,8 +67,33 @@ jobs:
         run: dotnet format backend/Mozgoslav.sln --verify-no-changes --no-restore --verbosity minimal
       - name: Build
         run: dotnet build backend/Mozgoslav.sln -maxcpucount:1 --no-restore -warnaserror
-      - name: Test (with coverage)
-        run: dotnet test backend/Mozgoslav.sln -maxcpucount:1 --no-build --nologo --verbosity normal --collect:"XPlat Code Coverage" --results-directory backend/coverage
+      - name: Test — unit (with coverage, 1% floor)
+        run: dotnet test backend/tests/Mozgoslav.Tests/Mozgoslav.Tests.csproj --no-build --nologo --verbosity normal --settings backend/UnitTests.runsettings --results-directory backend/coverage/unit
+      - name: Test — integration (with coverage, 1% floor)
+        run: dotnet test backend/tests/Mozgoslav.Tests.Integration/Mozgoslav.Tests.Integration.csproj --no-build --nologo --verbosity normal --settings backend/IntegrationTests.runsettings --results-directory backend/coverage/integration
+      - name: Backend coverage floor (1% line, total across both suites)
+        if: runner.os == 'Linux'
+        run: |
+          set -euo pipefail
+          files=$(find backend/coverage -name "coverage.cobertura.xml" 2>/dev/null)
+          if [ -z "$files" ]; then
+            echo "::error::no cobertura coverage files found under backend/coverage"
+            exit 1
+          fi
+          ok=0
+          for f in $files; do
+            rate=$(grep -oE 'line-rate="[0-9.]+"' "$f" | head -1 | cut -d'"' -f2 || true)
+            [ -z "$rate" ] && continue
+            pct=$(awk -v r="$rate" 'BEGIN{ printf "%.2f", r*100 }')
+            echo "  $f: ${pct}% line coverage"
+            if awk -v r="$rate" 'BEGIN{ exit (r >= 0.01) ? 0 : 1 }'; then
+              ok=1
+            fi
+          done
+          if [ "$ok" != "1" ]; then
+            echo "::error::every cobertura report was below the 1% floor"
+            exit 1
+          fi
       - name: Upload backend coverage
         if: runner.os == 'Linux' && always()
         uses: actions/upload-artifact@v4
