@@ -1,8 +1,10 @@
 import type { ProcessingJob } from "../domain/ProcessingJob";
 import type { ProcessedNote } from "../domain/ProcessedNote";
+import type { Profile } from "../domain/Profile";
 import type { Recording } from "../domain/Recording";
 import type { GlobalState } from "../store/rootReducer";
 import { initialJobsState, type JobsState } from "../store/slices/jobs";
+import { initialProfilesState, type ProfilesState } from "../store/slices/profiles";
 import { initialRecordingState, type RecordingState } from "../store/slices/recording";
 import { initialUiState, type UiState } from "../store/slices/ui";
 import { initialDictationState, type DictationState } from "../store/slices/dictation";
@@ -58,6 +60,15 @@ export const mockSettingsState = (
 
 export const mockModelsState = (patch: Partial<ModelsState> = {}): Pick<GlobalState, "models"> => ({
   models: { ...initialModelsState, ...patch },
+});
+
+export const profilesById = (profiles: readonly Profile[]): Record<string, Profile> =>
+  Object.fromEntries(profiles.map((p) => [p.id, p]));
+
+export const mockProfilesState = (
+  patch: Partial<ProfilesState> = {}
+): Pick<GlobalState, "profiles"> => ({
+  profiles: { ...initialProfilesState, ...patch },
 });
 
 export const mergeMockState = (...parts: Partial<GlobalState>[]): Partial<GlobalState> =>

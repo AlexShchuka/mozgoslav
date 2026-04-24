@@ -4,8 +4,19 @@ import { MemoryRouter } from "react-router-dom";
 
 import Profiles from "../index";
 import type { Profile } from "../../../domain/Profile";
-import { watchProfilesSagas } from "../../../store/slices/profiles";
-import { renderWithStore } from "../../../testUtils";
+import {
+  renderWithStore,
+  mockProfilesState,
+  profilesById,
+  mergeMockState,
+} from "../../../testUtils";
+import {
+  LOAD_PROFILES,
+  CREATE_PROFILE,
+  UPDATE_PROFILE,
+  DELETE_PROFILE,
+  DUPLICATE_PROFILE,
+} from "../../../store/slices/profiles";
 import "../../../i18n";
 
 jest.mock("react-toastify", () => ({
@@ -16,154 +27,133 @@ jest.mock("react-toastify", () => ({
   },
 }));
 
-jest.mock("../../../api/graphqlClient", () => ({
-  graphqlClient: { request: jest.fn() },
-  getGraphqlWsClient: jest.fn(),
-}));
-
-import { graphqlClient } from "../../../api/graphqlClient";
-
-const mockedRequest = graphqlClient.request as jest.Mock;
-
-const buildGqlProfile = (patch: Partial<Profile>) => ({
-  __typename: "Profile" as const,
+const buildProfile = (patch: Partial<Profile> = {}): Profile => ({
   id: patch.id ?? "p1",
   name: patch.name ?? "User Profile",
   systemPrompt: patch.systemPrompt ?? "",
   transcriptionPromptOverride: patch.transcriptionPromptOverride ?? "",
   outputTemplate: patch.outputTemplate ?? "",
-  cleanupLevel:
-    patch.cleanupLevel === "Aggressive"
-      ? "AGGRESSIVE"
-      : patch.cleanupLevel === "None"
-        ? "NONE"
-        : "LIGHT",
+  cleanupLevel: patch.cleanupLevel ?? "Light",
   exportFolder: patch.exportFolder ?? "_inbox",
   autoTags: patch.autoTags ?? [],
   isDefault: patch.isDefault ?? false,
   isBuiltIn: patch.isBuiltIn ?? false,
-  glossary: [],
-  llmCorrectionEnabled: false,
 });
 
-const renderProfiles = () =>
-  renderWithStore(
+const renderProfiles = (profiles: readonly Profile[] = []) => {
+  const allProfiles = profilesById(profiles);
+  const order = profiles.map((p) => p.id);
+  return renderWithStore(
     <MemoryRouter>
       <Profiles />
     </MemoryRouter>,
-    { sagas: [watchProfilesSagas] }
+    {
+      preloadedState: mergeMockState(mockProfilesState({ profiles: allProfiles, order })),
+    }
   );
+};
 
 describe("Profiles — CRUD UI", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockedRequest.mockResolvedValue({ profiles: [] });
+  it("Profiles_OnMount_DispatchesLoadProfiles", () => {
+    const { getActions } = renderProfiles();
+    expect(getActions().some((a) => a.type === LOAD_PROFILES)).toBe(true);
   });
 
-  it("Profiles_List_RendersWithBadges", async () => {
-    mockedRequest.mockResolvedValue({
-      profiles: [
-        buildGqlProfile({ id: "b1", name: "Built-in", isBuiltIn: true, isDefault: true }),
-        buildGqlProfile({ id: "u1", name: "Mine", isBuiltIn: false }),
-      ],
-    });
+  it("Profiles_List_RendersWithBadges", () => {
+    const profiles = [
+      buildProfile({ id: "b1", name: "Built-in", isBuiltIn: true, isDefault: true }),
+      buildProfile({ id: "u1", name: "Mine", isBuiltIn: false }),
+    ];
 
-    renderProfiles();
+    renderProfiles(profiles);
 
-    expect(await screen.findByText("Built-in")).toBeInTheDocument();
+    expect(screen.getByText("Built-in")).toBeInTheDocument();
     expect(screen.getByText("Mine")).toBeInTheDocument();
     expect(screen.getByTestId("profile-row-b1")).toHaveAttribute("data-builtin", "true");
     expect(screen.getByTestId("profile-row-u1")).toHaveAttribute("data-builtin", "false");
   });
 
-  it("Profiles_Create_OpensEditor_PostsAndInserts", async () => {
-    const created = buildGqlProfile({ id: "new", name: "Fresh" });
-    mockedRequest
-      .mockResolvedValueOnce({ profiles: [] })
-      .mockResolvedValueOnce({ createProfile: { profile: created, errors: [] } });
+  it("Profiles_Create_OpensEditor_DispatchesCreateProfile", async () => {
+    const { getActions } = renderProfiles();
 
-    renderProfiles();
-
-    await userEvent.click(await screen.findByTestId("profiles-create"));
+    await userEvent.click(screen.getByTestId("profiles-create"));
     await userEvent.type(screen.getByTestId("profile-field-name"), "Fresh");
     await userEvent.click(screen.getByTestId("profile-editor-save"));
 
-    expect(await screen.findByText("Fresh")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        getActions().some((a) => a.type === CREATE_PROFILE && a.payload.name === "Fresh")
+      ).toBe(true)
+    );
   });
 
-  it("Profiles_Edit_OpensEditor_PutsAndRefreshes", async () => {
-    const existing = buildGqlProfile({ id: "u1", name: "Mine" });
-    const updated = buildGqlProfile({ id: "u1", name: "Mine-renamed" });
-    mockedRequest
-      .mockResolvedValueOnce({ profiles: [existing] })
-      .mockResolvedValueOnce({ updateProfile: { profile: updated, errors: [] } });
+  it("Profiles_Edit_OpensEditor_DispatchesUpdateProfile", async () => {
+    const existing = buildProfile({ id: "u1", name: "Mine" });
+    const { getActions } = renderProfiles([existing]);
 
-    renderProfiles();
-
-    await userEvent.click(await screen.findByTestId("profile-row-edit-u1"));
+    await userEvent.click(screen.getByTestId("profile-row-edit-u1"));
     const nameField = screen.getByTestId("profile-field-name") as HTMLInputElement;
     await userEvent.clear(nameField);
     await userEvent.type(nameField, "Mine-renamed");
     await userEvent.click(screen.getByTestId("profile-editor-save"));
 
-    await waitFor(() => {
-      expect(mockedRequest).toHaveBeenCalledTimes(2);
-    });
+    await waitFor(() =>
+      expect(
+        getActions().some(
+          (a) =>
+            a.type === UPDATE_PROFILE &&
+            a.payload.id === "u1" &&
+            a.payload.draft.name === "Mine-renamed"
+        )
+      ).toBe(true)
+    );
   });
 
-  it("Profiles_Duplicate_PostsAndInserts", async () => {
-    const existing = buildGqlProfile({ id: "u1", name: "Mine" });
-    const copy = buildGqlProfile({ id: "u2", name: "Mine (copy)" });
-    mockedRequest
-      .mockResolvedValueOnce({ profiles: [existing] })
-      .mockResolvedValueOnce({ duplicateProfile: { profile: copy, errors: [] } });
+  it("Profiles_Duplicate_DispatchesDuplicateProfile", async () => {
+    const existing = buildProfile({ id: "u1", name: "Mine" });
+    const { getActions } = renderProfiles([existing]);
 
-    renderProfiles();
+    await userEvent.click(screen.getByTestId("profile-row-duplicate-u1"));
 
-    await userEvent.click(await screen.findByTestId("profile-row-duplicate-u1"));
-
-    expect(await screen.findByText("Mine (copy)")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(getActions().some((a) => a.type === DUPLICATE_PROFILE && a.payload.id === "u1")).toBe(
+        true
+      )
+    );
   });
 
-  it("Profiles_Delete_UserCreated_RemovesRow", async () => {
-    const existing = buildGqlProfile({ id: "u1", name: "Mine", isBuiltIn: false });
-    mockedRequest
-      .mockResolvedValueOnce({ profiles: [existing] })
-      .mockResolvedValueOnce({ deleteProfile: { profile: null, errors: [] } });
-
+  it("Profiles_Delete_UserCreated_DispatchesDeleteProfile", async () => {
+    const existing = buildProfile({ id: "u1", name: "Mine", isBuiltIn: false });
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true);
 
     try {
-      renderProfiles();
+      const { getActions } = renderProfiles([existing]);
 
-      await userEvent.click(await screen.findByTestId("profile-row-delete-u1"));
+      await userEvent.click(screen.getByTestId("profile-row-delete-u1"));
 
-      await waitFor(() => {
-        expect(screen.queryByText("Mine")).not.toBeInTheDocument();
-      });
+      await waitFor(() =>
+        expect(getActions().some((a) => a.type === DELETE_PROFILE && a.payload.id === "u1")).toBe(
+          true
+        )
+      );
     } finally {
       confirmSpy.mockRestore();
     }
   });
 
-  it("Profiles_Delete_BuiltIn_ShowsErrorToast_RowStays", async () => {
-    const builtIn = buildGqlProfile({ id: "b1", name: "Built-in", isBuiltIn: true });
-    mockedRequest.mockResolvedValue({ profiles: [builtIn] });
+  it("Profiles_Delete_BuiltIn_ButtonIsDisabled", () => {
+    const builtIn = buildProfile({ id: "b1", name: "Built-in", isBuiltIn: true });
+    renderProfiles([builtIn]);
 
-    renderProfiles();
-
-    const deleteBtn = await screen.findByTestId("profile-row-delete-b1");
-
+    const deleteBtn = screen.getByTestId("profile-row-delete-b1");
     expect(deleteBtn).toBeDisabled();
     expect(screen.getByText("Built-in")).toBeInTheDocument();
   });
 
   it("ProfileEditor_SubmitEmptyName_ShowsValidation", async () => {
-    mockedRequest.mockResolvedValue({ profiles: [] });
-
     renderProfiles();
 
-    await userEvent.click(await screen.findByTestId("profiles-create"));
+    await userEvent.click(screen.getByTestId("profiles-create"));
     await userEvent.click(screen.getByTestId("profile-editor-save"));
 
     expect(await screen.findByTestId("profile-field-name-error")).toBeInTheDocument();

@@ -16,5 +16,7 @@ export {
   notesById,
   mockSettingsState,
   mockModelsState,
+  mockProfilesState,
+  profilesById,
   mergeMockState,
 } from "./mockState";
