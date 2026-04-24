@@ -1,14 +1,18 @@
-import { put, takeLatest } from "redux-saga/effects";
+import { put, takeEvery, takeLatest } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 
 import type { QueryRecordingsQuery } from "../../../api/gql/graphql";
-import { QueryRecordingsDocument } from "../../../api/gql/graphql";
+import { MutationDeleteRecordingDocument, QueryRecordingsDocument } from "../../../api/gql/graphql";
 import { gqlRequest } from "../../saga/graphql";
 import {
+  DELETE_RECORDING,
   LOAD_RECORDINGS,
+  deleteRecordingFailure,
+  deleteRecordingSuccess,
   loadRecordingsFailure,
   loadRecordingsSuccess,
   loadRecordingsUnavailable,
+  type DeleteRecordingAction,
 } from "./actions";
 import { mapGqlRecording } from "./recordingMapper";
 
@@ -30,6 +34,17 @@ export function* loadRecordingsSaga(): SagaIterator {
   }
 }
 
+export function* deleteRecordingSaga(action: DeleteRecordingAction): SagaIterator {
+  const id = action.payload;
+  try {
+    yield* gqlRequest(MutationDeleteRecordingDocument, { id });
+    yield put(deleteRecordingSuccess(id));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    yield put(deleteRecordingFailure({ id, error: message }));
+  }
+}
+
 const isBackendDown = (error: unknown): boolean => {
   if (error instanceof Error) {
     return (
@@ -44,4 +59,5 @@ const isBackendDown = (error: unknown): boolean => {
 
 export function* watchRecordingSagas(): SagaIterator {
   yield takeLatest(LOAD_RECORDINGS, loadRecordingsSaga);
+  yield takeEvery(DELETE_RECORDING, deleteRecordingSaga);
 }

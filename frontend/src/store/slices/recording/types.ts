@@ -5,6 +5,7 @@ export interface RecordingState {
   isLoading: boolean;
   isBackendUnavailable: boolean;
   error: string | null;
+  deletingIds: Record<string, true>;
 }
 
 export const initialRecordingState: RecordingState = {
@@ -12,4 +13,5 @@ export const initialRecordingState: RecordingState = {
   isLoading: false,
   isBackendUnavailable: false,
   error: null,
+  deletingIds: {},
 };

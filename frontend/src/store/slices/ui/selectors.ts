@@ -9,3 +9,11 @@ export const selectOpenModals = createSelector(selectUiState, (slice) => slice.o
 export const selectIsModalOpen = (id: string) =>
   createSelector(selectUiState, (slice) => slice.openModals.includes(id));
 export const selectToasts = createSelector(selectUiState, (slice) => slice.toasts);
+
+export const selectAllOpenNoteResolutions = createSelector(
+  selectUiState,
+  (slice) => slice.openNoteResolutions
+);
+
+export const selectOpenNoteResolution = (recordingId: string) =>
+  createSelector(selectUiState, (slice) => slice.openNoteResolutions[recordingId] ?? null);
