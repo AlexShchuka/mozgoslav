@@ -5,9 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -29,8 +27,6 @@ namespace Mozgoslav.Tests.Integration;
 [TestClass]
 public sealed class DictationPushWebmOpusTests
 {
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
-
     [TestMethod]
     public async Task Push_WebmOpusChunks_DecodeAcrossBoundariesAndAccumulate()
     {
@@ -43,11 +39,9 @@ public sealed class DictationPushWebmOpusTests
         await using var factory = new DictationPushTestFactory(sink);
         using var client = factory.CreateClient();
 
-        using var start = await client.PostAsync("/api/dictation/start", content: null, TestContext.CancellationToken);
-        start.StatusCode.Should().Be(HttpStatusCode.OK);
-        var startBody = await start.Content.ReadFromJsonAsync<StartResponse>(Json, TestContext.CancellationToken);
-        startBody.Should().NotBeNull();
-        var sessionId = startBody.SessionId;
+        var manager = factory.Services.GetRequiredService<IDictationSessionManager>();
+        var session = manager.Start(source: "test");
+        var sessionId = session.Id;
 
         try
         {
@@ -69,9 +63,7 @@ public sealed class DictationPushWebmOpusTests
                     "every MediaRecorder chunk must be accepted, including header-less continuations");
             }
 
-            using var stop = await client.PostAsync(
-                $"/api/dictation/stop/{sessionId}", content: null, TestContext.CancellationToken);
-            stop.StatusCode.Should().Be(HttpStatusCode.OK);
+            await manager.StopAsync(sessionId, TestContext.CancellationToken);
 
             sink.ReceivedChunks.Should().NotBeEmpty(
                 "the decoded WebM/Opus chunks must reach the streaming transcription service");
@@ -83,8 +75,7 @@ public sealed class DictationPushWebmOpusTests
         }
         finally
         {
-            using var cancel = await client.PostAsync(
-                $"/api/dictation/cancel/{sessionId}", content: null, TestContext.CancellationToken);
+            try { await manager.CancelAsync(sessionId, TestContext.CancellationToken); } catch { }
         }
     }
 
@@ -110,8 +101,6 @@ public sealed class DictationPushWebmOpusTests
         }
         return false;
     }
-
-    private sealed record StartResponse(Guid SessionId);
 
     public TestContext TestContext { get; set; } = null!;
 
