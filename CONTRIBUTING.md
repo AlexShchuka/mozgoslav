@@ -58,7 +58,7 @@ Unused `using` directives are enforced by `dotnet build -warnaserror` (IDE0005).
 
 - **Branching**: `<username>/<kebab-slug>` off `main`. One logical change per branch.
 - **Squash-merge only**; the PR title becomes the commit message.
-- **PR title must pass Conventional Commits** (`amannn/action-semantic-pull-request`).
+- **PR title must pass Conventional Commits** (CI runs `commitlint` against `github.event.pull_request.title`).
   - Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`.
   - Header ≤ 100 characters. Scope optional but preferred: `feat(settings): …`.
   - Breaking changes: `feat(scope)!: …`.
