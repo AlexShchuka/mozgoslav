@@ -25,34 +25,12 @@ Boots backend + python sidecar + Electron UI. First run bootstraps everything; s
 
 ## Local gate (matches CI)
 
-Auto-format first, then verify. CI runs `--verify-no-changes` / `--check` and fails without diff context.
-
 ```bash
-dotnet format backend/Mozgoslav.sln --verbosity minimal
-cd frontend && npx prettier --write "src/**/*.{ts,tsx,css}" "electron/**/*.ts" && cd ..
+bash scripts/agent-gate.sh               # all stacks
+bash scripts/agent-gate.sh backend       # scoped: verify|backend|frontend|python|native
 ```
 
-Then:
-
-```bash
-scripts/check-encoding.sh
-uncomment --dry-run --remove-todo --remove-fixme --remove-doc \
-  backend frontend/src frontend/electron python-sidecar native scripts
-
-dotnet format backend/Mozgoslav.sln --verify-no-changes --verbosity minimal
-dotnet build  backend/Mozgoslav.sln -maxcpucount:1 -warnaserror
-dotnet test   backend/tests/Mozgoslav.Tests/Mozgoslav.Tests.csproj \
-  --settings backend/UnitTests.runsettings -maxcpucount:1
-dotnet test   backend/tests/Mozgoslav.Tests.Integration/Mozgoslav.Tests.Integration.csproj \
-  --settings backend/IntegrationTests.runsettings -maxcpucount:1
-
-cd frontend && npm run typecheck && npm run lint && npm run check-styles \
-  && npm run check-translations \
-  && npx prettier --check "src/**/*.{ts,tsx,css}" "electron/**/*.ts" \
-  && npm test -- --watchAll=false
-cd python-sidecar && ruff check . && black --check . && pytest -q
-cd native/MozgoslavDictationHelper && swift build -c release && swift test
-```
+The script auto-formats first, then runs the same verify / build / test / lint steps CI runs. Native stage is auto-skipped on Linux.
 
 ## PR workflow
 
@@ -77,4 +55,4 @@ AI agents never push. They open local branches and hand over to a human for the 
 
 ## Release
 
-Tagging `v*.*.*` triggers `.github/workflows/release.yml` — builds a self-contained macOS arm64 `.dmg` (bundled backend, models, syncthing, dictation helper) and attaches it to the GitHub Release. Signing + notarization are off until `MAC_CERT_P12_BASE64` / `APPLE_API_KEY_BASE64` / `APPLE_API_KEY_ID` / `APPLE_API_ISSUER_ID` / `MAC_CERT_PASSWORD` / `KEYCHAIN_PASSWORD` land in GitHub Secrets; users see a Gatekeeper warning on first launch of unsigned builds.
+Tagging `v*.*.*` triggers `.github/workflows/release.yml` — builds a self-contained macOS arm64 `.dmg` (bundled backend, models, syncthing, dictation helper) and attaches it to the GitHub Release. Full trigger + unlock-signing checklist: `docs/runbooks/release-dmg.md`.

@@ -43,32 +43,28 @@ Contract between this repo and any coding agent. Only things you cannot infer fr
 ## Non-obvious commands
 
 ```bash
-# Full local gate before committing (matches CI):
-bash scripts/check-encoding.sh
-uncomment --dry-run --remove-todo --remove-fixme --remove-doc \
-  backend frontend/src frontend/electron python-sidecar native scripts
+# Full local gate — matches CI; use before every push:
+bash scripts/agent-gate.sh                 # all stacks
+bash scripts/agent-gate.sh backend         # scoped: verify|backend|frontend|python|native
 
-# Backend integration + unit suites use separate runsettings:
-dotnet test backend/tests/Mozgoslav.Tests/Mozgoslav.Tests.csproj \
-  --settings backend/UnitTests.runsettings -maxcpucount:1
-dotnet test backend/tests/Mozgoslav.Tests.Integration/Mozgoslav.Tests.Integration.csproj \
-  --settings backend/IntegrationTests.runsettings -maxcpucount:1
-
-# Scoped test while iterating:
+# Scoped test while iterating (bypasses runsettings for speed):
 dotnet test --filter "FullyQualifiedName~<Class>" -maxcpucount:1
-
-# Translations parity (en.json ↔ ru.json) — CI blocks on drift:
-cd frontend && npm run check-translations
 
 # macOS .dmg pipeline (bundled backend + models + native helper + syncthing):
 bash scripts/publish-backend-osx.sh
 cd frontend && npm run dist:mac
 
-# Codegen-driven GraphQL types (regenerates src/api/gql/):
+# Regenerate GraphQL typed ops after adding a .graphql operation:
 cd frontend && npm run codegen
 ```
 
 Everything else (`npm run dev/build/test/lint/typecheck`, `dotnet build/format`, `pytest`, `ruff`, `swift build/test`) is discoverable from `package.json` / `.csproj` / `pyproject.toml` / `Package.swift`.
+
+## Runbooks
+
+- `docs/runbooks/agent-session.md` — end-to-end flow for an AI coding session in this repo.
+- `docs/runbooks/release-dmg.md` — cutting a macOS release + unlock-signing checklist.
+- `docs/runbooks/backlog-migration.md` — one-shot docs/ → Issues migration; for re-imports.
 
 ## Testing discipline
 
