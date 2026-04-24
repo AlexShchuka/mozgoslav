@@ -38,7 +38,7 @@ module.exports = {
         "!src/main.tsx",
         "!src/i18n/**",
     ],
-    coverageReporters: ["text-summary", "lcov"],
+    coverageReporters: ["text-summary", "lcov", "json-summary"],
     coverageDirectory: "coverage",
     coverageThreshold: {
         global: {
