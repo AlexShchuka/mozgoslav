@@ -176,9 +176,9 @@ public sealed class SyncthingHttpClientTests : IDisposable
             CancellationToken.None);
 
         var request = _server.LogEntries.Should().ContainSingle(e =>
-            e.RequestMessage.Method == "POST" && e.RequestMessage.Path == "/rest/cluster/pending/devices")
+            e.RequestMessage!.Method == "POST" && e.RequestMessage!.Path == "/rest/cluster/pending/devices")
             .Subject;
-        var body = request.RequestMessage.Body ?? string.Empty;
+        var body = request.RequestMessage!.Body ?? string.Empty;
         body.Should().Contain("NEW-PHONE");
         body.Should().Contain("alex-phone");
         body.Should().Contain("autoAcceptFolders");
@@ -194,7 +194,7 @@ public sealed class SyncthingHttpClientTests : IDisposable
         await client.ShutdownAsync(CancellationToken.None);
 
         _server.LogEntries.Should().Contain(e =>
-            e.RequestMessage.Method == "POST" && e.RequestMessage.Path == "/rest/system/shutdown");
+            e.RequestMessage!.Method == "POST" && e.RequestMessage!.Path == "/rest/system/shutdown");
     }
 
     [TestMethod]
@@ -221,9 +221,9 @@ public sealed class SyncthingHttpClientTests : IDisposable
         await client.ReplaceConfigAsync(Updated, CancellationToken.None);
 
         var put = _server.LogEntries.Should().ContainSingle(e =>
-            e.RequestMessage.Method == "PUT" && e.RequestMessage.Path == "/rest/system/config")
+            e.RequestMessage!.Method == "PUT" && e.RequestMessage!.Path == "/rest/system/config")
             .Subject;
-        (put.RequestMessage.Body ?? string.Empty).Should().Be(Updated);
+        (put.RequestMessage!.Body ?? string.Empty).Should().Be(Updated);
     }
 
     [TestMethod]
@@ -236,8 +236,8 @@ public sealed class SyncthingHttpClientTests : IDisposable
         await client.IsHealthyAsync(CancellationToken.None);
 
         var entry = _server.LogEntries.Single();
-        entry.RequestMessage.Headers.Should().ContainKey("X-API-Key");
-        string.Join(",", entry.RequestMessage.Headers!["X-API-Key"]).Should().Be(ApiKey);
+        entry.RequestMessage!.Headers.Should().ContainKey("X-API-Key");
+        string.Join(",", entry.RequestMessage!.Headers!["X-API-Key"]).Should().Be(ApiKey);
     }
 
     private SyncthingHttpClient NewClient() =>

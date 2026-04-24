@@ -112,7 +112,7 @@ public sealed class OllamaLlmProviderTests
 
         await _provider.ChatAsync("sys", "user", CancellationToken.None);
 
-        var body = _server.LogEntries.Single().RequestMessage.Body;
+        var body = _server.LogEntries.Single().RequestMessage!.Body;
         body.Should().Contain("\"stream\":false");
         body.Should().Contain("qwen2.5:14b");
     }

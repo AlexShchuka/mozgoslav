@@ -6,11 +6,11 @@
 # (audeering gender/emotion — Tier 2, not in CI).
 
 # --- Web framework ---
-fastapi>=0.115.0
-uvicorn[standard]>=0.32.0
-python-multipart>=0.0.18
-pydantic>=2.0
-pydantic-settings>=2.0
+fastapi==0.136.1
+uvicorn[standard]==0.46.0
+python-multipart==0.0.26
+pydantic==2.13.3
+pydantic-settings==2.14.0
 
 # --- ML runtime ---
 # torch pulls ~4GB of CUDA wheels on Linux by default — overkill for the
@@ -18,15 +18,15 @@ pydantic-settings>=2.0
 # are CPU-native already and resolve from PyPI. PEP 440 forbids `>=` with
 # local version labels (`+cpu`), so Linux uses exact-pin.
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch>=2.6.0 ; sys_platform == 'darwin'
-torch==2.6.0+cpu ; sys_platform == 'linux'
-torchaudio>=2.6.0 ; sys_platform == 'darwin'
-torchaudio==2.6.0+cpu ; sys_platform == 'linux'
-transformers>=4.49.0
-huggingface_hub>=0.29.0
-soundfile>=0.13.0
-librosa>=0.10.2
-numpy>=2.2.0
+torch==2.11.0 ; sys_platform == 'darwin'
+torch==2.11.0+cpu ; sys_platform == 'linux'
+torchaudio==2.11.0 ; sys_platform == 'darwin'
+torchaudio==2.11.0+cpu ; sys_platform == 'linux'
+transformers==5.6.2
+huggingface_hub==1.11.0
+soundfile==0.13.1
+librosa==0.11.0
+numpy==2.4.4
 
 # --- Diarization stack ---
 # ``webrtcvad-wheels`` ships precompiled wheels for the resemblyzer's
@@ -34,13 +34,13 @@ numpy>=2.2.0
 # package fails to build on Python 3.12 without a pre-installed C
 # toolchain. The wheels package exposes the same ``webrtcvad`` import
 # name, so no code change is needed.
-silero-vad>=5.1.2
-resemblyzer>=0.1.4
-webrtcvad-wheels>=2.0.14
-scikit-learn>=1.6.1
+silero-vad==6.2.1
+resemblyzer==0.1.4
+webrtcvad-wheels==2.0.14
+scikit-learn==1.8.0
 
 # --- NER ---
-natasha>=1.6.0
+natasha==1.6.0
 
 # --- Embeddings (ADR-005 RAG swap-in) ---
-sentence-transformers>=3.0.0
+sentence-transformers==5.4.1

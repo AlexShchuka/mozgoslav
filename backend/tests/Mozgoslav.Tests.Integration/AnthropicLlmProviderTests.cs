@@ -115,8 +115,8 @@ public sealed class AnthropicLlmProviderTests
         await _provider.ChatAsync("sys", "user", CancellationToken.None);
 
         var recorded = _server.LogEntries.Single();
-        recorded.RequestMessage.Headers.Should().ContainKey("x-api-key");
-        recorded.RequestMessage.Headers!["x-api-key"].Should().Contain("sk-ant-test");
-        recorded.RequestMessage.Headers.Should().ContainKey("anthropic-version");
+        recorded.RequestMessage!.Headers.Should().ContainKey("x-api-key");
+        recorded.RequestMessage!.Headers!["x-api-key"].Should().Contain("sk-ant-test");
+        recorded.RequestMessage!.Headers.Should().ContainKey("anthropic-version");
     }
 }

@@ -23,6 +23,7 @@ module.exports = {
                     esModuleInterop: true,
                     module: "commonjs",
                     moduleResolution: "node",
+                    ignoreDeprecations: "6.0",
                 },
             },
         ],

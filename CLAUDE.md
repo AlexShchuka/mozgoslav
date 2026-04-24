@@ -100,7 +100,7 @@ Frontend top-level:
 
 - One class per file. No `#region`. No primary constructors — explicit `readonly` fields in traditional ctors.
 - `sealed` on leaf classes. `internal` unless cross-project visibility is required.
-- Central package management via `Directory.Packages.props` (floating majors). Central build props: `TargetFramework=net10.0`, `LangVersion=14`, `Nullable=enable`, `TreatWarningsAsErrors=true`.
+- Central package management via `Directory.Packages.props` with exact pins on every package. Renovate opens weekly bump PRs. Central build props: `TargetFramework=net10.0`, `LangVersion=14`, `Nullable=enable`, `TreatWarningsAsErrors=true`.
 - Tests: MSTest + FluentAssertions + NSubstitute. Integration tests spin real SQLite temp files via the shared test database.
 
 ## Frontend conventions
