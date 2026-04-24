@@ -12,16 +12,29 @@ export interface RagMessage {
   readonly llmAvailable: boolean;
 }
 
+export interface RagStatus {
+  readonly embeddedNotes: number;
+  readonly chunks: number;
+}
+
 export interface RagState {
   readonly messages: readonly RagMessage[];
   readonly isAsking: boolean;
   readonly error: string | null;
+  readonly status: RagStatus | null;
+  readonly isLoadingStatus: boolean;
+  readonly isReindexing: boolean;
+  readonly lastReindexCount: number | null;
 }
 
 export const initialRagState: RagState = {
   messages: [],
   isAsking: false,
   error: null,
+  status: null,
+  isLoadingStatus: false,
+  isReindexing: false,
+  lastReindexCount: null,
 };
 
 export type { RagAnswer, RagCitation };
