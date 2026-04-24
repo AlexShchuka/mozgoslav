@@ -63,7 +63,7 @@ public sealed class OpenAiCompatibleLlmServiceTests
     public async Task IsAvailableAsync_ServerReturns200_ReturnsTrue()
     {
         _server.Given(Request.Create().WithPath("/v1/models").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{\"data\":[]}"));
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(/*lang=json,strict*/ "{\"data\":[]}"));
 
         var result = await _service.IsAvailableAsync(CancellationToken.None);
 
@@ -103,7 +103,7 @@ public sealed class OpenAiCompatibleLlmServiceTests
     [TestMethod]
     public async Task ProcessAsync_ValidJsonResponse_ReturnsTypedResult()
     {
-        const string Content = """
+        const string Content = /*lang=json,strict*/ """
             {
               "summary": "A short summary",
               "key_points": ["point one", "point two"],
@@ -174,7 +174,7 @@ public sealed class OpenAiCompatibleLlmServiceTests
     [TestMethod]
     public async Task ProcessAsync_UnknownConversationType_FallsBackToOther()
     {
-        const string Content = """
+        const string Content = /*lang=json,strict*/ """
             {"summary": "x", "key_points": [], "decisions": [], "action_items": [], "unresolved_questions": [], "participants": [], "topic": "t", "conversation_type": "unknown-variant", "tags": []}
             """;
         StubChatCompletion(Content);

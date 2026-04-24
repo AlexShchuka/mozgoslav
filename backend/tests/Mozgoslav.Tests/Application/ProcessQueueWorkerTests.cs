@@ -250,7 +250,7 @@ public sealed class ProcessQueueWorkerTests
                 Arg.Any<IProgress<int>?>(), Arg.Any<CancellationToken>())
             .Returns<IReadOnlyList<TranscriptSegment>>(ci =>
             {
-                var token = (CancellationToken)ci[4]!;
+                var token = (CancellationToken)ci[4];
                 token.ThrowIfCancellationRequested();
                 throw new InvalidOperationException("perJobToken should have been cancelled");
             });

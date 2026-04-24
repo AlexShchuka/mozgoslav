@@ -144,5 +144,5 @@ public sealed class DictationEndpointsTests
 
     private sealed record StartResponse(Guid SessionId);
 
-    public TestContext TestContext { get; set; }
+    public required TestContext TestContext { get; set; }
 }

@@ -50,7 +50,7 @@ public sealed class PythonSidecarClientTests : IDisposable
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody("""
+                .WithBody(/*lang=json,strict*/ """
                     {
                       "segments": [
                         { "speaker": "A", "start": 0.0, "end": 1.5 },
@@ -76,7 +76,7 @@ public sealed class PythonSidecarClientTests : IDisposable
             .RespondWith(Response.Create()
                 .WithStatusCode(503)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody("""
+                .WithBody(/*lang=json,strict*/ """
                     {
                       "error": "model_not_installed",
                       "model_id": "audeering-age-gender",
@@ -100,7 +100,7 @@ public sealed class PythonSidecarClientTests : IDisposable
             .RespondWith(Response.Create()
                 .WithStatusCode(503)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody("""
+                .WithBody(/*lang=json,strict*/ """
                     {
                       "error": "model_not_installed",
                       "model_id": "audeering-emotion-msp-dim",
@@ -122,7 +122,7 @@ public sealed class PythonSidecarClientTests : IDisposable
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody("""
+                .WithBody(/*lang=json,strict*/ """
                     {
                       "people": ["Иван", "Мария"],
                       "orgs": ["Яндекс"],
@@ -146,7 +146,7 @@ public sealed class PythonSidecarClientTests : IDisposable
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody("""{"gender":"female","confidence":0.82}"""));
+                .WithBody(/*lang=json,strict*/ """{"gender":"female","confidence":0.82}"""));
 
         var result = await _client.GenderAsync("/tmp/audio.wav", TestContext.CancellationToken);
 

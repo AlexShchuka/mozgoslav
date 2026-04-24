@@ -229,7 +229,7 @@ public sealed class DictationSessionManagerTests
     public async Task Start_PassesDictationVocabularyToStreamingAsInitialPrompt()
     {
         var fixture = new Fixture();
-        fixture.Settings.DictationVocabulary.Returns<IReadOnlyList<string>>(
+        fixture.Settings.DictationVocabulary.Returns(
             ["Mozgoslav", "scenarios", "LRT", "кафка"]);
         fixture.ArrangeEmptyStream();
 
@@ -302,7 +302,7 @@ public sealed class DictationSessionManagerTests
     public async Task Start_WithoutVocabulary_PassesNullInitialPrompt()
     {
         var fixture = new Fixture();
-        fixture.Settings.DictationVocabulary.Returns<IReadOnlyList<string>>([]);
+        fixture.Settings.DictationVocabulary.Returns([]);
         fixture.ArrangeEmptyStream();
 
         var session = fixture.Manager.Start();
@@ -470,7 +470,7 @@ public sealed class DictationSessionManagerTests
         }
     }
 
-    public TestContext TestContext { get; set; }
+    public required TestContext TestContext { get; set; }
 
     private static async Task WaitForAsync(Func<bool> predicate, TimeSpan timeout)
     {

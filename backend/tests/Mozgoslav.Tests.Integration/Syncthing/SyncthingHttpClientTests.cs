@@ -130,11 +130,11 @@ public sealed class SyncthingHttpClientTests : IDisposable
     public async Task StreamEventsAsync_Get_Events_YieldsParsedEnvelopes_And_TracksLastId()
     {
         _server.Given(Request.Create().WithPath("/rest/events").WithParam("since", "0").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("""
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(/*lang=json,strict*/ """
                 [{"id":10,"type":"DeviceConnected","time":"2026-04-16T12:00:00Z","data":{"id":"PEER"}}]
                 """));
         _server.Given(Request.Create().WithPath("/rest/events").WithParam("since", "10").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("""
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(/*lang=json,strict*/ """
                 [{"id":11,"type":"FolderCompletion","time":"2026-04-16T12:00:01Z","data":{"folder":"mozgoslav-notes","device":"PEER","completion":100.0,"globalBytes":1,"needBytes":0}}]
                 """));
 
@@ -200,7 +200,7 @@ public sealed class SyncthingHttpClientTests : IDisposable
     [TestMethod]
     public async Task GetConfigAsync_Returns_RawJson()
     {
-        const string ConfigJson = """{"version":37,"folders":[{"id":"mozgoslav-notes"}],"devices":[]}""";
+        const string ConfigJson = /*lang=json,strict*/ """{"version":37,"folders":[{"id":"mozgoslav-notes"}],"devices":[]}""";
         _server.Given(Request.Create().WithPath("/rest/system/config").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithHeader("Content-Type", "application/json").WithBody(ConfigJson));
         var client = NewClient();
@@ -217,7 +217,7 @@ public sealed class SyncthingHttpClientTests : IDisposable
             .RespondWith(Response.Create().WithStatusCode(200));
         var client = NewClient();
 
-        const string Updated = """{"version":37,"folders":[],"devices":[]}""";
+        const string Updated = /*lang=json,strict*/ """{"version":37,"folders":[],"devices":[]}""";
         await client.ReplaceConfigAsync(Updated, CancellationToken.None);
 
         var put = _server.LogEntries.Should().ContainSingle(e =>

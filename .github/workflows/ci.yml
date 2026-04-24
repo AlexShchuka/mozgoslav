@@ -63,8 +63,8 @@ jobs:
         run: brew install ffmpeg
       - name: Restore
         run: dotnet restore backend/Mozgoslav.sln -maxcpucount:1
-      - name: Format check
-        run: dotnet format whitespace backend/Mozgoslav.sln --verify-no-changes --no-restore --verbosity minimal
+      - name: Format check (full — whitespace + style + analyzers)
+        run: dotnet format backend/Mozgoslav.sln --verify-no-changes --no-restore --verbosity minimal
       - name: Build
         run: dotnet build backend/Mozgoslav.sln -maxcpucount:1 --no-restore -warnaserror
       - name: Test
@@ -91,6 +91,9 @@ jobs:
         run: cd frontend && npm run typecheck
       - name: ESLint
         run: cd frontend && npm run lint
+      - name: Knip (dead code / unused deps — advisory)
+        continue-on-error: true
+        run: cd frontend && npm run knip
       - name: Prettier (check)
         run: cd frontend && npx prettier --check "src/**/*.{ts,tsx,css}" "electron/**/*.ts"
       - name: Test

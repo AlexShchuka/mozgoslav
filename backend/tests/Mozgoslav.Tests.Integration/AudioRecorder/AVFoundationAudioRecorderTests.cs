@@ -72,7 +72,7 @@ public sealed class AVFoundationAudioRecorderTests : IDisposable
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody("""{"sessionId":"abc-123"}"""));
+                .WithBody(/*lang=json,strict*/ """{"sessionId":"abc-123"}"""));
 
         await _recorder.StartAsync("/tmp/out.wav", TestContext.CancellationToken);
         _recorder.IsRecording.Should().BeTrue();
@@ -103,7 +103,7 @@ public sealed class AVFoundationAudioRecorderTests : IDisposable
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody("""{"sessionId":"abc-123"}"""));
+                .WithBody(/*lang=json,strict*/ """{"sessionId":"abc-123"}"""));
 
         await loggingRecorder.StartAsync("/tmp/out.wav", TestContext.CancellationToken);
 

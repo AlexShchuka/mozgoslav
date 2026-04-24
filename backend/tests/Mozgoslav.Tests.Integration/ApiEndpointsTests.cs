@@ -210,5 +210,5 @@ public sealed class ApiEndpointsTests
         body.Should().Contain("llmEndpoint");
     }
 
-    public TestContext TestContext { get; set; }
+    public required TestContext TestContext { get; set; }
 }

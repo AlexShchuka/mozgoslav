@@ -69,7 +69,7 @@ public sealed class FileSystemVaultDriver : IVaultDriver
                     continue;
                 }
                 backupRoot ??= Path.Combine(spec.VaultRoot, BackupFolder, BackupSubdir, backupStamp);
-                await BackupFileAsync(absolute, spec.VaultRoot, backupRoot!, ct);
+                await BackupFileAsync(absolute, spec.VaultRoot, backupRoot, ct);
             }
 
             await WriteFromEmbeddedAsync(file, absolute, ct);

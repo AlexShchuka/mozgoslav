@@ -45,7 +45,7 @@ public sealed class GlossaryApplicatorTests
         var profile = new Profile { Glossary = longTerms };
         var prompt = applicator.TryBuildInitialPrompt(profile);
         prompt.Should().NotBeNull();
-        prompt!.Length.Should().BeLessThanOrEqualTo(200);
+        prompt.Length.Should().BeLessThanOrEqualTo(200);
     }
 
     [TestMethod]

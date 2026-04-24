@@ -65,7 +65,8 @@ public sealed class AnthropicLlmProviderTests
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")
                 .WithBody(
-                    """
+                                         /*lang=json,strict*/
+                                         """
                     {
                       "id": "msg_01",
                       "type": "message",
@@ -110,7 +111,8 @@ public sealed class AnthropicLlmProviderTests
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")
                 .WithBody(
-                    """{"content":[{"type":"text","text":"ok"}]}"""));
+                                         /*lang=json,strict*/
+                                         """{"content":[{"type":"text","text":"ok"}]}"""));
 
         await _provider.ChatAsync("sys", "user", CancellationToken.None);
 

@@ -102,7 +102,7 @@ public sealed class ModelDownloadServiceTests : IDisposable
         var hash = await ModelDownloadService.ComputeSha256Async(path, TestContext.CancellationToken);
 
         hash.Should().NotBeNull();
-        hash!.Should().MatchRegex("^[0-9a-f]{64}$");
+        hash.Should().MatchRegex("^[0-9a-f]{64}$");
     }
 
     private IHttpClientFactory BuildFactory(Func<HttpRequestMessage, HttpResponseMessage> responder)
@@ -120,7 +120,7 @@ public sealed class ModelDownloadServiceTests : IDisposable
         return factory;
     }
 
-    public TestContext TestContext { get; set; }
+    public required TestContext TestContext { get; set; }
 
     private sealed class ScriptedHandler : HttpMessageHandler
     {

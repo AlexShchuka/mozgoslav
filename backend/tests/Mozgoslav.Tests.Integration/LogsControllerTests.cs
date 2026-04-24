@@ -49,7 +49,7 @@ public sealed class LogsControllerTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var body = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
-        body.Should().Contain(Path.GetFileName(_tempLog!));
+        body.Should().Contain(Path.GetFileName(_tempLog));
         body.Should().Contain("sizeBytes");
         body.Should().Contain("lastModifiedUtc");
     }
@@ -92,7 +92,7 @@ public sealed class LogsControllerTests
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    public TestContext TestContext { get; set; }
+    public required TestContext TestContext { get; set; }
 
     private sealed record TailResponse(string File, IReadOnlyList<string> Lines, int TotalLines);
 }

@@ -76,7 +76,7 @@ public sealed class ModelScanEndpointTests
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             var payload = await response.Content.ReadFromJsonAsync<List<JsonElement>>(Json, TestContext.CancellationToken);
             payload.Should().NotBeNull();
-            payload!.Should().HaveCount(3);
+            payload.Should().HaveCount(3);
 
             var kinds = payload.Select(e => e.GetProperty("kind").GetString()).ToList();
             kinds.Should().Contain("whisper-ggml");

@@ -108,5 +108,5 @@ public sealed class JobCancelEndpointsTests
         return job.Id;
     }
 
-    public TestContext TestContext { get; set; }
+    public required TestContext TestContext { get; set; }
 }

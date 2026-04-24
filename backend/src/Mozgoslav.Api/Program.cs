@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 
@@ -217,14 +216,14 @@ try
     builder.Services.AddHttpClient(GitHubPluginInstaller.HttpClientName);
     builder.Services.AddScoped<IPluginInstaller, GitHubPluginInstaller>();
     builder.Services.AddScoped<IVaultDiagnostics, VaultDiagnosticsService>();
-    builder.Services.AddSingleton<IReadOnlyList<PluginInstallSpec>>(_ => PinnedPluginsLoader.LoadFromEmbeddedResource());
+    builder.Services.AddSingleton(_ => PinnedPluginsLoader.LoadFromEmbeddedResource());
     builder.Services.AddSingleton<ModelDownloadService>();
     builder.Services.AddSingleton<IModelDownloadCoordinator, ModelDownloadCoordinator>();
     builder.Services.AddSingleton<BackupService>();
     builder.Services.AddSingleton<MozgoslavMetrics>();
     builder.Services.AddSingleton<SyncthingConfigService>();
 
-    builder.Services.AddSingleton<BagOfWordsEmbeddingService>(_ => new BagOfWordsEmbeddingService());
+    builder.Services.AddSingleton(_ => new BagOfWordsEmbeddingService());
     var sidecarBaseUrl = builder.Configuration["Mozgoslav:PythonSidecar:BaseUrl"];
     if (!string.IsNullOrWhiteSpace(sidecarBaseUrl))
     {

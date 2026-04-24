@@ -12,7 +12,7 @@ public sealed class SyncthingSseEventParserTests
     [TestMethod]
     public void ParseBatch_FolderCompletion_MapsPayload()
     {
-        const string json = """
+        const string json = /*lang=json,strict*/ """
             [{
               "id": 42,
               "type": "FolderCompletion",
@@ -43,7 +43,7 @@ public sealed class SyncthingSseEventParserTests
     [TestMethod]
     public void ParseBatch_DeviceConnected_And_Disconnected_SetConnectedFlag()
     {
-        const string json = """
+        const string json = /*lang=json,strict*/ """
             [
               {"id":1,"type":"DeviceConnected","time":"2026-04-16T12:00:00Z","data":{"id":"PEER1","addr":"192.168.1.5:22000"}},
               {"id":2,"type":"DeviceDisconnected","time":"2026-04-16T12:05:00Z","data":{"id":"PEER1","error":"conn reset"}}
@@ -63,7 +63,7 @@ public sealed class SyncthingSseEventParserTests
     [TestMethod]
     public void ParseBatch_PendingDevicesChanged_MapsAddedEntries()
     {
-        const string json = """
+        const string json = /*lang=json,strict*/ """
             [{
               "id": 3,
               "type": "PendingDevicesChanged",
@@ -89,7 +89,7 @@ public sealed class SyncthingSseEventParserTests
     [TestMethod]
     public void ParseBatch_ItemFinished_WithConflictPath_SetsFileConflict()
     {
-        const string json = """
+        const string json = /*lang=json,strict*/ """
             [{
               "id": 4,
               "type": "ItemFinished",
@@ -112,7 +112,7 @@ public sealed class SyncthingSseEventParserTests
     [TestMethod]
     public void ParseBatch_ItemFinished_WithoutConflictPath_NoFileConflictSet()
     {
-        const string json = """
+        const string json = /*lang=json,strict*/ """
             [{
               "id": 5,
               "type": "ItemFinished",
@@ -129,7 +129,7 @@ public sealed class SyncthingSseEventParserTests
     [TestMethod]
     public void ParseBatch_UnknownType_PassesThroughWithRawJson()
     {
-        const string json = """
+        const string json = /*lang=json,strict*/ """
             [{"id":99,"type":"SomeNewEventKind","time":"2026-04-16T12:20:00Z","data":{"foo":"bar"}}]
             """;
 
@@ -145,7 +145,7 @@ public sealed class SyncthingSseEventParserTests
     [TestMethod]
     public void ParseBatch_MalformedEntry_IsSilentlySkipped()
     {
-        const string json = """
+        const string json = /*lang=json,strict*/ """
             [
               {"type":"NoId"},
               {"id":7,"type":"DeviceConnected","time":"2026-04-16T12:25:00Z","data":{"id":"PEER"}}

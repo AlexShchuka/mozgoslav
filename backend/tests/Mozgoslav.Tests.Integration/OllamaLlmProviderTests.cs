@@ -65,7 +65,8 @@ public sealed class OllamaLlmProviderTests
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")
                 .WithBody(
-                    """
+                                         /*lang=json,strict*/
+                                         """
                     {
                       "model": "qwen2.5:14b",
                       "created_at": "2026-04-17T12:00:00Z",
@@ -108,7 +109,8 @@ public sealed class OllamaLlmProviderTests
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")
                 .WithBody(
-                    """{"message":{"role":"assistant","content":"ok"},"done":true}"""));
+                                         /*lang=json,strict*/
+                                         """{"message":{"role":"assistant","content":"ok"},"done":true}"""));
 
         await _provider.ChatAsync("sys", "user", CancellationToken.None);
 

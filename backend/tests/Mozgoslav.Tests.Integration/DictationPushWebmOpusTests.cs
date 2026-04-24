@@ -47,7 +47,7 @@ public sealed class DictationPushWebmOpusTests
         start.StatusCode.Should().Be(HttpStatusCode.OK);
         var startBody = await start.Content.ReadFromJsonAsync<StartResponse>(Json, TestContext.CancellationToken);
         startBody.Should().NotBeNull();
-        var sessionId = startBody!.SessionId;
+        var sessionId = startBody.SessionId;
 
         try
         {

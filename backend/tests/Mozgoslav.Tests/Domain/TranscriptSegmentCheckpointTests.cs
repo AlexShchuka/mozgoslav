@@ -31,6 +31,6 @@ public sealed class TranscriptSegmentCheckpointTests
             CheckpointAt: stamp);
 
         segment.CheckpointAt.Should().Be(stamp);
-        segment.CheckpointAt!.Value.Kind.Should().Be(DateTimeKind.Utc);
+        segment.CheckpointAt.Value.Kind.Should().Be(DateTimeKind.Utc);
     }
 }

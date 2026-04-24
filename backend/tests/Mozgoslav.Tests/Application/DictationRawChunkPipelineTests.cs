@@ -109,7 +109,7 @@ public sealed class DictationRawChunkPipelineTests
         var f = new Fixture();
         f.Settings.DictationLanguage.Returns("ru");
         f.Settings.DictationLlmPolish.Returns(false);
-        f.Settings.DictationVocabulary.Returns<IReadOnlyList<string>>([]);
+        f.Settings.DictationVocabulary.Returns([]);
         f.PerAppProfiles.Resolve(Arg.Any<string?>()).Returns(PerAppCorrectionProfile.Empty);
         return f;
     }

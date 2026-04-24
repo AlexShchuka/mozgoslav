@@ -35,7 +35,7 @@ public sealed class ModelDefaultChainTests
         var resolved = ModelCatalog.TryGet("antony66-ggml");
 
         resolved.Should().NotBeNull();
-        resolved!.Id.Should().Be("whisper-large-v3-russian-antony66");
+        resolved.Id.Should().Be("whisper-large-v3-russian-antony66");
         resolved.Kind.Should().Be(ModelKind.Stt);
         resolved.IsDefault.Should().BeTrue();
     }
@@ -61,7 +61,7 @@ public sealed class ModelDefaultChainTests
 
         var payload = await response.Content.ReadFromJsonAsync<DownloadAcceptance>(Json, TestContext.CancellationToken);
         payload.Should().NotBeNull();
-        payload!.DownloadId.Should().NotBeNullOrEmpty();
+        payload.DownloadId.Should().NotBeNullOrEmpty();
     }
 
     [TestMethod]
@@ -92,7 +92,7 @@ public sealed class ModelDefaultChainTests
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
-    public TestContext TestContext { get; set; }
+    public required TestContext TestContext { get; set; }
 
     private sealed record DownloadAcceptance(string DownloadId);
 }
