@@ -17,9 +17,9 @@ public static class TestInfrastructure
     [Timeout(60_000)]
     public static Task AssemblyInitialize(TestContext context)
     {
-#pragma warning disable IDISP003
+        _ = context;
+        _factory?.Dispose();
         _factory = new ApiFactory();
-#pragma warning restore IDISP003
         _ = _factory.Services;
         return Task.CompletedTask;
     }

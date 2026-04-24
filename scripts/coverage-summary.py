@@ -115,7 +115,8 @@ def pct(covered, total):
 def render_rate_table(stats):
     lines = ["| metric | covered | total | % |", "|--------|--------:|------:|---:|"]
     lines.append(f"| lines | {stats['lines_covered']} | {stats['lines_total']} | {pct(stats['lines_covered'], stats['lines_total'])} |")
-    lines.append(f"| branches | {stats['branches_covered']} | {stats['branches_total']} | {pct(stats['branches_covered'], stats['branches_total'])} |")
+    if stats['branches_total'] > 0:
+        lines.append(f"| branches | {stats['branches_covered']} | {stats['branches_total']} | {pct(stats['branches_covered'], stats['branches_total'])} |")
     return lines
 
 
