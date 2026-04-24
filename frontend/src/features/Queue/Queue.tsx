@@ -1,22 +1,16 @@
-import { FC, useCallback, useEffect, useMemo, useState } from "react";
+import { FC, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ListChecks, X } from "lucide-react";
-import { toast } from "react-toastify";
-import { print } from "graphql";
+import { useDispatch, useSelector } from "react-redux";
+import type { Action, Dispatch } from "redux";
 
 import Badge, { BadgeTone } from "../../components/Badge";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
 import ProgressBar from "../../components/ProgressBar";
-import { graphqlClient, getGraphqlWsClient } from "../../api/graphqlClient";
-import {
-  MutationCancelJobDocument,
-  QueryJobsDocument,
-  SubscriptionJobProgressDocument,
-} from "../../api/gql/graphql";
-import type { SubscriptionJobProgressSubscription } from "../../api/gql/graphql";
 import { ProcessingJob } from "../../domain/ProcessingJob";
+import { cancelJob as cancelJobAction, selectAllJobs } from "../../store/slices/jobs";
 import { JobHeader, JobMeta, JobRow, PageRoot, PageTitle, ResumeCopy } from "./Queue.style";
 
 const TERMINAL: ProcessingJob["status"][] = ["Done", "Failed", "Cancelled"];
@@ -39,46 +33,9 @@ const formatHHMM = (iso: string): string => {
 
 const Queue: FC = () => {
   const { t } = useTranslation();
-  const [jobs, setJobs] = useState<ProcessingJob[]>([]);
+  const dispatch = useDispatch<Dispatch<Action>>();
+  const jobs = useSelector(selectAllJobs);
   const [cancellingIds, setCancellingIds] = useState<Set<string>>(() => new Set());
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const data = await graphqlClient.request(QueryJobsDocument, { first: 200 });
-        if (!cancelled) {
-          setJobs((data.jobs?.nodes ?? []) as unknown as ProcessingJob[]);
-        }
-      } catch {}
-    })();
-
-    const wsClient = getGraphqlWsClient();
-    const unsubscribe = wsClient.subscribe<SubscriptionJobProgressSubscription>(
-      { query: print(SubscriptionJobProgressDocument) },
-      {
-        next: (value) => {
-          if (!value.data) return;
-          const job = value.data.jobProgress as unknown as ProcessingJob;
-          setJobs((prev) => {
-            const idx = prev.findIndex((j) => j.id === job.id);
-            if (idx === -1) return [job, ...prev];
-            const copy = prev.slice();
-            copy[idx] = { ...copy[idx], ...job };
-            return copy;
-          });
-        },
-        error: () => {},
-        complete: () => {},
-      }
-    );
-
-    return () => {
-      cancelled = true;
-      unsubscribe();
-      void wsClient.dispose();
-    };
-  }, []);
 
   const sorted = useMemo(
     () =>
@@ -89,7 +46,7 @@ const Queue: FC = () => {
   );
 
   const handleCancel = useCallback(
-    async (job: ProcessingJob) => {
+    (job: ProcessingJob) => {
       const isRunning = !TERMINAL.includes(job.status) && job.status !== "Queued";
       if (isRunning) {
         const ok = window.confirm(t("queue.cancelConfirmRunning"));
@@ -100,20 +57,16 @@ const Queue: FC = () => {
         next.add(job.id);
         return next;
       });
-      try {
-        await graphqlClient.request(MutationCancelJobDocument, { id: job.id });
-        setJobs((prev) => prev.filter((j) => j.id !== job.id));
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : String(err));
-      } finally {
+      dispatch(cancelJobAction(job.id));
+      void Promise.resolve().then(() => {
         setCancellingIds((prev) => {
           const next = new Set(prev);
           next.delete(job.id);
           return next;
         });
-      }
+      });
     },
-    [t]
+    [t, dispatch]
   );
 
   return (
@@ -151,7 +104,7 @@ const Queue: FC = () => {
                       leftIcon={<X size={14} />}
                       isLoading={isCancelling}
                       disabled={isCancelling}
-                      onClick={() => void handleCancel(job)}
+                      onClick={() => handleCancel(job)}
                     >
                       {t("queue.cancel")}
                     </Button>

@@ -1,7 +1,8 @@
 import type { ReactElement, ReactNode } from "react";
 import { render, type RenderOptions, type RenderResult } from "@testing-library/react";
 import { Provider } from "react-redux";
-import { applyMiddleware, createStore, type Store } from "redux";
+import { applyMiddleware, createStore, type Middleware, type Store } from "redux";
+import type { AnyAction } from "redux";
 import type { SagaIterator } from "redux-saga";
 import createSagaMiddleware, { type SagaMiddleware } from "redux-saga";
 import { all, fork } from "redux-saga/effects";
@@ -22,17 +23,26 @@ export interface RenderWithStoreOptions {
 export interface RenderWithStoreResult extends RenderResult {
   readonly store: Store<GlobalState>;
   readonly sagaMiddleware: SagaMiddleware;
+  readonly recordedActions: readonly AnyAction[];
+  readonly getActions: () => AnyAction[];
 }
 
 export const renderWithStore = (
   ui: ReactElement,
   options: RenderWithStoreOptions = {}
 ): RenderWithStoreResult => {
+  const recorded: AnyAction[] = [];
+
+  const recorderMiddleware: Middleware = () => (next) => (action) => {
+    recorded.push(action as AnyAction);
+    return next(action);
+  };
+
   const sagaMiddleware = createSagaMiddleware();
   const store = createStore(
     rootReducer,
     options.preloadedState as GlobalState | undefined,
-    applyMiddleware(sagaMiddleware)
+    applyMiddleware(recorderMiddleware, sagaMiddleware)
   );
   if (options.sagas && options.sagas.length > 0) {
     const sagas = options.sagas;
@@ -52,5 +62,11 @@ export const renderWithStore = (
   );
 
   const result = render(ui, { wrapper: Wrapper, ...options.renderOptions });
-  return { ...result, store, sagaMiddleware };
+  return {
+    ...result,
+    store,
+    sagaMiddleware,
+    recordedActions: recorded,
+    getActions: () => recorded,
+  };
 };

@@ -1,35 +1,12 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ThemeProvider } from "styled-components";
 
 import Queue from "../Queue";
 import { lightTheme } from "../../../styles/theme";
 import { ProcessingJob } from "../../../domain/ProcessingJob";
+import { cancelJob as cancelJobAction, jobUpdated } from "../../../store/slices/jobs";
+import { renderWithStore, mockJobsState, jobsById } from "../../../testUtils";
 import "../../../i18n";
-
-type JobSink = {
-  next: (value: { data: { jobProgress: ProcessingJob } }) => void;
-  error: (err: unknown) => void;
-  complete: () => void;
-};
-
-let activeJobSink: JobSink | null = null;
-// eslint-disable-next-line no-var -- jest.mock factories run before `let` is initialised; `var` keeps hoisting semantics
-var mockRequest: jest.Mock;
-
-jest.mock("../../../api/graphqlClient", () => {
-  mockRequest = jest.fn();
-  return {
-    graphqlClient: { request: mockRequest },
-    getGraphqlWsClient: jest.fn(() => ({
-      subscribe: jest.fn((_query: unknown, sink: JobSink) => {
-        activeJobSink = sink;
-        return () => {};
-      }),
-      dispose: jest.fn(),
-    })),
-  };
-});
 
 jest.mock("react-toastify", () => ({
   toast: {
@@ -57,58 +34,39 @@ const buildJob = (patch: Partial<ProcessingJob>): ProcessingJob => ({
   checkpointAt: patch.checkpointAt,
 });
 
-const renderQueue = () =>
-  render(
-    <ThemeProvider theme={lightTheme}>
-      <Queue />
-    </ThemeProvider>
-  );
-
 beforeEach(() => {
   jest.clearAllMocks();
-  activeJobSink = null;
 });
 
 describe("Queue — cancel UI (BC-015 / Bug 19)", () => {
-  it("Queue_CancelQueued_FiresDelete_RemovesRow", async () => {
+  it("Queue_CancelQueued_DispatchesCancelJob", async () => {
     const job = buildJob({ id: "job-q", status: "Queued" });
-    mockRequest
-      .mockResolvedValueOnce({ jobs: { nodes: [job], pageInfo: { hasNextPage: false } } })
-      .mockResolvedValueOnce({ cancelJob: { errors: [] } });
-
-    renderQueue();
+    const { getActions } = renderWithStore(<Queue />, {
+      preloadedState: mockJobsState({ byId: jobsById([job]) }),
+      theme: lightTheme,
+    });
 
     const cancelBtn = await screen.findByTestId(`queue-cancel-${job.id}`);
     expect(cancelBtn).toBeEnabled();
     await userEvent.click(cancelBtn);
 
-    await waitFor(() =>
-      expect(mockRequest).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ id: job.id })
-      )
-    );
+    expect(getActions()).toContainEqual(cancelJobAction(job.id));
   });
 
-  it("Queue_CancelRunning_Confirmation_CallsDelete", async () => {
+  it("Queue_CancelRunning_Confirmation_DispatchesCancel", async () => {
     const job = buildJob({ id: "job-r", status: "Transcribing", progress: 30 });
-    mockRequest
-      .mockResolvedValueOnce({ jobs: { nodes: [job], pageInfo: { hasNextPage: false } } })
-      .mockResolvedValueOnce({ cancelJob: { errors: [] } });
-
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true);
 
-    renderQueue();
+    const { getActions } = renderWithStore(<Queue />, {
+      preloadedState: mockJobsState({ byId: jobsById([job]) }),
+      theme: lightTheme,
+    });
+
     const cancelBtn = await screen.findByTestId(`queue-cancel-${job.id}`);
     await userEvent.click(cancelBtn);
 
-    await waitFor(() =>
-      expect(mockRequest).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ id: job.id })
-      )
-    );
     expect(confirmSpy).toHaveBeenCalled();
+    expect(getActions()).toContainEqual(cancelJobAction(job.id));
 
     confirmSpy.mockRestore();
   });
@@ -116,28 +74,26 @@ describe("Queue — cancel UI (BC-015 / Bug 19)", () => {
   it("Queue_CancelHidden_OnDoneAndFailed", async () => {
     const done = buildJob({ id: "job-done-001", status: "Done", progress: 100 });
     const failed = buildJob({ id: "job-fail-001", status: "Failed" });
-    mockRequest.mockResolvedValue({
-      jobs: { nodes: [done, failed], pageInfo: { hasNextPage: false } },
-    });
 
-    renderQueue();
+    renderWithStore(<Queue />, {
+      preloadedState: mockJobsState({ byId: jobsById([done, failed]) }),
+      theme: lightTheme,
+    });
 
     await waitFor(() => expect(screen.getAllByText(/Готово|Done/).length).toBeGreaterThan(0));
     expect(screen.queryByTestId(`queue-cancel-${done.id}`)).not.toBeInTheDocument();
     expect(screen.queryByTestId(`queue-cancel-${failed.id}`)).not.toBeInTheDocument();
   });
 
-  it("Queue_SseReconnect_OnConnectionLoss — subscription updates job list", async () => {
+  it("Queue_SubscriptionPush_UpdatesList", async () => {
     const job = buildJob({ id: "job-live", status: "Transcribing", progress: 10 });
-    mockRequest.mockResolvedValue({ jobs: { nodes: [], pageInfo: { hasNextPage: false } } });
 
-    renderQueue();
-
-    await waitFor(() => expect(activeJobSink).not.toBeNull());
-
-    act(() => {
-      activeJobSink!.next({ data: { jobProgress: job } });
+    const { store } = renderWithStore(<Queue />, {
+      preloadedState: mockJobsState({ byId: {} }),
+      theme: lightTheme,
     });
+
+    store.dispatch(jobUpdated(job) as never);
 
     await waitFor(() => expect(screen.getByTestId(`queue-cancel-${job.id}`)).toBeInTheDocument());
   });
@@ -150,37 +106,16 @@ describe("Queue — ADR-015 cancelled terminal state", () => {
       status: "Cancelled",
       finishedAt: new Date("2026-04-18T09:00:00Z").toISOString(),
     });
-    mockRequest.mockResolvedValue({ jobs: { nodes: [job], pageInfo: { hasNextPage: false } } });
 
-    renderQueue();
+    renderWithStore(<Queue />, {
+      preloadedState: mockJobsState({ byId: jobsById([job]) }),
+      theme: lightTheme,
+    });
 
     await waitFor(() =>
       expect(screen.getAllByText(/Отменено|Cancelled/).length).toBeGreaterThan(0)
     );
     expect(screen.queryByTestId(`queue-cancel-${job.id}`)).not.toBeInTheDocument();
-  });
-
-  it("Queue_CancelOnSuccess_DoesNotShowToastError", async () => {
-    const job = buildJob({ id: "job-cancel-ok-001", status: "Queued" });
-    mockRequest
-      .mockResolvedValueOnce({ jobs: { nodes: [job], pageInfo: { hasNextPage: false } } })
-      .mockResolvedValueOnce({ cancelJob: { errors: [] } });
-
-    const { toast } = jest.requireMock("react-toastify") as {
-      toast: { error: jest.Mock };
-    };
-
-    renderQueue();
-    const cancelBtn = await screen.findByTestId(`queue-cancel-${job.id}`);
-    await userEvent.click(cancelBtn);
-
-    await waitFor(() =>
-      expect(mockRequest).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ id: job.id })
-      )
-    );
-    expect(toast.error).not.toHaveBeenCalled();
   });
 });
 
@@ -193,9 +128,11 @@ describe("Queue — resume copy (BC-017 / Bug 21)", () => {
       resumedFromCheckpoint: true,
       checkpointAt: "2026-04-17T07:23:00Z",
     });
-    mockRequest.mockResolvedValue({ jobs: { nodes: [job], pageInfo: { hasNextPage: false } } });
 
-    renderQueue();
+    renderWithStore(<Queue />, {
+      preloadedState: mockJobsState({ byId: jobsById([job]) }),
+      theme: lightTheme,
+    });
 
     expect(await screen.findByText(/Resumed from|Возобновлено с/)).toBeInTheDocument();
   });
@@ -206,9 +143,11 @@ describe("Queue — resume copy (BC-017 / Bug 21)", () => {
       status: "Transcribing",
       progress: 20,
     });
-    mockRequest.mockResolvedValue({ jobs: { nodes: [job], pageInfo: { hasNextPage: false } } });
 
-    renderQueue();
+    renderWithStore(<Queue />, {
+      preloadedState: mockJobsState({ byId: jobsById([job]) }),
+      theme: lightTheme,
+    });
 
     await waitFor(() =>
       expect(screen.getAllByText(/Транскрибация|Transcribing/).length).toBeGreaterThan(0)
