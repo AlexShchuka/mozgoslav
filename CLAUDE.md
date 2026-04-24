@@ -8,7 +8,7 @@ macOS-first desktop second-brain. Electron + React UI ↔ ASP.NET Minimal API ba
 2. Decisions are robot-readable: compact bullets, YAML frontmatter, concept-level only. No prose, no narrative, no file paths in the body.
 3. `.archive/` is write-only scrap. Move superseded files in, flat. Never edit anything already inside.
 4. No comments in code. No XML `///` summaries. No TODO/FIXME in committed code. Name things clearly instead.
-5. No NDA material, no Mindbox references, no concrete usage-scenario descriptions, no "user" narrative voice. Write in terms of components, APIs, state.
+5. No proprietary or third-party company references, no NDA material, no concrete usage-scenario descriptions, no "user" narrative voice. Write in terms of components, APIs, state.
 6. Minimal diff. Prefer `git mv` over delete+create. Never rewrite a file just to reformat it.
 7. All secrets live in the SQLite `settings` store, rendered with the sensitive-input primitive, never logged, never in environment variables.
 8. Never bump package versions, add telemetry, or introduce backwards-compat shims unless explicitly asked.
