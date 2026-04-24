@@ -88,7 +88,8 @@
     "deviceChanged": "Microphone \"{{name}}\" — {{kind}}",
     "recentTitle": "Recent recordings",
     "empty": "No recordings yet — import or record your first one.",
-    "recordedSaved": "Recording saved and queued for processing"
+    "recordedSaved": "Recording saved and queued for processing",
+    "dropRequiresElectron": "Drag-and-drop is only available in the desktop app"
   },
   "queue": {
     "title": "Processing queue",

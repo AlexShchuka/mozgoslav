@@ -26,32 +26,39 @@ import { graphqlClient } from "../../../api/graphqlClient";
 
 const mockedRequest = graphqlClient.request as jest.Mock;
 
-jest.mock("../../../api", () => {
-  const actual = jest.requireActual("../../../api");
-  const settingsStub = {
-    getSettings: jest.fn().mockResolvedValue({
-      vaultPath: "",
-      syncthingEnabled: false,
-    }),
-    saveSettings: jest.fn().mockResolvedValue({ syncthingEnabled: true }),
-    checkLlm: jest.fn(),
-  };
-  return {
-    ...actual,
-    apiFactory: {
-      ...actual.apiFactory,
-      createSettingsApi: () => settingsStub,
-    },
-    __settingsStub: settingsStub,
-  };
-});
-
-const settingsStub = (
-  jest.requireMock("../../../api") as { __settingsStub: Record<string, jest.Mock> }
-).__settingsStub;
-
-const api = {
-  saveSettings: settingsStub.saveSettings,
+const stubSettings = {
+  vaultPath: "",
+  llmProvider: "",
+  llmEndpoint: "",
+  llmModel: "",
+  llmApiKey: "",
+  obsidianApiHost: "",
+  obsidianApiToken: "",
+  whisperModelPath: "",
+  vadModelPath: "",
+  language: "ru",
+  themeMode: "system",
+  whisperThreads: 4,
+  dictationEnabled: false,
+  dictationHotkeyType: "mouse",
+  dictationMouseButton: 4,
+  dictationKeyboardHotkey: "",
+  dictationPushToTalk: false,
+  dictationLanguage: "ru",
+  dictationWhisperModelId: "",
+  dictationCaptureSampleRate: 16000,
+  dictationLlmPolish: false,
+  dictationInjectMode: "auto",
+  dictationOverlayEnabled: true,
+  dictationOverlayPosition: "bottom-center",
+  dictationSoundFeedback: true,
+  dictationVocabulary: [],
+  dictationModelUnloadMinutes: 10,
+  dictationTempAudioPath: "",
+  dictationAppProfiles: [],
+  syncthingEnabled: false,
+  syncthingObsidianVaultPath: "",
+  obsidianFeatureEnabled: false,
 };
 
 const buildStore = () => {
@@ -92,8 +99,16 @@ const renderSync = () => {
 describe("Sync tab — BC-050 / Bug 23", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedRequest.mockImplementation((opts: { document: unknown }) => {
-      const docStr = JSON.stringify(opts.document);
+    mockedRequest.mockImplementation((doc: unknown) => {
+      const docStr = JSON.stringify(doc);
+      if (docStr.includes("QuerySettings")) {
+        return Promise.resolve({ settings: stubSettings });
+      }
+      if (docStr.includes("MutationUpdateSettings")) {
+        return Promise.resolve({
+          updateSettings: { settings: { ...stubSettings, syncthingEnabled: true } },
+        });
+      }
       if (docStr.includes("syncStatus")) {
         return Promise.resolve({
           syncStatus: {
@@ -157,14 +172,17 @@ describe("Sync tab — BC-050 / Bug 23", () => {
     expect(await screen.findByTestId("sync-pairing-modal-body")).toBeInTheDocument();
   });
 
-  it("SyncTab_EnableToggle_CallsSettingsPut", async () => {
+  it("SyncTab_EnableToggle_CallsSettingsMutation", async () => {
     renderSync();
     await userEvent.click(screen.getByTestId("sync-tab-settings"));
     const toggle = await screen.findByTestId("sync-settings-enabled");
     await userEvent.click(toggle);
     await waitFor(() =>
-      expect(api.saveSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ syncthingEnabled: true })
+      expect(mockedRequest).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: "Document" }),
+        expect.objectContaining({
+          input: expect.objectContaining({ syncthingEnabled: true }),
+        })
       )
     );
   });

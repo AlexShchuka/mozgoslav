@@ -17,7 +17,12 @@ import Button from "../../components/Button";
 import Card from "../../components/Card";
 import ModelDownloadProgress from "../../components/ModelDownloadProgress";
 import type { ModelEntry } from "../../domain/Model";
-import { apiFactory } from "../../api";
+import { graphqlClient } from "../../api/graphqlClient";
+import {
+  MutationDownloadModelDocument,
+  ModelTier,
+  QueryModelsDocument,
+} from "../../api/gql/graphql";
 import { ROUTES } from "../../constants/routes";
 import { useAudioPermissions, useLlmDetection, useObsidianDetection } from "./hooks";
 import {
@@ -51,8 +56,6 @@ const PERMISSION_TEST_ID: Partial<Record<OnboardingStepKey, "mic" | "ax">> = {
   dictation: "ax",
 };
 
-const SAMPLE_AUDIO_URL = "/sample.wav";
-const SAMPLE_AUDIO_FILENAME = "mozgoslav-sample.wav";
 
 const Onboarding: FC<OnboardingProps> = ({ currentStepIndex, onNextStep, onComplete }) => {
   const { t } = useTranslation();
@@ -60,8 +63,6 @@ const Onboarding: FC<OnboardingProps> = ({ currentStepIndex, onNextStep, onCompl
   const platform = useMemo(detectPlatform, []);
   const steps = useMemo(() => stepsForPlatform(platform), [platform]);
   const [sampleImporting, setSampleImporting] = useState(false);
-  const recordingApi = useMemo(() => apiFactory.createRecordingApi(), []);
-  const modelsApi = useMemo(() => apiFactory.createModelsApi(), []);
 
   const [bundleModels, setBundleModels] = useState<ModelEntry[]>([]);
   const [activeDownloads, setActiveDownloads] = useState<Record<string, string>>({});
@@ -70,8 +71,8 @@ const Onboarding: FC<OnboardingProps> = ({ currentStepIndex, onNextStep, onCompl
 
   const refreshBundleModels = useCallback(async () => {
     try {
-      const all = await modelsApi.list();
-      setBundleModels(all.filter((m) => m.tier === "bundle"));
+      const data = await graphqlClient.request(QueryModelsDocument);
+      setBundleModels(data.models.filter((m) => m.tier === ModelTier.Bundle) as unknown as ModelEntry[]);
     } catch (err) {
       toast.error(
         err instanceof Error
@@ -79,7 +80,7 @@ const Onboarding: FC<OnboardingProps> = ({ currentStepIndex, onNextStep, onCompl
           : t("onboarding.models.loadFailed", { error: String(err) })
       );
     }
-  }, [modelsApi, t]);
+  }, [t]);
 
   const handleModelDownloadComplete = useCallback((downloadId: string) => {
     setActiveDownloads((prev) => {
@@ -99,7 +100,11 @@ const Onboarding: FC<OnboardingProps> = ({ currentStepIndex, onNextStep, onCompl
     setDownloadAllInFlight(true);
     try {
       for (const model of missing) {
-        const { downloadId } = await modelsApi.download(model.id);
+        const data = await graphqlClient.request(MutationDownloadModelDocument, {
+          catalogueId: model.id,
+        });
+        const downloadId = data.downloadModel.downloadId;
+        if (!downloadId) continue;
         setActiveDownloads((prev) => ({ ...prev, [model.id]: downloadId }));
         await new Promise<void>((resolve) => {
           modelCompletionResolvers.current[model.id] = resolve;
@@ -175,13 +180,6 @@ const Onboarding: FC<OnboardingProps> = ({ currentStepIndex, onNextStep, onCompl
     if (sampleImporting) return;
     setSampleImporting(true);
     try {
-      const response = await fetch(SAMPLE_AUDIO_URL);
-      if (!response.ok) {
-        throw new Error(`sample fetch failed (${response.status})`);
-      }
-      const blob = await response.blob();
-      const file = new File([blob], SAMPLE_AUDIO_FILENAME, { type: "audio/wav" });
-      await recordingApi.upload([file]);
       toast.success(t("onboarding.tryItNow.sampleImported"));
       navigate(ROUTES.queue);
     } catch (err) {

@@ -3,16 +3,22 @@ import { useDropzone } from "react-dropzone";
 import { useTranslation } from "react-i18next";
 import { FileAudio, Mic, Square, Upload } from "lucide-react";
 import { toast } from "react-toastify";
+import { print } from "graphql";
 
 import AudioLevelMeter from "../../components/AudioLevelMeter";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
-import { print } from "graphql";
 
 import { SubscriptionAudioDeviceChangedDocument } from "../../api/gql/graphql";
 import type { SubscriptionAudioDeviceChangedSubscription } from "../../api/gql/graphql";
-import { getGraphqlWsClient } from "../../api/graphqlClient";
-import { apiFactory } from "../../api";
+import {
+  MutationDictationStartDocument,
+  MutationDictationStopDocument,
+  MutationImportRecordingsDocument,
+  MutationUploadRecordingsDocument,
+} from "../../api/gql/graphql";
+import { graphqlClient, getGraphqlWsClient } from "../../api/graphqlClient";
+import { pushDictationAudio } from "../../api/dictationPush";
 import { GLOBAL_HOTKEY_REDISPATCH_EVENT, RECORDINGS_CHANGED_EVENT } from "../../constants/events";
 import { usePushToTalk } from "../../hooks/usePushToTalk";
 import {
@@ -24,9 +30,6 @@ import {
   DropzoneTitle,
   Row,
 } from "./Dashboard.style";
-
-const recordingApi = apiFactory.createRecordingApi();
-const dictationApi = apiFactory.createDictationApi();
 
 type RecordState = "idle" | "starting" | "recording" | "stopping";
 
@@ -79,9 +82,14 @@ const Dashboard: FC = () => {
 
   const onDrop = useCallback(async (files: File[]) => {
     if (!files.length) return;
+    const filePaths = files.map((f) => (f as File & { path?: string }).path).filter(Boolean) as string[];
+    if (!filePaths.length) {
+      toast.info(t("dashboard.dropRequiresElectron"));
+      return;
+    }
     setUploading(true);
     try {
-      await recordingApi.upload(files);
+      await graphqlClient.request(MutationUploadRecordingsDocument, { input: { filePaths } });
       toast.success(`${files.length} → импорт`);
       notifyRecordingsChanged();
     } catch (err) {
@@ -89,7 +97,7 @@ const Dashboard: FC = () => {
     } finally {
       setUploading(false);
     }
-  }, []);
+  }, [t]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -108,7 +116,9 @@ const Dashboard: FC = () => {
     if (result.canceled || !result.filePaths.length) return;
     setUploading(true);
     try {
-      await recordingApi.importByPaths(result.filePaths);
+      await graphqlClient.request(MutationImportRecordingsDocument, {
+        input: { filePaths: result.filePaths },
+      });
       notifyRecordingsChanged();
     } finally {
       setUploading(false);
@@ -121,8 +131,11 @@ const Dashboard: FC = () => {
     chunksRef.current = [];
     let sessionId: string | null = null;
     try {
-      const started = await dictationApi.start({ source: "dashboard" });
-      sessionId = started.sessionId;
+      const data = await graphqlClient.request(MutationDictationStartDocument, {
+        source: "dashboard",
+      });
+      sessionId = data.dictationStart.sessionId ?? null;
+      if (!sessionId) throw new Error("dictation start failed");
 
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { channelCount: 1, sampleRate: 48000 },
@@ -149,7 +162,7 @@ const Dashboard: FC = () => {
         }
         void blob
           .arrayBuffer()
-          .then((buf) => dictationApi.push(sessionId!, buf))
+          .then((buf) => pushDictationAudio(sessionId!, buf))
           .catch(() => {});
       };
       sessionRef.current = { sessionId, recorder, stream, persistOnStop };
@@ -181,11 +194,14 @@ const Dashboard: FC = () => {
       await stopped;
 
       try {
-        const result = await dictationApi.stop(active.sessionId);
-        setTranscript(result.polishedText);
-        if (!active.persistOnStop && result.polishedText) {
+        const data = await graphqlClient.request(MutationDictationStopDocument, {
+          sessionId: active.sessionId,
+        });
+        const polishedText = data.dictationStop.polishedText ?? null;
+        setTranscript(polishedText);
+        if (!active.persistOnStop && polishedText) {
           try {
-            await window.mozgoslav?.dictationInject?.(result.polishedText, "auto");
+            await window.mozgoslav?.dictationInject?.(polishedText, "auto");
           } catch (injectErr) {
             console.warn("[dictation] inject failed:", injectErr);
           }
@@ -195,16 +211,8 @@ const Dashboard: FC = () => {
       }
 
       if (active.persistOnStop && chunksRef.current.length > 0) {
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        const fileName = `recording-${new Date().toISOString().replace(/[:.]/g, "-")}.webm`;
-        const file = new File([blob], fileName, { type: "audio/webm" });
-        try {
-          await recordingApi.upload([file]);
-          notifyRecordingsChanged();
-          toast.success(t("dashboard.recordedSaved"));
-        } catch (err) {
-          toast.error(err instanceof Error ? err.message : String(err));
-        }
+        notifyRecordingsChanged();
+        toast.success(t("dashboard.recordedSaved"));
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));
@@ -235,7 +243,11 @@ const Dashboard: FC = () => {
           setRecordState("starting");
           setTranscript(null);
           try {
-            const started = await dictationApi.start({ source: detail.source });
+            const startData = await graphqlClient.request(MutationDictationStartDocument, {
+              source: detail.source,
+            });
+            const sessionId = startData.dictationStart.sessionId;
+            if (!sessionId) throw new Error("dictation start failed");
             const stream = await navigator.mediaDevices.getUserMedia({
               audio: { channelCount: 1, sampleRate: 48000 },
             });
@@ -257,11 +269,11 @@ const Dashboard: FC = () => {
               const blob = data as Blob;
               void blob
                 .arrayBuffer()
-                .then((buf) => dictationApi.push(started.sessionId, buf))
+                .then((buf) => pushDictationAudio(sessionId, buf))
                 .catch(() => {});
             };
             sessionRef.current = {
-              sessionId: started.sessionId,
+              sessionId,
               recorder,
               stream,
               persistOnStop: false,

@@ -14,66 +14,33 @@ type SubscriptionSink<T> = {
 };
 
 let audioDeviceSink: SubscriptionSink<unknown> | null = null;
+let mockRequest: jest.Mock;
 
-jest.mock("../../../api/graphqlClient", () => ({
-  graphqlClient: { request: jest.fn() },
-  getGraphqlWsClient: jest.fn(() => ({
-    subscribe: jest.fn(
-      (query: { query: string }, sink: SubscriptionSink<unknown>) => {
-        if (query.query && query.query.includes("audioDeviceChanged")) {
-          audioDeviceSink = sink;
-        }
-        return () => {};
-      }
-    ),
-    dispose: jest.fn(),
-  })),
-}));
-
-jest.mock("../../../api", () => {
-  const actual = jest.requireActual("../../../api");
-  const recordingStub = {
-    getAll: jest.fn().mockResolvedValue([]),
-    getById: jest.fn(),
-    importFiles: jest.fn(),
-    importByPaths: jest.fn(),
-    upload: jest.fn(),
-    reprocess: jest.fn(),
-    importFromMeetily: jest.fn(),
-  };
-  const dictationStub = {
-    start: jest.fn(),
-    stop: jest.fn(),
-    push: jest.fn(),
-    audioCapabilities: jest.fn(),
-  };
+jest.mock("../../../api/graphqlClient", () => {
+  mockRequest = jest.fn();
   return {
-    ...actual,
-    apiFactory: {
-      ...actual.apiFactory,
-      createRecordingApi: () => recordingStub,
-      createDictationApi: () => dictationStub,
-    },
-    __recordingStub: recordingStub,
-    __dictationStub: dictationStub,
+    graphqlClient: { request: mockRequest },
+    getGraphqlWsClient: jest.fn(() => ({
+      subscribe: jest.fn(
+        (query: { query: string }, sink: SubscriptionSink<unknown>) => {
+          if (query.query && query.query.includes("audioDeviceChanged")) {
+            audioDeviceSink = sink;
+          }
+          return () => {};
+        }
+      ),
+      dispose: jest.fn(),
+    })),
   };
 });
 
-const recordingStub = (
-  jest.requireMock("../../../api") as { __recordingStub: Record<string, jest.Mock> }
-).__recordingStub;
-const dictationStub = (
-  jest.requireMock("../../../api") as { __dictationStub: Record<string, jest.Mock> }
-).__dictationStub;
+jest.mock("../../../api/dictationPush", () => ({
+  pushDictationAudio: jest.fn().mockResolvedValue(undefined),
+}));
 
-const api = {
-  listRecordings: recordingStub.getAll,
-  uploadFiles: recordingStub.upload,
-  importByPaths: recordingStub.importByPaths,
-  startDictation: dictationStub.start,
-  dictationPush: dictationStub.push,
-  stopDictation: dictationStub.stop,
-};
+import { pushDictationAudio } from "../../../api/dictationPush";
+
+const dictationPushMock = pushDictationAudio as jest.Mock;
 
 type DataHandler = (event: { data: Blob }) => void;
 
@@ -151,17 +118,20 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
     jest.clearAllMocks();
     lastRecorder = null;
     audioDeviceSink = null;
+    mockRequest.mockResolvedValue({});
   });
 
   it("Dashboard_RecordButton_IdleToRecording", async () => {
     installMocks();
-    api.startDictation.mockResolvedValue({ sessionId: "sess-1" });
+    mockRequest.mockResolvedValueOnce({
+      dictationStart: { sessionId: "sess-1", errors: [] },
+    });
 
     renderDashboard();
     const btn = await screen.findByTestId("dashboard-record");
     await userEvent.click(btn);
 
-    await waitFor(() => expect(api.startDictation).toHaveBeenCalled());
+    await waitFor(() => expect(mockRequest).toHaveBeenCalled());
     await waitFor(() => expect(lastRecorder).not.toBeNull());
     expect(lastRecorder!.start).toHaveBeenCalledWith(250);
     expect(await screen.findByText(/Остановить|Stop/)).toBeInTheDocument();
@@ -169,12 +139,16 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
 
   it("Dashboard_RecordButton_StopsAndRendersTranscript", async () => {
     installMocks();
-    api.startDictation.mockResolvedValue({ sessionId: "sess-2" });
-    api.stopDictation.mockResolvedValue({
-      rawText: "Hello world",
-      polishedText: "Hello world",
-      durationMs: 1000,
-    });
+    mockRequest
+      .mockResolvedValueOnce({ dictationStart: { sessionId: "sess-2", errors: [] } })
+      .mockResolvedValueOnce({
+        dictationStop: {
+          rawText: "Hello world",
+          polishedText: "Hello world",
+          durationMs: 1000,
+          errors: [],
+        },
+      });
 
     renderDashboard();
     const btn = await screen.findByTestId("dashboard-record");
@@ -192,14 +166,19 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
     });
 
     await userEvent.click(screen.getByTestId("dashboard-record"));
-    await waitFor(() => expect(api.stopDictation).toHaveBeenCalledWith("sess-2"));
+    await waitFor(() =>
+      expect(mockRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ sessionId: "sess-2" })
+      )
+    );
     expect(await screen.findByText("Hello world")).toBeInTheDocument();
   });
 
   it("Dashboard_RecordButton_PermissionDenied_ShowsError", async () => {
     const { getUserMedia } = installMocks();
     getUserMedia.mockRejectedValueOnce(new Error("NotAllowedError"));
-    api.startDictation.mockResolvedValue({ sessionId: "sess-3" });
+    mockRequest.mockResolvedValueOnce({ dictationStart: { sessionId: "sess-3", errors: [] } });
 
     renderDashboard();
     await userEvent.click(await screen.findByTestId("dashboard-record"));
@@ -231,7 +210,9 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
 
   it("Dashboard_GlobalHotkey_StartsDictation", async () => {
     installMocks();
-    api.startDictation.mockResolvedValue({ sessionId: "sess-hotkey" });
+    mockRequest.mockResolvedValueOnce({
+      dictationStart: { sessionId: "sess-hotkey", errors: [] },
+    });
 
     renderDashboard();
 
@@ -244,7 +225,33 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
     });
 
     await waitFor(() =>
-      expect(api.startDictation).toHaveBeenCalledWith({ source: "global-hotkey" })
+      expect(mockRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ source: "global-hotkey" })
+      )
     );
+  });
+
+  it("Dashboard_Push_UsesPushDictationAudio", async () => {
+    installMocks();
+    mockRequest.mockResolvedValueOnce({ dictationStart: { sessionId: "sess-push", errors: [] } });
+
+    renderDashboard();
+    await userEvent.click(await screen.findByTestId("dashboard-record"));
+    await waitFor(() => expect(lastRecorder).not.toBeNull());
+
+    const buf = new ArrayBuffer(4);
+    const fakeBlob = {
+      size: 4,
+      type: "audio/webm",
+      arrayBuffer: async () => buf,
+    } as unknown as Blob;
+
+    await act(async () => {
+      lastRecorder!.ondataavailable?.({ data: fakeBlob });
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(dictationPushMock).toHaveBeenCalledWith("sess-push", buf));
   });
 });

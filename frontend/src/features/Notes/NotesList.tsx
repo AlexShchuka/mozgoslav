@@ -9,7 +9,12 @@ import Button from "../../components/Button";
 import EmptyState from "../../components/EmptyState";
 import GroupedList from "../../components/GroupedList";
 import Modal from "../../components/Modal";
-import { apiFactory } from "../../api";
+import { graphqlClient } from "../../api/graphqlClient";
+import {
+  MutationCreateNoteDocument,
+  MutationDeleteNoteDocument,
+  QueryNotesDocument,
+} from "../../api/gql/graphql";
 import { ProcessedNote } from "../../domain/ProcessedNote";
 import { noteRoute } from "../../constants/routes";
 import { notifyError, notifySuccess } from "../../store/slices/notifications";
@@ -27,8 +32,6 @@ import {
   ToolbarActions,
 } from "./NotesList.style";
 
-const notesApi = apiFactory.createNotesApi();
-
 const NotesList: FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -45,9 +48,9 @@ const NotesList: FC = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const loadNotes = useCallback(() => {
-    void notesApi
-      .list()
-      .then(setNotes)
+    void graphqlClient
+      .request(QueryNotesDocument, { first: 200 })
+      .then((data) => setNotes((data.notes?.nodes ?? []) as unknown as ProcessedNote[]))
       .catch(() => setNotes([]));
   }, []);
 
@@ -89,7 +92,7 @@ const NotesList: FC = () => {
     );
     if (!confirmed) return;
     try {
-      await notesApi.remove(note.id);
+      await graphqlClient.request(MutationDeleteNoteDocument, { id: note.id });
       setNotes((prev) => prev.filter((n) => n.id !== note.id));
       dispatch(notifySuccess({ messageKey: "notes.deleted" }));
     } catch (err) {
@@ -108,8 +111,13 @@ const NotesList: FC = () => {
     if (!trimmedTitle) return;
     setSubmitting(true);
     try {
-      const created = await notesApi.create({ title: trimmedTitle, body });
-      setNotes((prev) => [created, ...prev]);
+      const data = await graphqlClient.request(MutationCreateNoteDocument, {
+        input: { title: trimmedTitle, body },
+      });
+      const created = data.createNote.note;
+      if (created) {
+        setNotes((prev) => [created as unknown as ProcessedNote, ...prev]);
+      }
       dispatch(notifySuccess({ messageKey: "notes.created" }));
       closeAdd();
     } catch (err) {

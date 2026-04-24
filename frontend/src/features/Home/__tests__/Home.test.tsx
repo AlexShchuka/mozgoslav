@@ -2,39 +2,39 @@ import { screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 import Home from "../Home";
-import { type MockApiBundle, renderWithStore } from "../../../testUtils";
+import { renderWithStore } from "../../../testUtils";
 import { darkTheme } from "../../../styles/theme";
 import "../../../i18n";
 
+jest.mock("../../../api/graphqlClient", () => ({
+  graphqlClient: { request: jest.fn().mockResolvedValue({ recordings: { nodes: [] }, jobs: { nodes: [] } }) },
+  getGraphqlWsClient: jest.fn(() => ({
+    subscribe: jest.fn(() => () => {}),
+    dispose: jest.fn(),
+  })),
+}));
+
 jest.mock("../../../api", () => {
   const actual = jest.requireActual("../../../api");
-  const { createMockApi } = jest.requireActual(
-    "../../../testUtils/mockApi"
-  ) as typeof import("../../../testUtils/mockApi");
-  const bundle = createMockApi();
-  return { ...actual, apiFactory: bundle.factory, __bundle: bundle };
+  const dictationStub = {
+    start: jest.fn(),
+    stop: jest.fn(),
+    push: jest.fn(),
+    audioCapabilities: jest.fn(),
+  };
+  return {
+    ...actual,
+    apiFactory: {
+      ...actual.apiFactory,
+      createDictationApi: () => dictationStub,
+    },
+    __dictationStub: dictationStub,
+  };
 });
-
-const mockApi = (jest.requireMock("../../../api") as { __bundle: MockApiBundle }).__bundle;
-
-class StubEventSource {
-  public onmessage: ((ev: MessageEvent) => void) | null = null;
-  public onerror: ((ev: Event) => void) | null = null;
-
-  public addEventListener(): void {}
-
-  public removeEventListener(): void {}
-
-  public close(): void {}
-}
 
 describe("Home — unified Dashboard + HomeList page", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (global as { EventSource: typeof EventSource }).EventSource =
-      StubEventSource as unknown as typeof EventSource;
-    mockApi.recordingApi.getAll.mockResolvedValue([]);
-    mockApi.jobsApi.list.mockResolvedValue([]);
   });
 
   it("renders Dashboard controls and the unified HomeList on a single page", async () => {
