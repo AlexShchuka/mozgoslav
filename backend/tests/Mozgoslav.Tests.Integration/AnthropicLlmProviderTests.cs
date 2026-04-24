@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -20,11 +21,10 @@ using WireMock.Server;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class AnthropicLlmProviderTests
+public sealed class AnthropicLlmProviderTests : IDisposable
 {
-    private static readonly HttpClient SharedHttpClient = new();
-    private static readonly IHttpClientFactory StubFactory = new StubHttpClientFactory(SharedHttpClient);
-
+    private HttpClient _httpClient = null!;
+    private IHttpClientFactory _stubFactory = null!;
     private WireMockServer _server = null!;
     private IAppSettings _settings = null!;
     private AnthropicLlmProvider _provider = null!;
@@ -32,13 +32,15 @@ public sealed class AnthropicLlmProviderTests
     [TestInitialize]
     public void Init()
     {
+        _httpClient = new HttpClient();
+        _stubFactory = new StubHttpClientFactory(_httpClient);
         _server = WireMockServer.Start();
         _settings = Substitute.For<IAppSettings>();
         _settings.LlmEndpoint.Returns(_server.Urls[0]);
         _settings.LlmApiKey.Returns("sk-ant-test");
         _settings.LlmModel.Returns("claude-3-5-sonnet-20241022");
 
-        _provider = new AnthropicLlmProvider(_settings, StubFactory, NullLogger<AnthropicLlmProvider>.Instance);
+        _provider = new AnthropicLlmProvider(_settings, _stubFactory, NullLogger<AnthropicLlmProvider>.Instance);
     }
 
     [TestCleanup]
@@ -46,6 +48,13 @@ public sealed class AnthropicLlmProviderTests
     {
         _server.Stop();
         _server.Dispose();
+        _httpClient.Dispose();
+    }
+
+    public void Dispose()
+    {
+        _server?.Dispose();
+        _httpClient?.Dispose();
     }
 
     [TestMethod]

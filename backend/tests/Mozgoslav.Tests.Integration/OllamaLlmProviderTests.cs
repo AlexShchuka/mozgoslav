@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -20,11 +21,10 @@ using WireMock.Server;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class OllamaLlmProviderTests
+public sealed class OllamaLlmProviderTests : IDisposable
 {
-    private static readonly HttpClient SharedHttpClient = new();
-    private static readonly IHttpClientFactory StubFactory = new StubHttpClientFactory(SharedHttpClient);
-
+    private HttpClient _httpClient = null!;
+    private IHttpClientFactory _stubFactory = null!;
     private WireMockServer _server = null!;
     private IAppSettings _settings = null!;
     private OllamaLlmProvider _provider = null!;
@@ -32,13 +32,15 @@ public sealed class OllamaLlmProviderTests
     [TestInitialize]
     public void Init()
     {
+        _httpClient = new HttpClient();
+        _stubFactory = new StubHttpClientFactory(_httpClient);
         _server = WireMockServer.Start();
         _settings = Substitute.For<IAppSettings>();
         _settings.LlmEndpoint.Returns(_server.Urls[0]);
         _settings.LlmApiKey.Returns(string.Empty);
         _settings.LlmModel.Returns("qwen2.5:14b");
 
-        _provider = new OllamaLlmProvider(_settings, StubFactory, NullLogger<OllamaLlmProvider>.Instance);
+        _provider = new OllamaLlmProvider(_settings, _stubFactory, NullLogger<OllamaLlmProvider>.Instance);
     }
 
     [TestCleanup]
@@ -46,6 +48,13 @@ public sealed class OllamaLlmProviderTests
     {
         _server.Stop();
         _server.Dispose();
+        _httpClient.Dispose();
+    }
+
+    public void Dispose()
+    {
+        _server?.Dispose();
+        _httpClient?.Dispose();
     }
 
     [TestMethod]

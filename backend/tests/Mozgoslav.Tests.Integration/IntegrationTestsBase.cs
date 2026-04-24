@@ -1,19 +1,42 @@
+using System;
 using System.Net.Http;
 
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Mozgoslav.Tests.Integration;
 
-public abstract class IntegrationTestsBase
+public abstract class IntegrationTestsBase : IDisposable
 {
+    private ApiFactory _factory = null!;
+
     public TestContext TestContext { get; set; } = null!;
 
-    protected static ApiFactory Factory => TestInfrastructure.Factory;
+    protected ApiFactory Factory => _factory;
 
-    protected static HttpClient CreateClient() => Factory.CreateClient();
+    [TestInitialize]
+    public void BaseInit() => _factory = new ApiFactory();
 
-    protected static T GetRequiredService<T>() where T : notnull
-        => TestInfrastructure.GetRequiredService<T>();
+    [TestCleanup]
+    public void BaseCleanup() => _factory.Dispose();
 
-    protected static IServiceScope CreateScope() => Factory.Services.CreateScope();
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _factory?.Dispose();
+        }
+    }
+
+    protected HttpClient CreateClient() => _factory.CreateClient();
+
+    protected T GetRequiredService<T>() where T : notnull
+        => _factory.Services.GetRequiredService<T>();
+
+    protected IServiceScope CreateScope() => _factory.Services.CreateScope();
 }

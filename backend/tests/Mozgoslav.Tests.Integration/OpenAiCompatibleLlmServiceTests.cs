@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
@@ -21,11 +22,10 @@ using WireMock.Server;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class OpenAiCompatibleLlmServiceTests
+public sealed class OpenAiCompatibleLlmServiceTests : IDisposable
 {
-    private static readonly HttpClient SharedHttpClient = new();
-    private static readonly IHttpClientFactory StubFactory = new StubHttpClientFactory(SharedHttpClient);
-
+    private HttpClient _httpClient = null!;
+    private IHttpClientFactory _stubFactory = null!;
     private WireMockServer _server = null!;
     private IAppSettings _settings = null!;
     private OpenAiCompatibleLlmService _service = null!;
@@ -33,6 +33,8 @@ public sealed class OpenAiCompatibleLlmServiceTests
     [TestInitialize]
     public void Init()
     {
+        _httpClient = new HttpClient();
+        _stubFactory = new StubHttpClientFactory(_httpClient);
         _server = WireMockServer.Start();
         _settings = Substitute.For<IAppSettings>();
         _settings.LlmProvider.Returns("openai_compatible");
@@ -46,7 +48,7 @@ public sealed class OpenAiCompatibleLlmServiceTests
         providerFactory.GetCurrentAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult<ILlmProvider>(openAiProvider));
 
         _service = new OpenAiCompatibleLlmService(
-            providerFactory, _settings, StubFactory, NullLogger<OpenAiCompatibleLlmService>.Instance);
+            providerFactory, _settings, _stubFactory, NullLogger<OpenAiCompatibleLlmService>.Instance);
     }
 
     [TestCleanup]
@@ -54,6 +56,13 @@ public sealed class OpenAiCompatibleLlmServiceTests
     {
         _server.Stop();
         _server.Dispose();
+        _httpClient.Dispose();
+    }
+
+    public void Dispose()
+    {
+        _server?.Dispose();
+        _httpClient?.Dispose();
     }
 
     [TestMethod]
