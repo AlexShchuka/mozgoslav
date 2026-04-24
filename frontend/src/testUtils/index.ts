@@ -14,5 +14,6 @@ export {
   mockAudioDevicesState,
   mockNotesState,
   notesById,
+  mockSettingsState,
   mergeMockState,
 } from "./mockState";
