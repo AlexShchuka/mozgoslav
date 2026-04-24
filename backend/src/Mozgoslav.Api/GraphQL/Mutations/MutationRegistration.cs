@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Mozgoslav.Api.GraphQL.Models;
 using Mozgoslav.Api.GraphQL.Profiles;
+using Mozgoslav.Api.GraphQL.Recordings;
 using Mozgoslav.Api.GraphQL.Settings;
 
 namespace Mozgoslav.Api.GraphQL.Mutations;
@@ -17,6 +18,7 @@ internal static class MutationRegistration
             .AddMutationType<MutationType>()
             .AddTypeExtension<SettingsMutationType>()
             .AddTypeExtension<ProfileMutationType>()
-            .AddTypeExtension<ModelMutationType>();
+            .AddTypeExtension<ModelMutationType>()
+            .AddTypeExtension<RecordingMutationType>();
     }
 }

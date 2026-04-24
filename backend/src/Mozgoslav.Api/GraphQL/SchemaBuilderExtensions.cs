@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Mozgoslav.Api.GraphQL.Mutations;
 using Mozgoslav.Api.GraphQL.Profiles;
 using Mozgoslav.Api.GraphQL.Queries;
+using Mozgoslav.Api.GraphQL.Recordings;
 using Mozgoslav.Api.GraphQL.Subscriptions;
 
 namespace Mozgoslav.Api.GraphQL;
@@ -20,6 +21,8 @@ internal static class SchemaBuilderExtensions
             .AddMozgoslavSubscriptions()
             .AddMozgoslavTypes()
             .AddTypeExtension<ProfileType>()
+            .AddTypeExtension<RecordingType>()
+            .AddDataLoader<RecordingByIdDataLoader>()
             .AddFiltering()
             .AddSorting()
             .AddProjections()

@@ -41,6 +41,9 @@ public sealed class EfRecordingRepository : IRecordingRepository
     public async Task<IReadOnlyList<Recording>> GetAllAsync(CancellationToken ct) =>
         await _db.Recordings.AsNoTracking().OrderByDescending(r => r.CreatedAt).ToListAsync(ct);
 
+    public async Task<IReadOnlyList<Recording>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken ct) =>
+        await _db.Recordings.AsNoTracking().Where(r => ids.Contains(r.Id)).ToListAsync(ct);
+
     public async Task UpdateAsync(Recording recording, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(recording);

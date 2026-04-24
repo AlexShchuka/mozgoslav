@@ -1,0 +1,102 @@
+query QueryRecordings($first: Int, $after: String, $last: Int, $before: String) {
+  recordings(first: $first, after: $after, last: $last, before: $before) {
+    totalCount
+    nodes {
+      id
+      fileName
+      filePath
+      sha256
+      duration
+      format
+      sourceType
+      status
+      createdAt
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+
+query QueryRecording($id: UUID!) {
+  recording(id: $id) {
+    id
+    fileName
+    filePath
+    sha256
+    duration
+    format
+    sourceType
+    status
+    createdAt
+  }
+}
+
+mutation MutationImportRecordings($input: ImportRecordingsInput!) {
+  importRecordings(input: $input) {
+    recordings {
+      id
+      fileName
+      status
+    }
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationUploadRecordings($input: UploadRecordingsInput!) {
+  uploadRecordings(input: $input) {
+    recordings {
+      id
+      fileName
+      status
+    }
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationReprocessRecording($recordingId: UUID!, $profileId: UUID!) {
+  reprocessRecording(recordingId: $recordingId, profileId: $profileId) {
+    recording {
+      id
+    }
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationStartRecording($outputPath: String) {
+  startRecording(outputPath: $outputPath) {
+    sessionId
+    outputPath
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationStopRecording($sessionId: String!) {
+  stopRecording(sessionId: $sessionId) {
+    sessionId
+    recordings {
+      id
+      fileName
+      status
+    }
+    errors {
+      code
+      message
+    }
+  }
+}

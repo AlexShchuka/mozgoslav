@@ -18,8 +18,12 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean };
   Int: { input: number; output: number };
   Float: { input: number; output: number };
+  /** The `DateTime` scalar represents an ISO-8601 compliant date time type. */
+  DateTime: { input: string; output: string };
   /** The `Long` scalar type represents non-fractional signed whole 64-bit numeric values. Long can represent values between -(2^63) and 2^63 - 1. */
   Long: { input: any; output: any };
+  /** The `TimeSpan` scalar represents an ISO-8601 compliant duration type. */
+  TimeSpan: { input: any; output: any };
   UUID: { input: string; output: string };
 };
 
@@ -61,6 +65,24 @@ export type AppSettingsDto = {
   whisperThreads: Scalars["Int"]["output"];
 };
 
+export enum AudioFormat {
+  Aac = "AAC",
+  Flac = "FLAC",
+  M4A = "M4A",
+  Mp3 = "MP3",
+  Mp4 = "MP4",
+  Ogg = "OGG",
+  Wav = "WAV",
+  Webm = "WEBM",
+}
+
+export type AudioFormatOperationFilterInput = {
+  eq?: InputMaybe<AudioFormat>;
+  in?: InputMaybe<Array<AudioFormat>>;
+  neq?: InputMaybe<AudioFormat>;
+  nin?: InputMaybe<Array<AudioFormat>>;
+};
+
 export enum CleanupLevel {
   Aggressive = "AGGRESSIVE",
   Light = "LIGHT",
@@ -85,6 +107,21 @@ export type CreateProfileInput = {
   systemPrompt: Scalars["String"]["input"];
 };
 
+export type DateTimeOperationFilterInput = {
+  eq?: InputMaybe<Scalars["DateTime"]["input"]>;
+  gt?: InputMaybe<Scalars["DateTime"]["input"]>;
+  gte?: InputMaybe<Scalars["DateTime"]["input"]>;
+  in?: InputMaybe<Array<InputMaybe<Scalars["DateTime"]["input"]>>>;
+  lt?: InputMaybe<Scalars["DateTime"]["input"]>;
+  lte?: InputMaybe<Scalars["DateTime"]["input"]>;
+  neq?: InputMaybe<Scalars["DateTime"]["input"]>;
+  ngt?: InputMaybe<Scalars["DateTime"]["input"]>;
+  ngte?: InputMaybe<Scalars["DateTime"]["input"]>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars["DateTime"]["input"]>>>;
+  nlt?: InputMaybe<Scalars["DateTime"]["input"]>;
+  nlte?: InputMaybe<Scalars["DateTime"]["input"]>;
+};
+
 export type DownloadModelPayload = {
   __typename?: "DownloadModelPayload";
   downloadId?: Maybe<Scalars["String"]["output"]>;
@@ -100,6 +137,17 @@ export type HealthStatus = {
 export type IUserError = {
   code: Scalars["String"]["output"];
   message: Scalars["String"]["output"];
+};
+
+export type ImportRecordingsInput = {
+  filePaths: Array<Scalars["String"]["input"]>;
+  profileId?: InputMaybe<Scalars["UUID"]["input"]>;
+};
+
+export type ImportRecordingsPayload = {
+  __typename?: "ImportRecordingsPayload";
+  errors: Array<IUserError>;
+  recordings: Array<Recording>;
 };
 
 export type KeyValuePairOfStringAndString = {
@@ -168,8 +216,13 @@ export type MutationType = {
   deleteProfile: ProfilePayload;
   downloadModel: DownloadModelPayload;
   duplicateProfile: ProfilePayload;
+  importRecordings: ImportRecordingsPayload;
+  reprocessRecording: RecordingPayload;
+  startRecording: StartRecordingPayload;
+  stopRecording: StopRecordingPayload;
   updateProfile: ProfilePayload;
   updateSettings: UpdateSettingsPayload;
+  uploadRecordings: ImportRecordingsPayload;
 };
 
 export type MutationTypeCreateProfileArgs = {
@@ -188,6 +241,23 @@ export type MutationTypeDuplicateProfileArgs = {
   id: Scalars["UUID"]["input"];
 };
 
+export type MutationTypeImportRecordingsArgs = {
+  input: ImportRecordingsInput;
+};
+
+export type MutationTypeReprocessRecordingArgs = {
+  profileId: Scalars["UUID"]["input"];
+  recordingId: Scalars["UUID"]["input"];
+};
+
+export type MutationTypeStartRecordingArgs = {
+  outputPath?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+export type MutationTypeStopRecordingArgs = {
+  sessionId: Scalars["String"]["input"];
+};
+
 export type MutationTypeUpdateProfileArgs = {
   id: Scalars["UUID"]["input"];
   input: CreateProfileInput;
@@ -195,6 +265,10 @@ export type MutationTypeUpdateProfileArgs = {
 
 export type MutationTypeUpdateSettingsArgs = {
   input: UpdateSettingsInput;
+};
+
+export type MutationTypeUploadRecordingsArgs = {
+  input: UploadRecordingsInput;
 };
 
 /** The node interface is implemented by entities that have a global unique identifier. */
@@ -208,6 +282,19 @@ export type NotFoundError = IUserError & {
   message: Scalars["String"]["output"];
   resourceId: Scalars["String"]["output"];
   resourceKind: Scalars["String"]["output"];
+};
+
+/** Information about pagination in a connection. */
+export type PageInfo = {
+  __typename?: "PageInfo";
+  /** When paginating forwards, the cursor to continue. */
+  endCursor?: Maybe<Scalars["String"]["output"]>;
+  /** Indicates whether more edges exist following the set defined by the clients arguments. */
+  hasNextPage: Scalars["Boolean"]["output"];
+  /** Indicates whether more edges exist prior the set defined by the clients arguments. */
+  hasPreviousPage: Scalars["Boolean"]["output"];
+  /** When paginating backwards, the cursor to continue. */
+  startCursor?: Maybe<Scalars["String"]["output"]>;
 };
 
 export type Profile = Node & {
@@ -244,6 +331,8 @@ export type QueryType = {
   nodes: Array<Maybe<Node>>;
   profile?: Maybe<Profile>;
   profiles: Array<Profile>;
+  recording?: Maybe<Recording>;
+  recordings?: Maybe<RecordingsConnection>;
   settings: AppSettingsDto;
 };
 
@@ -259,6 +348,146 @@ export type QueryTypeProfileArgs = {
   id: Scalars["UUID"]["input"];
 };
 
+export type QueryTypeRecordingArgs = {
+  id: Scalars["UUID"]["input"];
+};
+
+export type QueryTypeRecordingsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
+  order?: InputMaybe<Array<RecordingSortInput>>;
+  where?: InputMaybe<RecordingFilterInput>;
+};
+
+export type Recording = Node & {
+  __typename?: "Recording";
+  createdAt: Scalars["DateTime"]["output"];
+  duration: Scalars["TimeSpan"]["output"];
+  fileName: Scalars["String"]["output"];
+  filePath: Scalars["String"]["output"];
+  format: AudioFormat;
+  id: Scalars["ID"]["output"];
+  sha256: Scalars["String"]["output"];
+  sourceType: SourceType;
+  status: RecordingStatus;
+};
+
+export type RecordingFilterInput = {
+  and?: InputMaybe<Array<RecordingFilterInput>>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  duration?: InputMaybe<TimeSpanOperationFilterInput>;
+  fileName?: InputMaybe<StringOperationFilterInput>;
+  filePath?: InputMaybe<StringOperationFilterInput>;
+  format?: InputMaybe<AudioFormatOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  or?: InputMaybe<Array<RecordingFilterInput>>;
+  sha256?: InputMaybe<StringOperationFilterInput>;
+  sourceType?: InputMaybe<SourceTypeOperationFilterInput>;
+  status?: InputMaybe<RecordingStatusOperationFilterInput>;
+};
+
+export type RecordingPayload = {
+  __typename?: "RecordingPayload";
+  errors: Array<IUserError>;
+  recording?: Maybe<Recording>;
+};
+
+export type RecordingSortInput = {
+  createdAt?: InputMaybe<SortEnumType>;
+  duration?: InputMaybe<SortEnumType>;
+  fileName?: InputMaybe<SortEnumType>;
+  filePath?: InputMaybe<SortEnumType>;
+  format?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  sha256?: InputMaybe<SortEnumType>;
+  sourceType?: InputMaybe<SortEnumType>;
+  status?: InputMaybe<SortEnumType>;
+};
+
+export enum RecordingStatus {
+  Failed = "FAILED",
+  New = "NEW",
+  Transcribed = "TRANSCRIBED",
+  Transcribing = "TRANSCRIBING",
+}
+
+export type RecordingStatusOperationFilterInput = {
+  eq?: InputMaybe<RecordingStatus>;
+  in?: InputMaybe<Array<RecordingStatus>>;
+  neq?: InputMaybe<RecordingStatus>;
+  nin?: InputMaybe<Array<RecordingStatus>>;
+};
+
+/** A connection to a list of items. */
+export type RecordingsConnection = {
+  __typename?: "RecordingsConnection";
+  /** A list of edges. */
+  edges?: Maybe<Array<RecordingsEdge>>;
+  /** A flattened list of the nodes. */
+  nodes?: Maybe<Array<Recording>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars["Int"]["output"];
+};
+
+/** An edge in a connection. */
+export type RecordingsEdge = {
+  __typename?: "RecordingsEdge";
+  /** A cursor for use in pagination. */
+  cursor: Scalars["String"]["output"];
+  /** The item at the end of the edge. */
+  node: Recording;
+};
+
+export enum SortEnumType {
+  Asc = "ASC",
+  Desc = "DESC",
+}
+
+export enum SourceType {
+  Imported = "IMPORTED",
+  Recorded = "RECORDED",
+}
+
+export type SourceTypeOperationFilterInput = {
+  eq?: InputMaybe<SourceType>;
+  in?: InputMaybe<Array<SourceType>>;
+  neq?: InputMaybe<SourceType>;
+  nin?: InputMaybe<Array<SourceType>>;
+};
+
+export type StartRecordingPayload = {
+  __typename?: "StartRecordingPayload";
+  errors: Array<IUserError>;
+  outputPath?: Maybe<Scalars["String"]["output"]>;
+  sessionId?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type StopRecordingPayload = {
+  __typename?: "StopRecordingPayload";
+  errors: Array<IUserError>;
+  recordings: Array<Recording>;
+  sessionId?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type StringOperationFilterInput = {
+  and?: InputMaybe<Array<StringOperationFilterInput>>;
+  contains?: InputMaybe<Scalars["String"]["input"]>;
+  endsWith?: InputMaybe<Scalars["String"]["input"]>;
+  eq?: InputMaybe<Scalars["String"]["input"]>;
+  in?: InputMaybe<Array<InputMaybe<Scalars["String"]["input"]>>>;
+  ncontains?: InputMaybe<Scalars["String"]["input"]>;
+  nendsWith?: InputMaybe<Scalars["String"]["input"]>;
+  neq?: InputMaybe<Scalars["String"]["input"]>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars["String"]["input"]>>>;
+  nstartsWith?: InputMaybe<Scalars["String"]["input"]>;
+  or?: InputMaybe<Array<StringOperationFilterInput>>;
+  startsWith?: InputMaybe<Scalars["String"]["input"]>;
+};
+
 export type SubscriptionType = {
   __typename?: "SubscriptionType";
   modelDownloadProgress: ModelDownloadProgressEvent;
@@ -266,6 +495,21 @@ export type SubscriptionType = {
 
 export type SubscriptionTypeModelDownloadProgressArgs = {
   downloadId: Scalars["String"]["input"];
+};
+
+export type TimeSpanOperationFilterInput = {
+  eq?: InputMaybe<Scalars["TimeSpan"]["input"]>;
+  gt?: InputMaybe<Scalars["TimeSpan"]["input"]>;
+  gte?: InputMaybe<Scalars["TimeSpan"]["input"]>;
+  in?: InputMaybe<Array<InputMaybe<Scalars["TimeSpan"]["input"]>>>;
+  lt?: InputMaybe<Scalars["TimeSpan"]["input"]>;
+  lte?: InputMaybe<Scalars["TimeSpan"]["input"]>;
+  neq?: InputMaybe<Scalars["TimeSpan"]["input"]>;
+  ngt?: InputMaybe<Scalars["TimeSpan"]["input"]>;
+  ngte?: InputMaybe<Scalars["TimeSpan"]["input"]>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars["TimeSpan"]["input"]>>>;
+  nlt?: InputMaybe<Scalars["TimeSpan"]["input"]>;
+  nlte?: InputMaybe<Scalars["TimeSpan"]["input"]>;
 };
 
 export type UnavailableError = IUserError & {
@@ -315,6 +559,26 @@ export type UpdateSettingsPayload = {
   __typename?: "UpdateSettingsPayload";
   errors: Array<IUserError>;
   settings?: Maybe<AppSettingsDto>;
+};
+
+export type UploadRecordingsInput = {
+  filePaths: Array<Scalars["String"]["input"]>;
+  profileId?: InputMaybe<Scalars["UUID"]["input"]>;
+};
+
+export type UuidOperationFilterInput = {
+  eq?: InputMaybe<Scalars["UUID"]["input"]>;
+  gt?: InputMaybe<Scalars["UUID"]["input"]>;
+  gte?: InputMaybe<Scalars["UUID"]["input"]>;
+  in?: InputMaybe<Array<InputMaybe<Scalars["UUID"]["input"]>>>;
+  lt?: InputMaybe<Scalars["UUID"]["input"]>;
+  lte?: InputMaybe<Scalars["UUID"]["input"]>;
+  neq?: InputMaybe<Scalars["UUID"]["input"]>;
+  ngt?: InputMaybe<Scalars["UUID"]["input"]>;
+  ngte?: InputMaybe<Scalars["UUID"]["input"]>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars["UUID"]["input"]>>>;
+  nlt?: InputMaybe<Scalars["UUID"]["input"]>;
+  nlte?: InputMaybe<Scalars["UUID"]["input"]>;
 };
 
 export type ValidationError = IUserError & {
@@ -531,6 +795,168 @@ export type MutationDuplicateProfileMutation = {
       glossary: Array<string>;
       llmCorrectionEnabled: boolean;
     } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type QueryRecordingsQueryVariables = Exact<{
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+}>;
+
+export type QueryRecordingsQuery = {
+  __typename?: "QueryType";
+  recordings?: {
+    __typename?: "RecordingsConnection";
+    totalCount: number;
+    nodes?: Array<{
+      __typename?: "Recording";
+      id: string;
+      fileName: string;
+      filePath: string;
+      sha256: string;
+      duration: any;
+      format: AudioFormat;
+      sourceType: SourceType;
+      status: RecordingStatus;
+      createdAt: string;
+    }> | null;
+    pageInfo: {
+      __typename?: "PageInfo";
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+      startCursor?: string | null;
+      endCursor?: string | null;
+    };
+  } | null;
+};
+
+export type QueryRecordingQueryVariables = Exact<{
+  id: Scalars["UUID"]["input"];
+}>;
+
+export type QueryRecordingQuery = {
+  __typename?: "QueryType";
+  recording?: {
+    __typename?: "Recording";
+    id: string;
+    fileName: string;
+    filePath: string;
+    sha256: string;
+    duration: any;
+    format: AudioFormat;
+    sourceType: SourceType;
+    status: RecordingStatus;
+    createdAt: string;
+  } | null;
+};
+
+export type MutationImportRecordingsMutationVariables = Exact<{
+  input: ImportRecordingsInput;
+}>;
+
+export type MutationImportRecordingsMutation = {
+  __typename?: "MutationType";
+  importRecordings: {
+    __typename?: "ImportRecordingsPayload";
+    recordings: Array<{
+      __typename?: "Recording";
+      id: string;
+      fileName: string;
+      status: RecordingStatus;
+    }>;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationUploadRecordingsMutationVariables = Exact<{
+  input: UploadRecordingsInput;
+}>;
+
+export type MutationUploadRecordingsMutation = {
+  __typename?: "MutationType";
+  uploadRecordings: {
+    __typename?: "ImportRecordingsPayload";
+    recordings: Array<{
+      __typename?: "Recording";
+      id: string;
+      fileName: string;
+      status: RecordingStatus;
+    }>;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationReprocessRecordingMutationVariables = Exact<{
+  recordingId: Scalars["UUID"]["input"];
+  profileId: Scalars["UUID"]["input"];
+}>;
+
+export type MutationReprocessRecordingMutation = {
+  __typename?: "MutationType";
+  reprocessRecording: {
+    __typename?: "RecordingPayload";
+    recording?: { __typename?: "Recording"; id: string } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationStartRecordingMutationVariables = Exact<{
+  outputPath?: InputMaybe<Scalars["String"]["input"]>;
+}>;
+
+export type MutationStartRecordingMutation = {
+  __typename?: "MutationType";
+  startRecording: {
+    __typename?: "StartRecordingPayload";
+    sessionId?: string | null;
+    outputPath?: string | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationStopRecordingMutationVariables = Exact<{
+  sessionId: Scalars["String"]["input"];
+}>;
+
+export type MutationStopRecordingMutation = {
+  __typename?: "MutationType";
+  stopRecording: {
+    __typename?: "StopRecordingPayload";
+    sessionId?: string | null;
+    recordings: Array<{
+      __typename?: "Recording";
+      id: string;
+      fileName: string;
+      status: RecordingStatus;
+    }>;
     errors: Array<
       | { __typename?: "ConflictError"; code: string; message: string }
       | { __typename?: "NotFoundError"; code: string; message: string }
@@ -1198,6 +1624,485 @@ export const MutationDuplicateProfileDocument = {
   MutationDuplicateProfileMutation,
   MutationDuplicateProfileMutationVariables
 >;
+export const QueryRecordingsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryRecordings" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "first" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "Int" } },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "after" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "last" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "Int" } },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "before" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "recordings" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "first" },
+                value: { kind: "Variable", name: { kind: "Name", value: "first" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "after" },
+                value: { kind: "Variable", name: { kind: "Name", value: "after" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "last" },
+                value: { kind: "Variable", name: { kind: "Name", value: "last" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "before" },
+                value: { kind: "Variable", name: { kind: "Name", value: "before" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "totalCount" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "nodes" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "fileName" } },
+                      { kind: "Field", name: { kind: "Name", value: "filePath" } },
+                      { kind: "Field", name: { kind: "Name", value: "sha256" } },
+                      { kind: "Field", name: { kind: "Name", value: "duration" } },
+                      { kind: "Field", name: { kind: "Name", value: "format" } },
+                      { kind: "Field", name: { kind: "Name", value: "sourceType" } },
+                      { kind: "Field", name: { kind: "Name", value: "status" } },
+                      { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "pageInfo" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "hasNextPage" } },
+                      { kind: "Field", name: { kind: "Name", value: "hasPreviousPage" } },
+                      { kind: "Field", name: { kind: "Name", value: "startCursor" } },
+                      { kind: "Field", name: { kind: "Name", value: "endCursor" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryRecordingsQuery, QueryRecordingsQueryVariables>;
+export const QueryRecordingDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryRecording" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "recording" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "fileName" } },
+                { kind: "Field", name: { kind: "Name", value: "filePath" } },
+                { kind: "Field", name: { kind: "Name", value: "sha256" } },
+                { kind: "Field", name: { kind: "Name", value: "duration" } },
+                { kind: "Field", name: { kind: "Name", value: "format" } },
+                { kind: "Field", name: { kind: "Name", value: "sourceType" } },
+                { kind: "Field", name: { kind: "Name", value: "status" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryRecordingQuery, QueryRecordingQueryVariables>;
+export const MutationImportRecordingsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationImportRecordings" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "input" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "ImportRecordingsInput" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "importRecordings" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: { kind: "Variable", name: { kind: "Name", value: "input" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "recordings" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "fileName" } },
+                      { kind: "Field", name: { kind: "Name", value: "status" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationImportRecordingsMutation,
+  MutationImportRecordingsMutationVariables
+>;
+export const MutationUploadRecordingsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationUploadRecordings" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "input" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UploadRecordingsInput" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "uploadRecordings" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: { kind: "Variable", name: { kind: "Name", value: "input" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "recordings" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "fileName" } },
+                      { kind: "Field", name: { kind: "Name", value: "status" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationUploadRecordingsMutation,
+  MutationUploadRecordingsMutationVariables
+>;
+export const MutationReprocessRecordingDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationReprocessRecording" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "recordingId" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "profileId" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "reprocessRecording" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "recordingId" },
+                value: { kind: "Variable", name: { kind: "Name", value: "recordingId" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "profileId" },
+                value: { kind: "Variable", name: { kind: "Name", value: "profileId" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "recording" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [{ kind: "Field", name: { kind: "Name", value: "id" } }],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationReprocessRecordingMutation,
+  MutationReprocessRecordingMutationVariables
+>;
+export const MutationStartRecordingDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationStartRecording" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "outputPath" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "startRecording" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "outputPath" },
+                value: { kind: "Variable", name: { kind: "Name", value: "outputPath" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "sessionId" } },
+                { kind: "Field", name: { kind: "Name", value: "outputPath" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationStartRecordingMutation,
+  MutationStartRecordingMutationVariables
+>;
+export const MutationStopRecordingDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationStopRecording" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "sessionId" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "stopRecording" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "sessionId" },
+                value: { kind: "Variable", name: { kind: "Name", value: "sessionId" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "sessionId" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "recordings" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "fileName" } },
+                      { kind: "Field", name: { kind: "Name", value: "status" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationStopRecordingMutation, MutationStopRecordingMutationVariables>;
 export const QuerySettingsDocument = {
   kind: "Document",
   definitions: [

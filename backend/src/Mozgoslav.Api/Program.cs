@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 
 using Mozgoslav.Api.Endpoints;
 using Mozgoslav.Api.GraphQL;
+using Mozgoslav.Api.Services;
 using Mozgoslav.Api.GraphQL.SchemaExport;
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Obsidian;
@@ -222,6 +223,7 @@ try
     builder.Services.AddSingleton<ModelDownloadService>();
     builder.Services.AddSingleton<IModelDownloadCoordinator, ModelDownloadCoordinator>();
     builder.Services.AddSingleton<BackupService>();
+    builder.Services.AddSingleton<RecordingSessionRegistry>();
     builder.Services.AddSingleton<MozgoslavMetrics>();
     builder.Services.AddSingleton<SyncthingConfigService>();
 
