@@ -1,6 +1,7 @@
-import { FC, useCallback, useEffect, useState } from "react";
+import { FC, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "react-toastify";
+import { useDispatch, useSelector } from "react-redux";
+import type { Action, Dispatch } from "redux";
 import { Check, Download, HardDrive } from "lucide-react";
 
 import Badge from "../../components/Badge";
@@ -8,65 +9,24 @@ import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
 import ModelDownloadProgress from "../../components/ModelDownloadProgress";
-import type { QueryModelsQuery } from "../../api/gql/graphql";
-import { QueryModelsDocument, MutationDownloadModelDocument } from "../../api/gql/graphql";
-import { graphqlClient } from "../../api/graphqlClient";
+import {
+  downloadModel,
+  loadModels,
+  selectAllModels,
+  selectActiveDownloadIdForModel,
+  selectDownloadingModelId,
+} from "../../store/slices/models";
 import { ModelCard, ModelHeader, ModelMeta, PageRoot, PageTitle, Subtitle } from "./Models.style";
-
-type GqlModelEntry = QueryModelsQuery["models"][number];
 
 const Models: FC = () => {
   const { t } = useTranslation();
-  const [models, setModels] = useState<GqlModelEntry[]>([]);
-  const [downloading, setDownloading] = useState<string | null>(null);
-  const [activeDownloads, setActiveDownloads] = useState<Record<string, string>>({});
-
-  const refresh = useCallback(async () => {
-    try {
-      const result = await graphqlClient.request(QueryModelsDocument);
-      setModels(result.models);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err));
-    }
-  }, []);
+  const dispatch = useDispatch<Dispatch<Action>>();
+  const models = useSelector(selectAllModels);
+  const requestingDownloadId = useSelector(selectDownloadingModelId);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  const handleDownloadComplete = useCallback(
-    (downloadId: string) => {
-      setActiveDownloads((prev) => {
-        const next: Record<string, string> = {};
-        for (const [id, dId] of Object.entries(prev)) {
-          if (dId !== downloadId) next[id] = dId;
-        }
-        return next;
-      });
-      void refresh();
-    },
-    [refresh]
-  );
-
-  const handleDownload = async (id: string) => {
-    setDownloading(id);
-    try {
-      const result = await graphqlClient.request(MutationDownloadModelDocument, {
-        catalogueId: id,
-      });
-      if (result.downloadModel.downloadId) {
-        setActiveDownloads((prev) => ({ ...prev, [id]: result.downloadModel.downloadId! }));
-        toast.success(`${id} → ${t("common.download")}`);
-      } else {
-        const err = result.downloadModel.errors[0];
-        toast.error(err?.message ?? t("common.error"));
-      }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err));
-    } finally {
-      setDownloading(null);
-    }
-  };
+    dispatch(loadModels());
+  }, [dispatch]);
 
   return (
     <PageRoot>
@@ -78,55 +38,93 @@ const Models: FC = () => {
         <EmptyState title={t("common.empty")} icon={<HardDrive size={28} />} />
       ) : (
         models.map((model) => (
-          <ModelCard key={model.id}>
-            <Card
-              title={
-                <ModelHeader>
-                  <span>{model.name}</span>
-                  {model.isDefault && <Badge tone="accent">{t("profiles.defaultBadge")}</Badge>}
-                  {model.installed ? (
-                    <Badge tone="success">{t("models.installed")}</Badge>
-                  ) : (
-                    <Badge tone="neutral">{t("models.notInstalled")}</Badge>
-                  )}
-                </ModelHeader>
-              }
-              subtitle={model.description}
-              headerAction={
-                model.installed ? (
-                  <Button variant="success" disabled leftIcon={<Check size={16} />}>
-                    {t("models.installedButton")}
-                  </Button>
-                ) : (
-                  <Button
-                    variant="primary"
-                    leftIcon={<Download size={16} />}
-                    isLoading={downloading === model.id}
-                    onClick={() => void handleDownload(model.id)}
-                  >
-                    {t("models.download")}
-                  </Button>
-                )
-              }
-            >
-              <ModelMeta>
-                <span>{t("models.sizeMb", { size: model.sizeMb })}</span>
-                <code>{model.destinationPath}</code>
-              </ModelMeta>
-              {activeDownloads[model.id] && (
-                <div style={{ marginTop: 12 }}>
-                  <ModelDownloadProgress
-                    downloadId={activeDownloads[model.id]!}
-                    label={model.name}
-                    onComplete={handleDownloadComplete}
-                  />
-                </div>
-              )}
-            </Card>
-          </ModelCard>
+          <ModelRow
+            key={model.id}
+            modelId={model.id}
+            modelName={model.name}
+            modelDescription={model.description}
+            modelSizeMb={model.sizeMb}
+            modelDestinationPath={model.destinationPath}
+            modelInstalled={model.installed}
+            modelIsDefault={model.isDefault}
+            requestingDownloadId={requestingDownloadId}
+            onDownload={() => dispatch(downloadModel(model.id))}
+          />
         ))
       )}
     </PageRoot>
+  );
+};
+
+interface ModelRowProps {
+  modelId: string;
+  modelName: string;
+  modelDescription: string | null | undefined;
+  modelSizeMb: number;
+  modelDestinationPath: string;
+  modelInstalled: boolean;
+  modelIsDefault: boolean;
+  requestingDownloadId: string | null;
+  onDownload: () => void;
+}
+
+const ModelRow: FC<ModelRowProps> = ({
+  modelId,
+  modelName,
+  modelDescription,
+  modelSizeMb,
+  modelDestinationPath,
+  modelInstalled,
+  modelIsDefault,
+  requestingDownloadId,
+  onDownload,
+}) => {
+  const { t } = useTranslation();
+  const activeDownloadId = useSelector(selectActiveDownloadIdForModel(modelId));
+
+  return (
+    <ModelCard>
+      <Card
+        title={
+          <ModelHeader>
+            <span>{modelName}</span>
+            {modelIsDefault && <Badge tone="accent">{t("profiles.defaultBadge")}</Badge>}
+            {modelInstalled ? (
+              <Badge tone="success">{t("models.installed")}</Badge>
+            ) : (
+              <Badge tone="neutral">{t("models.notInstalled")}</Badge>
+            )}
+          </ModelHeader>
+        }
+        subtitle={modelDescription}
+        headerAction={
+          modelInstalled ? (
+            <Button variant="success" disabled leftIcon={<Check size={16} />}>
+              {t("models.installedButton")}
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              leftIcon={<Download size={16} />}
+              isLoading={requestingDownloadId === modelId}
+              onClick={onDownload}
+            >
+              {t("models.download")}
+            </Button>
+          )
+        }
+      >
+        <ModelMeta>
+          <span>{t("models.sizeMb", { size: modelSizeMb })}</span>
+          <code>{modelDestinationPath}</code>
+        </ModelMeta>
+        {activeDownloadId && (
+          <div>
+            <ModelDownloadProgress downloadId={activeDownloadId} label={modelName} />
+          </div>
+        )}
+      </Card>
+    </ModelCard>
   );
 };
 

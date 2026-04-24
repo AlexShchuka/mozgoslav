@@ -1,26 +1,22 @@
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
+import type { Action, Dispatch } from "redux";
 import styled from "styled-components";
-import { print } from "graphql";
 
 import ProgressBar from "./ProgressBar";
 import Button from "./Button";
-import type { SubscriptionModelDownloadProgressSubscription } from "../api/gql/graphql";
-import { SubscriptionModelDownloadProgressDocument } from "../api/gql/graphql";
-import { getGraphqlWsClient } from "../api/graphqlClient";
+import {
+  selectDownloadProgress,
+  subscribeModelDownload,
+  unsubscribeModelDownload,
+} from "../store/slices/models";
 
 export interface ModelDownloadProgressProps {
   downloadId: string;
   label?: string;
   onCancel?: (downloadId: string) => void;
   onComplete?: (downloadId: string) => void;
-}
-
-interface ProgressState {
-  bytesRead: number;
-  totalBytes: number | null;
-  done: boolean;
-  error: string | null;
 }
 
 const Root = styled.div`
@@ -45,77 +41,50 @@ const Meta = styled.div`
 const formatMb = (bytes: number): string =>
   bytes > 0 ? `${(bytes / (1024 * 1024)).toFixed(1)} МБ` : "—";
 
-const ModelDownloadProgress: FC<ModelDownloadProgressProps> = ({
-  downloadId,
-  label,
-  onCancel,
-  onComplete,
-}) => {
+const ModelDownloadProgress: FC<ModelDownloadProgressProps> = ({ downloadId, label, onCancel }) => {
   const { t } = useTranslation();
-  const [progress, setProgress] = useState<ProgressState | null>(null);
-  const [closed, setClosed] = useState(false);
+  const dispatch = useDispatch<Dispatch<Action>>();
+  const progress = useSelector(selectDownloadProgress(downloadId));
+  const hadProgress = useRef(false);
 
   useEffect(() => {
-    const wsClient = getGraphqlWsClient();
-    const unsubscribe = wsClient.subscribe<SubscriptionModelDownloadProgressSubscription>(
-      {
-        query: print(SubscriptionModelDownloadProgressDocument),
-        variables: { downloadId },
-      },
-      {
-        next: (value) => {
-          const evt = value.data?.modelDownloadProgress;
-          if (!evt) return;
-          setProgress({
-            bytesRead: Number(evt.bytesRead),
-            totalBytes: evt.totalBytes != null ? Number(evt.totalBytes) : null,
-            done: evt.done,
-            error: evt.error ?? null,
-          });
-          if (evt.done) {
-            onComplete?.(downloadId);
-            setClosed(true);
-          }
-        },
-        error: () => {
-          setClosed(true);
-        },
-        complete: () => {
-          setClosed(true);
-        },
-      }
-    );
+    dispatch(subscribeModelDownload(downloadId));
     return () => {
-      unsubscribe();
-      void wsClient.dispose();
+      dispatch(unsubscribeModelDownload(downloadId));
     };
-  }, [downloadId, onComplete]);
+  }, [downloadId, dispatch]);
 
-  if (closed && !progress) return null;
+  if (progress !== null) {
+    hadProgress.current = true;
+  }
+
+  if (hadProgress.current && progress === null) {
+    return null;
+  }
+
+  if (progress === null) {
+    return null;
+  }
 
   const pct =
-    progress && progress.totalBytes && progress.totalBytes > 0
+    progress.totalBytes && progress.totalBytes > 0
       ? Math.round((progress.bytesRead / progress.totalBytes) * 100)
       : 0;
-  const errored = progress?.error != null;
+  const errored = progress.error != null;
 
   return (
     <Root data-testid={`model-download-${downloadId}`}>
       <Meta>
         <span>{label ?? t("models.download")}</span>
-        <span>
-          {progress
-            ? `${formatMb(progress.bytesRead)} / ${formatMb(progress.totalBytes ?? 0)}`
-            : "…"}
-        </span>
+        <span>{`${formatMb(progress.bytesRead)} / ${formatMb(progress.totalBytes ?? 0)}`}</span>
       </Meta>
       <ProgressBar
         value={pct}
-        status={errored ? "error" : progress?.done ? "success" : "active"}
-        indeterminate={!progress || !progress.totalBytes || progress.totalBytes === 0}
-        label={errored ? (progress?.error ?? t("common.error")) : undefined}
+        status={errored ? "error" : progress.done ? "success" : "active"}
+        indeterminate={!progress.totalBytes || progress.totalBytes === 0}
+        label={errored ? (progress.error ?? t("common.error")) : undefined}
       />
-      {onCancel && !progress?.done && (
+      {onCancel && !progress.done && (
         <Button
           variant="ghost"
           data-testid={`model-download-cancel-${downloadId}`}

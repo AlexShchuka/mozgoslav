@@ -9,6 +9,7 @@ import { initialDictationState, type DictationState } from "../store/slices/dict
 import { initialAudioDevicesState, type AudioDevicesState } from "../store/slices/audioDevices";
 import { initialNotesState, type NotesState } from "../store/slices/notes";
 import { initialSettingsState, type SettingsState } from "../store/slices/settings";
+import { initialModelsState, type ModelsState } from "../store/slices/models";
 
 export const jobsById = (jobs: readonly ProcessingJob[]): Record<string, ProcessingJob> =>
   Object.fromEntries(jobs.map((job) => [job.id, job]));
@@ -53,6 +54,10 @@ export const mockSettingsState = (
   patch: Partial<SettingsState> = {}
 ): Pick<GlobalState, "settings"> => ({
   settings: { ...initialSettingsState, ...patch },
+});
+
+export const mockModelsState = (patch: Partial<ModelsState> = {}): Pick<GlobalState, "models"> => ({
+  models: { ...initialModelsState, ...patch },
 });
 
 export const mergeMockState = (...parts: Partial<GlobalState>[]): Partial<GlobalState> =>

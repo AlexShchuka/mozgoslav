@@ -23,6 +23,8 @@ import type { AudioDevicesState } from "./slices/audioDevices";
 import { audioDevicesReducer } from "./slices/audioDevices";
 import type { NotesState } from "./slices/notes";
 import { notesReducer } from "./slices/notes";
+import type { ModelsState } from "./slices/models";
+import { modelsReducer } from "./slices/models";
 
 export const rootReducer = combineReducers({
   recording: recordingReducer,
@@ -37,6 +39,7 @@ export const rootReducer = combineReducers({
   dictation: dictationReducer,
   audioDevices: audioDevicesReducer,
   notes: notesReducer,
+  models: modelsReducer,
 });
 
 export interface GlobalState {
@@ -52,4 +55,5 @@ export interface GlobalState {
   dictation: DictationState;
   audioDevices: AudioDevicesState;
   notes: NotesState;
+  models: ModelsState;
 }

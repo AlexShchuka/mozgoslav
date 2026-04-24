@@ -71,6 +71,7 @@ logs/
 models/
 !python-sidecar/app/models/
 !python-sidecar/app/models/*.py
+!frontend/src/store/slices/models/
 
 .build/
 Package.resolved
