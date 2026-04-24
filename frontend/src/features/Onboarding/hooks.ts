@@ -1,110 +1,65 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import type { Action, Dispatch } from "redux";
 
-import { graphqlClient } from "../../api/graphqlClient";
 import {
-  QueryDictationAudioCapabilitiesDocument,
-  QueryLlmHealthDocument,
-  QueryObsidianDetectDocument,
-} from "../../api/gql/graphql";
+  selectAudioCapabilities,
+  selectLlmHealth,
+  selectObsidianDetection,
+  startAudioCapabilitiesProbe,
+  startLlmHealthProbe,
+  startObsidianDetectProbe,
+  stopAudioCapabilitiesProbe,
+  stopLlmHealthProbe,
+  stopObsidianDetectProbe,
+} from "../../store/slices/onboarding";
+import type {
+  AudioCapabilitiesState,
+  LlmHealth,
+  ObsidianDetection,
+} from "../../store/slices/onboarding";
+
+export type { AudioCapabilities } from "../../store/slices/onboarding/types";
 
 export const useLlmDetection = (enabled: boolean): { reachable: boolean } => {
-  const [reachable, setReachable] = useState(false);
-
+  const dispatch = useDispatch<Dispatch<Action>>();
+  const { reachable } = useSelector(selectLlmHealth) as LlmHealth;
   useEffect(() => {
     if (!enabled) return;
-    let active = true;
-    const poll = async () => {
-      try {
-        const data = await graphqlClient.request(QueryLlmHealthDocument);
-        if (active) setReachable(data.llmHealth.available);
-      } catch {
-        if (active) setReachable(false);
-      }
-    };
-    void poll();
-    const handle = window.setInterval(poll, 3000);
+    dispatch(startLlmHealthProbe());
     return () => {
-      active = false;
-      window.clearInterval(handle);
+      dispatch(stopLlmHealthProbe());
     };
-  }, [enabled]);
-
+  }, [enabled, dispatch]);
   return { reachable };
 };
 
 export const useObsidianDetection = (
   enabled: boolean
 ): { detected: Array<{ path: string; name: string }>; loaded: boolean } => {
-  const [state, setState] = useState<{
-    detected: Array<{ path: string; name: string }>;
-    loaded: boolean;
-  }>({ detected: [], loaded: false });
-
+  const dispatch = useDispatch<Dispatch<Action>>();
+  const { detected, loaded } = useSelector(selectObsidianDetection) as ObsidianDetection;
   useEffect(() => {
     if (!enabled) return;
-    let active = true;
-    const poll = async () => {
-      try {
-        const data = await graphqlClient.request(QueryObsidianDetectDocument);
-        if (active) {
-          setState({ detected: data.obsidianDetect.detected, loaded: true });
-        }
-      } catch {
-        if (active) setState({ detected: [], loaded: true });
-      }
-    };
-    void poll();
-    const handle = window.setInterval(poll, 5000);
+    dispatch(startObsidianDetectProbe());
     return () => {
-      active = false;
-      window.clearInterval(handle);
+      dispatch(stopObsidianDetectProbe());
     };
-  }, [enabled]);
-
-  return state;
+  }, [enabled, dispatch]);
+  return { detected: detected as Array<{ path: string; name: string }>, loaded };
 };
-
-export interface AudioCapabilities {
-  isSupported: boolean;
-  detectedPlatform: string;
-  permissionsRequired: string[];
-}
 
 export const useAudioPermissions = (
   enabled: boolean
-): { capabilities: AudioCapabilities | null; loaded: boolean } => {
-  const [state, setState] = useState<{
-    capabilities: AudioCapabilities | null;
-    loaded: boolean;
-  }>({ capabilities: null, loaded: false });
-
+): { capabilities: AudioCapabilitiesState["capabilities"]; loaded: boolean } => {
+  const dispatch = useDispatch<Dispatch<Action>>();
+  const { capabilities, loaded } = useSelector(selectAudioCapabilities) as AudioCapabilitiesState;
   useEffect(() => {
     if (!enabled) return;
-    let active = true;
-    const poll = async () => {
-      try {
-        const data = await graphqlClient.request(QueryDictationAudioCapabilitiesDocument);
-        if (active) {
-          setState({
-            capabilities: {
-              isSupported: data.dictationAudioCapabilities.isSupported,
-              detectedPlatform: data.dictationAudioCapabilities.detectedPlatform,
-              permissionsRequired: data.dictationAudioCapabilities.permissionsRequired,
-            },
-            loaded: true,
-          });
-        }
-      } catch {
-        if (active) setState({ capabilities: null, loaded: true });
-      }
-    };
-    void poll();
-    const handle = window.setInterval(poll, 2000);
+    dispatch(startAudioCapabilitiesProbe());
     return () => {
-      active = false;
-      window.clearInterval(handle);
+      dispatch(stopAudioCapabilitiesProbe());
     };
-  }, [enabled]);
-
-  return state;
+  }, [enabled, dispatch]);
+  return { capabilities, loaded };
 };

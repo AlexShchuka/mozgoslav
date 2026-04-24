@@ -13,6 +13,7 @@ import { initialNotesState, type NotesState } from "../store/slices/notes";
 import { initialSettingsState, type SettingsState } from "../store/slices/settings";
 import { initialModelsState, type ModelsState } from "../store/slices/models";
 import { initialBackupsState, type BackupsState } from "../store/slices/backups";
+import { initialOnboardingState, type OnboardingState } from "../store/slices/onboarding";
 
 export const jobsById = (jobs: readonly ProcessingJob[]): Record<string, ProcessingJob> =>
   Object.fromEntries(jobs.map((job) => [job.id, job]));
@@ -76,6 +77,12 @@ export const mockBackupsState = (
   patch: Partial<BackupsState> = {}
 ): Pick<GlobalState, "backups"> => ({
   backups: { ...initialBackupsState, ...patch },
+});
+
+export const mockOnboardingState = (
+  patch: Partial<OnboardingState> = {}
+): Pick<GlobalState, "onboarding"> => ({
+  onboarding: { ...initialOnboardingState, ...patch },
 });
 
 export const mergeMockState = (...parts: Partial<GlobalState>[]): Partial<GlobalState> =>

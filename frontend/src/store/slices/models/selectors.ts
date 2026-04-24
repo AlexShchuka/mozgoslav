@@ -15,6 +15,11 @@ export const selectDownloadingModelId = createSelector(
   (slice) => slice.requestingDownloadId
 );
 
+export const selectActiveDownloads = createSelector(
+  selectModelsState,
+  (slice): Record<string, string> => slice.activeDownloads
+);
+
 export const selectActiveDownloadIdForModel = (catalogueId: string) =>
   createSelector(
     selectModelsState,

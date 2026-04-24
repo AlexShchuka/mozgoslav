@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FC, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { domAnimation, LazyMotion, m } from "framer-motion";
@@ -12,17 +12,13 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useDispatch, useSelector } from "react-redux";
+import type { Action, Dispatch } from "redux";
 
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import ModelDownloadProgress from "../../components/ModelDownloadProgress";
-import type { ModelEntry } from "../../domain/Model";
-import { graphqlClient } from "../../api/graphqlClient";
-import {
-  MutationDownloadModelDocument,
-  ModelTier,
-  QueryModelsDocument,
-} from "../../api/gql/graphql";
+import { ModelTier } from "../../api/gql/graphql";
 import { ROUTES } from "../../constants/routes";
 import { useAudioPermissions, useLlmDetection, useObsidianDetection } from "./hooks";
 import {
@@ -45,6 +41,12 @@ import {
   Title,
   Toolbar,
 } from "./Onboarding.style";
+import {
+  downloadModel,
+  loadModels,
+  selectActiveDownloads,
+  selectAllModels,
+} from "../../store/slices/models";
 
 const SYSTEM_PREFERENCES_URLS: Partial<Record<OnboardingStepKey, string>> = {
   mic: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone",
@@ -59,72 +61,20 @@ const PERMISSION_TEST_ID: Partial<Record<OnboardingStepKey, "mic" | "ax">> = {
 const Onboarding: FC<OnboardingProps> = ({ currentStepIndex, onNextStep, onComplete }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const dispatch = useDispatch<Dispatch<Action>>();
   const platform = useMemo(detectPlatform, []);
   const steps = useMemo(() => stepsForPlatform(platform), [platform]);
   const [sampleImporting, setSampleImporting] = useState(false);
-
-  const [bundleModels, setBundleModels] = useState<ModelEntry[]>([]);
-  const [activeDownloads, setActiveDownloads] = useState<Record<string, string>>({});
   const [downloadAllInFlight, setDownloadAllInFlight] = useState(false);
-  const modelCompletionResolvers = useRef<Record<string, () => void>>({});
 
-  const refreshBundleModels = useCallback(async () => {
-    try {
-      const data = await graphqlClient.request(QueryModelsDocument);
-      setBundleModels(
-        data.models.filter((m) => m.tier === ModelTier.Bundle) as unknown as ModelEntry[]
-      );
-    } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? t("onboarding.models.loadFailed", { error: err.message })
-          : t("onboarding.models.loadFailed", { error: String(err) })
-      );
-    }
-  }, [t]);
+  const allModels = useSelector(selectAllModels);
+  const activeDownloads = useSelector(selectActiveDownloads);
+  const bundleModels = useMemo(
+    () => allModels.filter((m) => m.tier === ModelTier.Bundle),
+    [allModels]
+  );
 
-  const handleModelDownloadComplete = useCallback((downloadId: string) => {
-    setActiveDownloads((prev) => {
-      const next: Record<string, string> = {};
-      for (const [catalogueId, dId] of Object.entries(prev)) {
-        if (dId !== downloadId) next[catalogueId] = dId;
-        else modelCompletionResolvers.current[catalogueId]?.();
-      }
-      return next;
-    });
-  }, []);
-
-  const handleDownloadAll = async (): Promise<void> => {
-    if (downloadAllInFlight) return;
-    const missing = bundleModels.filter((m) => !m.installed);
-    if (missing.length === 0) return;
-    setDownloadAllInFlight(true);
-    try {
-      for (const model of missing) {
-        const data = await graphqlClient.request(MutationDownloadModelDocument, {
-          catalogueId: model.id,
-        });
-        const downloadId = data.downloadModel.downloadId;
-        if (!downloadId) continue;
-        setActiveDownloads((prev) => ({ ...prev, [model.id]: downloadId }));
-        await new Promise<void>((resolve) => {
-          modelCompletionResolvers.current[model.id] = resolve;
-        });
-        delete modelCompletionResolvers.current[model.id];
-        await refreshBundleModels();
-      }
-    } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? t("onboarding.models.downloadFailed", { error: err.message })
-          : t("onboarding.models.downloadFailed", { error: String(err) })
-      );
-    } finally {
-      setDownloadAllInFlight(false);
-    }
-  };
   const index = Math.max(0, Math.min(steps.length - 1, currentStepIndex));
-
   const currentStep = steps[index]!;
   const done = index >= steps.length - 1;
   const stepKey = `onboarding.${currentStep}` as const;
@@ -152,13 +102,23 @@ const Onboarding: FC<OnboardingProps> = ({ currentStepIndex, onNextStep, onCompl
   };
 
   useEffect(() => {
-    if (done && currentStepIndex >= steps.length - 1) return;
-  }, [done, currentStepIndex, steps.length]);
-
-  useEffect(() => {
     if (currentStep !== "models") return;
-    void refreshBundleModels();
-  }, [currentStep, refreshBundleModels]);
+    dispatch(loadModels());
+  }, [currentStep, dispatch]);
+
+  const handleDownloadAll = async (): Promise<void> => {
+    if (downloadAllInFlight) return;
+    const missing = bundleModels.filter((m) => !m.installed);
+    if (missing.length === 0) return;
+    setDownloadAllInFlight(true);
+    try {
+      for (const model of missing) {
+        dispatch(downloadModel(model.id));
+      }
+    } finally {
+      setDownloadAllInFlight(false);
+    }
+  };
 
   const missingBundleModels = bundleModels.filter((m) => !m.installed);
   const modelsBlockingNext = currentStep === "models" && missingBundleModels.length > 0;
@@ -255,55 +215,54 @@ const Onboarding: FC<OnboardingProps> = ({ currentStepIndex, onNextStep, onCompl
                   data-testid="onboarding-models-list"
                   style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 12 }}
                 >
-                  {bundleModels.map((model) => (
-                    <div
-                      key={model.id}
-                      data-testid={`onboarding-models-item-${model.id}`}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        fontSize: 14,
-                      }}
-                    >
-                      <span>
-                        <strong>{model.name}</strong>
-                        {" · "}
-                        {t("onboarding.models.sizeMb", { size: model.sizeMb })}
-                      </span>
-                      {model.installed ? (
-                        <span
-                          data-testid={`onboarding-models-installed-${model.id}`}
+                  {bundleModels.map((model) => {
+                    const activeDownloadId = activeDownloads[model.id] ?? null;
+                    return (
+                      <div key={model.id}>
+                        <div
+                          data-testid={`onboarding-models-item-${model.id}`}
                           style={{
-                            display: "inline-flex",
+                            display: "flex",
                             alignItems: "center",
-                            gap: 4,
-                            color: "currentColor",
-                            opacity: 0.7,
+                            justifyContent: "space-between",
+                            gap: 12,
+                            fontSize: 14,
                           }}
                         >
-                          <CheckCircle2 size={16} />
-                          {t("onboarding.models.installed")}
-                        </span>
-                      ) : (
-                        <span
-                          data-testid={`onboarding-models-missing-${model.id}`}
-                          style={{ opacity: 0.7 }}
-                        >
-                          {t("onboarding.models.missing")}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                  {Object.entries(activeDownloads).map(([catalogueId, downloadId]) => (
-                    <ModelDownloadProgress
-                      key={downloadId}
-                      downloadId={downloadId}
-                      label={bundleModels.find((m) => m.id === catalogueId)?.name ?? catalogueId}
-                      onComplete={handleModelDownloadComplete}
-                    />
-                  ))}
+                          <span>
+                            <strong>{model.name}</strong>
+                            {" · "}
+                            {t("onboarding.models.sizeMb", { size: model.sizeMb })}
+                          </span>
+                          {model.installed ? (
+                            <span
+                              data-testid={`onboarding-models-installed-${model.id}`}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                color: "currentColor",
+                                opacity: 0.7,
+                              }}
+                            >
+                              <CheckCircle2 size={16} />
+                              {t("onboarding.models.installed")}
+                            </span>
+                          ) : (
+                            <span
+                              data-testid={`onboarding-models-missing-${model.id}`}
+                              style={{ opacity: 0.7 }}
+                            >
+                              {t("onboarding.models.missing")}
+                            </span>
+                          )}
+                        </div>
+                        {activeDownloadId && (
+                          <ModelDownloadProgress downloadId={activeDownloadId} label={model.name} />
+                        )}
+                      </div>
+                    );
+                  })}
                   {missingBundleModels.length > 0 && (
                     <Button
                       data-testid="onboarding-models-download-all"
