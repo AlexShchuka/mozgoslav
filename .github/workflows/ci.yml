@@ -224,6 +224,9 @@ jobs:
     name: validate / commitlint
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+      statuses: write
     steps:
       - name: Lint PR title (source of the squash-merge commit message)
         uses: amannn/action-semantic-pull-request@v5
