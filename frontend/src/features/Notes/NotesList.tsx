@@ -9,17 +9,17 @@ import Button from "../../components/Button";
 import EmptyState from "../../components/EmptyState";
 import GroupedList from "../../components/GroupedList";
 import Modal from "../../components/Modal";
-import { graphqlClient } from "../../api/graphqlClient";
-import {
-  MutationCreateNoteDocument,
-  MutationDeleteNoteDocument,
-  QueryNotesDocument,
-} from "../../api/gql/graphql";
 import { ProcessedNote } from "../../domain/ProcessedNote";
 import { noteRoute } from "../../constants/routes";
-import { notifyError, notifySuccess } from "../../store/slices/notifications";
 import { applyLayout, selectObsidianIsApplyingLayout } from "../../store/slices/obsidian";
 import { loadSettings, selectSettings } from "../../store/slices/settings";
+import {
+  createNote as createNoteAction,
+  deleteNote as deleteNoteAction,
+  loadNotes,
+  selectAllNotes,
+  selectIsSubmittingNote,
+} from "../../store/slices/notes";
 import { folderFromVaultPath } from "./folder";
 import {
   BodyField,
@@ -40,23 +40,20 @@ const NotesList: FC = () => {
   const settings = useSelector(selectSettings);
   const isApplyingLayout = useSelector(selectObsidianIsApplyingLayout);
   const prevApplyingRef = useRef(false);
+  const notesFromStore = useSelector(selectAllNotes);
+  const isSubmitting = useSelector(selectIsSubmittingNote);
 
-  const [notes, setNotes] = useState<ProcessedNote[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
-  const loadNotes = useCallback(() => {
-    void graphqlClient
-      .request(QueryNotesDocument, { first: 200 })
-      .then((data) => setNotes((data.notes?.nodes ?? []) as unknown as ProcessedNote[]))
-      .catch(() => setNotes([]));
-  }, []);
+  const dispatchLoadNotes = useCallback(() => {
+    dispatch(loadNotes());
+  }, [dispatch]);
 
   useEffect(() => {
-    loadNotes();
-  }, [loadNotes]);
+    dispatchLoadNotes();
+  }, [dispatchLoadNotes]);
 
   useEffect(() => {
     if (!settings) dispatch(loadSettings());
@@ -64,14 +61,14 @@ const NotesList: FC = () => {
 
   useEffect(() => {
     if (prevApplyingRef.current && !isApplyingLayout) {
-      loadNotes();
+      dispatchLoadNotes();
     }
     prevApplyingRef.current = isApplyingLayout;
-  }, [isApplyingLayout, loadNotes]);
+  }, [isApplyingLayout, dispatchLoadNotes]);
 
   const sortedNotes = useMemo(
-    () => [...notes].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
-    [notes]
+    () => [...notesFromStore].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
+    [notesFromStore]
   );
 
   const vaultRoot = settings?.vaultPath ?? "";
@@ -86,51 +83,19 @@ const NotesList: FC = () => {
 
   const openNote = (note: ProcessedNote) => navigate(noteRoute(note.id));
 
-  const handleDelete = async (note: ProcessedNote) => {
+  const handleDelete = (note: ProcessedNote) => {
     const confirmed = window.confirm(
       t("notes.deleteConfirm", { title: note.topic || "conversation" })
     );
     if (!confirmed) return;
-    try {
-      await graphqlClient.request(MutationDeleteNoteDocument, { id: note.id });
-      setNotes((prev) => prev.filter((n) => n.id !== note.id));
-      dispatch(notifySuccess({ messageKey: "notes.deleted" }));
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      dispatch(
-        notifyError({
-          messageKey: "errors.genericErrorWithMessage",
-          params: { message },
-        })
-      );
-    }
+    dispatch(deleteNoteAction(note.id));
   };
 
-  const submit = async () => {
+  const submit = () => {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) return;
-    setSubmitting(true);
-    try {
-      const data = await graphqlClient.request(MutationCreateNoteDocument, {
-        input: { title: trimmedTitle, body },
-      });
-      const created = data.createNote.note;
-      if (created) {
-        setNotes((prev) => [created as unknown as ProcessedNote, ...prev]);
-      }
-      dispatch(notifySuccess({ messageKey: "notes.created" }));
-      closeAdd();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      dispatch(
-        notifyError({
-          messageKey: "errors.genericErrorWithMessage",
-          params: { message },
-        })
-      );
-    } finally {
-      setSubmitting(false);
-    }
+    dispatch(createNoteAction({ title: trimmedTitle, body }));
+    closeAdd();
   };
 
   const organize = () => {
@@ -178,7 +143,7 @@ const NotesList: FC = () => {
       size="sm"
       leftIcon={<Trash2 size={14} />}
       data-testid={`notes-delete-${note.id}`}
-      onClick={() => void handleDelete(note)}
+      onClick={() => handleDelete(note)}
     >
       {t("common.delete")}
     </Button>
@@ -239,9 +204,9 @@ const NotesList: FC = () => {
             <Button
               variant="primary"
               data-testid="notes-add-submit"
-              isLoading={submitting}
-              disabled={submitting || !title.trim()}
-              onClick={() => void submit()}
+              isLoading={isSubmitting}
+              disabled={isSubmitting || !title.trim()}
+              onClick={submit}
             >
               {t("notes.submit")}
             </Button>

@@ -1,6 +1,7 @@
-import { FC, useEffect, useMemo, useState } from "react";
+import { FC, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "react-toastify";
@@ -9,11 +10,14 @@ import { ArrowLeft, Copy, FolderOutput, RefreshCw } from "lucide-react";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import Badge from "../../components/Badge";
-import { graphqlClient } from "../../api/graphqlClient";
-import { MutationExportNoteDocument, QueryNoteDocument } from "../../api/gql/graphql";
-import { ProcessedNote } from "../../domain/ProcessedNote";
 import { ROUTES } from "../../constants/routes";
 import { stripFrontmatter } from "./markdown";
+import {
+  exportNote as exportNoteAction,
+  loadNote,
+  selectExportingNoteIds,
+  selectNoteById,
+} from "../../store/slices/notes";
 import {
   Actions,
   BackBar,
@@ -31,15 +35,16 @@ const NoteViewer: FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id = "" } = useParams();
-  const [note, setNote] = useState<ProcessedNote | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- matches project-wide useDispatch cast (Layout.tsx, Sync.tsx)
+  const dispatch = useDispatch() as (action: any) => void;
 
   useEffect(() => {
-    if (!id) return;
-    void graphqlClient
-      .request(QueryNoteDocument, { id })
-      .then((data) => setNote(data.note as ProcessedNote | null))
-      .catch(() => setNote(null));
-  }, [id]);
+    if (id) dispatch(loadNote(id));
+  }, [id, dispatch]);
+
+  const note = useSelector(selectNoteById(id));
+  const exportingIds = useSelector(selectExportingNoteIds);
+  const isExporting = exportingIds[id] === true;
 
   const body = useMemo(() => (note ? stripFrontmatter(note.markdownContent) : ""), [note]);
 
@@ -57,18 +62,9 @@ const NoteViewer: FC = () => {
     toast.success(t("common.copied"));
   };
 
-  const onExport = async () => {
+  const onExport = () => {
     if (!note) return;
-    try {
-      const data = await graphqlClient.request(MutationExportNoteDocument, { id: note.id });
-      const updated = data.exportNote.note;
-      if (updated) {
-        setNote((prev) => (prev ? { ...prev, ...updated } : null));
-      }
-      toast.success(t("common.apply"));
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err));
-    }
+    dispatch(exportNoteAction(note.id));
   };
 
   if (!note) return <PageRoot>{t("common.loading")}</PageRoot>;
@@ -122,7 +118,13 @@ const NoteViewer: FC = () => {
         <Button variant="secondary" leftIcon={<Copy size={16} />} onClick={onCopy}>
           {t("note.actions.copyMarkdown")}
         </Button>
-        <Button variant="primary" leftIcon={<FolderOutput size={16} />} onClick={onExport}>
+        <Button
+          variant="primary"
+          leftIcon={<FolderOutput size={16} />}
+          isLoading={isExporting}
+          disabled={isExporting}
+          onClick={onExport}
+        >
           {t("note.actions.export")}
         </Button>
         <Button variant="ghost" leftIcon={<RefreshCw size={16} />} disabled>
