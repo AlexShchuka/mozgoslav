@@ -1,10 +1,13 @@
 import { FC, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import styled from "styled-components";
+import { print } from "graphql";
 
 import ProgressBar from "./ProgressBar";
 import Button from "./Button";
-import { API_ENDPOINTS, BACKEND_URL } from "../constants/api";
+import type { SubscriptionModelDownloadProgressSubscription } from "../api/gql/graphql";
+import { SubscriptionModelDownloadProgressDocument } from "../api/gql/graphql";
+import { getGraphqlWsClient } from "../api/graphqlClient";
 
 export interface ModelDownloadProgressProps {
   downloadId: string;
@@ -13,12 +16,11 @@ export interface ModelDownloadProgressProps {
   onComplete?: (downloadId: string) => void;
 }
 
-interface DownloadFrame {
-  downloadId: string;
-  totalBytes: number;
-  receivedBytes: number;
-  status: "pending" | "downloading" | "done" | "failed";
-  error?: string | null;
+interface ProgressState {
+  bytesRead: number;
+  totalBytes: number | null;
+  done: boolean;
+  error: string | null;
 }
 
 const Root = styled.div`
@@ -50,57 +52,70 @@ const ModelDownloadProgress: FC<ModelDownloadProgressProps> = ({
   onComplete,
 }) => {
   const { t } = useTranslation();
-  const [frame, setFrame] = useState<DownloadFrame | null>(null);
+  const [progress, setProgress] = useState<ProgressState | null>(null);
   const [closed, setClosed] = useState(false);
 
   useEffect(() => {
-    const url = `${BACKEND_URL}${API_ENDPOINTS.modelsDownloadStream}?downloadId=${encodeURIComponent(downloadId)}`;
-    const source = new EventSource(url);
-    const handle = (ev: MessageEvent) => {
-      try {
-        const parsed = JSON.parse(ev.data) as DownloadFrame;
-        setFrame(parsed);
-        if (parsed.status === "done") {
-          onComplete?.(parsed.downloadId);
-          source.close();
+    const wsClient = getGraphqlWsClient();
+    const unsubscribe = wsClient.subscribe<SubscriptionModelDownloadProgressSubscription>(
+      {
+        query: print(SubscriptionModelDownloadProgressDocument),
+        variables: { downloadId },
+      },
+      {
+        next: (value) => {
+          const evt = value.data?.modelDownloadProgress;
+          if (!evt) return;
+          setProgress({
+            bytesRead: Number(evt.bytesRead),
+            totalBytes: evt.totalBytes != null ? Number(evt.totalBytes) : null,
+            done: evt.done,
+            error: evt.error ?? null,
+          });
+          if (evt.done) {
+            onComplete?.(downloadId);
+            setClosed(true);
+          }
+        },
+        error: () => {
           setClosed(true);
-        }
-        if (parsed.status === "failed") {
-          source.close();
+        },
+        complete: () => {
           setClosed(true);
-        }
-      } catch {}
-    };
-    source.addEventListener("progress", handle);
-    source.onmessage = handle;
-    source.onerror = () => {};
+        },
+      }
+    );
     return () => {
-      source.close();
-      setClosed(true);
+      unsubscribe();
+      void wsClient.dispose();
     };
   }, [downloadId, onComplete]);
 
-  if (closed && !frame) return null;
+  if (closed && !progress) return null;
 
   const pct =
-    frame && frame.totalBytes > 0 ? Math.round((frame.receivedBytes / frame.totalBytes) * 100) : 0;
-  const errored = frame?.status === "failed";
+    progress && progress.totalBytes && progress.totalBytes > 0
+      ? Math.round((progress.bytesRead / progress.totalBytes) * 100)
+      : 0;
+  const errored = progress?.error != null;
 
   return (
     <Root data-testid={`model-download-${downloadId}`}>
       <Meta>
         <span>{label ?? t("models.download")}</span>
         <span>
-          {frame ? `${formatMb(frame.receivedBytes)} / ${formatMb(frame.totalBytes)}` : "…"}
+          {progress
+            ? `${formatMb(progress.bytesRead)} / ${formatMb(progress.totalBytes ?? 0)}`
+            : "…"}
         </span>
       </Meta>
       <ProgressBar
         value={pct}
-        status={errored ? "error" : frame?.status === "done" ? "success" : "active"}
-        indeterminate={!frame || frame.totalBytes === 0}
-        label={errored ? (frame?.error ?? t("common.error")) : undefined}
+        status={errored ? "error" : progress?.done ? "success" : "active"}
+        indeterminate={!progress || !progress.totalBytes || progress.totalBytes === 0}
+        label={errored ? (progress?.error ?? t("common.error")) : undefined}
       />
-      {onCancel && frame?.status !== "done" && (
+      {onCancel && !progress?.done && (
         <Button
           variant="ghost"
           data-testid={`model-download-cancel-${downloadId}`}

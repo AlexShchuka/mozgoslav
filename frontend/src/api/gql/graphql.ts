@@ -18,6 +18,8 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean };
   Int: { input: number; output: number };
   Float: { input: number; output: number };
+  /** The `Long` scalar type represents non-fractional signed whole 64-bit numeric values. Long can represent values between -(2^63) and 2^63 - 1. */
+  Long: { input: any; output: any };
   UUID: { input: string; output: string };
 };
 
@@ -83,6 +85,12 @@ export type CreateProfileInput = {
   systemPrompt: Scalars["String"]["input"];
 };
 
+export type DownloadModelPayload = {
+  __typename?: "DownloadModelPayload";
+  downloadId?: Maybe<Scalars["String"]["output"]>;
+  errors: Array<IUserError>;
+};
+
 export type HealthStatus = {
   __typename?: "HealthStatus";
   status: Scalars["String"]["output"];
@@ -118,10 +126,47 @@ export type MetaInfo = {
   version: Scalars["String"]["output"];
 };
 
+export type ModelDownloadProgressEvent = {
+  __typename?: "ModelDownloadProgressEvent";
+  bytesRead: Scalars["Long"]["output"];
+  done: Scalars["Boolean"]["output"];
+  downloadId: Scalars["String"]["output"];
+  error?: Maybe<Scalars["String"]["output"]>;
+  totalBytes?: Maybe<Scalars["Long"]["output"]>;
+};
+
+export type ModelEntry = {
+  __typename?: "ModelEntry";
+  description: Scalars["String"]["output"];
+  destinationPath: Scalars["String"]["output"];
+  id: Scalars["String"]["output"];
+  installed: Scalars["Boolean"]["output"];
+  isDefault: Scalars["Boolean"]["output"];
+  kind: ModelKind;
+  name: Scalars["String"]["output"];
+  sizeMb: Scalars["Int"]["output"];
+  tier: ModelTier;
+  url: Scalars["String"]["output"];
+};
+
+export enum ModelKind {
+  AudioMl = "AUDIO_ML",
+  Llm = "LLM",
+  NlpMl = "NLP_ML",
+  Stt = "STT",
+  Vad = "VAD",
+}
+
+export enum ModelTier {
+  Bundle = "BUNDLE",
+  Downloadable = "DOWNLOADABLE",
+}
+
 export type MutationType = {
   __typename?: "MutationType";
   createProfile: ProfilePayload;
   deleteProfile: ProfilePayload;
+  downloadModel: DownloadModelPayload;
   duplicateProfile: ProfilePayload;
   updateProfile: ProfilePayload;
   updateSettings: UpdateSettingsPayload;
@@ -133,6 +178,10 @@ export type MutationTypeCreateProfileArgs = {
 
 export type MutationTypeDeleteProfileArgs = {
   id: Scalars["UUID"]["input"];
+};
+
+export type MutationTypeDownloadModelArgs = {
+  catalogueId: Scalars["String"]["input"];
 };
 
 export type MutationTypeDuplicateProfileArgs = {
@@ -188,6 +237,7 @@ export type QueryType = {
   health: HealthStatus;
   llmHealth: LlmHealthStatus;
   meta: MetaInfo;
+  models: Array<ModelEntry>;
   /** Fetches an object given its ID. */
   node?: Maybe<Node>;
   /** Lookup nodes by a list of IDs. */
@@ -211,7 +261,11 @@ export type QueryTypeProfileArgs = {
 
 export type SubscriptionType = {
   __typename?: "SubscriptionType";
-  placeholder: Scalars["Boolean"]["output"];
+  modelDownloadProgress: ModelDownloadProgressEvent;
+};
+
+export type SubscriptionTypeModelDownloadProgressArgs = {
+  downloadId: Scalars["String"]["input"];
 };
 
 export type UnavailableError = IUserError & {
@@ -294,6 +348,59 @@ export type QueryMetaQuery = {
     assemblyVersion: string;
     commit: string;
     buildDate: string;
+  };
+};
+
+export type QueryModelsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QueryModelsQuery = {
+  __typename?: "QueryType";
+  models: Array<{
+    __typename?: "ModelEntry";
+    id: string;
+    name: string;
+    description: string;
+    url: string;
+    sizeMb: number;
+    kind: ModelKind;
+    tier: ModelTier;
+    isDefault: boolean;
+    destinationPath: string;
+    installed: boolean;
+  }>;
+};
+
+export type MutationDownloadModelMutationVariables = Exact<{
+  catalogueId: Scalars["String"]["input"];
+}>;
+
+export type MutationDownloadModelMutation = {
+  __typename?: "MutationType";
+  downloadModel: {
+    __typename?: "DownloadModelPayload";
+    downloadId?: string | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type SubscriptionModelDownloadProgressSubscriptionVariables = Exact<{
+  downloadId: Scalars["String"]["input"];
+}>;
+
+export type SubscriptionModelDownloadProgressSubscription = {
+  __typename?: "SubscriptionType";
+  modelDownloadProgress: {
+    __typename?: "ModelDownloadProgressEvent";
+    downloadId: string;
+    bytesRead: any;
+    totalBytes?: any | null;
+    done: boolean;
+    error?: string | null;
   };
 };
 
@@ -615,6 +722,142 @@ export const QueryMetaDocument = {
     },
   ],
 } as unknown as DocumentNode<QueryMetaQuery, QueryMetaQueryVariables>;
+export const QueryModelsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryModels" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "models" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+                { kind: "Field", name: { kind: "Name", value: "description" } },
+                { kind: "Field", name: { kind: "Name", value: "url" } },
+                { kind: "Field", name: { kind: "Name", value: "sizeMb" } },
+                { kind: "Field", name: { kind: "Name", value: "kind" } },
+                { kind: "Field", name: { kind: "Name", value: "tier" } },
+                { kind: "Field", name: { kind: "Name", value: "isDefault" } },
+                { kind: "Field", name: { kind: "Name", value: "destinationPath" } },
+                { kind: "Field", name: { kind: "Name", value: "installed" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryModelsQuery, QueryModelsQueryVariables>;
+export const MutationDownloadModelDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationDownloadModel" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "catalogueId" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "downloadModel" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "catalogueId" },
+                value: { kind: "Variable", name: { kind: "Name", value: "catalogueId" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "downloadId" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationDownloadModelMutation, MutationDownloadModelMutationVariables>;
+export const SubscriptionModelDownloadProgressDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "subscription",
+      name: { kind: "Name", value: "SubscriptionModelDownloadProgress" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "downloadId" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "modelDownloadProgress" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "downloadId" },
+                value: { kind: "Variable", name: { kind: "Name", value: "downloadId" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "downloadId" } },
+                { kind: "Field", name: { kind: "Name", value: "bytesRead" } },
+                { kind: "Field", name: { kind: "Name", value: "totalBytes" } },
+                { kind: "Field", name: { kind: "Name", value: "done" } },
+                { kind: "Field", name: { kind: "Name", value: "error" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  SubscriptionModelDownloadProgressSubscription,
+  SubscriptionModelDownloadProgressSubscriptionVariables
+>;
 export const QueryProfilesDocument = {
   kind: "Document",
   definitions: [

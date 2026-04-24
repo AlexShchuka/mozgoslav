@@ -8,21 +8,23 @@ import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
 import ModelDownloadProgress from "../../components/ModelDownloadProgress";
-import { apiFactory } from "../../api";
-import { ModelEntry } from "../../domain/Model";
+import type { QueryModelsQuery } from "../../api/gql/graphql";
+import { QueryModelsDocument, MutationDownloadModelDocument } from "../../api/gql/graphql";
+import { graphqlClient } from "../../api/graphqlClient";
 import { ModelCard, ModelHeader, ModelMeta, PageRoot, PageTitle, Subtitle } from "./Models.style";
 
-const modelsApi = apiFactory.createModelsApi();
+type GqlModelEntry = QueryModelsQuery["models"][number];
 
 const Models: FC = () => {
   const { t } = useTranslation();
-  const [models, setModels] = useState<ModelEntry[]>([]);
+  const [models, setModels] = useState<GqlModelEntry[]>([]);
   const [downloading, setDownloading] = useState<string | null>(null);
   const [activeDownloads, setActiveDownloads] = useState<Record<string, string>>({});
 
   const refresh = useCallback(async () => {
     try {
-      setModels(await modelsApi.list());
+      const result = await graphqlClient.request(QueryModelsDocument);
+      setModels(result.models);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));
     }
@@ -49,9 +51,16 @@ const Models: FC = () => {
   const handleDownload = async (id: string) => {
     setDownloading(id);
     try {
-      const { downloadId } = await modelsApi.download(id);
-      setActiveDownloads((prev) => ({ ...prev, [id]: downloadId }));
-      toast.success(`${id} → ${t("common.download")}`);
+      const result = await graphqlClient.request(MutationDownloadModelDocument, {
+        catalogueId: id,
+      });
+      if (result.downloadModel.downloadId) {
+        setActiveDownloads((prev) => ({ ...prev, [id]: result.downloadModel.downloadId! }));
+        toast.success(`${id} → ${t("common.download")}`);
+      } else {
+        const err = result.downloadModel.errors[0];
+        toast.error(err?.message ?? t("common.error"));
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));
     } finally {
