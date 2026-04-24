@@ -7,11 +7,17 @@ describe("theme — ADR-013 nested shape snapshot", () => {
             "bg",
             "border",
             "error",
+            "errorSoft",
             "focusRing",
             "info",
+            "infoSoft",
+            "overlayBackdrop",
             "success",
+            "successSoft",
             "text",
             "warning",
+            "warningBorder",
+            "warningSoft",
         ]);
     });
 
