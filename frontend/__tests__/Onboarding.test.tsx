@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 
 import Onboarding from "../src/features/Onboarding";
 import { watchOnboardingSagas } from "../src/store/slices/onboarding";
+import { watchModelsSagas } from "../src/store/slices/models";
 import { renderWithStore } from "../src/testUtils";
 import { darkTheme } from "../src/styles/theme";
 import "../src/i18n";
@@ -114,7 +115,7 @@ const renderOnboarding = () =>
     <MemoryRouter>
       <Onboarding />
     </MemoryRouter>,
-    { sagas: [watchOnboardingSagas], theme: darkTheme }
+    { sagas: [watchOnboardingSagas, watchModelsSagas], theme: darkTheme }
   );
 
 const clickNext = async (times: number): Promise<void> => {
@@ -266,8 +267,9 @@ describe("Onboarding — plan v0.8 Block 4 (slim, platform-aware)", () => {
 
     await waitFor(() =>
       expect(mockedRequest).toHaveBeenCalledWith(
-        expect.objectContaining({ kind: "Document" }),
-        expect.objectContaining({ catalogueId: "whisper-small-russian-bundle" })
+        expect.objectContaining({
+          variables: expect.objectContaining({ catalogueId: "whisper-small-russian-bundle" }),
+        })
       )
     );
   });
