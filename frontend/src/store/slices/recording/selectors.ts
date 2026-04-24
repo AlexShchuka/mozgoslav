@@ -22,3 +22,11 @@ export const selectBackendUnavailable = createSelector(
 
 export const selectRecordingById = (id: string) =>
   createSelector(selectRecordingState, (slice) => slice.recordings[id] ?? null);
+
+export const selectDeletingRecordingIds = createSelector(
+  selectRecordingState,
+  (slice) => slice.deletingIds
+);
+
+export const selectIsDeletingRecording = (id: string) =>
+  createSelector(selectRecordingState, (slice) => slice.deletingIds[id] === true);

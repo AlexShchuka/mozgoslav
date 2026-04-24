@@ -1,3 +1,8 @@
+import { all, fork } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 
-export function* watchUiSagas(): SagaIterator {}
+import { watchOpenNoteSagas } from "./openNoteSaga";
+
+export function* watchUiSagas(): SagaIterator {
+  yield all([fork(watchOpenNoteSagas)]);
+}
