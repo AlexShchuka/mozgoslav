@@ -1,5 +1,5 @@
-name: Build & test
-run-name: Build & test
+name: CI
+run-name: CI
 
 on:
   push:
@@ -14,7 +14,7 @@ concurrency:
 jobs:
 
   verify:
-    name: verify / checks
+    name: validate / checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,7 +44,7 @@ jobs:
         run: scripts/check-encoding.sh
 
   backend:
-    name: build / backend (${{ matrix.os }})
+    name: build & tests / backend (${{ matrix.os }})
     needs: verify
     strategy:
       fail-fast: false
@@ -117,7 +117,7 @@ jobs:
         run: git diff --exit-code backend/openapi.json || (echo "::error::backend/openapi.json out of sync with build output. Rebuild backend and commit the regenerated file."; exit 1)
 
   frontend:
-    name: build / frontend (${{ matrix.os }})
+    name: build & tests / frontend (${{ matrix.os }})
     needs: verify
     strategy:
       fail-fast: false
@@ -166,7 +166,7 @@ jobs:
         run: cd frontend && WATCHPACK_POLLING=true npm run build
 
   python:
-    name: build / python (${{ matrix.os }})
+    name: build & tests / python (${{ matrix.os }})
     needs: verify
     strategy:
       fail-fast: false
@@ -202,7 +202,7 @@ jobs:
           retention-days: 7
 
   commitlint:
-    name: verify / commitlint
+    name: validate / commitlint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -230,7 +230,7 @@ jobs:
         run: cd frontend && npx commitlint --from HEAD~1 --to HEAD
 
   native:
-    name: build / native
+    name: build & tests / native (macos-latest)
     needs: verify
     runs-on: macos-latest
     steps:
@@ -269,7 +269,7 @@ jobs:
           retention-days: 7
 
   coverage-comment:
-    name: coverage / pr-comment
+    name: post-checks / coverage
     needs: [ backend, frontend, python, native ]
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
