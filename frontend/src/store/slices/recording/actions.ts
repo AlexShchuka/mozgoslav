@@ -41,6 +41,43 @@ export interface DeleteRecordingFailureAction {
   payload: { id: string; error: string };
 }
 
+export const UPLOAD_RECORDINGS_REQUESTED = "recording/UPLOAD_REQUESTED";
+export const UPLOAD_RECORDINGS_SUCCESS = "recording/UPLOAD_SUCCESS";
+export const UPLOAD_RECORDINGS_FAILURE = "recording/UPLOAD_FAILURE";
+export const IMPORT_RECORDINGS_REQUESTED = "recording/IMPORT_REQUESTED";
+export const IMPORT_RECORDINGS_SUCCESS = "recording/IMPORT_SUCCESS";
+export const IMPORT_RECORDINGS_FAILURE = "recording/IMPORT_FAILURE";
+
+export interface UploadRecordingsRequestedAction {
+  type: typeof UPLOAD_RECORDINGS_REQUESTED;
+  payload: { filePaths: string[] };
+}
+
+export interface UploadRecordingsSuccessAction {
+  type: typeof UPLOAD_RECORDINGS_SUCCESS;
+  payload: { count: number };
+}
+
+export interface UploadRecordingsFailureAction {
+  type: typeof UPLOAD_RECORDINGS_FAILURE;
+  payload: { error: string };
+}
+
+export interface ImportRecordingsRequestedAction {
+  type: typeof IMPORT_RECORDINGS_REQUESTED;
+  payload: { filePaths: string[] };
+}
+
+export interface ImportRecordingsSuccessAction {
+  type: typeof IMPORT_RECORDINGS_SUCCESS;
+  payload: { count: number };
+}
+
+export interface ImportRecordingsFailureAction {
+  type: typeof IMPORT_RECORDINGS_FAILURE;
+  payload: { error: string };
+}
+
 export type RecordingAction =
   | LoadRecordingsAction
   | LoadRecordingsSuccessAction
@@ -48,7 +85,13 @@ export type RecordingAction =
   | LoadRecordingsUnavailableAction
   | DeleteRecordingAction
   | DeleteRecordingSuccessAction
-  | DeleteRecordingFailureAction;
+  | DeleteRecordingFailureAction
+  | UploadRecordingsRequestedAction
+  | UploadRecordingsSuccessAction
+  | UploadRecordingsFailureAction
+  | ImportRecordingsRequestedAction
+  | ImportRecordingsSuccessAction
+  | ImportRecordingsFailureAction;
 
 export const loadRecordings = (): LoadRecordingsAction => ({
   type: LOAD_RECORDINGS,
@@ -83,5 +126,47 @@ export const deleteRecordingFailure = (payload: {
   error: string;
 }): DeleteRecordingFailureAction => ({
   type: DELETE_RECORDING_FAILURE,
+  payload,
+});
+
+export const uploadRecordingsRequested = (payload: {
+  filePaths: string[];
+}): UploadRecordingsRequestedAction => ({
+  type: UPLOAD_RECORDINGS_REQUESTED,
+  payload,
+});
+
+export const uploadRecordingsSuccess = (payload: {
+  count: number;
+}): UploadRecordingsSuccessAction => ({
+  type: UPLOAD_RECORDINGS_SUCCESS,
+  payload,
+});
+
+export const uploadRecordingsFailure = (payload: {
+  error: string;
+}): UploadRecordingsFailureAction => ({
+  type: UPLOAD_RECORDINGS_FAILURE,
+  payload,
+});
+
+export const importRecordingsRequested = (payload: {
+  filePaths: string[];
+}): ImportRecordingsRequestedAction => ({
+  type: IMPORT_RECORDINGS_REQUESTED,
+  payload,
+});
+
+export const importRecordingsSuccess = (payload: {
+  count: number;
+}): ImportRecordingsSuccessAction => ({
+  type: IMPORT_RECORDINGS_SUCCESS,
+  payload,
+});
+
+export const importRecordingsFailure = (payload: {
+  error: string;
+}): ImportRecordingsFailureAction => ({
+  type: IMPORT_RECORDINGS_FAILURE,
   payload,
 });

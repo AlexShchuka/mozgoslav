@@ -6,6 +6,8 @@ export interface RecordingState {
   isBackendUnavailable: boolean;
   error: string | null;
   deletingIds: Record<string, true>;
+  isUploading: boolean;
+  lastUploadError: string | null;
 }
 
 export const initialRecordingState: RecordingState = {
@@ -14,4 +16,6 @@ export const initialRecordingState: RecordingState = {
   isBackendUnavailable: false,
   error: null,
   deletingIds: {},
+  isUploading: false,
+  lastUploadError: null,
 };

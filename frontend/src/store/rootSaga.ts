@@ -9,9 +9,16 @@ import { watchSettingsSagas } from "./slices/settings";
 import { watchObsidianSagas } from "./slices/obsidian";
 import { watchOnboardingSagas } from "./slices/onboarding";
 import { subscribeJobs, watchJobsSagas } from "./slices/jobs";
+import { watchDictationSagas } from "./slices/dictation";
+import { subscribeAudioDevices, watchAudioDevicesSagas } from "./slices/audioDevices";
+import { watchNotesSagas } from "./slices/notes";
 
 function* bootstrapJobsSubscription(): SagaIterator {
   yield put(subscribeJobs());
+}
+
+function* bootstrapAudioDevicesSubscription(): SagaIterator {
+  yield put(subscribeAudioDevices());
 }
 
 export function* rootSaga(): SagaIterator {
@@ -26,5 +33,9 @@ export function* rootSaga(): SagaIterator {
     fork(watchOnboardingSagas),
     fork(watchJobsSagas),
     fork(bootstrapJobsSubscription),
+    fork(watchDictationSagas),
+    fork(watchAudioDevicesSagas),
+    fork(bootstrapAudioDevicesSubscription),
+    fork(watchNotesSagas),
   ]);
 }

@@ -3,10 +3,16 @@ import {
   DELETE_RECORDING,
   DELETE_RECORDING_FAILURE,
   DELETE_RECORDING_SUCCESS,
+  IMPORT_RECORDINGS_FAILURE,
+  IMPORT_RECORDINGS_REQUESTED,
+  IMPORT_RECORDINGS_SUCCESS,
   LOAD_RECORDINGS,
   LOAD_RECORDINGS_FAILURE,
   LOAD_RECORDINGS_SUCCESS,
   LOAD_RECORDINGS_UNAVAILABLE,
+  UPLOAD_RECORDINGS_FAILURE,
+  UPLOAD_RECORDINGS_REQUESTED,
+  UPLOAD_RECORDINGS_SUCCESS,
   type RecordingAction,
 } from "./actions";
 import { initialRecordingState, type RecordingState } from "./types";
@@ -79,6 +85,19 @@ export const recordingReducer: Reducer<RecordingState> = (
         error: (typed as { payload: { id: string; error: string } }).payload.error,
       };
     }
+    case UPLOAD_RECORDINGS_REQUESTED:
+    case IMPORT_RECORDINGS_REQUESTED:
+      return { ...state, isUploading: true, lastUploadError: null };
+    case UPLOAD_RECORDINGS_SUCCESS:
+    case IMPORT_RECORDINGS_SUCCESS:
+      return { ...state, isUploading: false, lastUploadError: null };
+    case UPLOAD_RECORDINGS_FAILURE:
+    case IMPORT_RECORDINGS_FAILURE:
+      return {
+        ...state,
+        isUploading: false,
+        lastUploadError: (typed as { payload: { error: string } }).payload.error,
+      };
     default:
       return state;
   }

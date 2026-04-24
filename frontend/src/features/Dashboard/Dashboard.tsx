@@ -3,24 +3,31 @@ import { useDropzone } from "react-dropzone";
 import { useTranslation } from "react-i18next";
 import { FileAudio, Mic, Square, Upload } from "lucide-react";
 import { toast } from "react-toastify";
-import { print } from "graphql";
+import { useDispatch, useSelector } from "react-redux";
+import type { Dispatch } from "redux";
+import type { AnyAction } from "redux";
 
 import AudioLevelMeter from "../../components/AudioLevelMeter";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 
-import { SubscriptionAudioDeviceChangedDocument } from "../../api/gql/graphql";
-import type { SubscriptionAudioDeviceChangedSubscription } from "../../api/gql/graphql";
-import {
-  MutationDictationStartDocument,
-  MutationDictationStopDocument,
-  MutationImportRecordingsDocument,
-  MutationUploadRecordingsDocument,
-} from "../../api/gql/graphql";
-import { graphqlClient, getGraphqlWsClient } from "../../api/graphqlClient";
 import { pushDictationAudio } from "../../api/dictationPush";
 import { GLOBAL_HOTKEY_REDISPATCH_EVENT, RECORDINGS_CHANGED_EVENT } from "../../constants/events";
 import { usePushToTalk } from "../../hooks/usePushToTalk";
+import {
+  dictationStartRequested,
+  dictationStopRequested,
+  dictationReset,
+  dictationFailed,
+  selectDictationStatus,
+} from "../../store/slices/dictation";
+import {
+  uploadRecordingsRequested,
+  importRecordingsRequested,
+  selectIsUploading,
+  selectLastUploadError,
+} from "../../store/slices/recording";
+import { selectLastAudioDeviceChange } from "../../store/slices/audioDevices";
 import {
   DashboardRoot,
   DropzoneCopy,
@@ -30,8 +37,6 @@ import {
   DropzoneTitle,
   Row,
 } from "./Dashboard.style";
-
-type RecordState = "idle" | "starting" | "recording" | "stopping";
 
 interface ActiveSession {
   readonly sessionId: string;
@@ -48,37 +53,137 @@ const notifyRecordingsChanged = (): void => {
 
 const Dashboard: FC = () => {
   const { t } = useTranslation();
-  const [uploading, setUploading] = useState(false);
-  const [recordState, setRecordState] = useState<RecordState>("idle");
+  const dispatch = useDispatch<Dispatch<AnyAction>>();
+  const status = useSelector(selectDictationStatus);
+  const isUploading = useSelector(selectIsUploading);
+  const lastUploadError = useSelector(selectLastUploadError);
+  const lastChange = useSelector(selectLastAudioDeviceChange);
+
   const [transcript, setTranscript] = useState<string | null>(null);
   const [activeStream, setActiveStream] = useState<MediaStream | null>(null);
   const sessionRef = useRef<ActiveSession | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const lastSeenChangeIdRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const wsClient = getGraphqlWsClient();
-    const unsubscribe = wsClient.subscribe<SubscriptionAudioDeviceChangedSubscription>(
-      { query: print(SubscriptionAudioDeviceChangedDocument) },
-      {
-        next: (value) => {
-          if (!value.data) return;
-          const payload = value.data.audioDeviceChanged;
-          if (payload.kind === "snapshot") return;
-          const defaultName =
-            payload.devices.find((d) => d.isDefault)?.name ??
-            payload.devices[0]?.name ??
-            t("dashboard.deviceUnknown");
-          toast.info(t("dashboard.deviceChanged", { kind: payload.kind, name: defaultName }));
-        },
-        error: () => {},
-        complete: () => {},
-      }
+    if (!lastChange) return;
+    if (lastSeenChangeIdRef.current === lastChange.id) return;
+    lastSeenChangeIdRef.current = lastChange.id;
+    toast.info(
+      t("dashboard.deviceChanged", { kind: lastChange.kind, name: lastChange.defaultName })
     );
+  }, [lastChange, t]);
+
+  useEffect(() => {
+    if (!lastUploadError) return;
+    toast.error(lastUploadError);
+  }, [lastUploadError]);
+
+  useEffect(() => {
+    if (status.phase !== "active") return;
+    if (sessionRef.current?.sessionId === status.sessionId) return;
+
+    const { sessionId, persistOnStop } = status;
+    let mounted = true;
+    void (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { channelCount: 1, sampleRate: 48000 },
+        });
+        if (!mounted) {
+          stream.getTracks().forEach((tr) => tr.stop());
+          return;
+        }
+        const MediaRecorderCtor = (
+          globalThis as unknown as { MediaRecorder?: typeof MediaRecorder }
+        ).MediaRecorder;
+        if (!MediaRecorderCtor) {
+          throw new Error("MediaRecorder API is not available in this environment");
+        }
+        const recorder = new MediaRecorderCtor(stream, {
+          mimeType: "audio/webm;codecs=opus",
+          audioBitsPerSecond: 24_000,
+        });
+        recorder.ondataavailable = (event) => {
+          const data = event.data as Blob | undefined;
+          if (!data || data.size === 0) return;
+          if (persistOnStop) chunksRef.current.push(data);
+          void data
+            .arrayBuffer()
+            .then((buf) => pushDictationAudio(sessionId, buf))
+            .catch(() => {});
+        };
+        sessionRef.current = { sessionId, recorder, stream, persistOnStop };
+        setActiveStream(stream);
+        recorder.start(250);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : String(err));
+        dispatch(dictationFailed({ error: err instanceof Error ? err.message : String(err) }));
+        sessionRef.current = null;
+        setActiveStream(null);
+      }
+    })();
     return () => {
-      unsubscribe();
-      void wsClient.dispose();
+      mounted = false;
     };
-  }, [t]);
+  }, [status, dispatch]);
+
+  useEffect(() => {
+    if (status.phase !== "stopped") return;
+    const { polishedText, persistOnStop } = status;
+    const hadChunks = chunksRef.current.length > 0;
+    setTranscript(polishedText);
+    void (async () => {
+      if (!persistOnStop && polishedText) {
+        try {
+          await window.mozgoslav?.dictationInject?.(polishedText, "auto");
+        } catch {}
+      }
+      if (persistOnStop && hadChunks) {
+        notifyRecordingsChanged();
+        toast.success(t("dashboard.recordedSaved"));
+      }
+      chunksRef.current = [];
+      sessionRef.current = null;
+      setActiveStream(null);
+      dispatch(dictationReset());
+    })();
+  }, [status, dispatch, t]);
+
+  useEffect(() => {
+    if (status.phase !== "failed") return;
+    const { error } = status;
+    toast.error(error);
+    chunksRef.current = [];
+    sessionRef.current = null;
+    setActiveStream(null);
+    dispatch(dictationReset());
+  }, [status, dispatch]);
+
+  const stopRecording = useCallback(async () => {
+    const active = sessionRef.current;
+    if (!active) {
+      dispatch(dictationReset());
+      return;
+    }
+    try {
+      const stopped = new Promise<void>((resolve) => {
+        active.recorder.addEventListener("stop", () => resolve(), { once: true });
+      });
+      active.recorder.stop();
+      active.stream.getTracks().forEach((track) => track.stop());
+      await stopped;
+    } catch {}
+    dispatch(dictationStopRequested());
+  }, [dispatch]);
+
+  const toggleRecord = () => {
+    if (status.phase === "idle") {
+      dispatch(dictationStartRequested({ source: "dashboard", persistOnStop: true }));
+    } else if (status.phase === "active") {
+      void stopRecording();
+    }
+  };
 
   const onDrop = useCallback(
     async (files: File[]) => {
@@ -90,18 +195,9 @@ const Dashboard: FC = () => {
         toast.info(t("dashboard.dropRequiresElectron"));
         return;
       }
-      setUploading(true);
-      try {
-        await graphqlClient.request(MutationUploadRecordingsDocument, { input: { filePaths } });
-        toast.success(`${files.length} → импорт`);
-        notifyRecordingsChanged();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : String(err));
-      } finally {
-        setUploading(false);
-      }
+      dispatch(uploadRecordingsRequested({ filePaths }));
     },
-    [t]
+    [dispatch, t]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -119,194 +215,35 @@ const Dashboard: FC = () => {
     }
     const result = await window.mozgoslav.openAudioFiles();
     if (result.canceled || !result.filePaths.length) return;
-    setUploading(true);
-    try {
-      await graphqlClient.request(MutationImportRecordingsDocument, {
-        input: { filePaths: result.filePaths },
-      });
-      notifyRecordingsChanged();
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const startRecording = async (persistOnStop: boolean = false) => {
-    setRecordState("starting");
-    setTranscript(null);
-    chunksRef.current = [];
-    let sessionId: string | null = null;
-    try {
-      const data = await graphqlClient.request(MutationDictationStartDocument, {
-        source: "dashboard",
-      });
-      sessionId = data.dictationStart.sessionId ?? null;
-      if (!sessionId) throw new Error("dictation start failed");
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { channelCount: 1, sampleRate: 48000 },
-      });
-      const MediaRecorderCtor = (
-        globalThis as unknown as {
-          MediaRecorder?: typeof MediaRecorder;
-        }
-      ).MediaRecorder;
-      if (!MediaRecorderCtor) {
-        throw new Error("MediaRecorder API is not available in this environment");
-      }
-      const recorder = new MediaRecorderCtor(stream, {
-        mimeType: "audio/webm;codecs=opus",
-        audioBitsPerSecond: 24_000,
-      });
-      recorder.ondataavailable = (event) => {
-        if (!sessionId) return;
-        const data = event.data;
-        if (!data || (data as Blob).size === 0) return;
-        const blob = data as Blob;
-        if (persistOnStop) {
-          chunksRef.current.push(blob);
-        }
-        void blob
-          .arrayBuffer()
-          .then((buf) => pushDictationAudio(sessionId!, buf))
-          .catch(() => {});
-      };
-      sessionRef.current = { sessionId, recorder, stream, persistOnStop };
-      setActiveStream(stream);
-      recorder.start(250);
-      setRecordState("recording");
-    } catch (err) {
-      setRecordState("idle");
-      toast.error(err instanceof Error ? err.message : String(err));
-      sessionRef.current = null;
-      setActiveStream(null);
-      chunksRef.current = [];
-    }
-  };
-
-  const stopRecording = async () => {
-    const active = sessionRef.current;
-    if (!active) {
-      setRecordState("idle");
-      return;
-    }
-    setRecordState("stopping");
-    try {
-      const stopped = new Promise<void>((resolve) => {
-        active.recorder.addEventListener("stop", () => resolve(), { once: true });
-      });
-      active.recorder.stop();
-      active.stream.getTracks().forEach((track) => track.stop());
-      await stopped;
-
-      try {
-        const data = await graphqlClient.request(MutationDictationStopDocument, {
-          sessionId: active.sessionId,
-        });
-        const polishedText = data.dictationStop.polishedText ?? null;
-        setTranscript(polishedText);
-        if (!active.persistOnStop && polishedText) {
-          try {
-            await window.mozgoslav?.dictationInject?.(polishedText, "auto");
-          } catch (injectErr) {
-            console.warn("[dictation] inject failed:", injectErr);
-          }
-        }
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : String(err));
-      }
-
-      if (active.persistOnStop && chunksRef.current.length > 0) {
-        notifyRecordingsChanged();
-        toast.success(t("dashboard.recordedSaved"));
-      }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err));
-    } finally {
-      chunksRef.current = [];
-      sessionRef.current = null;
-      setActiveStream(null);
-      setRecordState("idle");
-    }
-  };
-
-  const toggleRecord = () => {
-    if (recordState === "idle") {
-      void startRecording(true);
-    } else if (recordState === "recording") {
-      void stopRecording();
-    }
+    dispatch(importRecordingsRequested({ filePaths: result.filePaths }));
   };
 
   useEffect(() => {
     const handleGlobalHotkey = (event: Event) => {
       const detail = (event as CustomEvent<{ source: string }>).detail;
-      console.info("[hotkey] Dashboard received redispatch:", detail);
       if (sessionRef.current) {
         void stopRecording();
       } else {
-        void (async () => {
-          setRecordState("starting");
-          setTranscript(null);
-          try {
-            const startData = await graphqlClient.request(MutationDictationStartDocument, {
-              source: detail.source,
-            });
-            const sessionId = startData.dictationStart.sessionId;
-            if (!sessionId) throw new Error("dictation start failed");
-            const stream = await navigator.mediaDevices.getUserMedia({
-              audio: { channelCount: 1, sampleRate: 48000 },
-            });
-            const MediaRecorderCtor = (
-              globalThis as unknown as {
-                MediaRecorder?: typeof MediaRecorder;
-              }
-            ).MediaRecorder;
-            if (!MediaRecorderCtor) {
-              throw new Error("MediaRecorder API is not available in this environment");
-            }
-            const recorder = new MediaRecorderCtor(stream, {
-              mimeType: "audio/webm;codecs=opus",
-              audioBitsPerSecond: 24_000,
-            });
-            recorder.ondataavailable = (event) => {
-              const data = event.data;
-              if (!data || (data as Blob).size === 0) return;
-              const blob = data as Blob;
-              void blob
-                .arrayBuffer()
-                .then((buf) => pushDictationAudio(sessionId, buf))
-                .catch(() => {});
-            };
-            sessionRef.current = {
-              sessionId,
-              recorder,
-              stream,
-              persistOnStop: false,
-            };
-            setActiveStream(stream);
-            recorder.start(250);
-            setRecordState("recording");
-          } catch (err) {
-            setRecordState("idle");
-            toast.error(err instanceof Error ? err.message : String(err));
-            sessionRef.current = null;
-            setActiveStream(null);
-          }
-        })();
+        dispatch(dictationStartRequested({ source: detail.source, persistOnStop: false }));
       }
     };
     window.addEventListener(GLOBAL_HOTKEY_REDISPATCH_EVENT, handleGlobalHotkey);
     return () => window.removeEventListener(GLOBAL_HOTKEY_REDISPATCH_EVENT, handleGlobalHotkey);
-  }, []);
+  }, [dispatch, stopRecording]);
 
   usePushToTalk({
     onPress: () => {
-      if (!sessionRef.current) void startRecording(false);
+      if (!sessionRef.current) {
+        dispatch(dictationStartRequested({ source: "push-to-talk", persistOnStop: false }));
+      }
     },
     onRelease: () => {
       if (sessionRef.current) void stopRecording();
     },
   });
+
+  const isRecording = status.phase === "active";
+  const isTransitioning = status.phase === "starting" || status.phase === "stopping";
 
   return (
     <DashboardRoot>
@@ -326,21 +263,21 @@ const Dashboard: FC = () => {
             variant="secondary"
             leftIcon={<FileAudio size={16} />}
             onClick={pickViaDialog}
-            isLoading={uploading}
+            isLoading={isUploading}
           >
             {t("common.add")}
           </Button>
           <Button
-            variant={recordState === "recording" ? "primary" : "ghost"}
-            leftIcon={recordState === "recording" ? <Square size={16} /> : <Mic size={16} />}
+            variant={isRecording ? "primary" : "ghost"}
+            leftIcon={isRecording ? <Square size={16} /> : <Mic size={16} />}
             data-testid="dashboard-record"
-            isLoading={recordState === "starting" || recordState === "stopping"}
+            isLoading={isTransitioning}
             onClick={toggleRecord}
           >
-            {recordState === "recording" ? t("dashboard.recordStop") : t("dashboard.recordStart")}
+            {isRecording ? t("dashboard.recordStop") : t("dashboard.recordStart")}
           </Button>
         </Row>
-        {recordState === "recording" && activeStream && (
+        {isRecording && activeStream && (
           <div style={{ marginTop: 12 }} data-testid="dashboard-levels">
             <AudioLevelMeter stream={activeStream} ariaLabel={t("dashboard.audioLevel")} />
           </div>
