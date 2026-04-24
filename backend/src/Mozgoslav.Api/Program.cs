@@ -292,7 +292,8 @@ try
     builder.Services.AddOpenTelemetry().WithMetrics(m => m
         .AddMeter(MozgoslavMetrics.MeterName)
         .AddAspNetCoreInstrumentation()
-        .AddRuntimeInstrumentation());
+        .AddRuntimeInstrumentation()
+        .AddPrometheusExporter());
 
     builder.Services.AddHostedService<DatabaseInitializer>();
     builder.Services.AddQuartz(q =>
@@ -320,6 +321,7 @@ try
     app.UseCors(DevelopmentCorsPolicy);
 
     app.MapOpenApi();
+    app.MapPrometheusScrapingEndpoint();
     app.MapControllers();
 
     app.MapHealthEndpoints();

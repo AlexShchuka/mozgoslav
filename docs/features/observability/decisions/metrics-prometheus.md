@@ -1,7 +1,7 @@
 # ADR-017 — Backend `/metrics` Prometheus endpoint
 
-- **Status:** Proposed
-- **Date:** 2026-04-18
+- **Status:** Shipped
+- **Date:** 2026-04-24
 - **Priority:** Low-mid (quick win, но пока приложение local-first — ценность ограничена).
 
 ## Контекст
