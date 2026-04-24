@@ -323,7 +323,6 @@ try
 
     builder.Services.AddMozgoslavGraphQL(builder.Environment);
 
-    builder.Services.AddControllers();
     builder.Services.AddOpenApi();
 
     var app = builder.Build();
@@ -341,25 +340,10 @@ try
 
     app.MapOpenApi();
     app.MapPrometheusScrapingEndpoint();
-    app.MapControllers();
 
     app.MapGraphQL("/graphql");
 
-    app.MapHealthEndpoints();
-    app.MapRecordingEndpoints();
-    app.MapJobEndpoints();
-    app.MapNoteEndpoints();
-    app.MapProfileEndpoints();
-    app.MapSettingsEndpoints();
-    app.MapModelEndpoints();
-    app.MapMeetilyEndpoints();
-    app.MapObsidianEndpoints();
-    app.MapSseEndpoints();
-    app.MapBackupEndpoints();
-    app.MapDictationEndpoints();
-    app.MapSyncEndpoints();
-    app.MapRagEndpoints();
-    app.MapMetaEndpoints();
+    app.MapInternalEndpoints();
 
     await app.RunAsync();
 }

@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using System.Text.Json;
 using System.Threading;
 
 using Microsoft.AspNetCore.Builder;
@@ -15,37 +13,43 @@ using Mozgoslav.Domain.ValueObjects;
 
 namespace Mozgoslav.Api.Endpoints;
 
-public static class DictationEndpoints
+public static class InternalEndpoints
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
-
     public sealed record PushChunkRequest(
         IReadOnlyList<float> Samples,
         int SampleRate,
         double OffsetSeconds);
 
-    public sealed record StartSessionRequest(string? Source, string? ProfileId);
-
-    public sealed record StopSessionRequest(string? BundleId);
-
-    public static IEndpointRouteBuilder MapDictationEndpoints(this IEndpointRouteBuilder endpoints)
+    public static IEndpointRouteBuilder MapInternalEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapPost("/api/dictation/start", (
-            [FromBody] StartSessionRequest? body,
-            IDictationSessionManager manager) =>
+        endpoints.MapPost("/_internal/devices/changed", async (
+            [FromBody] AudioDeviceChangePayload payload,
+            IAudioDeviceChangeNotifier notifier,
+            CancellationToken ct) =>
         {
-            try
+            if (payload is null)
             {
-                var session = manager.Start(source: body?.Source);
-                return Results.Ok(new { sessionId = session.Id, source = session.Source });
+                return Results.BadRequest(new { error = "payload required" });
             }
-            catch (InvalidOperationException ex)
+            await notifier.PublishAsync(payload, ct);
+            return Results.Ok(new { accepted = true });
+        });
+
+        endpoints.MapPost("/_internal/hotkey/event", async (
+            [FromBody] HotkeyEvent payload,
+            IHotkeyEventNotifier notifier,
+            CancellationToken ct) =>
+        {
+            if (payload is null)
             {
-                return Results.Conflict(new { error = ex.Message });
+                return Results.BadRequest(new { error = "payload required" });
             }
+            if (payload.Kind != "press" && payload.Kind != "release")
+            {
+                return Results.BadRequest(new { error = "kind must be press or release" });
+            }
+            await notifier.PublishAsync(payload, ct);
+            return Results.Ok(new { accepted = true });
         });
 
         endpoints.MapPost("/api/dictation/push/{sessionId:guid}", async (
@@ -121,70 +125,6 @@ public static class DictationEndpoints
             {
                 return Results.BadRequest(new { error = ex.Message });
             }
-        });
-
-        endpoints.MapGet("/api/dictation/stream/{sessionId:guid}", async (
-            Guid sessionId,
-            HttpContext context,
-            IDictationSessionManager manager,
-            CancellationToken ct) =>
-        {
-            if (manager.TryGet(sessionId) is null)
-            {
-                context.Response.StatusCode = StatusCodes.Status404NotFound;
-                await context.Response.WriteAsync($"session {sessionId} not found", ct);
-                return;
-            }
-
-            context.Response.Headers.ContentType = "text/event-stream";
-            context.Response.Headers.CacheControl = "no-cache";
-            context.Response.Headers["X-Accel-Buffering"] = "no";
-
-            await context.Response.WriteAsync(":ok\n\n", ct);
-            await context.Response.Body.FlushAsync(ct);
-
-            await foreach (var partial in manager.SubscribePartialsAsync(sessionId, ct))
-            {
-                var payload = JsonSerializer.Serialize(new
-                {
-                    text = partial.Text,
-                    timestampMs = partial.Timestamp.TotalMilliseconds
-                }, JsonOptions);
-
-                await context.Response.WriteAsync($"event: partial\ndata: {payload}\n\n", Encoding.UTF8, ct);
-                await context.Response.Body.FlushAsync(ct);
-            }
-        });
-
-        endpoints.MapPost("/api/dictation/stop/{sessionId:guid}", async (
-            Guid sessionId,
-            [FromBody] StopSessionRequest? body,
-            IDictationSessionManager manager,
-            CancellationToken ct) =>
-        {
-            try
-            {
-                var result = await manager.StopAsync(sessionId, ct, body?.BundleId);
-                return Results.Ok(new
-                {
-                    rawText = result.RawText,
-                    polishedText = result.PolishedText,
-                    durationMs = result.Duration.TotalMilliseconds
-                });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return Results.NotFound(new { error = ex.Message });
-            }
-        });
-
-        endpoints.MapPost("/api/dictation/cancel/{sessionId:guid}", async (
-            Guid sessionId,
-            IDictationSessionManager manager,
-            CancellationToken ct) =>
-        {
-            await manager.CancelAsync(sessionId, ct);
-            return Results.Ok(new { cancelled = true });
         });
 
         return endpoints;
