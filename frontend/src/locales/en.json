@@ -410,6 +410,8 @@
     "hintPlaceholder": "e.g. Q2 planning call, Ivan and Olga"
   },
   "dictation": {
+    "cancel": "Cancel",
+    "cancelHint": "Stop dictation without saving",
     "overlay": {
       "idle": "Dictation",
       "recording": "Listening",

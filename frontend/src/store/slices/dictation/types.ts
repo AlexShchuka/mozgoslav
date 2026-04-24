@@ -3,6 +3,7 @@ export type DictationStatus =
   | { phase: "starting"; source: string; persistOnStop: boolean }
   | { phase: "active"; sessionId: string; source: string; persistOnStop: boolean }
   | { phase: "stopping"; sessionId: string; persistOnStop: boolean }
+  | { phase: "cancelling"; sessionId: string; persistOnStop: boolean }
   | { phase: "stopped"; polishedText: string | null; persistOnStop: boolean }
   | { phase: "failed"; error: string };
 

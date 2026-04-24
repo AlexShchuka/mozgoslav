@@ -18,6 +18,7 @@ export interface MozgoslavBridge {
     folderPath: string
   ) => Promise<Array<{ folderId: string; path: string; conflictPath: string }>>;
   onGlobalHotkey: (listener: (payload: GlobalHotkeyPayload) => void) => () => void;
+  onOverlayCancelRequest: (listener: () => void) => () => void;
   startNativeRecording?: (outputPath: string) => Promise<{ sessionId: string }>;
   stopNativeRecording?: (sessionId: string) => Promise<{ path: string; durationMs: number }>;
   dictationInject?: (text: string, mode: "auto" | "cgevent" | "accessibility") => Promise<void>;
@@ -31,6 +32,7 @@ export interface DictationOverlayState {
 
 export interface MozgoslavOverlayBridge {
   onStateChange: (listener: (state: DictationOverlayState) => void) => () => void;
+  cancelDictation: () => void;
 }
 
 const GLOBAL_HOTKEY_CHANNEL = "mozgoslav:global-hotkey-toggle";
@@ -57,6 +59,13 @@ const bridge: MozgoslavBridge = {
   startNativeRecording: (outputPath) => ipcRenderer.invoke("record:start", outputPath),
   stopNativeRecording: (sessionId) => ipcRenderer.invoke("record:stop", sessionId),
   dictationInject: (text, mode) => ipcRenderer.invoke("dictation:inject", text, mode),
+  onOverlayCancelRequest: (listener) => {
+    const handler = () => listener();
+    ipcRenderer.on("dictation:cancel-from-overlay", handler);
+    return () => {
+      ipcRenderer.removeListener("dictation:cancel-from-overlay", handler);
+    };
+  },
 };
 
 const overlayBridge: MozgoslavOverlayBridge = {
@@ -67,6 +76,9 @@ const overlayBridge: MozgoslavOverlayBridge = {
     return () => {
       ipcRenderer.removeListener("dictation:overlay-state", handler);
     };
+  },
+  cancelDictation: () => {
+    ipcRenderer.send("dictation:cancel-request");
   },
 };
 

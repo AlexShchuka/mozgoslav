@@ -66,3 +66,20 @@ export const Spinner = styled.span`
   animation: ${spin} 0.8s linear infinite;
   flex-shrink: 0;
 `;
+
+export const CancelButton = styled.button`
+  flex-shrink: 0;
+  padding: ${({ theme }) => theme.space(0.5)} ${({ theme }) => theme.space(1.5)};
+  border: 1px solid ${({ theme }) => theme.colors.error};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  background: transparent;
+  color: ${({ theme }) => theme.colors.error};
+  font-size: ${({ theme }) => theme.font.size.xs};
+  font-family: ${({ theme }) => theme.font.family};
+  cursor: pointer;
+  line-height: 1;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.errorSoft};
+  }
+`;

@@ -1,5 +1,8 @@
 import type { Reducer } from "redux";
 import {
+  DICTATION_CANCEL_FAILED,
+  DICTATION_CANCEL_REQUESTED,
+  DICTATION_CANCELLED,
   DICTATION_FAILED,
   DICTATION_RESET,
   DICTATION_START_REQUESTED,
@@ -72,6 +75,19 @@ export const dictationReducer: Reducer<DictationState> = (
       if (phase !== "stopped" && phase !== "failed") return state;
       return initialDictationState;
     }
+    case DICTATION_CANCEL_REQUESTED: {
+      const phase = state.status.phase;
+      if (phase !== "active" && phase !== "stopping") return state;
+      const { sessionId, persistOnStop } = state.status as {
+        sessionId: string;
+        persistOnStop: boolean;
+      };
+      return { status: { phase: "cancelling", sessionId, persistOnStop } };
+    }
+    case DICTATION_CANCELLED:
+      return initialDictationState;
+    case DICTATION_CANCEL_FAILED:
+      return initialDictationState;
     default:
       return state;
   }
