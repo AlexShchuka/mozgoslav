@@ -27,6 +27,21 @@ export type Scalars = {
   UUID: { input: string; output: string };
 };
 
+export type ActionItem = {
+  __typename?: "ActionItem";
+  deadline?: Maybe<Scalars["String"]["output"]>;
+  person: Scalars["String"]["output"];
+  task: Scalars["String"]["output"];
+};
+
+export type ActionItemFilterInput = {
+  and?: InputMaybe<Array<ActionItemFilterInput>>;
+  deadline?: InputMaybe<StringOperationFilterInput>;
+  or?: InputMaybe<Array<ActionItemFilterInput>>;
+  person?: InputMaybe<StringOperationFilterInput>;
+  task?: InputMaybe<StringOperationFilterInput>;
+};
+
 export type AppSettingsDto = {
   __typename?: "AppSettingsDto";
   dictationAppProfiles: Array<KeyValuePairOfStringAndString>;
@@ -83,6 +98,11 @@ export type AudioFormatOperationFilterInput = {
   nin?: InputMaybe<Array<AudioFormat>>;
 };
 
+export type BooleanOperationFilterInput = {
+  eq?: InputMaybe<Scalars["Boolean"]["input"]>;
+  neq?: InputMaybe<Scalars["Boolean"]["input"]>;
+};
+
 export enum CleanupLevel {
   Aggressive = "AGGRESSIVE",
   Light = "LIGHT",
@@ -93,6 +113,21 @@ export type ConflictError = IUserError & {
   __typename?: "ConflictError";
   code: Scalars["String"]["output"];
   message: Scalars["String"]["output"];
+};
+
+export enum ConversationType {
+  Idea = "IDEA",
+  Meeting = "MEETING",
+  OneOnOne = "ONE_ON_ONE",
+  Other = "OTHER",
+  Personal = "PERSONAL",
+}
+
+export type ConversationTypeOperationFilterInput = {
+  eq?: InputMaybe<ConversationType>;
+  in?: InputMaybe<Array<ConversationType>>;
+  neq?: InputMaybe<ConversationType>;
+  nin?: InputMaybe<Array<ConversationType>>;
 };
 
 export type CreateProfileInput = {
@@ -150,6 +185,21 @@ export type ImportRecordingsPayload = {
   recordings: Array<Recording>;
 };
 
+export type IntOperationFilterInput = {
+  eq?: InputMaybe<Scalars["Int"]["input"]>;
+  gt?: InputMaybe<Scalars["Int"]["input"]>;
+  gte?: InputMaybe<Scalars["Int"]["input"]>;
+  in?: InputMaybe<Array<InputMaybe<Scalars["Int"]["input"]>>>;
+  lt?: InputMaybe<Scalars["Int"]["input"]>;
+  lte?: InputMaybe<Scalars["Int"]["input"]>;
+  neq?: InputMaybe<Scalars["Int"]["input"]>;
+  ngt?: InputMaybe<Scalars["Int"]["input"]>;
+  ngte?: InputMaybe<Scalars["Int"]["input"]>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars["Int"]["input"]>>>;
+  nlt?: InputMaybe<Scalars["Int"]["input"]>;
+  nlte?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
 export type KeyValuePairOfStringAndString = {
   __typename?: "KeyValuePairOfStringAndString";
   key: Scalars["String"]["output"];
@@ -159,6 +209,20 @@ export type KeyValuePairOfStringAndString = {
 export type KeyValuePairOfStringAndStringInput = {
   key: Scalars["String"]["input"];
   value: Scalars["String"]["input"];
+};
+
+export type ListFilterInputTypeOfActionItemFilterInput = {
+  all?: InputMaybe<ActionItemFilterInput>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
+  none?: InputMaybe<ActionItemFilterInput>;
+  some?: InputMaybe<ActionItemFilterInput>;
+};
+
+export type ListStringOperationFilterInput = {
+  all?: InputMaybe<StringOperationFilterInput>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
+  none?: InputMaybe<StringOperationFilterInput>;
+  some?: InputMaybe<StringOperationFilterInput>;
 };
 
 export type LlmHealthStatus = {
@@ -216,6 +280,7 @@ export type MutationType = {
   deleteProfile: ProfilePayload;
   downloadModel: DownloadModelPayload;
   duplicateProfile: ProfilePayload;
+  exportNote: NotePayload;
   importRecordings: ImportRecordingsPayload;
   reprocessRecording: RecordingPayload;
   startRecording: StartRecordingPayload;
@@ -238,6 +303,10 @@ export type MutationTypeDownloadModelArgs = {
 };
 
 export type MutationTypeDuplicateProfileArgs = {
+  id: Scalars["UUID"]["input"];
+};
+
+export type MutationTypeExportNoteArgs = {
   id: Scalars["UUID"]["input"];
 };
 
@@ -284,6 +353,46 @@ export type NotFoundError = IUserError & {
   resourceKind: Scalars["String"]["output"];
 };
 
+export type NotePayload = {
+  __typename?: "NotePayload";
+  errors: Array<IUserError>;
+  note?: Maybe<ProcessedNote>;
+};
+
+export enum NoteSource {
+  Manual = "MANUAL",
+  Processed = "PROCESSED",
+}
+
+export type NoteSourceOperationFilterInput = {
+  eq?: InputMaybe<NoteSource>;
+  in?: InputMaybe<Array<NoteSource>>;
+  neq?: InputMaybe<NoteSource>;
+  nin?: InputMaybe<Array<NoteSource>>;
+};
+
+/** A connection to a list of items. */
+export type NotesConnection = {
+  __typename?: "NotesConnection";
+  /** A list of edges. */
+  edges?: Maybe<Array<NotesEdge>>;
+  /** A flattened list of the nodes. */
+  nodes?: Maybe<Array<ProcessedNote>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars["Int"]["output"];
+};
+
+/** An edge in a connection. */
+export type NotesEdge = {
+  __typename?: "NotesEdge";
+  /** A cursor for use in pagination. */
+  cursor: Scalars["String"]["output"];
+  /** The item at the end of the edge. */
+  node: ProcessedNote;
+};
+
 /** Information about pagination in a connection. */
 export type PageInfo = {
   __typename?: "PageInfo";
@@ -295,6 +404,75 @@ export type PageInfo = {
   hasPreviousPage: Scalars["Boolean"]["output"];
   /** When paginating backwards, the cursor to continue. */
   startCursor?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type ProcessedNote = Node & {
+  __typename?: "ProcessedNote";
+  actionItems: Array<ActionItem>;
+  cleanTranscript: Scalars["String"]["output"];
+  conversationType: ConversationType;
+  createdAt: Scalars["DateTime"]["output"];
+  decisions: Array<Scalars["String"]["output"]>;
+  exportedToVault: Scalars["Boolean"]["output"];
+  fullTranscript: Scalars["String"]["output"];
+  id: Scalars["ID"]["output"];
+  keyPoints: Array<Scalars["String"]["output"]>;
+  markdownContent: Scalars["String"]["output"];
+  participants: Array<Scalars["String"]["output"]>;
+  profileId: Scalars["UUID"]["output"];
+  source: NoteSource;
+  summary: Scalars["String"]["output"];
+  tags: Array<Scalars["String"]["output"]>;
+  title: Scalars["String"]["output"];
+  topic: Scalars["String"]["output"];
+  transcriptId: Scalars["UUID"]["output"];
+  unresolvedQuestions: Array<Scalars["String"]["output"]>;
+  vaultPath?: Maybe<Scalars["String"]["output"]>;
+  version: Scalars["Int"]["output"];
+};
+
+export type ProcessedNoteFilterInput = {
+  actionItems?: InputMaybe<ListFilterInputTypeOfActionItemFilterInput>;
+  and?: InputMaybe<Array<ProcessedNoteFilterInput>>;
+  cleanTranscript?: InputMaybe<StringOperationFilterInput>;
+  conversationType?: InputMaybe<ConversationTypeOperationFilterInput>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  decisions?: InputMaybe<ListStringOperationFilterInput>;
+  exportedToVault?: InputMaybe<BooleanOperationFilterInput>;
+  fullTranscript?: InputMaybe<StringOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  keyPoints?: InputMaybe<ListStringOperationFilterInput>;
+  markdownContent?: InputMaybe<StringOperationFilterInput>;
+  or?: InputMaybe<Array<ProcessedNoteFilterInput>>;
+  participants?: InputMaybe<ListStringOperationFilterInput>;
+  profileId?: InputMaybe<UuidOperationFilterInput>;
+  source?: InputMaybe<NoteSourceOperationFilterInput>;
+  summary?: InputMaybe<StringOperationFilterInput>;
+  tags?: InputMaybe<ListStringOperationFilterInput>;
+  title?: InputMaybe<StringOperationFilterInput>;
+  topic?: InputMaybe<StringOperationFilterInput>;
+  transcriptId?: InputMaybe<UuidOperationFilterInput>;
+  unresolvedQuestions?: InputMaybe<ListStringOperationFilterInput>;
+  vaultPath?: InputMaybe<StringOperationFilterInput>;
+  version?: InputMaybe<IntOperationFilterInput>;
+};
+
+export type ProcessedNoteSortInput = {
+  cleanTranscript?: InputMaybe<SortEnumType>;
+  conversationType?: InputMaybe<SortEnumType>;
+  createdAt?: InputMaybe<SortEnumType>;
+  exportedToVault?: InputMaybe<SortEnumType>;
+  fullTranscript?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  markdownContent?: InputMaybe<SortEnumType>;
+  profileId?: InputMaybe<SortEnumType>;
+  source?: InputMaybe<SortEnumType>;
+  summary?: InputMaybe<SortEnumType>;
+  title?: InputMaybe<SortEnumType>;
+  topic?: InputMaybe<SortEnumType>;
+  transcriptId?: InputMaybe<SortEnumType>;
+  vaultPath?: InputMaybe<SortEnumType>;
+  version?: InputMaybe<SortEnumType>;
 };
 
 export type Profile = Node & {
@@ -329,6 +507,8 @@ export type QueryType = {
   node?: Maybe<Node>;
   /** Lookup nodes by a list of IDs. */
   nodes: Array<Maybe<Node>>;
+  note?: Maybe<ProcessedNote>;
+  notes?: Maybe<NotesConnection>;
   profile?: Maybe<Profile>;
   profiles: Array<Profile>;
   recording?: Maybe<Recording>;
@@ -342,6 +522,19 @@ export type QueryTypeNodeArgs = {
 
 export type QueryTypeNodesArgs = {
   ids: Array<Scalars["ID"]["input"]>;
+};
+
+export type QueryTypeNoteArgs = {
+  id: Scalars["UUID"]["input"];
+};
+
+export type QueryTypeNotesArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
+  order?: InputMaybe<Array<ProcessedNoteSortInput>>;
+  where?: InputMaybe<ProcessedNoteFilterInput>;
 };
 
 export type QueryTypeProfileArgs = {
@@ -665,6 +858,117 @@ export type SubscriptionModelDownloadProgressSubscription = {
     totalBytes?: any | null;
     done: boolean;
     error?: string | null;
+  };
+};
+
+export type QueryNotesQueryVariables = Exact<{
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+}>;
+
+export type QueryNotesQuery = {
+  __typename?: "QueryType";
+  notes?: {
+    __typename?: "NotesConnection";
+    totalCount: number;
+    nodes?: Array<{
+      __typename?: "ProcessedNote";
+      id: string;
+      transcriptId: string;
+      profileId: string;
+      version: number;
+      source: NoteSource;
+      title: string;
+      summary: string;
+      keyPoints: Array<string>;
+      decisions: Array<string>;
+      unresolvedQuestions: Array<string>;
+      participants: Array<string>;
+      topic: string;
+      conversationType: ConversationType;
+      cleanTranscript: string;
+      fullTranscript: string;
+      tags: Array<string>;
+      markdownContent: string;
+      exportedToVault: boolean;
+      vaultPath?: string | null;
+      createdAt: string;
+      actionItems: Array<{
+        __typename?: "ActionItem";
+        person: string;
+        task: string;
+        deadline?: string | null;
+      }>;
+    }> | null;
+    pageInfo: {
+      __typename?: "PageInfo";
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+      startCursor?: string | null;
+      endCursor?: string | null;
+    };
+  } | null;
+};
+
+export type QueryNoteQueryVariables = Exact<{
+  id: Scalars["UUID"]["input"];
+}>;
+
+export type QueryNoteQuery = {
+  __typename?: "QueryType";
+  note?: {
+    __typename?: "ProcessedNote";
+    id: string;
+    transcriptId: string;
+    profileId: string;
+    version: number;
+    source: NoteSource;
+    title: string;
+    summary: string;
+    keyPoints: Array<string>;
+    decisions: Array<string>;
+    unresolvedQuestions: Array<string>;
+    participants: Array<string>;
+    topic: string;
+    conversationType: ConversationType;
+    cleanTranscript: string;
+    fullTranscript: string;
+    tags: Array<string>;
+    markdownContent: string;
+    exportedToVault: boolean;
+    vaultPath?: string | null;
+    createdAt: string;
+    actionItems: Array<{
+      __typename?: "ActionItem";
+      person: string;
+      task: string;
+      deadline?: string | null;
+    }>;
+  } | null;
+};
+
+export type MutationExportNoteMutationVariables = Exact<{
+  id: Scalars["UUID"]["input"];
+}>;
+
+export type MutationExportNoteMutation = {
+  __typename?: "MutationType";
+  exportNote: {
+    __typename?: "NotePayload";
+    note?: {
+      __typename?: "ProcessedNote";
+      id: string;
+      exportedToVault: boolean;
+      vaultPath?: string | null;
+    } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
   };
 };
 
@@ -1284,6 +1588,266 @@ export const SubscriptionModelDownloadProgressDocument = {
   SubscriptionModelDownloadProgressSubscription,
   SubscriptionModelDownloadProgressSubscriptionVariables
 >;
+export const QueryNotesDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryNotes" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "first" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "Int" } },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "after" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "last" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "Int" } },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "before" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "notes" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "first" },
+                value: { kind: "Variable", name: { kind: "Name", value: "first" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "after" },
+                value: { kind: "Variable", name: { kind: "Name", value: "after" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "last" },
+                value: { kind: "Variable", name: { kind: "Name", value: "last" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "before" },
+                value: { kind: "Variable", name: { kind: "Name", value: "before" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "totalCount" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "nodes" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "transcriptId" } },
+                      { kind: "Field", name: { kind: "Name", value: "profileId" } },
+                      { kind: "Field", name: { kind: "Name", value: "version" } },
+                      { kind: "Field", name: { kind: "Name", value: "source" } },
+                      { kind: "Field", name: { kind: "Name", value: "title" } },
+                      { kind: "Field", name: { kind: "Name", value: "summary" } },
+                      { kind: "Field", name: { kind: "Name", value: "keyPoints" } },
+                      { kind: "Field", name: { kind: "Name", value: "decisions" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "actionItems" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "person" } },
+                            { kind: "Field", name: { kind: "Name", value: "task" } },
+                            { kind: "Field", name: { kind: "Name", value: "deadline" } },
+                          ],
+                        },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "unresolvedQuestions" } },
+                      { kind: "Field", name: { kind: "Name", value: "participants" } },
+                      { kind: "Field", name: { kind: "Name", value: "topic" } },
+                      { kind: "Field", name: { kind: "Name", value: "conversationType" } },
+                      { kind: "Field", name: { kind: "Name", value: "cleanTranscript" } },
+                      { kind: "Field", name: { kind: "Name", value: "fullTranscript" } },
+                      { kind: "Field", name: { kind: "Name", value: "tags" } },
+                      { kind: "Field", name: { kind: "Name", value: "markdownContent" } },
+                      { kind: "Field", name: { kind: "Name", value: "exportedToVault" } },
+                      { kind: "Field", name: { kind: "Name", value: "vaultPath" } },
+                      { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "pageInfo" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "hasNextPage" } },
+                      { kind: "Field", name: { kind: "Name", value: "hasPreviousPage" } },
+                      { kind: "Field", name: { kind: "Name", value: "startCursor" } },
+                      { kind: "Field", name: { kind: "Name", value: "endCursor" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryNotesQuery, QueryNotesQueryVariables>;
+export const QueryNoteDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryNote" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "note" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "transcriptId" } },
+                { kind: "Field", name: { kind: "Name", value: "profileId" } },
+                { kind: "Field", name: { kind: "Name", value: "version" } },
+                { kind: "Field", name: { kind: "Name", value: "source" } },
+                { kind: "Field", name: { kind: "Name", value: "title" } },
+                { kind: "Field", name: { kind: "Name", value: "summary" } },
+                { kind: "Field", name: { kind: "Name", value: "keyPoints" } },
+                { kind: "Field", name: { kind: "Name", value: "decisions" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "actionItems" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "person" } },
+                      { kind: "Field", name: { kind: "Name", value: "task" } },
+                      { kind: "Field", name: { kind: "Name", value: "deadline" } },
+                    ],
+                  },
+                },
+                { kind: "Field", name: { kind: "Name", value: "unresolvedQuestions" } },
+                { kind: "Field", name: { kind: "Name", value: "participants" } },
+                { kind: "Field", name: { kind: "Name", value: "topic" } },
+                { kind: "Field", name: { kind: "Name", value: "conversationType" } },
+                { kind: "Field", name: { kind: "Name", value: "cleanTranscript" } },
+                { kind: "Field", name: { kind: "Name", value: "fullTranscript" } },
+                { kind: "Field", name: { kind: "Name", value: "tags" } },
+                { kind: "Field", name: { kind: "Name", value: "markdownContent" } },
+                { kind: "Field", name: { kind: "Name", value: "exportedToVault" } },
+                { kind: "Field", name: { kind: "Name", value: "vaultPath" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryNoteQuery, QueryNoteQueryVariables>;
+export const MutationExportNoteDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationExportNote" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "exportNote" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "note" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "exportedToVault" } },
+                      { kind: "Field", name: { kind: "Name", value: "vaultPath" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationExportNoteMutation, MutationExportNoteMutationVariables>;
 export const QueryProfilesDocument = {
   kind: "Document",
   definitions: [

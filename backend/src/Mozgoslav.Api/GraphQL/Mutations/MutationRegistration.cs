@@ -3,6 +3,7 @@ using HotChocolate.Execution.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mozgoslav.Api.GraphQL.Models;
+using Mozgoslav.Api.GraphQL.Notes;
 using Mozgoslav.Api.GraphQL.Profiles;
 using Mozgoslav.Api.GraphQL.Recordings;
 using Mozgoslav.Api.GraphQL.Settings;
@@ -19,6 +20,7 @@ internal static class MutationRegistration
             .AddTypeExtension<SettingsMutationType>()
             .AddTypeExtension<ProfileMutationType>()
             .AddTypeExtension<ModelMutationType>()
-            .AddTypeExtension<RecordingMutationType>();
+            .AddTypeExtension<RecordingMutationType>()
+            .AddTypeExtension<NoteMutationType>();
     }
 }

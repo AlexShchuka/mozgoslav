@@ -43,6 +43,11 @@ public sealed class EfProcessedNoteRepository : IProcessedNoteRepository
             .OrderByDescending(n => n.CreatedAt)
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<ProcessedNote>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken ct) =>
+        await _db.ProcessedNotes.AsNoTracking()
+            .Where(n => ids.Contains(n.Id))
+            .ToListAsync(ct);
+
     public async Task UpdateAsync(ProcessedNote note, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(note);

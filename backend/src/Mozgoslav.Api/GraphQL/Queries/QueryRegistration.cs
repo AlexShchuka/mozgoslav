@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Mozgoslav.Api.GraphQL.Health;
 using Mozgoslav.Api.GraphQL.Models;
+using Mozgoslav.Api.GraphQL.Notes;
 using Mozgoslav.Api.GraphQL.Profiles;
 using Mozgoslav.Api.GraphQL.Recordings;
 using Mozgoslav.Api.GraphQL.Settings;
@@ -21,6 +22,7 @@ internal static class QueryRegistration
             .AddTypeExtension<SettingsQueryType>()
             .AddTypeExtension<ProfileQueryType>()
             .AddTypeExtension<ModelQueryType>()
-            .AddTypeExtension<RecordingQueryType>();
+            .AddTypeExtension<RecordingQueryType>()
+            .AddTypeExtension<NoteQueryType>();
     }
 }

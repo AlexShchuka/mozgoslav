@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using Mozgoslav.Api.GraphQL.Mutations;
+using Mozgoslav.Api.GraphQL.Notes;
 using Mozgoslav.Api.GraphQL.Profiles;
 using Mozgoslav.Api.GraphQL.Queries;
 using Mozgoslav.Api.GraphQL.Recordings;
@@ -23,6 +24,8 @@ internal static class SchemaBuilderExtensions
             .AddTypeExtension<ProfileType>()
             .AddTypeExtension<RecordingType>()
             .AddDataLoader<RecordingByIdDataLoader>()
+            .AddTypeExtension<ProcessedNoteType>()
+            .AddDataLoader<ProcessedNoteByIdDataLoader>()
             .AddFiltering()
             .AddSorting()
             .AddProjections()

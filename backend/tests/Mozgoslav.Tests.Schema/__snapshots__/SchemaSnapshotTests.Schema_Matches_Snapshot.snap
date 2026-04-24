@@ -14,6 +14,12 @@ interface Node {
   id: ID!
 }
 
+type ActionItem {
+  person: String!
+  task: String!
+  deadline: String
+}
+
 type AppSettingsDto {
   vaultPath: String!
   llmProvider: String!
@@ -120,6 +126,7 @@ type MutationType {
   reprocessRecording(recordingId: UUID! profileId: UUID!): RecordingPayload! @cost(weight: "10")
   startRecording(outputPath: String): StartRecordingPayload! @cost(weight: "10")
   stopRecording(sessionId: String!): StopRecordingPayload! @cost(weight: "10")
+  exportNote(id: UUID!): NotePayload! @cost(weight: "10")
 }
 
 type NotFoundError implements IUserError {
@@ -127,6 +134,31 @@ type NotFoundError implements IUserError {
   message: String!
   resourceKind: String!
   resourceId: String!
+}
+
+type NotePayload {
+  note: ProcessedNote
+  errors: [IUserError!]!
+}
+
+"A connection to a list of items."
+type NotesConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [NotesEdge!]
+  "A flattened list of the nodes."
+  nodes: [ProcessedNote!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type NotesEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: ProcessedNote!
 }
 
 "Information about pagination in a connection."
@@ -139,6 +171,30 @@ type PageInfo {
   startCursor: String
   "When paginating forwards, the cursor to continue."
   endCursor: String
+}
+
+type ProcessedNote implements Node {
+  id: ID!
+  transcriptId: UUID!
+  profileId: UUID!
+  version: Int!
+  source: NoteSource!
+  title: String!
+  summary: String!
+  keyPoints: [String!]!
+  decisions: [String!]!
+  actionItems: [ActionItem!]!
+  unresolvedQuestions: [String!]!
+  participants: [String!]!
+  topic: String!
+  conversationType: ConversationType!
+  cleanTranscript: String!
+  fullTranscript: String!
+  tags: [String!]!
+  markdownContent: String!
+  exportedToVault: Boolean!
+  vaultPath: String
+  createdAt: DateTime!
 }
 
 type Profile implements Node {
@@ -175,6 +231,8 @@ type QueryType {
   models: [ModelEntry!]!
   recordings("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: RecordingFilterInput @cost(weight: "10") order: [RecordingSortInput!] @cost(weight: "10")): RecordingsConnection @listSize(assumedSize: 200, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 25, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
   recording(id: UUID!): Recording @cost(weight: "10")
+  notes("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: ProcessedNoteFilterInput @cost(weight: "10") order: [ProcessedNoteSortInput!] @cost(weight: "10")): NotesConnection @listSize(assumedSize: 200, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 25, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  note(id: UUID!): ProcessedNote @cost(weight: "10")
 }
 
 type Recording implements Node {
@@ -246,11 +304,31 @@ type ValidationError implements IUserError {
   field: String!
 }
 
+input ActionItemFilterInput {
+  and: [ActionItemFilterInput!]
+  or: [ActionItemFilterInput!]
+  person: StringOperationFilterInput
+  task: StringOperationFilterInput
+  deadline: StringOperationFilterInput
+}
+
 input AudioFormatOperationFilterInput {
   eq: AudioFormat @cost(weight: "10")
   neq: AudioFormat @cost(weight: "10")
   in: [AudioFormat!] @cost(weight: "10")
   nin: [AudioFormat!] @cost(weight: "10")
+}
+
+input BooleanOperationFilterInput {
+  eq: Boolean @cost(weight: "10")
+  neq: Boolean @cost(weight: "10")
+}
+
+input ConversationTypeOperationFilterInput {
+  eq: ConversationType @cost(weight: "10")
+  neq: ConversationType @cost(weight: "10")
+  in: [ConversationType!] @cost(weight: "10")
+  nin: [ConversationType!] @cost(weight: "10")
 }
 
 input CreateProfileInput {
@@ -285,9 +363,89 @@ input ImportRecordingsInput {
   profileId: UUID
 }
 
+input IntOperationFilterInput {
+  eq: Int @cost(weight: "10")
+  neq: Int @cost(weight: "10")
+  in: [Int] @cost(weight: "10")
+  nin: [Int] @cost(weight: "10")
+  gt: Int @cost(weight: "10")
+  ngt: Int @cost(weight: "10")
+  gte: Int @cost(weight: "10")
+  ngte: Int @cost(weight: "10")
+  lt: Int @cost(weight: "10")
+  nlt: Int @cost(weight: "10")
+  lte: Int @cost(weight: "10")
+  nlte: Int @cost(weight: "10")
+}
+
 input KeyValuePairOfStringAndStringInput {
   key: String!
   value: String!
+}
+
+input ListFilterInputTypeOfActionItemFilterInput {
+  all: ActionItemFilterInput @cost(weight: "10")
+  none: ActionItemFilterInput @cost(weight: "10")
+  some: ActionItemFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListStringOperationFilterInput {
+  all: StringOperationFilterInput @cost(weight: "10")
+  none: StringOperationFilterInput @cost(weight: "10")
+  some: StringOperationFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input NoteSourceOperationFilterInput {
+  eq: NoteSource @cost(weight: "10")
+  neq: NoteSource @cost(weight: "10")
+  in: [NoteSource!] @cost(weight: "10")
+  nin: [NoteSource!] @cost(weight: "10")
+}
+
+input ProcessedNoteFilterInput {
+  and: [ProcessedNoteFilterInput!]
+  or: [ProcessedNoteFilterInput!]
+  id: UuidOperationFilterInput
+  transcriptId: UuidOperationFilterInput
+  profileId: UuidOperationFilterInput
+  version: IntOperationFilterInput
+  source: NoteSourceOperationFilterInput
+  title: StringOperationFilterInput
+  summary: StringOperationFilterInput
+  keyPoints: ListStringOperationFilterInput
+  decisions: ListStringOperationFilterInput
+  actionItems: ListFilterInputTypeOfActionItemFilterInput
+  unresolvedQuestions: ListStringOperationFilterInput
+  participants: ListStringOperationFilterInput
+  topic: StringOperationFilterInput
+  conversationType: ConversationTypeOperationFilterInput
+  cleanTranscript: StringOperationFilterInput
+  fullTranscript: StringOperationFilterInput
+  tags: ListStringOperationFilterInput
+  markdownContent: StringOperationFilterInput
+  exportedToVault: BooleanOperationFilterInput
+  vaultPath: StringOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+}
+
+input ProcessedNoteSortInput {
+  id: SortEnumType @cost(weight: "10")
+  transcriptId: SortEnumType @cost(weight: "10")
+  profileId: SortEnumType @cost(weight: "10")
+  version: SortEnumType @cost(weight: "10")
+  source: SortEnumType @cost(weight: "10")
+  title: SortEnumType @cost(weight: "10")
+  summary: SortEnumType @cost(weight: "10")
+  topic: SortEnumType @cost(weight: "10")
+  conversationType: SortEnumType @cost(weight: "10")
+  cleanTranscript: SortEnumType @cost(weight: "10")
+  fullTranscript: SortEnumType @cost(weight: "10")
+  markdownContent: SortEnumType @cost(weight: "10")
+  exportedToVault: SortEnumType @cost(weight: "10")
+  vaultPath: SortEnumType @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
 }
 
 input RecordingFilterInput {
@@ -434,6 +592,14 @@ enum CleanupLevel {
   AGGRESSIVE
 }
 
+enum ConversationType {
+  MEETING
+  ONE_ON_ONE
+  IDEA
+  PERSONAL
+  OTHER
+}
+
 enum ModelKind {
   STT
   VAD
@@ -445,6 +611,11 @@ enum ModelKind {
 enum ModelTier {
   BUNDLE
   DOWNLOADABLE
+}
+
+enum NoteSource {
+  PROCESSED
+  MANUAL
 }
 
 enum RecordingStatus {

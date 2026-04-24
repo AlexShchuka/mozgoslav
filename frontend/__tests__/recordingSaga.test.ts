@@ -1,5 +1,4 @@
 import { expectSaga } from "redux-saga-test-plan";
-import { throwError } from "redux-saga-test-plan/providers";
 import { loadRecordingsSaga } from "../src/store/slices/recording/saga";
 import {
   loadRecordingsFailure,
