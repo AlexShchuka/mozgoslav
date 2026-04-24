@@ -317,6 +317,9 @@ try
     builder.Services.AddHostedService<SyncthingVersioningVerifier>();
     builder.Services.AddHostedService<SyncthingLifecycleService>();
     builder.Services.AddHostedService<JobProgressBridge>();
+    builder.Services.AddHostedService<Mozgoslav.Api.GraphQL.Dictation.AudioDeviceChangedBridge>();
+    builder.Services.AddHostedService<Mozgoslav.Api.GraphQL.Dictation.HotkeyEventsBridge>();
+    builder.Services.AddHostedService<Mozgoslav.Api.GraphQL.Sync.SyncEventsBridge>();
 
     builder.Services.AddMozgoslavGraphQL(builder.Environment);
 

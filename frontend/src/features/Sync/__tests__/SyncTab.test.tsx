@@ -14,6 +14,18 @@ import { syncReducer, watchSyncSagas } from "../../../store/slices/sync";
 import { lightTheme } from "../../../styles/theme";
 import "../../../i18n";
 
+jest.mock("../../../api/graphqlClient", () => ({
+  graphqlClient: { request: jest.fn() },
+  getGraphqlWsClient: jest.fn(() => ({
+    subscribe: jest.fn(() => () => {}),
+    dispose: jest.fn(),
+  })),
+}));
+
+import { graphqlClient } from "../../../api/graphqlClient";
+
+const mockedRequest = graphqlClient.request as jest.Mock;
+
 jest.mock("../../../api", () => {
   const actual = jest.requireActual("../../../api");
   const settingsStub = {
@@ -41,41 +53,6 @@ const settingsStub = (
 const api = {
   saveSettings: settingsStub.saveSettings,
 };
-
-jest.mock("../../../api/SyncApi", () => ({
-  syncApi: {
-    getStatus: jest.fn().mockResolvedValue({
-      folders: [
-        { id: "obsidian-vault", state: "idle", completionPct: 87, conflicts: 3 },
-        { id: "backup", state: "syncing", completionPct: 40, conflicts: 0 },
-      ],
-      devices: [
-        {
-          id: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-          name: "iPhone",
-          connected: true,
-          lastSeen: null,
-        },
-        {
-          id: "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
-          name: "Desktop",
-          connected: false,
-          lastSeen: null,
-        },
-      ],
-    }),
-    getPairingPayload: jest
-      .fn()
-      .mockResolvedValue({ deviceId: "dev-1", folderIds: [], uri: "syncthing://" }),
-    acceptDevice: jest.fn().mockResolvedValue(undefined),
-  },
-  createSyncEventSource: jest.fn().mockReturnValue({
-    onopen: null,
-    onerror: null,
-    addEventListener: jest.fn(),
-    close: jest.fn(),
-  }),
-}));
 
 const buildStore = () => {
   const saga = createSagaMiddleware();
@@ -113,7 +90,46 @@ const renderSync = () => {
 };
 
 describe("Sync tab — BC-050 / Bug 23", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockedRequest.mockImplementation((opts: { document: unknown }) => {
+      const docStr = JSON.stringify(opts.document);
+      if (docStr.includes("syncStatus")) {
+        return Promise.resolve({
+          syncStatus: {
+            folders: [
+              { id: "obsidian-vault", state: "idle", completionPct: 87, conflicts: 3 },
+              { id: "backup", state: "syncing", completionPct: 40, conflicts: 0 },
+            ],
+            devices: [
+              {
+                id: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                name: "iPhone",
+                connected: true,
+                lastSeen: null,
+              },
+              {
+                id: "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+                name: "Desktop",
+                connected: false,
+                lastSeen: null,
+              },
+            ],
+          },
+        });
+      }
+      if (docStr.includes("syncPairingPayload")) {
+        return Promise.resolve({
+          syncPairingPayload: {
+            deviceId: "dev-1",
+            folderIds: [],
+            uri: "syncthing://",
+          },
+        });
+      }
+      return Promise.resolve({});
+    });
+  });
 
   it("SyncTab_RendersFoldersAndDevices", async () => {
     renderSync();

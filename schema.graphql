@@ -14,6 +14,11 @@ interface Node {
   id: ID!
 }
 
+type AcceptSyncDevicePayload {
+  accepted: Boolean!
+  errors: [IUserError!]!
+}
+
 type ActionItem {
   person: String!
   task: String!
@@ -57,6 +62,25 @@ type AppSettingsDto {
   obsidianFeatureEnabled: Boolean!
 }
 
+type AudioDeviceChangedEvent {
+  kind: String!
+  devices: [AudioDeviceEntry!]!
+  observedAt: DateTime!
+}
+
+type AudioDeviceEntry {
+  id: String!
+  name: String!
+  isDefault: Boolean!
+}
+
+type BackupEntry {
+  name: String!
+  path: String!
+  sizeBytes: Long!
+  createdAt: DateTime!
+}
+
 type CancelJobPayload {
   errors: [IUserError!]!
 }
@@ -66,14 +90,81 @@ type ConflictError implements IUserError {
   message: String!
 }
 
+type CreateBackupPayload {
+  backup: BackupEntry
+  errors: [IUserError!]!
+}
+
+type DeviceConnectionPayload {
+  deviceId: String!
+  connected: Boolean!
+  address: String
+  error: String
+}
+
+type DictationAudioCapabilities {
+  isSupported: Boolean!
+  detectedPlatform: String!
+  permissionsRequired: [String!]!
+}
+
+type DictationCancelPayload {
+  errors: [IUserError!]!
+}
+
+type DictationPartialEvent {
+  sessionId: UUID!
+  text: String!
+  timestampMs: Float!
+}
+
+type DictationSessionStatus {
+  sessionId: UUID!
+  state: String!
+  source: String
+  startedAt: DateTime!
+}
+
+type DictationStartPayload {
+  sessionId: UUID
+  source: String
+  errors: [IUserError!]!
+}
+
+type DictationStopPayload {
+  rawText: String
+  polishedText: String
+  durationMs: Float
+  errors: [IUserError!]!
+}
+
 type DownloadModelPayload {
   downloadId: String
   errors: [IUserError!]!
 }
 
+type FileConflictPayload {
+  folder: String!
+  path: String!
+}
+
+type FolderCompletionPayload {
+  folder: String!
+  device: String!
+  completion: Float!
+  needBytes: Long!
+  globalBytes: Long!
+}
+
 type HealthStatus {
   status: String!
   time: String!
+}
+
+type HotkeyEventMessage {
+  kind: String!
+  accelerator: String!
+  observedAt: DateTime!
 }
 
 type ImportRecordingsPayload {
@@ -113,6 +204,26 @@ type KeyValuePairOfStringAndString {
 
 type LlmHealthStatus {
   available: Boolean!
+}
+
+type LogFileEntry {
+  fileName: String!
+  sizeBytes: Long!
+  lastModifiedUtc: DateTime!
+}
+
+type LogTailResult {
+  file: String!
+  lines: [String!]!
+  totalLines: Int!
+}
+
+type MeetilyImportPayload {
+  totalMeetings: Int
+  importedRecordings: Int
+  skippedDuplicates: Int
+  importErrors: Int
+  errors: [IUserError!]!
 }
 
 type MetaInfo {
@@ -158,6 +269,14 @@ type MutationType {
   exportNote(id: UUID!): NotePayload! @cost(weight: "10")
   enqueueJob(input: EnqueueJobInput!): JobPayload! @cost(weight: "10")
   cancelJob(id: UUID!): CancelJobPayload! @cost(weight: "10")
+  dictationStart(source: String): DictationStartPayload! @cost(weight: "10")
+  dictationStop(sessionId: UUID! bundleId: String): DictationStopPayload! @cost(weight: "10")
+  dictationCancel(sessionId: UUID!): DictationCancelPayload! @cost(weight: "10")
+  setupObsidian(vaultPath: String): SetupObsidianPayload! @cost(weight: "10")
+  importFromMeetily(meetilyDatabasePath: String!): MeetilyImportPayload! @cost(weight: "10")
+  createBackup: CreateBackupPayload! @cost(weight: "10")
+  ragReindex: RagReindexPayload! @cost(weight: "10")
+  acceptSyncDevice(deviceId: String! name: String folderIds: [String!]): AcceptSyncDevicePayload! @cost(weight: "10")
 }
 
 type NotFoundError implements IUserError {
@@ -192,6 +311,22 @@ type NotesEdge {
   node: ProcessedNote!
 }
 
+type ObsidianDetectionResult {
+  detected: [ObsidianVaultEntry!]!
+  searched: [String!]!
+}
+
+type ObsidianSetupReport {
+  vaultPath: String!
+  createdPaths: [String!]!
+  skippedPaths: [String!]!
+}
+
+type ObsidianVaultEntry {
+  path: String!
+  name: String!
+}
+
 "Information about pagination in a connection."
 type PageInfo {
   "Indicates whether more edges exist following the set defined by the clients arguments."
@@ -202,6 +337,17 @@ type PageInfo {
   startCursor: String
   "When paginating forwards, the cursor to continue."
   endCursor: String
+}
+
+type PendingDeviceEntry {
+  deviceId: String!
+  name: String
+  address: String
+}
+
+type PendingDevicesPayload {
+  added: [PendingDeviceEntry!]!
+  removed: [String!]!
 }
 
 type ProcessedNote implements Node {
@@ -282,6 +428,35 @@ type QueryType {
   jobs("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: ProcessingJobFilterInput @cost(weight: "10") order: [ProcessingJobSortInput!] @cost(weight: "10")): JobsConnection @listSize(assumedSize: 200, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 25, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
   activeJobs: [ProcessingJob!]! @cost(weight: "10")
   job(id: UUID!): ProcessingJob @cost(weight: "10")
+  dictationAudioCapabilities: DictationAudioCapabilities!
+  dictationStatus(sessionId: UUID!): DictationSessionStatus @cost(weight: "10")
+  obsidianDetect: ObsidianDetectionResult!
+  backups: [BackupEntry!]!
+  logs: [LogFileEntry!]!
+  logTail(file: String lines: Int!): LogTailResult @cost(weight: "10")
+  ragQuery(question: String! topK: Int): RagQueryResult @cost(weight: "10")
+  syncStatus: SyncStatusResult @cost(weight: "10")
+  syncHealth: Boolean! @cost(weight: "10")
+  syncPairingPayload: SyncPairingPayloadResult @cost(weight: "10")
+}
+
+type RagCitation {
+  noteId: UUID!
+  segmentId: String!
+  text: String!
+  snippet: String!
+}
+
+type RagQueryResult {
+  answer: String!
+  citations: [RagCitation!]!
+  llmAvailable: Boolean!
+}
+
+type RagReindexPayload {
+  embeddedNotes: Int
+  chunks: Int
+  errors: [IUserError!]!
 }
 
 type Recording implements Node {
@@ -321,6 +496,11 @@ type RecordingsEdge {
   node: Recording!
 }
 
+type SetupObsidianPayload {
+  report: ObsidianSetupReport
+  errors: [IUserError!]!
+}
+
 type StartRecordingPayload {
   sessionId: String
   outputPath: String
@@ -336,6 +516,45 @@ type StopRecordingPayload {
 type SubscriptionType {
   modelDownloadProgress(downloadId: String!): ModelDownloadProgressEvent!
   jobProgress: ProcessingJob!
+  dictationEvents(sessionId: UUID!): DictationPartialEvent!
+  audioDeviceChanged: AudioDeviceChangedEvent!
+  hotkeyEvents: HotkeyEventMessage!
+  syncEvents: SyncEventMessage!
+}
+
+type SyncDeviceEntry {
+  id: String!
+  name: String!
+  connected: Boolean!
+  lastSeen: DateTime
+}
+
+type SyncEventMessage {
+  id: Long!
+  type: String!
+  time: DateTime!
+  folderCompletion: FolderCompletionPayload
+  deviceConnection: DeviceConnectionPayload
+  pendingDevices: PendingDevicesPayload
+  fileConflict: FileConflictPayload
+}
+
+type SyncFolderEntry {
+  id: String!
+  state: String!
+  completionPct: Float!
+  conflicts: Int!
+}
+
+type SyncPairingPayloadResult {
+  deviceId: String!
+  folderIds: [String!]!
+  uri: String!
+}
+
+type SyncStatusResult {
+  folders: [SyncFolderEntry!]!
+  devices: [SyncDeviceEntry!]!
 }
 
 type UnavailableError implements IUserError {

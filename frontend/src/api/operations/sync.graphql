@@ -1,0 +1,71 @@
+query QuerySyncStatus {
+  syncStatus {
+    folders {
+      id
+      state
+      completionPct
+      conflicts
+    }
+    devices {
+      id
+      name
+      connected
+      lastSeen
+    }
+  }
+}
+
+query QuerySyncHealth {
+  syncHealth
+}
+
+query QuerySyncPairingPayload {
+  syncPairingPayload {
+    deviceId
+    folderIds
+    uri
+  }
+}
+
+mutation MutationAcceptSyncDevice($deviceId: String!, $name: String, $folderIds: [String!]) {
+  acceptSyncDevice(deviceId: $deviceId, name: $name, folderIds: $folderIds) {
+    accepted
+    errors {
+      code
+      message
+    }
+  }
+}
+
+subscription SubscriptionSyncEvents {
+  syncEvents {
+    id
+    type
+    time
+    folderCompletion {
+      folder
+      device
+      completion
+      needBytes
+      globalBytes
+    }
+    deviceConnection {
+      deviceId
+      connected
+      address
+      error
+    }
+    pendingDevices {
+      added {
+        deviceId
+        name
+        address
+      }
+      removed
+    }
+    fileConflict {
+      folder
+      path
+    }
+  }
+}

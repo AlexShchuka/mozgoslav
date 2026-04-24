@@ -27,6 +27,12 @@ export type Scalars = {
   UUID: { input: string; output: string };
 };
 
+export type AcceptSyncDevicePayload = {
+  __typename?: "AcceptSyncDevicePayload";
+  accepted: Scalars["Boolean"]["output"];
+  errors: Array<IUserError>;
+};
+
 export type ActionItem = {
   __typename?: "ActionItem";
   deadline?: Maybe<Scalars["String"]["output"]>;
@@ -80,6 +86,20 @@ export type AppSettingsDto = {
   whisperThreads: Scalars["Int"]["output"];
 };
 
+export type AudioDeviceChangedEvent = {
+  __typename?: "AudioDeviceChangedEvent";
+  devices: Array<AudioDeviceEntry>;
+  kind: Scalars["String"]["output"];
+  observedAt: Scalars["DateTime"]["output"];
+};
+
+export type AudioDeviceEntry = {
+  __typename?: "AudioDeviceEntry";
+  id: Scalars["String"]["output"];
+  isDefault: Scalars["Boolean"]["output"];
+  name: Scalars["String"]["output"];
+};
+
 export enum AudioFormat {
   Aac = "AAC",
   Flac = "FLAC",
@@ -96,6 +116,14 @@ export type AudioFormatOperationFilterInput = {
   in?: InputMaybe<Array<AudioFormat>>;
   neq?: InputMaybe<AudioFormat>;
   nin?: InputMaybe<Array<AudioFormat>>;
+};
+
+export type BackupEntry = {
+  __typename?: "BackupEntry";
+  createdAt: Scalars["DateTime"]["output"];
+  name: Scalars["String"]["output"];
+  path: Scalars["String"]["output"];
+  sizeBytes: Scalars["Long"]["output"];
 };
 
 export type BooleanOperationFilterInput = {
@@ -135,6 +163,12 @@ export type ConversationTypeOperationFilterInput = {
   nin?: InputMaybe<Array<ConversationType>>;
 };
 
+export type CreateBackupPayload = {
+  __typename?: "CreateBackupPayload";
+  backup?: Maybe<BackupEntry>;
+  errors: Array<IUserError>;
+};
+
 export type CreateProfileInput = {
   autoTags: Array<Scalars["String"]["input"]>;
   cleanupLevel: CleanupLevel;
@@ -162,6 +196,56 @@ export type DateTimeOperationFilterInput = {
   nlte?: InputMaybe<Scalars["DateTime"]["input"]>;
 };
 
+export type DeviceConnectionPayload = {
+  __typename?: "DeviceConnectionPayload";
+  address?: Maybe<Scalars["String"]["output"]>;
+  connected: Scalars["Boolean"]["output"];
+  deviceId: Scalars["String"]["output"];
+  error?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type DictationAudioCapabilities = {
+  __typename?: "DictationAudioCapabilities";
+  detectedPlatform: Scalars["String"]["output"];
+  isSupported: Scalars["Boolean"]["output"];
+  permissionsRequired: Array<Scalars["String"]["output"]>;
+};
+
+export type DictationCancelPayload = {
+  __typename?: "DictationCancelPayload";
+  errors: Array<IUserError>;
+};
+
+export type DictationPartialEvent = {
+  __typename?: "DictationPartialEvent";
+  sessionId: Scalars["UUID"]["output"];
+  text: Scalars["String"]["output"];
+  timestampMs: Scalars["Float"]["output"];
+};
+
+export type DictationSessionStatus = {
+  __typename?: "DictationSessionStatus";
+  sessionId: Scalars["UUID"]["output"];
+  source?: Maybe<Scalars["String"]["output"]>;
+  startedAt: Scalars["DateTime"]["output"];
+  state: Scalars["String"]["output"];
+};
+
+export type DictationStartPayload = {
+  __typename?: "DictationStartPayload";
+  errors: Array<IUserError>;
+  sessionId?: Maybe<Scalars["UUID"]["output"]>;
+  source?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type DictationStopPayload = {
+  __typename?: "DictationStopPayload";
+  durationMs?: Maybe<Scalars["Float"]["output"]>;
+  errors: Array<IUserError>;
+  polishedText?: Maybe<Scalars["String"]["output"]>;
+  rawText?: Maybe<Scalars["String"]["output"]>;
+};
+
 export type DownloadModelPayload = {
   __typename?: "DownloadModelPayload";
   downloadId?: Maybe<Scalars["String"]["output"]>;
@@ -173,10 +257,32 @@ export type EnqueueJobInput = {
   recordingId: Scalars["UUID"]["input"];
 };
 
+export type FileConflictPayload = {
+  __typename?: "FileConflictPayload";
+  folder: Scalars["String"]["output"];
+  path: Scalars["String"]["output"];
+};
+
+export type FolderCompletionPayload = {
+  __typename?: "FolderCompletionPayload";
+  completion: Scalars["Float"]["output"];
+  device: Scalars["String"]["output"];
+  folder: Scalars["String"]["output"];
+  globalBytes: Scalars["Long"]["output"];
+  needBytes: Scalars["Long"]["output"];
+};
+
 export type HealthStatus = {
   __typename?: "HealthStatus";
   status: Scalars["String"]["output"];
   time: Scalars["String"]["output"];
+};
+
+export type HotkeyEventMessage = {
+  __typename?: "HotkeyEventMessage";
+  accelerator: Scalars["String"]["output"];
+  kind: Scalars["String"]["output"];
+  observedAt: Scalars["DateTime"]["output"];
 };
 
 export type IUserError = {
@@ -286,6 +392,29 @@ export type LlmHealthStatus = {
   available: Scalars["Boolean"]["output"];
 };
 
+export type LogFileEntry = {
+  __typename?: "LogFileEntry";
+  fileName: Scalars["String"]["output"];
+  lastModifiedUtc: Scalars["DateTime"]["output"];
+  sizeBytes: Scalars["Long"]["output"];
+};
+
+export type LogTailResult = {
+  __typename?: "LogTailResult";
+  file: Scalars["String"]["output"];
+  lines: Array<Scalars["String"]["output"]>;
+  totalLines: Scalars["Int"]["output"];
+};
+
+export type MeetilyImportPayload = {
+  __typename?: "MeetilyImportPayload";
+  errors: Array<IUserError>;
+  importErrors?: Maybe<Scalars["Int"]["output"]>;
+  importedRecordings?: Maybe<Scalars["Int"]["output"]>;
+  skippedDuplicates?: Maybe<Scalars["Int"]["output"]>;
+  totalMeetings?: Maybe<Scalars["Int"]["output"]>;
+};
+
 export type MetaInfo = {
   __typename?: "MetaInfo";
   assemblyVersion: Scalars["String"]["output"];
@@ -332,20 +461,34 @@ export enum ModelTier {
 
 export type MutationType = {
   __typename?: "MutationType";
+  acceptSyncDevice: AcceptSyncDevicePayload;
   cancelJob: CancelJobPayload;
+  createBackup: CreateBackupPayload;
   createProfile: ProfilePayload;
   deleteProfile: ProfilePayload;
+  dictationCancel: DictationCancelPayload;
+  dictationStart: DictationStartPayload;
+  dictationStop: DictationStopPayload;
   downloadModel: DownloadModelPayload;
   duplicateProfile: ProfilePayload;
   enqueueJob: JobPayload;
   exportNote: NotePayload;
+  importFromMeetily: MeetilyImportPayload;
   importRecordings: ImportRecordingsPayload;
+  ragReindex: RagReindexPayload;
   reprocessRecording: RecordingPayload;
+  setupObsidian: SetupObsidianPayload;
   startRecording: StartRecordingPayload;
   stopRecording: StopRecordingPayload;
   updateProfile: ProfilePayload;
   updateSettings: UpdateSettingsPayload;
   uploadRecordings: ImportRecordingsPayload;
+};
+
+export type MutationTypeAcceptSyncDeviceArgs = {
+  deviceId: Scalars["String"]["input"];
+  folderIds?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  name?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type MutationTypeCancelJobArgs = {
@@ -358,6 +501,19 @@ export type MutationTypeCreateProfileArgs = {
 
 export type MutationTypeDeleteProfileArgs = {
   id: Scalars["UUID"]["input"];
+};
+
+export type MutationTypeDictationCancelArgs = {
+  sessionId: Scalars["UUID"]["input"];
+};
+
+export type MutationTypeDictationStartArgs = {
+  source?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+export type MutationTypeDictationStopArgs = {
+  bundleId?: InputMaybe<Scalars["String"]["input"]>;
+  sessionId: Scalars["UUID"]["input"];
 };
 
 export type MutationTypeDownloadModelArgs = {
@@ -376,6 +532,10 @@ export type MutationTypeExportNoteArgs = {
   id: Scalars["UUID"]["input"];
 };
 
+export type MutationTypeImportFromMeetilyArgs = {
+  meetilyDatabasePath: Scalars["String"]["input"];
+};
+
 export type MutationTypeImportRecordingsArgs = {
   input: ImportRecordingsInput;
 };
@@ -383,6 +543,10 @@ export type MutationTypeImportRecordingsArgs = {
 export type MutationTypeReprocessRecordingArgs = {
   profileId: Scalars["UUID"]["input"];
   recordingId: Scalars["UUID"]["input"];
+};
+
+export type MutationTypeSetupObsidianArgs = {
+  vaultPath?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type MutationTypeStartRecordingArgs = {
@@ -459,6 +623,25 @@ export type NotesEdge = {
   node: ProcessedNote;
 };
 
+export type ObsidianDetectionResult = {
+  __typename?: "ObsidianDetectionResult";
+  detected: Array<ObsidianVaultEntry>;
+  searched: Array<Scalars["String"]["output"]>;
+};
+
+export type ObsidianSetupReport = {
+  __typename?: "ObsidianSetupReport";
+  createdPaths: Array<Scalars["String"]["output"]>;
+  skippedPaths: Array<Scalars["String"]["output"]>;
+  vaultPath: Scalars["String"]["output"];
+};
+
+export type ObsidianVaultEntry = {
+  __typename?: "ObsidianVaultEntry";
+  name: Scalars["String"]["output"];
+  path: Scalars["String"]["output"];
+};
+
 /** Information about pagination in a connection. */
 export type PageInfo = {
   __typename?: "PageInfo";
@@ -470,6 +653,19 @@ export type PageInfo = {
   hasPreviousPage: Scalars["Boolean"]["output"];
   /** When paginating backwards, the cursor to continue. */
   startCursor?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type PendingDeviceEntry = {
+  __typename?: "PendingDeviceEntry";
+  address?: Maybe<Scalars["String"]["output"]>;
+  deviceId: Scalars["String"]["output"];
+  name?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type PendingDevicesPayload = {
+  __typename?: "PendingDevicesPayload";
+  added: Array<PendingDeviceEntry>;
+  removed: Array<Scalars["String"]["output"]>;
 };
 
 export type ProcessedNote = Node & {
@@ -614,10 +810,15 @@ export type ProfilePayload = {
 export type QueryType = {
   __typename?: "QueryType";
   activeJobs: Array<ProcessingJob>;
+  backups: Array<BackupEntry>;
+  dictationAudioCapabilities: DictationAudioCapabilities;
+  dictationStatus?: Maybe<DictationSessionStatus>;
   health: HealthStatus;
   job?: Maybe<ProcessingJob>;
   jobs?: Maybe<JobsConnection>;
   llmHealth: LlmHealthStatus;
+  logTail?: Maybe<LogTailResult>;
+  logs: Array<LogFileEntry>;
   meta: MetaInfo;
   models: Array<ModelEntry>;
   /** Fetches an object given its ID. */
@@ -626,11 +827,20 @@ export type QueryType = {
   nodes: Array<Maybe<Node>>;
   note?: Maybe<ProcessedNote>;
   notes?: Maybe<NotesConnection>;
+  obsidianDetect: ObsidianDetectionResult;
   profile?: Maybe<Profile>;
   profiles: Array<Profile>;
+  ragQuery?: Maybe<RagQueryResult>;
   recording?: Maybe<Recording>;
   recordings?: Maybe<RecordingsConnection>;
   settings: AppSettingsDto;
+  syncHealth: Scalars["Boolean"]["output"];
+  syncPairingPayload?: Maybe<SyncPairingPayloadResult>;
+  syncStatus?: Maybe<SyncStatusResult>;
+};
+
+export type QueryTypeDictationStatusArgs = {
+  sessionId: Scalars["UUID"]["input"];
 };
 
 export type QueryTypeJobArgs = {
@@ -644,6 +854,11 @@ export type QueryTypeJobsArgs = {
   last?: InputMaybe<Scalars["Int"]["input"]>;
   order?: InputMaybe<Array<ProcessingJobSortInput>>;
   where?: InputMaybe<ProcessingJobFilterInput>;
+};
+
+export type QueryTypeLogTailArgs = {
+  file?: InputMaybe<Scalars["String"]["input"]>;
+  lines: Scalars["Int"]["input"];
 };
 
 export type QueryTypeNodeArgs = {
@@ -671,6 +886,11 @@ export type QueryTypeProfileArgs = {
   id: Scalars["UUID"]["input"];
 };
 
+export type QueryTypeRagQueryArgs = {
+  question: Scalars["String"]["input"];
+  topK?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
 export type QueryTypeRecordingArgs = {
   id: Scalars["UUID"]["input"];
 };
@@ -682,6 +902,28 @@ export type QueryTypeRecordingsArgs = {
   last?: InputMaybe<Scalars["Int"]["input"]>;
   order?: InputMaybe<Array<RecordingSortInput>>;
   where?: InputMaybe<RecordingFilterInput>;
+};
+
+export type RagCitation = {
+  __typename?: "RagCitation";
+  noteId: Scalars["UUID"]["output"];
+  segmentId: Scalars["String"]["output"];
+  snippet: Scalars["String"]["output"];
+  text: Scalars["String"]["output"];
+};
+
+export type RagQueryResult = {
+  __typename?: "RagQueryResult";
+  answer: Scalars["String"]["output"];
+  citations: Array<RagCitation>;
+  llmAvailable: Scalars["Boolean"]["output"];
+};
+
+export type RagReindexPayload = {
+  __typename?: "RagReindexPayload";
+  chunks?: Maybe<Scalars["Int"]["output"]>;
+  embeddedNotes?: Maybe<Scalars["Int"]["output"]>;
+  errors: Array<IUserError>;
 };
 
 export type Recording = Node & {
@@ -765,6 +1007,12 @@ export type RecordingsEdge = {
   node: Recording;
 };
 
+export type SetupObsidianPayload = {
+  __typename?: "SetupObsidianPayload";
+  errors: Array<IUserError>;
+  report?: Maybe<ObsidianSetupReport>;
+};
+
 export enum SortEnumType {
   Asc = "ASC",
   Desc = "DESC",
@@ -813,12 +1061,60 @@ export type StringOperationFilterInput = {
 
 export type SubscriptionType = {
   __typename?: "SubscriptionType";
+  audioDeviceChanged: AudioDeviceChangedEvent;
+  dictationEvents: DictationPartialEvent;
+  hotkeyEvents: HotkeyEventMessage;
   jobProgress: ProcessingJob;
   modelDownloadProgress: ModelDownloadProgressEvent;
+  syncEvents: SyncEventMessage;
+};
+
+export type SubscriptionTypeDictationEventsArgs = {
+  sessionId: Scalars["UUID"]["input"];
 };
 
 export type SubscriptionTypeModelDownloadProgressArgs = {
   downloadId: Scalars["String"]["input"];
+};
+
+export type SyncDeviceEntry = {
+  __typename?: "SyncDeviceEntry";
+  connected: Scalars["Boolean"]["output"];
+  id: Scalars["String"]["output"];
+  lastSeen?: Maybe<Scalars["DateTime"]["output"]>;
+  name: Scalars["String"]["output"];
+};
+
+export type SyncEventMessage = {
+  __typename?: "SyncEventMessage";
+  deviceConnection?: Maybe<DeviceConnectionPayload>;
+  fileConflict?: Maybe<FileConflictPayload>;
+  folderCompletion?: Maybe<FolderCompletionPayload>;
+  id: Scalars["Long"]["output"];
+  pendingDevices?: Maybe<PendingDevicesPayload>;
+  time: Scalars["DateTime"]["output"];
+  type: Scalars["String"]["output"];
+};
+
+export type SyncFolderEntry = {
+  __typename?: "SyncFolderEntry";
+  completionPct: Scalars["Float"]["output"];
+  conflicts: Scalars["Int"]["output"];
+  id: Scalars["String"]["output"];
+  state: Scalars["String"]["output"];
+};
+
+export type SyncPairingPayloadResult = {
+  __typename?: "SyncPairingPayloadResult";
+  deviceId: Scalars["String"]["output"];
+  folderIds: Array<Scalars["String"]["output"]>;
+  uri: Scalars["String"]["output"];
+};
+
+export type SyncStatusResult = {
+  __typename?: "SyncStatusResult";
+  devices: Array<SyncDeviceEntry>;
+  folders: Array<SyncFolderEntry>;
 };
 
 export type TimeSpanOperationFilterInput = {
@@ -910,6 +1206,168 @@ export type ValidationError = IUserError & {
   code: Scalars["String"]["output"];
   field: Scalars["String"]["output"];
   message: Scalars["String"]["output"];
+};
+
+export type QueryBackupsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QueryBackupsQuery = {
+  __typename?: "QueryType";
+  backups: Array<{
+    __typename?: "BackupEntry";
+    name: string;
+    path: string;
+    sizeBytes: any;
+    createdAt: string;
+  }>;
+};
+
+export type MutationCreateBackupMutationVariables = Exact<{ [key: string]: never }>;
+
+export type MutationCreateBackupMutation = {
+  __typename?: "MutationType";
+  createBackup: {
+    __typename?: "CreateBackupPayload";
+    backup?: {
+      __typename?: "BackupEntry";
+      name: string;
+      path: string;
+      sizeBytes: any;
+      createdAt: string;
+    } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type QueryDictationAudioCapabilitiesQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QueryDictationAudioCapabilitiesQuery = {
+  __typename?: "QueryType";
+  dictationAudioCapabilities: {
+    __typename?: "DictationAudioCapabilities";
+    isSupported: boolean;
+    detectedPlatform: string;
+    permissionsRequired: Array<string>;
+  };
+};
+
+export type QueryDictationStatusQueryVariables = Exact<{
+  sessionId: Scalars["UUID"]["input"];
+}>;
+
+export type QueryDictationStatusQuery = {
+  __typename?: "QueryType";
+  dictationStatus?: {
+    __typename?: "DictationSessionStatus";
+    sessionId: string;
+    state: string;
+    source?: string | null;
+    startedAt: string;
+  } | null;
+};
+
+export type MutationDictationStartMutationVariables = Exact<{
+  source?: InputMaybe<Scalars["String"]["input"]>;
+}>;
+
+export type MutationDictationStartMutation = {
+  __typename?: "MutationType";
+  dictationStart: {
+    __typename?: "DictationStartPayload";
+    sessionId?: string | null;
+    source?: string | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationDictationStopMutationVariables = Exact<{
+  sessionId: Scalars["UUID"]["input"];
+  bundleId?: InputMaybe<Scalars["String"]["input"]>;
+}>;
+
+export type MutationDictationStopMutation = {
+  __typename?: "MutationType";
+  dictationStop: {
+    __typename?: "DictationStopPayload";
+    rawText?: string | null;
+    polishedText?: string | null;
+    durationMs?: number | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationDictationCancelMutationVariables = Exact<{
+  sessionId: Scalars["UUID"]["input"];
+}>;
+
+export type MutationDictationCancelMutation = {
+  __typename?: "MutationType";
+  dictationCancel: {
+    __typename?: "DictationCancelPayload";
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type SubscriptionDictationEventsSubscriptionVariables = Exact<{
+  sessionId: Scalars["UUID"]["input"];
+}>;
+
+export type SubscriptionDictationEventsSubscription = {
+  __typename?: "SubscriptionType";
+  dictationEvents: {
+    __typename?: "DictationPartialEvent";
+    sessionId: string;
+    text: string;
+    timestampMs: number;
+  };
+};
+
+export type SubscriptionAudioDeviceChangedSubscriptionVariables = Exact<{ [key: string]: never }>;
+
+export type SubscriptionAudioDeviceChangedSubscription = {
+  __typename?: "SubscriptionType";
+  audioDeviceChanged: {
+    __typename?: "AudioDeviceChangedEvent";
+    kind: string;
+    observedAt: string;
+    devices: Array<{
+      __typename?: "AudioDeviceEntry";
+      id: string;
+      name: string;
+      isDefault: boolean;
+    }>;
+  };
+};
+
+export type SubscriptionHotkeyEventsSubscriptionVariables = Exact<{ [key: string]: never }>;
+
+export type SubscriptionHotkeyEventsSubscription = {
+  __typename?: "SubscriptionType";
+  hotkeyEvents: {
+    __typename?: "HotkeyEventMessage";
+    kind: string;
+    accelerator: string;
+    observedAt: string;
+  };
 };
 
 export type QueryHealthQueryVariables = Exact<{ [key: string]: never }>;
@@ -1017,6 +1475,54 @@ export type SubscriptionJobProgressSubscription = {
     createdAt: string;
     startedAt?: string | null;
     finishedAt?: string | null;
+  };
+};
+
+export type QueryLogsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QueryLogsQuery = {
+  __typename?: "QueryType";
+  logs: Array<{
+    __typename?: "LogFileEntry";
+    fileName: string;
+    sizeBytes: any;
+    lastModifiedUtc: string;
+  }>;
+};
+
+export type QueryLogTailQueryVariables = Exact<{
+  file?: InputMaybe<Scalars["String"]["input"]>;
+  lines: Scalars["Int"]["input"];
+}>;
+
+export type QueryLogTailQuery = {
+  __typename?: "QueryType";
+  logTail?: {
+    __typename?: "LogTailResult";
+    file: string;
+    lines: Array<string>;
+    totalLines: number;
+  } | null;
+};
+
+export type MutationImportFromMeetilyMutationVariables = Exact<{
+  meetilyDatabasePath: Scalars["String"]["input"];
+}>;
+
+export type MutationImportFromMeetilyMutation = {
+  __typename?: "MutationType";
+  importFromMeetily: {
+    __typename?: "MeetilyImportPayload";
+    totalMeetings?: number | null;
+    importedRecordings?: number | null;
+    skippedDuplicates?: number | null;
+    importErrors?: number | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
   };
 };
 
@@ -1184,6 +1690,40 @@ export type MutationExportNoteMutation = {
   };
 };
 
+export type QueryObsidianDetectQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QueryObsidianDetectQuery = {
+  __typename?: "QueryType";
+  obsidianDetect: {
+    __typename?: "ObsidianDetectionResult";
+    searched: Array<string>;
+    detected: Array<{ __typename?: "ObsidianVaultEntry"; path: string; name: string }>;
+  };
+};
+
+export type MutationSetupObsidianMutationVariables = Exact<{
+  vaultPath?: InputMaybe<Scalars["String"]["input"]>;
+}>;
+
+export type MutationSetupObsidianMutation = {
+  __typename?: "MutationType";
+  setupObsidian: {
+    __typename?: "SetupObsidianPayload";
+    report?: {
+      __typename?: "ObsidianSetupReport";
+      vaultPath: string;
+      createdPaths: Array<string>;
+      skippedPaths: Array<string>;
+    } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
 export type QueryProfilesQueryVariables = Exact<{ [key: string]: never }>;
 
 export type QueryProfilesQuery = {
@@ -1311,6 +1851,44 @@ export type MutationDuplicateProfileMutation = {
       glossary: Array<string>;
       llmCorrectionEnabled: boolean;
     } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type QueryRagQueryVariables = Exact<{
+  question: Scalars["String"]["input"];
+  topK?: InputMaybe<Scalars["Int"]["input"]>;
+}>;
+
+export type QueryRagQuery = {
+  __typename?: "QueryType";
+  ragQuery?: {
+    __typename?: "RagQueryResult";
+    answer: string;
+    llmAvailable: boolean;
+    citations: Array<{
+      __typename?: "RagCitation";
+      noteId: string;
+      segmentId: string;
+      text: string;
+      snippet: string;
+    }>;
+  } | null;
+};
+
+export type MutationRagReindexMutationVariables = Exact<{ [key: string]: never }>;
+
+export type MutationRagReindexMutation = {
+  __typename?: "MutationType";
+  ragReindex: {
+    __typename?: "RagReindexPayload";
+    embeddedNotes?: number | null;
+    chunks?: number | null;
     errors: Array<
       | { __typename?: "ConflictError"; code: string; message: string }
       | { __typename?: "NotFoundError"; code: string; message: string }
@@ -1587,6 +2165,546 @@ export type MutationUpdateSettingsMutation = {
   };
 };
 
+export type QuerySyncStatusQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QuerySyncStatusQuery = {
+  __typename?: "QueryType";
+  syncStatus?: {
+    __typename?: "SyncStatusResult";
+    folders: Array<{
+      __typename?: "SyncFolderEntry";
+      id: string;
+      state: string;
+      completionPct: number;
+      conflicts: number;
+    }>;
+    devices: Array<{
+      __typename?: "SyncDeviceEntry";
+      id: string;
+      name: string;
+      connected: boolean;
+      lastSeen?: string | null;
+    }>;
+  } | null;
+};
+
+export type QuerySyncHealthQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QuerySyncHealthQuery = { __typename?: "QueryType"; syncHealth: boolean };
+
+export type QuerySyncPairingPayloadQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QuerySyncPairingPayloadQuery = {
+  __typename?: "QueryType";
+  syncPairingPayload?: {
+    __typename?: "SyncPairingPayloadResult";
+    deviceId: string;
+    folderIds: Array<string>;
+    uri: string;
+  } | null;
+};
+
+export type MutationAcceptSyncDeviceMutationVariables = Exact<{
+  deviceId: Scalars["String"]["input"];
+  name?: InputMaybe<Scalars["String"]["input"]>;
+  folderIds?: InputMaybe<Array<Scalars["String"]["input"]> | Scalars["String"]["input"]>;
+}>;
+
+export type MutationAcceptSyncDeviceMutation = {
+  __typename?: "MutationType";
+  acceptSyncDevice: {
+    __typename?: "AcceptSyncDevicePayload";
+    accepted: boolean;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type SubscriptionSyncEventsSubscriptionVariables = Exact<{ [key: string]: never }>;
+
+export type SubscriptionSyncEventsSubscription = {
+  __typename?: "SubscriptionType";
+  syncEvents: {
+    __typename?: "SyncEventMessage";
+    id: any;
+    type: string;
+    time: string;
+    folderCompletion?: {
+      __typename?: "FolderCompletionPayload";
+      folder: string;
+      device: string;
+      completion: number;
+      needBytes: any;
+      globalBytes: any;
+    } | null;
+    deviceConnection?: {
+      __typename?: "DeviceConnectionPayload";
+      deviceId: string;
+      connected: boolean;
+      address?: string | null;
+      error?: string | null;
+    } | null;
+    pendingDevices?: {
+      __typename?: "PendingDevicesPayload";
+      removed: Array<string>;
+      added: Array<{
+        __typename?: "PendingDeviceEntry";
+        deviceId: string;
+        name?: string | null;
+        address?: string | null;
+      }>;
+    } | null;
+    fileConflict?: { __typename?: "FileConflictPayload"; folder: string; path: string } | null;
+  };
+};
+
+export const QueryBackupsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryBackups" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "backups" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+                { kind: "Field", name: { kind: "Name", value: "path" } },
+                { kind: "Field", name: { kind: "Name", value: "sizeBytes" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryBackupsQuery, QueryBackupsQueryVariables>;
+export const MutationCreateBackupDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationCreateBackup" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createBackup" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "backup" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      { kind: "Field", name: { kind: "Name", value: "path" } },
+                      { kind: "Field", name: { kind: "Name", value: "sizeBytes" } },
+                      { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationCreateBackupMutation, MutationCreateBackupMutationVariables>;
+export const QueryDictationAudioCapabilitiesDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryDictationAudioCapabilities" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "dictationAudioCapabilities" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "isSupported" } },
+                { kind: "Field", name: { kind: "Name", value: "detectedPlatform" } },
+                { kind: "Field", name: { kind: "Name", value: "permissionsRequired" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  QueryDictationAudioCapabilitiesQuery,
+  QueryDictationAudioCapabilitiesQueryVariables
+>;
+export const QueryDictationStatusDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryDictationStatus" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "sessionId" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "dictationStatus" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "sessionId" },
+                value: { kind: "Variable", name: { kind: "Name", value: "sessionId" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "sessionId" } },
+                { kind: "Field", name: { kind: "Name", value: "state" } },
+                { kind: "Field", name: { kind: "Name", value: "source" } },
+                { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryDictationStatusQuery, QueryDictationStatusQueryVariables>;
+export const MutationDictationStartDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationDictationStart" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "source" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "dictationStart" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "source" },
+                value: { kind: "Variable", name: { kind: "Name", value: "source" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "sessionId" } },
+                { kind: "Field", name: { kind: "Name", value: "source" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationDictationStartMutation,
+  MutationDictationStartMutationVariables
+>;
+export const MutationDictationStopDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationDictationStop" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "sessionId" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "bundleId" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "dictationStop" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "sessionId" },
+                value: { kind: "Variable", name: { kind: "Name", value: "sessionId" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "bundleId" },
+                value: { kind: "Variable", name: { kind: "Name", value: "bundleId" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "rawText" } },
+                { kind: "Field", name: { kind: "Name", value: "polishedText" } },
+                { kind: "Field", name: { kind: "Name", value: "durationMs" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationDictationStopMutation, MutationDictationStopMutationVariables>;
+export const MutationDictationCancelDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationDictationCancel" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "sessionId" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "dictationCancel" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "sessionId" },
+                value: { kind: "Variable", name: { kind: "Name", value: "sessionId" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationDictationCancelMutation,
+  MutationDictationCancelMutationVariables
+>;
+export const SubscriptionDictationEventsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "subscription",
+      name: { kind: "Name", value: "SubscriptionDictationEvents" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "sessionId" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "dictationEvents" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "sessionId" },
+                value: { kind: "Variable", name: { kind: "Name", value: "sessionId" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "sessionId" } },
+                { kind: "Field", name: { kind: "Name", value: "text" } },
+                { kind: "Field", name: { kind: "Name", value: "timestampMs" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  SubscriptionDictationEventsSubscription,
+  SubscriptionDictationEventsSubscriptionVariables
+>;
+export const SubscriptionAudioDeviceChangedDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "subscription",
+      name: { kind: "Name", value: "SubscriptionAudioDeviceChanged" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "audioDeviceChanged" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "kind" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "devices" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      { kind: "Field", name: { kind: "Name", value: "isDefault" } },
+                    ],
+                  },
+                },
+                { kind: "Field", name: { kind: "Name", value: "observedAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  SubscriptionAudioDeviceChangedSubscription,
+  SubscriptionAudioDeviceChangedSubscriptionVariables
+>;
+export const SubscriptionHotkeyEventsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "subscription",
+      name: { kind: "Name", value: "SubscriptionHotkeyEvents" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "hotkeyEvents" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "kind" } },
+                { kind: "Field", name: { kind: "Name", value: "accelerator" } },
+                { kind: "Field", name: { kind: "Name", value: "observedAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  SubscriptionHotkeyEventsSubscription,
+  SubscriptionHotkeyEventsSubscriptionVariables
+>;
 export const QueryHealthDocument = {
   kind: "Document",
   definitions: [
@@ -1853,6 +2971,146 @@ export const SubscriptionJobProgressDocument = {
 } as unknown as DocumentNode<
   SubscriptionJobProgressSubscription,
   SubscriptionJobProgressSubscriptionVariables
+>;
+export const QueryLogsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryLogs" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "logs" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "fileName" } },
+                { kind: "Field", name: { kind: "Name", value: "sizeBytes" } },
+                { kind: "Field", name: { kind: "Name", value: "lastModifiedUtc" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryLogsQuery, QueryLogsQueryVariables>;
+export const QueryLogTailDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryLogTail" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "file" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "lines" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "Int" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "logTail" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "file" },
+                value: { kind: "Variable", name: { kind: "Name", value: "file" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "lines" },
+                value: { kind: "Variable", name: { kind: "Name", value: "lines" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "file" } },
+                { kind: "Field", name: { kind: "Name", value: "lines" } },
+                { kind: "Field", name: { kind: "Name", value: "totalLines" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryLogTailQuery, QueryLogTailQueryVariables>;
+export const MutationImportFromMeetilyDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationImportFromMeetily" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "meetilyDatabasePath" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "importFromMeetily" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "meetilyDatabasePath" },
+                value: { kind: "Variable", name: { kind: "Name", value: "meetilyDatabasePath" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "totalMeetings" } },
+                { kind: "Field", name: { kind: "Name", value: "importedRecordings" } },
+                { kind: "Field", name: { kind: "Name", value: "skippedDuplicates" } },
+                { kind: "Field", name: { kind: "Name", value: "importErrors" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationImportFromMeetilyMutation,
+  MutationImportFromMeetilyMutationVariables
 >;
 export const QueryModelsDocument = {
   kind: "Document",
@@ -2250,6 +3508,103 @@ export const MutationExportNoteDocument = {
     },
   ],
 } as unknown as DocumentNode<MutationExportNoteMutation, MutationExportNoteMutationVariables>;
+export const QueryObsidianDetectDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryObsidianDetect" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "obsidianDetect" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "detected" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "path" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                    ],
+                  },
+                },
+                { kind: "Field", name: { kind: "Name", value: "searched" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryObsidianDetectQuery, QueryObsidianDetectQueryVariables>;
+export const MutationSetupObsidianDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationSetupObsidian" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "vaultPath" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "setupObsidian" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "vaultPath" },
+                value: { kind: "Variable", name: { kind: "Name", value: "vaultPath" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "report" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "vaultPath" } },
+                      { kind: "Field", name: { kind: "Name", value: "createdPaths" } },
+                      { kind: "Field", name: { kind: "Name", value: "skippedPaths" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationSetupObsidianMutation, MutationSetupObsidianMutationVariables>;
 export const QueryProfilesDocument = {
   kind: "Document",
   definitions: [
@@ -2590,6 +3945,109 @@ export const MutationDuplicateProfileDocument = {
   MutationDuplicateProfileMutation,
   MutationDuplicateProfileMutationVariables
 >;
+export const QueryRagDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryRag" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "question" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "topK" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "Int" } },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "ragQuery" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "question" },
+                value: { kind: "Variable", name: { kind: "Name", value: "question" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "topK" },
+                value: { kind: "Variable", name: { kind: "Name", value: "topK" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "answer" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "citations" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "noteId" } },
+                      { kind: "Field", name: { kind: "Name", value: "segmentId" } },
+                      { kind: "Field", name: { kind: "Name", value: "text" } },
+                      { kind: "Field", name: { kind: "Name", value: "snippet" } },
+                    ],
+                  },
+                },
+                { kind: "Field", name: { kind: "Name", value: "llmAvailable" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryRagQuery, QueryRagQueryVariables>;
+export const MutationRagReindexDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationRagReindex" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "ragReindex" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "embeddedNotes" } },
+                { kind: "Field", name: { kind: "Name", value: "chunks" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationRagReindexMutation, MutationRagReindexMutationVariables>;
 export const QueryRecordingsDocument = {
   kind: "Document",
   definitions: [
@@ -3253,4 +4711,267 @@ export const MutationUpdateSettingsDocument = {
 } as unknown as DocumentNode<
   MutationUpdateSettingsMutation,
   MutationUpdateSettingsMutationVariables
+>;
+export const QuerySyncStatusDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QuerySyncStatus" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "syncStatus" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "folders" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "state" } },
+                      { kind: "Field", name: { kind: "Name", value: "completionPct" } },
+                      { kind: "Field", name: { kind: "Name", value: "conflicts" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "devices" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      { kind: "Field", name: { kind: "Name", value: "connected" } },
+                      { kind: "Field", name: { kind: "Name", value: "lastSeen" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QuerySyncStatusQuery, QuerySyncStatusQueryVariables>;
+export const QuerySyncHealthDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QuerySyncHealth" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [{ kind: "Field", name: { kind: "Name", value: "syncHealth" } }],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QuerySyncHealthQuery, QuerySyncHealthQueryVariables>;
+export const QuerySyncPairingPayloadDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QuerySyncPairingPayload" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "syncPairingPayload" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "deviceId" } },
+                { kind: "Field", name: { kind: "Name", value: "folderIds" } },
+                { kind: "Field", name: { kind: "Name", value: "uri" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QuerySyncPairingPayloadQuery, QuerySyncPairingPayloadQueryVariables>;
+export const MutationAcceptSyncDeviceDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationAcceptSyncDevice" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "deviceId" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "name" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "folderIds" } },
+          type: {
+            kind: "ListType",
+            type: {
+              kind: "NonNullType",
+              type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "acceptSyncDevice" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "deviceId" },
+                value: { kind: "Variable", name: { kind: "Name", value: "deviceId" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "name" },
+                value: { kind: "Variable", name: { kind: "Name", value: "name" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "folderIds" },
+                value: { kind: "Variable", name: { kind: "Name", value: "folderIds" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "accepted" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationAcceptSyncDeviceMutation,
+  MutationAcceptSyncDeviceMutationVariables
+>;
+export const SubscriptionSyncEventsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "subscription",
+      name: { kind: "Name", value: "SubscriptionSyncEvents" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "syncEvents" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "type" } },
+                { kind: "Field", name: { kind: "Name", value: "time" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "folderCompletion" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "folder" } },
+                      { kind: "Field", name: { kind: "Name", value: "device" } },
+                      { kind: "Field", name: { kind: "Name", value: "completion" } },
+                      { kind: "Field", name: { kind: "Name", value: "needBytes" } },
+                      { kind: "Field", name: { kind: "Name", value: "globalBytes" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "deviceConnection" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "deviceId" } },
+                      { kind: "Field", name: { kind: "Name", value: "connected" } },
+                      { kind: "Field", name: { kind: "Name", value: "address" } },
+                      { kind: "Field", name: { kind: "Name", value: "error" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "pendingDevices" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "added" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "deviceId" } },
+                            { kind: "Field", name: { kind: "Name", value: "name" } },
+                            { kind: "Field", name: { kind: "Name", value: "address" } },
+                          ],
+                        },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "removed" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "fileConflict" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "folder" } },
+                      { kind: "Field", name: { kind: "Name", value: "path" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  SubscriptionSyncEventsSubscription,
+  SubscriptionSyncEventsSubscriptionVariables
 >;
