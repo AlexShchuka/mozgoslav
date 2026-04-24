@@ -9,7 +9,6 @@ export const ROUTES = {
   profiles: "/profiles",
   models: "/models",
   settings: "/settings",
-  logs: "/logs",
   backup: "/backup",
   obsidian: "/obsidian",
   sync: "/sync",

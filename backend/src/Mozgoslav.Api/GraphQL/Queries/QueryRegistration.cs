@@ -6,7 +6,6 @@ using Mozgoslav.Api.GraphQL.Backup;
 using Mozgoslav.Api.GraphQL.Dictation;
 using Mozgoslav.Api.GraphQL.Health;
 using Mozgoslav.Api.GraphQL.Jobs;
-using Mozgoslav.Api.GraphQL.Logs;
 using Mozgoslav.Api.GraphQL.Models;
 using Mozgoslav.Api.GraphQL.Notes;
 using Mozgoslav.Api.GraphQL.Obsidian;
@@ -35,7 +34,6 @@ internal static class QueryRegistration
             .AddTypeExtension<DictationQueryType>()
             .AddTypeExtension<ObsidianQueryType>()
             .AddTypeExtension<BackupQueryType>()
-            .AddTypeExtension<LogQueryType>()
             .AddTypeExtension<RagQueryType>()
             .AddTypeExtension<SyncQueryType>();
     }

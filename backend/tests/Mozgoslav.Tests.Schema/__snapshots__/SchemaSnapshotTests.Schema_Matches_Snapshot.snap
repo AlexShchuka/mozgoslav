@@ -1,4 +1,4 @@
-﻿schema {
+schema {
   query: QueryType
   mutation: MutationType
   subscription: SubscriptionType
@@ -206,18 +206,6 @@ type LlmHealthStatus {
   available: Boolean!
 }
 
-type LogFileEntry {
-  fileName: String!
-  sizeBytes: Long!
-  lastModifiedUtc: DateTime!
-}
-
-type LogTailResult {
-  file: String!
-  lines: [String!]!
-  totalLines: Int!
-}
-
 type MeetilyImportPayload {
   totalMeetings: Int
   importedRecordings: Int
@@ -264,8 +252,11 @@ type MutationType {
   importRecordings(input: ImportRecordingsInput!): ImportRecordingsPayload! @cost(weight: "10")
   uploadRecordings(input: UploadRecordingsInput!): ImportRecordingsPayload! @cost(weight: "10")
   reprocessRecording(recordingId: UUID! profileId: UUID!): RecordingPayload! @cost(weight: "10")
+  deleteRecording(id: UUID!): RecordingPayload! @cost(weight: "10")
   startRecording(outputPath: String): StartRecordingPayload! @cost(weight: "10")
   stopRecording(sessionId: String!): StopRecordingPayload! @cost(weight: "10")
+  deleteNote(id: UUID!): NotePayload! @cost(weight: "10")
+  createNote(input: CreateNoteInput!): NotePayload! @cost(weight: "10")
   exportNote(id: UUID!): NotePayload! @cost(weight: "10")
   enqueueJob(input: EnqueueJobInput!): JobPayload! @cost(weight: "10")
   cancelJob(id: UUID!): CancelJobPayload! @cost(weight: "10")
@@ -432,8 +423,7 @@ type QueryType {
   dictationStatus(sessionId: UUID!): DictationSessionStatus @cost(weight: "10")
   obsidianDetect: ObsidianDetectionResult!
   backups: [BackupEntry!]!
-  logs: [LogFileEntry!]!
-  logTail(file: String lines: Int!): LogTailResult @cost(weight: "10")
+  ragStatus: RagIndexStatus! @cost(weight: "10")
   ragQuery(question: String! topK: Int): RagQueryResult @cost(weight: "10")
   syncStatus: SyncStatusResult @cost(weight: "10")
   syncHealth: Boolean! @cost(weight: "10")
@@ -445,6 +435,11 @@ type RagCitation {
   segmentId: String!
   text: String!
   snippet: String!
+}
+
+type RagIndexStatus {
+  embeddedNotes: Int!
+  chunks: Int!
 }
 
 type RagQueryResult {
@@ -469,6 +464,7 @@ type Recording implements Node {
   sourceType: SourceType!
   status: RecordingStatus!
   createdAt: DateTime!
+  notes: [ProcessedNote!]! @cost(weight: "10")
 }
 
 type RecordingPayload {
@@ -598,6 +594,11 @@ input ConversationTypeOperationFilterInput {
   neq: ConversationType @cost(weight: "10")
   in: [ConversationType!] @cost(weight: "10")
   nin: [ConversationType!] @cost(weight: "10")
+}
+
+input CreateNoteInput {
+  title: String!
+  body: String
 }
 
 input CreateProfileInput {

@@ -1533,33 +1533,6 @@ export type SubscriptionJobProgressSubscription = {
   };
 };
 
-export type QueryLogsQueryVariables = Exact<{ [key: string]: never }>;
-
-export type QueryLogsQuery = {
-  __typename?: "QueryType";
-  logs: Array<{
-    __typename?: "LogFileEntry";
-    fileName: string;
-    sizeBytes: any;
-    lastModifiedUtc: string;
-  }>;
-};
-
-export type QueryLogTailQueryVariables = Exact<{
-  file?: InputMaybe<Scalars["String"]["input"]>;
-  lines: Scalars["Int"]["input"];
-}>;
-
-export type QueryLogTailQuery = {
-  __typename?: "QueryType";
-  logTail?: {
-    __typename?: "LogTailResult";
-    file: string;
-    lines: Array<string>;
-    totalLines: number;
-  } | null;
-};
-
 export type MutationImportFromMeetilyMutationVariables = Exact<{
   meetilyDatabasePath: Scalars["String"]["input"];
 }>;
@@ -3212,87 +3185,6 @@ export const SubscriptionJobProgressDocument = {
   SubscriptionJobProgressSubscription,
   SubscriptionJobProgressSubscriptionVariables
 >;
-export const QueryLogsDocument = {
-  kind: "Document",
-  definitions: [
-    {
-      kind: "OperationDefinition",
-      operation: "query",
-      name: { kind: "Name", value: "QueryLogs" },
-      selectionSet: {
-        kind: "SelectionSet",
-        selections: [
-          {
-            kind: "Field",
-            name: { kind: "Name", value: "logs" },
-            selectionSet: {
-              kind: "SelectionSet",
-              selections: [
-                { kind: "Field", name: { kind: "Name", value: "fileName" } },
-                { kind: "Field", name: { kind: "Name", value: "sizeBytes" } },
-                { kind: "Field", name: { kind: "Name", value: "lastModifiedUtc" } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<QueryLogsQuery, QueryLogsQueryVariables>;
-export const QueryLogTailDocument = {
-  kind: "Document",
-  definitions: [
-    {
-      kind: "OperationDefinition",
-      operation: "query",
-      name: { kind: "Name", value: "QueryLogTail" },
-      variableDefinitions: [
-        {
-          kind: "VariableDefinition",
-          variable: { kind: "Variable", name: { kind: "Name", value: "file" } },
-          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
-        },
-        {
-          kind: "VariableDefinition",
-          variable: { kind: "Variable", name: { kind: "Name", value: "lines" } },
-          type: {
-            kind: "NonNullType",
-            type: { kind: "NamedType", name: { kind: "Name", value: "Int" } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: "SelectionSet",
-        selections: [
-          {
-            kind: "Field",
-            name: { kind: "Name", value: "logTail" },
-            arguments: [
-              {
-                kind: "Argument",
-                name: { kind: "Name", value: "file" },
-                value: { kind: "Variable", name: { kind: "Name", value: "file" } },
-              },
-              {
-                kind: "Argument",
-                name: { kind: "Name", value: "lines" },
-                value: { kind: "Variable", name: { kind: "Name", value: "lines" } },
-              },
-            ],
-            selectionSet: {
-              kind: "SelectionSet",
-              selections: [
-                { kind: "Field", name: { kind: "Name", value: "file" } },
-                { kind: "Field", name: { kind: "Name", value: "lines" } },
-                { kind: "Field", name: { kind: "Name", value: "totalLines" } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<QueryLogTailQuery, QueryLogTailQueryVariables>;
 export const MutationImportFromMeetilyDocument = {
   kind: "Document",
   definitions: [

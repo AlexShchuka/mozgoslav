@@ -83,13 +83,6 @@ export const useCommandPaletteActions = (): void => {
         perform: () => navigate(ROUTES.settings),
       },
       {
-        id: "nav-logs",
-        name: t("nav.logs"),
-        keywords: "logs debug tail",
-        section: t("commandPalette.sections.navigation"),
-        perform: () => navigate(ROUTES.logs),
-      },
-      {
         id: "nav-backup",
         name: t("nav.backup"),
         keywords: "backup archive restore",

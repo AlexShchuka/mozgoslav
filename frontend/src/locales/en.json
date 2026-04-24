@@ -12,7 +12,6 @@
     "profiles": "Profiles",
     "models": "Models",
     "settings": "Settings",
-    "logs": "Logs",
     "backup": "Backups",
     "obsidian": "Obsidian",
     "sync": "Sync"
@@ -397,12 +396,6 @@
     "reprocess": "Reprocess note",
     "exportNote": "Export note",
     "toggleRecord": "Record / stop"
-  },
-  "logs": {
-    "title": "Logs",
-    "download": "Download file",
-    "refresh": "Refresh",
-    "empty": "No log lines yet — run the pipeline."
   },
   "backup": {
     "title": "Backups",
