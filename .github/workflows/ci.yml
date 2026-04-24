@@ -1,4 +1,5 @@
-name: ci
+name: Build & test
+run-name: Build & test
 
 on:
   push:
@@ -7,7 +8,7 @@ on:
     branches: [ main ]
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
