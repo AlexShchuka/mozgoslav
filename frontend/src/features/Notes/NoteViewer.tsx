@@ -10,10 +10,7 @@ import Button from "../../components/Button";
 import Card from "../../components/Card";
 import Badge from "../../components/Badge";
 import { graphqlClient } from "../../api/graphqlClient";
-import {
-  MutationExportNoteDocument,
-  QueryNoteDocument,
-} from "../../api/gql/graphql";
+import { MutationExportNoteDocument, QueryNoteDocument } from "../../api/gql/graphql";
 import { ProcessedNote } from "../../domain/ProcessedNote";
 import { ROUTES } from "../../constants/routes";
 import { stripFrontmatter } from "./markdown";

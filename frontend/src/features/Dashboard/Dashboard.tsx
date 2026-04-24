@@ -80,24 +80,29 @@ const Dashboard: FC = () => {
     };
   }, [t]);
 
-  const onDrop = useCallback(async (files: File[]) => {
-    if (!files.length) return;
-    const filePaths = files.map((f) => (f as File & { path?: string }).path).filter(Boolean) as string[];
-    if (!filePaths.length) {
-      toast.info(t("dashboard.dropRequiresElectron"));
-      return;
-    }
-    setUploading(true);
-    try {
-      await graphqlClient.request(MutationUploadRecordingsDocument, { input: { filePaths } });
-      toast.success(`${files.length} → импорт`);
-      notifyRecordingsChanged();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err));
-    } finally {
-      setUploading(false);
-    }
-  }, [t]);
+  const onDrop = useCallback(
+    async (files: File[]) => {
+      if (!files.length) return;
+      const filePaths = files
+        .map((f) => (f as File & { path?: string }).path)
+        .filter(Boolean) as string[];
+      if (!filePaths.length) {
+        toast.info(t("dashboard.dropRequiresElectron"));
+        return;
+      }
+      setUploading(true);
+      try {
+        await graphqlClient.request(MutationUploadRecordingsDocument, { input: { filePaths } });
+        toast.success(`${files.length} → импорт`);
+        notifyRecordingsChanged();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : String(err));
+      } finally {
+        setUploading(false);
+      }
+    },
+    [t]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

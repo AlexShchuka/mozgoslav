@@ -11,19 +11,16 @@ export function* gqlRequest<TResult extends object, TVariables extends Variables
   doc: TypedDocumentNode<TResult, TVariables>,
   variables: TVariables
 ): Generator<Effect, TResult, TResult> {
-  const result: TResult = yield call(
-    () => graphqlClient.request<TResult>({ document: doc, variables: variables as Variables })
+  const result: TResult = yield call(() =>
+    graphqlClient.request<TResult>({ document: doc, variables: variables as Variables })
   );
   return result;
 }
 
 export function gqlSubscriptionChannel<
   TResult extends object,
-  TVariables extends Record<string, unknown>
->(
-  doc: TypedDocumentNode<TResult, TVariables>,
-  variables: TVariables
-): EventChannel<TResult> {
+  TVariables extends Record<string, unknown>,
+>(doc: TypedDocumentNode<TResult, TVariables>, variables: TVariables): EventChannel<TResult> {
   return eventChannel<TResult>((emit) => {
     const wsClient = getGraphqlWsClient();
     const unsubscribe = wsClient.subscribe<TResult>(

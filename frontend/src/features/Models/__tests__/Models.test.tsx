@@ -47,11 +47,9 @@ describe("Models page — task #13 inline download progress", () => {
   });
 
   it("mounts <ModelDownloadProgress/> under a row when Download is clicked", async () => {
-    mockedRequest
-      .mockResolvedValueOnce({ models: [fakeModel] })
-      .mockResolvedValueOnce({
-        downloadModel: { downloadId: "dl-abc", errors: [] },
-      });
+    mockedRequest.mockResolvedValueOnce({ models: [fakeModel] }).mockResolvedValueOnce({
+      downloadModel: { downloadId: "dl-abc", errors: [] },
+    });
 
     renderModels();
 

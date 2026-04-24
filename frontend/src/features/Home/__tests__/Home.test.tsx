@@ -7,7 +7,9 @@ import { darkTheme } from "../../../styles/theme";
 import "../../../i18n";
 
 jest.mock("../../../api/graphqlClient", () => ({
-  graphqlClient: { request: jest.fn().mockResolvedValue({ recordings: { nodes: [] }, jobs: { nodes: [] } }) },
+  graphqlClient: {
+    request: jest.fn().mockResolvedValue({ recordings: { nodes: [] }, jobs: { nodes: [] } }),
+  },
   getGraphqlWsClient: jest.fn(() => ({
     subscribe: jest.fn(() => () => {}),
     dispose: jest.fn(),

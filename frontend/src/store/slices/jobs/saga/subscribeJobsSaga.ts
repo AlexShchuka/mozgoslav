@@ -2,8 +2,14 @@ import { cancel, cancelled, fork, put, take, takeLatest } from "redux-saga/effec
 import type { SagaIterator } from "redux-saga";
 import type { Task, EventChannel } from "redux-saga";
 
-import type { QueryActiveJobsQuery, SubscriptionJobProgressSubscription } from "../../../../api/gql/graphql";
-import { QueryActiveJobsDocument, SubscriptionJobProgressDocument } from "../../../../api/gql/graphql";
+import type {
+  QueryActiveJobsQuery,
+  SubscriptionJobProgressSubscription,
+} from "../../../../api/gql/graphql";
+import {
+  QueryActiveJobsDocument,
+  SubscriptionJobProgressDocument,
+} from "../../../../api/gql/graphql";
 import { gqlRequest, gqlSubscriptionChannel } from "../../../saga/graphql";
 import { mapGqlJob } from "../jobMapper";
 import {
@@ -16,9 +22,7 @@ import {
   jobsStreamOpened,
 } from "../actions";
 
-function* consumeChannel(
-  channel: EventChannel<SubscriptionJobProgressSubscription>
-): SagaIterator {
+function* consumeChannel(channel: EventChannel<SubscriptionJobProgressSubscription>): SagaIterator {
   try {
     yield put(jobsStreamOpened());
     while (true) {

@@ -32,7 +32,12 @@ const buildGqlProfile = (patch: Partial<Profile>) => ({
   systemPrompt: patch.systemPrompt ?? "",
   transcriptionPromptOverride: patch.transcriptionPromptOverride ?? "",
   outputTemplate: patch.outputTemplate ?? "",
-  cleanupLevel: patch.cleanupLevel === "Aggressive" ? "AGGRESSIVE" : patch.cleanupLevel === "None" ? "NONE" : "LIGHT",
+  cleanupLevel:
+    patch.cleanupLevel === "Aggressive"
+      ? "AGGRESSIVE"
+      : patch.cleanupLevel === "None"
+        ? "NONE"
+        : "LIGHT",
   exportFolder: patch.exportFolder ?? "_inbox",
   autoTags: patch.autoTags ?? [],
   isDefault: patch.isDefault ?? false,
@@ -40,7 +45,6 @@ const buildGqlProfile = (patch: Partial<Profile>) => ({
   glossary: [],
   llmCorrectionEnabled: false,
 });
-
 
 const renderProfiles = () =>
   renderWithStore(

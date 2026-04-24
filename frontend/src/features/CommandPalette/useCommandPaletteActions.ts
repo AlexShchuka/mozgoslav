@@ -110,9 +110,7 @@ export const useCommandPaletteActions = (): void => {
           void graphqlClient
             .request(MutationRagReindexDocument)
             .then((data) =>
-              toast.success(
-                t("rag.reindexedToast", { count: data.ragReindex.embeddedNotes })
-              )
+              toast.success(t("rag.reindexedToast", { count: data.ragReindex.embeddedNotes }))
             )
             .catch((err) => toast.error(err instanceof Error ? err.message : String(err)));
         },

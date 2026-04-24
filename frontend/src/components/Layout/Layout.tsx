@@ -15,7 +15,7 @@ import {
   RefreshCw,
   Settings,
   Sparkles,
-  } from "lucide-react";
+} from "lucide-react";
 
 import { useBackendHealth } from "../../hooks/useBackendHealth";
 import { ROUTES } from "../../constants/routes";

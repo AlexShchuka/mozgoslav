@@ -82,7 +82,20 @@ describe("subscribeJobsSaga", () => {
 
     const result = await expectSaga(subscribeJobsSaga)
       .withReducer(jobsReducer)
-      .put(jobsSeeded([makeJob({ id: "a", status: "Queued", progress: 0, currentStep: null, errorMessage: null, userHint: null, startedAt: null, finishedAt: null })]))
+      .put(
+        jobsSeeded([
+          makeJob({
+            id: "a",
+            status: "Queued",
+            progress: 0,
+            currentStep: null,
+            errorMessage: null,
+            userHint: null,
+            startedAt: null,
+            finishedAt: null,
+          }),
+        ])
+      )
       .put(jobsStreamOpened())
       .dispatch(unsubscribeJobs())
       .silentRun(50);
@@ -116,7 +129,13 @@ describe("subscribeJobsSaga", () => {
     mockedGetWsClient.mockReturnValue(wsStub);
     mockedRequest.mockResolvedValueOnce({ activeJobs: [] });
 
-    const incoming = makeJob({ id: "x", progress: 99, status: "Transcribing", currentStep: null, startedAt: null });
+    const incoming = makeJob({
+      id: "x",
+      progress: 99,
+      status: "Transcribing",
+      currentStep: null,
+      startedAt: null,
+    });
     const gqlIncoming = {
       jobProgress: {
         __typename: "ProcessingJob" as const,

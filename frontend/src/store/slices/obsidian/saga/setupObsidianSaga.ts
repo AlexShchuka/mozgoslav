@@ -9,7 +9,9 @@ import { SETUP_OBSIDIAN, type SetupObsidianAction, setupObsidianDone } from "../
 
 export function* setupObsidianSaga(action: SetupObsidianAction): SagaIterator {
   try {
-    const data = (yield* gqlRequest(MutationSetupObsidianDocument, { vaultPath: action.payload.vaultPath })) as MutationSetupObsidianMutation;
+    const data = (yield* gqlRequest(MutationSetupObsidianDocument, {
+      vaultPath: action.payload.vaultPath,
+    })) as MutationSetupObsidianMutation;
     if (data.setupObsidian.errors.length > 0) {
       yield put(
         notifyError({

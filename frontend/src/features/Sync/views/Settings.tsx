@@ -3,10 +3,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 
 import { graphqlClient } from "../../../api/graphqlClient";
-import {
-  MutationUpdateSettingsDocument,
-  QuerySettingsDocument,
-} from "../../../api/gql/graphql";
+import { MutationUpdateSettingsDocument, QuerySettingsDocument } from "../../../api/gql/graphql";
 import type {
   MutationUpdateSettingsMutation,
   MutationUpdateSettingsMutationVariables,
@@ -39,7 +36,8 @@ function mapDtoToSettings(dto: QuerySettingsQuery["settings"]): AppSettings {
     dictationLlmPolish: dto.dictationLlmPolish,
     dictationInjectMode: dto.dictationInjectMode as AppSettings["dictationInjectMode"],
     dictationOverlayEnabled: dto.dictationOverlayEnabled,
-    dictationOverlayPosition: dto.dictationOverlayPosition as AppSettings["dictationOverlayPosition"],
+    dictationOverlayPosition:
+      dto.dictationOverlayPosition as AppSettings["dictationOverlayPosition"],
     dictationSoundFeedback: dto.dictationSoundFeedback,
     dictationVocabulary: dto.dictationVocabulary,
     dictationModelUnloadMinutes: dto.dictationModelUnloadMinutes,
@@ -52,9 +50,7 @@ function mapDtoToSettings(dto: QuerySettingsQuery["settings"]): AppSettings {
   };
 }
 
-function mapSettingsToInput(
-  s: AppSettings
-): MutationUpdateSettingsMutationVariables["input"] {
+function mapSettingsToInput(s: AppSettings): MutationUpdateSettingsMutationVariables["input"] {
   return {
     vaultPath: s.vaultPath,
     llmProvider: "",

@@ -14,7 +14,9 @@ import { mapGqlRecording } from "./recordingMapper";
 
 export function* loadRecordingsSaga(): SagaIterator {
   try {
-    const result = (yield* gqlRequest(QueryRecordingsDocument, { first: 200 })) as QueryRecordingsQuery;
+    const result = (yield* gqlRequest(QueryRecordingsDocument, {
+      first: 200,
+    })) as QueryRecordingsQuery;
     const nodes = result.recordings?.nodes ?? [];
     const recordings = nodes.map(mapGqlRecording);
     yield put(loadRecordingsSuccess(recordings));

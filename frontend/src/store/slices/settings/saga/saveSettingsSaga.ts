@@ -16,9 +16,7 @@ import {
   saveSettingsSuccess,
 } from "../actions";
 
-function mapSettingsToInput(
-  s: AppSettings
-): MutationUpdateSettingsMutationVariables["input"] {
+function mapSettingsToInput(s: AppSettings): MutationUpdateSettingsMutationVariables["input"] {
   return {
     vaultPath: s.vaultPath,
     llmProvider: "",
@@ -86,7 +84,8 @@ function mapSavedToSettings(
     dictationLlmPolish: dto.dictationLlmPolish,
     dictationInjectMode: dto.dictationInjectMode as AppSettings["dictationInjectMode"],
     dictationOverlayEnabled: dto.dictationOverlayEnabled,
-    dictationOverlayPosition: dto.dictationOverlayPosition as AppSettings["dictationOverlayPosition"],
+    dictationOverlayPosition:
+      dto.dictationOverlayPosition as AppSettings["dictationOverlayPosition"],
     dictationSoundFeedback: dto.dictationSoundFeedback,
     dictationVocabulary: dto.dictationVocabulary,
     dictationModelUnloadMinutes: dto.dictationModelUnloadMinutes,
@@ -101,10 +100,9 @@ function mapSavedToSettings(
 
 export function* saveSettingsSaga(action: SaveSettingsAction): SagaIterator {
   try {
-    const result = (yield* gqlRequest(
-      MutationUpdateSettingsDocument,
-      { input: mapSettingsToInput(action.payload) }
-    )) as MutationUpdateSettingsMutation;
+    const result = (yield* gqlRequest(MutationUpdateSettingsDocument, {
+      input: mapSettingsToInput(action.payload),
+    })) as MutationUpdateSettingsMutation;
     const dto = result.updateSettings.settings;
     if (dto) {
       yield put(saveSettingsSuccess(mapSavedToSettings(dto)));

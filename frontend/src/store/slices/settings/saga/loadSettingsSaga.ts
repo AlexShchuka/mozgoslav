@@ -32,7 +32,8 @@ function mapDtoToSettings(dto: QuerySettingsQuery["settings"]): AppSettings {
     dictationLlmPolish: dto.dictationLlmPolish,
     dictationInjectMode: dto.dictationInjectMode as AppSettings["dictationInjectMode"],
     dictationOverlayEnabled: dto.dictationOverlayEnabled,
-    dictationOverlayPosition: dto.dictationOverlayPosition as AppSettings["dictationOverlayPosition"],
+    dictationOverlayPosition:
+      dto.dictationOverlayPosition as AppSettings["dictationOverlayPosition"],
     dictationSoundFeedback: dto.dictationSoundFeedback,
     dictationVocabulary: dto.dictationVocabulary,
     dictationModelUnloadMinutes: dto.dictationModelUnloadMinutes,

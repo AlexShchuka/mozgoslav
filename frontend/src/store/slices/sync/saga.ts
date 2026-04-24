@@ -63,11 +63,12 @@ function mapGqlEvent(evt: SubscriptionSyncEventsSubscription["syncEvents"]): Syn
     deviceConnection: evt.deviceConnection
       ? { deviceId: evt.deviceConnection.deviceId, connected: evt.deviceConnection.connected }
       : null,
-    pendingDevices: evt.pendingDevices?.added.map((e) => ({
-      deviceId: e.deviceId,
-      name: e.name ?? "",
-      address: e.address ?? null,
-    })) ?? null,
+    pendingDevices:
+      evt.pendingDevices?.added.map((e) => ({
+        deviceId: e.deviceId,
+        name: e.name ?? "",
+        address: e.address ?? null,
+      })) ?? null,
     fileConflict: evt.fileConflict
       ? { folderId: evt.fileConflict.folder, path: evt.fileConflict.path }
       : null,
@@ -88,13 +89,18 @@ export function* loadStatusSaga(): SagaIterator {
 
 export function* loadPairingSaga(): SagaIterator {
   try {
-    const data = (yield* gqlRequest(QuerySyncPairingPayloadDocument, {})) as QuerySyncPairingPayloadQuery;
+    const data = (yield* gqlRequest(
+      QuerySyncPairingPayloadDocument,
+      {}
+    )) as QuerySyncPairingPayloadQuery;
     if (data.syncPairingPayload) {
-      yield put(loadPairingSuccess({
-        deviceId: data.syncPairingPayload.deviceId,
-        folderIds: [...data.syncPairingPayload.folderIds],
-        uri: data.syncPairingPayload.uri,
-      }));
+      yield put(
+        loadPairingSuccess({
+          deviceId: data.syncPairingPayload.deviceId,
+          folderIds: [...data.syncPairingPayload.folderIds],
+          uri: data.syncPairingPayload.uri,
+        })
+      );
     }
   } catch (error) {
     yield put(loadPairingFailure(extractMessage(error)));
@@ -104,7 +110,10 @@ export function* loadPairingSaga(): SagaIterator {
 export function* acceptDeviceSaga(action: AcceptDeviceAction): SagaIterator {
   const { deviceId, name } = action.payload;
   try {
-    const data = (yield* gqlRequest(MutationAcceptSyncDeviceDocument, { deviceId, name })) as MutationAcceptSyncDeviceMutation;
+    const data = (yield* gqlRequest(MutationAcceptSyncDeviceDocument, {
+      deviceId,
+      name,
+    })) as MutationAcceptSyncDeviceMutation;
     if (data.acceptSyncDevice.errors.length > 0) {
       yield put(acceptDeviceFailure(deviceId, data.acceptSyncDevice.errors[0].message));
     } else {

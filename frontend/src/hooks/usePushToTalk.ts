@@ -27,9 +27,17 @@ export const usePushToTalk = (handlers: UsePushToTalkHandlers): void => {
           if (!value.data) return;
           const frame = value.data.hotkeyEvents;
           if (frame.kind === "press") {
-            handlers.onPress?.({ kind: "press", accelerator: frame.accelerator, observedAt: frame.observedAt });
+            handlers.onPress?.({
+              kind: "press",
+              accelerator: frame.accelerator,
+              observedAt: frame.observedAt,
+            });
           } else if (frame.kind === "release") {
-            handlers.onRelease?.({ kind: "release", accelerator: frame.accelerator, observedAt: frame.observedAt });
+            handlers.onRelease?.({
+              kind: "release",
+              accelerator: frame.accelerator,
+              observedAt: frame.observedAt,
+            });
           }
         },
         error: () => {},

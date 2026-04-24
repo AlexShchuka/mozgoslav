@@ -56,7 +56,6 @@ const PERMISSION_TEST_ID: Partial<Record<OnboardingStepKey, "mic" | "ax">> = {
   dictation: "ax",
 };
 
-
 const Onboarding: FC<OnboardingProps> = ({ currentStepIndex, onNextStep, onComplete }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -72,7 +71,9 @@ const Onboarding: FC<OnboardingProps> = ({ currentStepIndex, onNextStep, onCompl
   const refreshBundleModels = useCallback(async () => {
     try {
       const data = await graphqlClient.request(QueryModelsDocument);
-      setBundleModels(data.models.filter((m) => m.tier === ModelTier.Bundle) as unknown as ModelEntry[]);
+      setBundleModels(
+        data.models.filter((m) => m.tier === ModelTier.Bundle) as unknown as ModelEntry[]
+      );
     } catch (err) {
       toast.error(
         err instanceof Error

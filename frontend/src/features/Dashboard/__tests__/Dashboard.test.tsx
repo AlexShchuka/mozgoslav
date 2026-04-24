@@ -22,14 +22,12 @@ jest.mock("../../../api/graphqlClient", () => {
   return {
     graphqlClient: { request: mockRequest },
     getGraphqlWsClient: jest.fn(() => ({
-      subscribe: jest.fn(
-        (query: { query: string }, sink: SubscriptionSink<unknown>) => {
-          if (query.query && query.query.includes("audioDeviceChanged")) {
-            audioDeviceSink = sink;
-          }
-          return () => {};
+      subscribe: jest.fn((query: { query: string }, sink: SubscriptionSink<unknown>) => {
+        if (query.query && query.query.includes("audioDeviceChanged")) {
+          audioDeviceSink = sink;
         }
-      ),
+        return () => {};
+      }),
       dispose: jest.fn(),
     })),
   };
