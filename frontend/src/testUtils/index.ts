@@ -21,5 +21,6 @@ export {
   mockBackupsState,
   mockOnboardingState,
   mockRagState,
+  mockHotkeysState,
   mergeMockState,
 } from "./mockState";

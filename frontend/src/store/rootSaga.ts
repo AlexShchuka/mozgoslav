@@ -14,6 +14,7 @@ import { subscribeAudioDevices, watchAudioDevicesSagas } from "./slices/audioDev
 import { watchNotesSagas } from "./slices/notes";
 import { watchModelsSagas } from "./slices/models";
 import { watchBackupsSagas } from "./slices/backups";
+import { subscribeHotkeys, watchHotkeysSagas } from "./slices/hotkeys";
 
 function* bootstrapJobsSubscription(): SagaIterator {
   yield put(subscribeJobs());
@@ -21,6 +22,10 @@ function* bootstrapJobsSubscription(): SagaIterator {
 
 function* bootstrapAudioDevicesSubscription(): SagaIterator {
   yield put(subscribeAudioDevices());
+}
+
+function* bootstrapHotkeysSubscription(): SagaIterator {
+  yield put(subscribeHotkeys());
 }
 
 export function* rootSaga(): SagaIterator {
@@ -41,5 +46,7 @@ export function* rootSaga(): SagaIterator {
     fork(watchNotesSagas),
     fork(watchModelsSagas),
     fork(watchBackupsSagas),
+    fork(watchHotkeysSagas),
+    fork(bootstrapHotkeysSubscription),
   ]);
 }

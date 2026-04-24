@@ -1,16 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useSelector } from "react-redux";
 
-import { print } from "graphql";
+import { selectLastHotkeyPress, selectLastHotkeyRelease } from "../store/slices/hotkeys";
+import type { HotkeyEventFrame } from "../store/slices/hotkeys";
 
-import { SubscriptionHotkeyEventsDocument } from "../api/gql/graphql";
-import type { SubscriptionHotkeyEventsSubscription } from "../api/gql/graphql";
-import { getGraphqlWsClient } from "../api/graphqlClient";
-
-export interface HotkeyEventFrame {
-  kind: "press" | "release";
-  accelerator: string;
-  observedAt: string;
-}
+export type { HotkeyEventFrame };
 
 export interface UsePushToTalkHandlers {
   onPress?: (event: HotkeyEventFrame) => void;
@@ -18,35 +12,22 @@ export interface UsePushToTalkHandlers {
 }
 
 export const usePushToTalk = (handlers: UsePushToTalkHandlers): void => {
+  const lastPress = useSelector(selectLastHotkeyPress);
+  const lastRelease = useSelector(selectLastHotkeyRelease);
+  const lastPressSeenRef = useRef<string | null>(null);
+  const lastReleaseSeenRef = useRef<string | null>(null);
+
   useEffect(() => {
-    const wsClient = getGraphqlWsClient();
-    const unsubscribe = wsClient.subscribe<SubscriptionHotkeyEventsSubscription>(
-      { query: print(SubscriptionHotkeyEventsDocument) },
-      {
-        next: (value) => {
-          if (!value.data) return;
-          const frame = value.data.hotkeyEvents;
-          if (frame.kind === "press") {
-            handlers.onPress?.({
-              kind: "press",
-              accelerator: frame.accelerator,
-              observedAt: frame.observedAt,
-            });
-          } else if (frame.kind === "release") {
-            handlers.onRelease?.({
-              kind: "release",
-              accelerator: frame.accelerator,
-              observedAt: frame.observedAt,
-            });
-          }
-        },
-        error: () => {},
-        complete: () => {},
-      }
-    );
-    return () => {
-      unsubscribe();
-      void wsClient.dispose();
-    };
-  }, [handlers]);
+    if (!lastPress) return;
+    if (lastPressSeenRef.current === lastPress.observedAt) return;
+    lastPressSeenRef.current = lastPress.observedAt;
+    handlers.onPress?.(lastPress);
+  }, [lastPress, handlers]);
+
+  useEffect(() => {
+    if (!lastRelease) return;
+    if (lastReleaseSeenRef.current === lastRelease.observedAt) return;
+    lastReleaseSeenRef.current = lastRelease.observedAt;
+    handlers.onRelease?.(lastRelease);
+  }, [lastRelease, handlers]);
 };

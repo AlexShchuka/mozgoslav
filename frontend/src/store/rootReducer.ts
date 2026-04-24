@@ -27,6 +27,8 @@ import type { ModelsState } from "./slices/models";
 import { modelsReducer } from "./slices/models";
 import type { BackupsState } from "./slices/backups";
 import { backupsReducer } from "./slices/backups";
+import type { HotkeysState } from "./slices/hotkeys";
+import { hotkeysReducer } from "./slices/hotkeys";
 
 export const rootReducer = combineReducers({
   recording: recordingReducer,
@@ -43,6 +45,7 @@ export const rootReducer = combineReducers({
   notes: notesReducer,
   models: modelsReducer,
   backups: backupsReducer,
+  hotkeys: hotkeysReducer,
 });
 
 export interface GlobalState {
@@ -60,4 +63,5 @@ export interface GlobalState {
   notes: NotesState;
   models: ModelsState;
   backups: BackupsState;
+  hotkeys: HotkeysState;
 }

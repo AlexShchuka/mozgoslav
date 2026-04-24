@@ -16,10 +16,6 @@ jest.mock("../../../api/dictationPush", () => ({
   pushDictationAudio: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock("../../../hooks/usePushToTalk", () => ({
-  usePushToTalk: jest.fn(),
-}));
-
 jest.mock("react-toastify", () => ({
   toast: {
     info: jest.fn(),

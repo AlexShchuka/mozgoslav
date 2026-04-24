@@ -22,3 +22,12 @@ npx prettier --check "src/**/*.{ts,tsx,css}" "electron/**/*.ts"
 - Every user-facing string via `useTranslation`; keys in both `ru.json` and `en.json`.
 - Sensitive inputs via the `<Input sensitive />` primitive; never logged.
 - New feature or slice → `npm run plop`, never hand-scaffold.
+- Transport policy (per #120): components and hooks never import `graphqlClient`
+  or `getGraphqlWsClient`. All GraphQL operations go through Redux-Saga: a
+  component/hook dispatches an action triple (`*Requested` / `*Succeeded` /
+  `*Failed`), a saga owns the `graphqlClient.request`, reducer reflects the
+  outcome, selectors expose the state. Tests preload state via
+  `testUtils/mockState.ts` helpers and assert via `renderWithStore`'s
+  `getActions()`; no `jest.mock("graphqlClient")` under `src/features/**/__tests__/`
+  or `src/components/**/__tests__/`. The sole legitimate REST caller remains
+  `src/api/dictationPush.ts` (binary audio push).

@@ -15,6 +15,7 @@ import { initialModelsState, type ModelsState } from "../store/slices/models";
 import { initialBackupsState, type BackupsState } from "../store/slices/backups";
 import { initialOnboardingState, type OnboardingState } from "../store/slices/onboarding";
 import { initialRagState, type RagState } from "../store/slices/rag";
+import { initialHotkeysState, type HotkeysState } from "../store/slices/hotkeys";
 
 export const jobsById = (jobs: readonly ProcessingJob[]): Record<string, ProcessingJob> =>
   Object.fromEntries(jobs.map((job) => [job.id, job]));
@@ -88,6 +89,12 @@ export const mockOnboardingState = (
 
 export const mockRagState = (patch: Partial<RagState> = {}): Pick<GlobalState, "rag"> => ({
   rag: { ...initialRagState, ...patch },
+});
+
+export const mockHotkeysState = (
+  patch: Partial<HotkeysState> = {}
+): Pick<GlobalState, "hotkeys"> => ({
+  hotkeys: { ...initialHotkeysState, ...patch },
 });
 
 export const mergeMockState = (...parts: Partial<GlobalState>[]): Partial<GlobalState> =>
