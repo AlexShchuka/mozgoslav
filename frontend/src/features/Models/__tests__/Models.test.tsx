@@ -43,7 +43,7 @@ const renderModels = () =>
 describe("Models page — task #13 inline download progress", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (global as any).EventSource = StubEventSource;
+    (global as { EventSource: typeof EventSource }).EventSource = StubEventSource as unknown as typeof EventSource;
     mockApi.modelsApi.list.mockResolvedValue([
       {
         id: "whisper-small-russian-bundle",

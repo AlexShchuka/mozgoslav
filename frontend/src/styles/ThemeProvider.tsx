@@ -30,7 +30,7 @@ const MozgoslavThemeProvider: FC<PropsWithChildren> = ({ children }) => {
   }, [mode]);
 
   useEffect(() => {
-    (window as any).__mozgoslavSetThemeMode = setMode;
+    window.__mozgoslavSetThemeMode = setMode;
   }, []);
 
   return (
@@ -42,7 +42,7 @@ const MozgoslavThemeProvider: FC<PropsWithChildren> = ({ children }) => {
 };
 
 export const setThemeMode = (next: ThemeMode): void => {
-  (window as any).__mozgoslavSetThemeMode?.(next);
+  window.__mozgoslavSetThemeMode?.(next);
 };
 
 export default MozgoslavThemeProvider;

@@ -31,7 +31,7 @@ class StubEventSource {
 describe("Home — unified Dashboard + HomeList page", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (global as any).EventSource = StubEventSource;
+    (global as { EventSource: typeof EventSource }).EventSource = StubEventSource as unknown as typeof EventSource;
     mockApi.recordingApi.getAll.mockResolvedValue([]);
     mockApi.jobsApi.list.mockResolvedValue([]);
   });
