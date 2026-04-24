@@ -1,5 +1,4 @@
 import { expectSaga } from "redux-saga-test-plan";
-import * as matchers from "redux-saga-test-plan/matchers";
 import { throwError } from "redux-saga-test-plan/providers";
 
 import { notifySuccess, notifyWarning } from "../../notifications";
@@ -7,17 +6,14 @@ import { checkLlm, checkLlmDone } from "../actions";
 import { checkLlmSaga } from "../saga/checkLlmSaga";
 import { settingsReducer } from "../reducer";
 
-jest.mock("../../../../api", () => {
-  const healthStub = { checkLlm: jest.fn() };
-  return {
-    apiFactory: { createHealthApi: () => healthStub },
-    __healthStub: healthStub,
-  };
-});
+jest.mock("../../../../api/graphqlClient", () => ({
+  graphqlClient: { request: jest.fn() },
+  getGraphqlWsClient: jest.fn(),
+}));
 
-const healthStub = (
-  jest.requireMock("../../../../api") as { __healthStub: { checkLlm: jest.Mock } }
-).__healthStub;
+import { graphqlClient } from "../../../../api/graphqlClient";
+
+const mockedRequest = graphqlClient.request as jest.Mock;
 
 const dispatch = (action: unknown) => action as Parameters<typeof settingsReducer>[1];
 
@@ -25,9 +21,10 @@ describe("checkLlmSaga", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("emits notifySuccess + CHECK_LLM_DONE on ok=true", async () => {
+    mockedRequest.mockResolvedValueOnce({ llmHealth: { available: true } });
+
     const result = await expectSaga(checkLlmSaga)
       .withReducer(settingsReducer)
-      .provide([[matchers.call.fn(healthStub.checkLlm), true]])
       .put(notifySuccess({ messageKey: "settings.llmCheckSuccessToast" }))
       .put(checkLlmDone())
       .run();
@@ -36,9 +33,10 @@ describe("checkLlmSaga", () => {
   });
 
   it("emits notifyWarning + CHECK_LLM_DONE on ok=false", async () => {
+    mockedRequest.mockResolvedValueOnce({ llmHealth: { available: false } });
+
     const result = await expectSaga(checkLlmSaga)
       .withReducer(settingsReducer)
-      .provide([[matchers.call.fn(healthStub.checkLlm), false]])
       .put(notifyWarning({ messageKey: "settings.llmCheckFailureToast" }))
       .put(checkLlmDone())
       .run();
@@ -47,9 +45,10 @@ describe("checkLlmSaga", () => {
   });
 
   it("emits notifyWarning + CHECK_LLM_DONE when API throws", async () => {
+    mockedRequest.mockRejectedValueOnce(new Error("down"));
+
     const result = await expectSaga(checkLlmSaga)
       .withReducer(settingsReducer)
-      .provide([[matchers.call.fn(healthStub.checkLlm), throwError(new Error("down"))]])
       .put(notifyWarning({ messageKey: "settings.llmCheckFailureToast" }))
       .put(checkLlmDone())
       .run();

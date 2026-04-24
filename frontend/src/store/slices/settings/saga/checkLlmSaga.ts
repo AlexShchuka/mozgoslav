@@ -1,15 +1,17 @@
-import { call, put, takeLatest } from "redux-saga/effects";
+import { put, takeLatest } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 
-import { apiFactory } from "../../../../api";
+import type { QueryLlmHealthQuery } from "../../../../api/gql/graphql";
+import { QueryLlmHealthDocument } from "../../../../api/gql/graphql";
+import { gqlRequest } from "../../../saga/graphql";
 import { notifySuccess, notifyWarning } from "../../notifications";
 import { CHECK_LLM, checkLlmDone } from "../actions";
 
 export function* checkLlmSaga(): SagaIterator {
-  const healthApi = apiFactory.createHealthApi();
   let ok = false;
   try {
-    ok = yield call([healthApi, healthApi.checkLlm]);
+    const result = (yield* gqlRequest(QueryLlmHealthDocument, {})) as QueryLlmHealthQuery;
+    ok = result.llmHealth.available;
   } catch {
     ok = false;
   }

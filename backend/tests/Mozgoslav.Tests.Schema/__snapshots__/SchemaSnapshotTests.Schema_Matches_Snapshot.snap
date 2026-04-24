@@ -1,7 +1,23 @@
-﻿schema {
+schema {
   query: QueryType
   mutation: MutationType
   subscription: SubscriptionType
+}
+
+type HealthStatus {
+  status: String!
+  time: String!
+}
+
+type LlmHealthStatus {
+  available: Boolean!
+}
+
+type MetaInfo {
+  version: String!
+  assemblyVersion: String!
+  commit: String!
+  buildDate: String!
 }
 
 type MutationType {
@@ -9,9 +25,14 @@ type MutationType {
 }
 
 type QueryType {
-  placeholder: Boolean!
+  health: HealthStatus!
+  llmHealth: LlmHealthStatus! @cost(weight: "10")
+  meta: MetaInfo!
 }
 
 type SubscriptionType {
   placeholder: Boolean!
 }
+
+"The purpose of the `cost` directive is to define a `weight` for GraphQL types, fields, and arguments. Static analysis can use these weights when calculating the overall cost of a query or response."
+directive @cost("The `weight` argument defines what value to add to the overall cost for every appearance, or possible appearance, of a type, field, argument, etc." weight: String!) on SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM | INPUT_FIELD_DEFINITION
