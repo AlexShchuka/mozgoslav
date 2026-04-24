@@ -15,13 +15,15 @@ public static class TestInfrastructure
 
     [AssemblyInitialize]
     [Timeout(60_000)]
-    public static Task AssemblyInitialize(TestContext context)
+    public static async Task AssemblyInitialize(TestContext context)
     {
         _ = context;
-        _factory?.Dispose();
+        if (_factory is not null)
+        {
+            await _factory.DisposeAsync();
+        }
         _factory = new ApiFactory();
         _ = _factory.Services;
-        return Task.CompletedTask;
     }
 
     [AssemblyCleanup]

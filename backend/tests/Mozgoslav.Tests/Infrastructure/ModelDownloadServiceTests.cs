@@ -13,8 +13,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Mozgoslav.Infrastructure.Services;
 
-using NSubstitute;
-
 namespace Mozgoslav.Tests.Infrastructure;
 
 [TestClass]
@@ -109,15 +107,16 @@ public sealed class ModelDownloadServiceTests : IDisposable
     {
         _handler?.Dispose();
         _client?.Dispose();
-        var handler = new ScriptedHandler(responder);
-        var client = new HttpClient(handler, disposeHandler: false);
-        _handler = handler;
-        _client = client;
-        var factory = Substitute.For<IHttpClientFactory>();
-#pragma warning disable IDISP004 
-        factory.CreateClient(Arg.Any<string>()).Returns(client);
-#pragma warning restore IDISP004
-        return factory;
+        _handler = new ScriptedHandler(responder);
+        _client = new HttpClient(_handler, disposeHandler: false);
+        return new StubHttpClientFactory(_client);
+    }
+
+    private sealed class StubHttpClientFactory : IHttpClientFactory
+    {
+        private readonly HttpClient _client;
+        public StubHttpClientFactory(HttpClient client) => _client = client;
+        public HttpClient CreateClient(string name) => _client;
     }
 
     public required TestContext TestContext { get; set; }

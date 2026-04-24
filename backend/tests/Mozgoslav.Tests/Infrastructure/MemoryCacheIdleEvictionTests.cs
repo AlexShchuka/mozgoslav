@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 using FluentAssertions;
@@ -7,9 +8,11 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace Mozgoslav.Tests.Infrastructure;
 
-#pragma warning disable IDISP001, CA2000
-
 [TestClass]
+[SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP001:Dispose created",
+    Justification = "MemoryCache takes ownership of cached disposables via PostEvictionCallback; lifecycle is covered by the eviction tests in this class.")]
+[SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope",
+    Justification = "Same as IDISP001 — cached disposables are owned by the MemoryCache instance being tested.")]
 public sealed class MemoryCacheIdleEvictionTests
 {
     [TestMethod]

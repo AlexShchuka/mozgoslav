@@ -22,9 +22,11 @@ namespace Mozgoslav.Tests.Integration;
 [TestClass]
 public sealed class OllamaLlmProviderTests
 {
+    private static readonly HttpClient SharedHttpClient = new();
+    private static readonly IHttpClientFactory StubFactory = new StubHttpClientFactory(SharedHttpClient);
+
     private WireMockServer _server = null!;
     private IAppSettings _settings = null!;
-    private IHttpClientFactory _httpFactory = null!;
     private OllamaLlmProvider _provider = null!;
 
     [TestInitialize]
@@ -36,12 +38,7 @@ public sealed class OllamaLlmProviderTests
         _settings.LlmApiKey.Returns(string.Empty);
         _settings.LlmModel.Returns("qwen2.5:14b");
 
-        _httpFactory = Substitute.For<IHttpClientFactory>();
-#pragma warning disable CA2000, IDISP004
-        _httpFactory.CreateClient(Arg.Any<string>()).Returns(_ => new HttpClient());
-#pragma warning restore CA2000, IDISP004
-
-        _provider = new OllamaLlmProvider(_settings, _httpFactory, NullLogger<OllamaLlmProvider>.Instance);
+        _provider = new OllamaLlmProvider(_settings, StubFactory, NullLogger<OllamaLlmProvider>.Instance);
     }
 
     [TestCleanup]

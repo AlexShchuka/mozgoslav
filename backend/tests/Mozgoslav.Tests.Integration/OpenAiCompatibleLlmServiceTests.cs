@@ -23,9 +23,11 @@ namespace Mozgoslav.Tests.Integration;
 [TestClass]
 public sealed class OpenAiCompatibleLlmServiceTests
 {
+    private static readonly HttpClient SharedHttpClient = new();
+    private static readonly IHttpClientFactory StubFactory = new StubHttpClientFactory(SharedHttpClient);
+
     private WireMockServer _server = null!;
     private IAppSettings _settings = null!;
-    private IHttpClientFactory _httpFactory = null!;
     private OpenAiCompatibleLlmService _service = null!;
 
     [TestInitialize]
@@ -38,18 +40,13 @@ public sealed class OpenAiCompatibleLlmServiceTests
         _settings.LlmApiKey.Returns("test-key");
         _settings.LlmModel.Returns("test-model");
 
-        _httpFactory = Substitute.For<IHttpClientFactory>();
-#pragma warning disable CA2000, IDISP004
-        _httpFactory.CreateClient(Arg.Any<string>()).Returns(_ => new HttpClient());
-#pragma warning restore CA2000, IDISP004
-
         var openAiProvider = new OpenAiCompatibleLlmProvider(
             _settings, NullLogger<OpenAiCompatibleLlmProvider>.Instance);
         var providerFactory = Substitute.For<ILlmProviderFactory>();
         providerFactory.GetCurrentAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult<ILlmProvider>(openAiProvider));
 
         _service = new OpenAiCompatibleLlmService(
-            providerFactory, _settings, _httpFactory, NullLogger<OpenAiCompatibleLlmService>.Instance);
+            providerFactory, _settings, StubFactory, NullLogger<OpenAiCompatibleLlmService>.Instance);
     }
 
     [TestCleanup]

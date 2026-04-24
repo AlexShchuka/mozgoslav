@@ -22,9 +22,11 @@ namespace Mozgoslav.Tests.Integration;
 [TestClass]
 public sealed class AnthropicLlmProviderTests
 {
+    private static readonly HttpClient SharedHttpClient = new();
+    private static readonly IHttpClientFactory StubFactory = new StubHttpClientFactory(SharedHttpClient);
+
     private WireMockServer _server = null!;
     private IAppSettings _settings = null!;
-    private IHttpClientFactory _httpFactory = null!;
     private AnthropicLlmProvider _provider = null!;
 
     [TestInitialize]
@@ -36,12 +38,7 @@ public sealed class AnthropicLlmProviderTests
         _settings.LlmApiKey.Returns("sk-ant-test");
         _settings.LlmModel.Returns("claude-3-5-sonnet-20241022");
 
-        _httpFactory = Substitute.For<IHttpClientFactory>();
-#pragma warning disable CA2000, IDISP004
-        _httpFactory.CreateClient(Arg.Any<string>()).Returns(_ => new HttpClient());
-#pragma warning restore CA2000, IDISP004
-
-        _provider = new AnthropicLlmProvider(_settings, _httpFactory, NullLogger<AnthropicLlmProvider>.Instance);
+        _provider = new AnthropicLlmProvider(_settings, StubFactory, NullLogger<AnthropicLlmProvider>.Instance);
     }
 
     [TestCleanup]
