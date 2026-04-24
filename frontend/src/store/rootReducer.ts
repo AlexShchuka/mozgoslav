@@ -25,6 +25,8 @@ import type { NotesState } from "./slices/notes";
 import { notesReducer } from "./slices/notes";
 import type { ModelsState } from "./slices/models";
 import { modelsReducer } from "./slices/models";
+import type { BackupsState } from "./slices/backups";
+import { backupsReducer } from "./slices/backups";
 
 export const rootReducer = combineReducers({
   recording: recordingReducer,
@@ -40,6 +42,7 @@ export const rootReducer = combineReducers({
   audioDevices: audioDevicesReducer,
   notes: notesReducer,
   models: modelsReducer,
+  backups: backupsReducer,
 });
 
 export interface GlobalState {
@@ -56,4 +59,5 @@ export interface GlobalState {
   audioDevices: AudioDevicesState;
   notes: NotesState;
   models: ModelsState;
+  backups: BackupsState;
 }

@@ -18,5 +18,6 @@ export {
   mockModelsState,
   mockProfilesState,
   profilesById,
+  mockBackupsState,
   mergeMockState,
 } from "./mockState";
