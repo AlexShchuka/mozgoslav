@@ -7,6 +7,29 @@ import Dashboard from "../Dashboard";
 import { lightTheme } from "../../../styles/theme";
 import "../../../i18n";
 
+type SubscriptionSink<T> = {
+  next: (value: { data: T }) => void;
+  error: (err: unknown) => void;
+  complete: () => void;
+};
+
+let audioDeviceSink: SubscriptionSink<unknown> | null = null;
+
+jest.mock("../../../api/graphqlClient", () => ({
+  graphqlClient: { request: jest.fn() },
+  getGraphqlWsClient: jest.fn(() => ({
+    subscribe: jest.fn(
+      (query: { query: string }, sink: SubscriptionSink<unknown>) => {
+        if (query.query && query.query.includes("audioDeviceChanged")) {
+          audioDeviceSink = sink;
+        }
+        return () => {};
+      }
+    ),
+    dispose: jest.fn(),
+  })),
+}));
+
 jest.mock("../../../api", () => {
   const actual = jest.requireActual("../../../api");
   const recordingStub = {
@@ -127,6 +150,7 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     lastRecorder = null;
+    audioDeviceSink = null;
   });
 
   it("Dashboard_RecordButton_IdleToRecording", async () => {
@@ -183,41 +207,26 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
     await waitFor(() => expect(screen.getByText(/NotAllowedError/)).toBeInTheDocument());
   });
 
-  it("Dashboard_DeviceChangedSse_ShowsToastOnHotPlug", async () => {
+  it("Dashboard_DeviceChangedGql_ShowsToastOnHotPlug", async () => {
     installMocks();
 
-    const listeners = new Map<string, (event: MessageEvent) => void>();
-    const closeMock = jest.fn();
+    renderDashboard();
 
-    class FakeEventSource {
-      public close = closeMock;
+    await waitFor(() => expect(audioDeviceSink).not.toBeNull());
 
-      public addEventListener(name: string, cb: (event: MessageEvent) => void): void {
-        listeners.set(name, cb);
-      }
-    }
-
-    const originalEventSource = (globalThis as { EventSource: typeof EventSource }).EventSource;
-    (globalThis as { EventSource: typeof EventSource }).EventSource =
-      FakeEventSource as unknown as typeof EventSource;
-
-    try {
-      renderDashboard();
-      await waitFor(() => expect(listeners.has("device-changed")).toBe(true));
-
-      act(() => {
-        listeners.get("device-changed")?.({
-          data: JSON.stringify({
+    act(() => {
+      audioDeviceSink!.next({
+        data: {
+          audioDeviceChanged: {
             kind: "connected",
             devices: [{ id: "id-1", name: "AirPods Pro", isDefault: true }],
-          }),
-        } as MessageEvent);
+            observedAt: new Date().toISOString(),
+          },
+        },
       });
+    });
 
-      await waitFor(() => expect(screen.getByText(/AirPods Pro/)).toBeInTheDocument());
-    } finally {
-      (globalThis as { EventSource: typeof EventSource }).EventSource = originalEventSource;
-    }
+    await waitFor(() => expect(screen.getByText(/AirPods Pro/)).toBeInTheDocument());
   });
 
   it("Dashboard_GlobalHotkey_StartsDictation", async () => {

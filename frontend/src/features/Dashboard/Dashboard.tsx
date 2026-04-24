@@ -7,8 +7,12 @@ import { toast } from "react-toastify";
 import AudioLevelMeter from "../../components/AudioLevelMeter";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
+import { print } from "graphql";
+
+import { SubscriptionAudioDeviceChangedDocument } from "../../api/gql/graphql";
+import type { SubscriptionAudioDeviceChangedSubscription } from "../../api/gql/graphql";
+import { getGraphqlWsClient } from "../../api/graphqlClient";
 import { apiFactory } from "../../api";
-import { API_ENDPOINTS, BACKEND_URL } from "../../constants/api";
 import { GLOBAL_HOTKEY_REDISPATCH_EVENT, RECORDINGS_CHANGED_EVENT } from "../../constants/events";
 import { usePushToTalk } from "../../hooks/usePushToTalk";
 import {
@@ -49,25 +53,28 @@ const Dashboard: FC = () => {
   const chunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || typeof window.EventSource === "undefined") {
-      return undefined;
-    }
-    const es = new EventSource(`${BACKEND_URL}${API_ENDPOINTS.devicesStream}`);
-    es.addEventListener("device-changed", (event) => {
-      try {
-        const payload = JSON.parse((event as MessageEvent).data) as {
-          kind: string;
-          devices: { id: string; name: string; isDefault: boolean }[];
-        };
-        if (payload.kind === "snapshot") return;
-        const defaultName =
-          payload.devices.find((d) => d.isDefault)?.name ??
-          payload.devices[0]?.name ??
-          t("dashboard.deviceUnknown");
-        toast.info(t("dashboard.deviceChanged", { kind: payload.kind, name: defaultName }));
-      } catch {}
-    });
-    return () => es.close();
+    const wsClient = getGraphqlWsClient();
+    const unsubscribe = wsClient.subscribe<SubscriptionAudioDeviceChangedSubscription>(
+      { query: print(SubscriptionAudioDeviceChangedDocument) },
+      {
+        next: (value) => {
+          if (!value.data) return;
+          const payload = value.data.audioDeviceChanged;
+          if (payload.kind === "snapshot") return;
+          const defaultName =
+            payload.devices.find((d) => d.isDefault)?.name ??
+            payload.devices[0]?.name ??
+            t("dashboard.deviceUnknown");
+          toast.info(t("dashboard.deviceChanged", { kind: payload.kind, name: defaultName }));
+        },
+        error: () => {},
+        complete: () => {},
+      }
+    );
+    return () => {
+      unsubscribe();
+      void wsClient.dispose();
+    };
   }, [t]);
 
   const onDrop = useCallback(async (files: File[]) => {
