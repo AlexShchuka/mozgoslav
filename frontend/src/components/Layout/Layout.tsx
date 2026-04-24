@@ -1,6 +1,7 @@
 import { FC, ReactNode, useCallback } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import type { Action, Dispatch } from "redux";
 import { useTranslation } from "react-i18next";
 import {
   Archive,
@@ -49,7 +50,7 @@ const Layout: FC<LayoutProps> = ({ children }) => {
   const health = useBackendHealth();
   const location = useLocation();
   const navigate = useNavigate();
-  const dispatch = useDispatch() as (action: any) => void;
+  const dispatch = useDispatch<Dispatch<Action>>();
   const onboardingCompleted = useSelector(selectOnboardingCompleted);
   const isHealthy = health.status === "ok";
 

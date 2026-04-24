@@ -10,15 +10,14 @@ using Mozgoslav.Application.Interfaces;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class LlmProviderFactoryIntegrationTests
+public sealed class LlmProviderFactoryIntegrationTests : IntegrationTestsBase
 {
     [TestMethod]
     public async Task Factory_SwitchesOnSetting()
     {
-        await using var factory = new ApiFactory();
-        using var _ = factory.CreateClient();
+        using var _ = CreateClient();
 
-        using var scope = factory.Services.CreateScope();
+        using var scope = Factory.Services.CreateScope();
         var providerFactory = scope.ServiceProvider.GetRequiredService<ILlmProviderFactory>();
         var settings = scope.ServiceProvider.GetRequiredService<IAppSettings>();
 

@@ -32,7 +32,7 @@ public sealed class EfProcessingJobRepositoryTests
         var fetched = await new EfProcessingJobRepository(freshCtx).GetByIdAsync(job.Id, CancellationToken.None);
 
         fetched.Should().NotBeNull();
-        fetched!.Status.Should().Be(JobStatus.Queued);
+        fetched.Status.Should().Be(JobStatus.Queued);
     }
 
     [TestMethod]

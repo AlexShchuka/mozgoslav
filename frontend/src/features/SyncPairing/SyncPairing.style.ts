@@ -19,7 +19,7 @@ export const QrBox = styled.div`
 
 export const QrFrame = styled.div`
   padding: ${({ theme }) => theme.space(3)};
-  background: #ffffff;
+  background: #fff;
   border-radius: ${({ theme }) => theme.radii.md};
   border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   line-height: 0;

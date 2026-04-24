@@ -11,15 +11,14 @@ using Mozgoslav.Domain.Entities;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class NoteManualCreateTests
+public sealed class NoteManualCreateTests : IntegrationTestsBase
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     [TestMethod]
     public async Task Post_Notes_WithTitleAndBody_Returns201_AndPersistsManualNote()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsJsonAsync(
             "/api/notes",
@@ -41,8 +40,7 @@ public sealed class NoteManualCreateTests
     [TestMethod]
     public async Task Post_Notes_WithoutBody_ReturnsCreatedStubWithDefaults()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsJsonAsync(
             "/api/notes",
@@ -54,6 +52,4 @@ public sealed class NoteManualCreateTests
         created.GetProperty("id").GetGuid().Should().NotBeEmpty();
         created.TryGetProperty("markdownContent", out _).Should().BeTrue();
     }
-
-    public TestContext TestContext { get; set; } = null!;
 }

@@ -4,7 +4,7 @@ macOS-first desktop second-brain. Electron + React UI ↔ ASP.NET Minimal API ba
 
 ## Rules (strict, global)
 
-1. Docs are organized by feature under `docs/features/<name>/`. Each feature may have `decisions/` (shipped architectural decisions) and `backlog/` (one file per deferred item — retire an item by moving that file to `.archive/`). No central index files. No files that enumerate features.
+1. Docs are organized by feature under `docs/features/<name>/`. Each feature may have `decisions/` (shipped architectural decisions), `backlog/` (one file per deferred item), and `bugs/` (one file per known issue). Retire any of them by moving that file to `.archive/`. No central index files. No files that enumerate features.
 2. Decisions are robot-readable: compact bullets, YAML frontmatter, concept-level only. No prose, no narrative, no file paths in the body.
 3. `.archive/` is write-only scrap. Move superseded files in, flat. Never edit anything already inside.
 4. No comments in code. No XML `///` summaries. No TODO/FIXME in committed code. Name things clearly instead.
@@ -14,6 +14,24 @@ macOS-first desktop second-brain. Electron + React UI ↔ ASP.NET Minimal API ba
 8. Never bump package versions, add telemetry, or introduce backwards-compat shims unless explicitly asked.
 9. Privacy posture is immutable: no outbound traffic except to endpoints explicitly configured in settings; no auto-update pings; no crash reporters; CSP grants only what is in use today.
 10. One PR = one focused change. No drive-by refactors. Stop on ambiguity and ask.
+
+## Anti-patterns (do-not catalogue)
+
+Explicit do-nots, one line each with a concrete example. Agents pattern-match these faster than positive rules.
+
+- Primary constructors in C# — `class Foo(IBar bar)` is banned; write explicit `readonly` field + traditional ctor instead.
+- `//` / `/* */` comments in code — remove them; rename the symbol instead of annotating it.
+- XML `///` summaries — banned on any production type or member; `CS1591` is suppressed precisely because XML docs should not exist.
+- TODO / FIXME / HACK markers in committed code — open a backlog file under `docs/features/<feature>/backlog/` instead.
+- Inline CSS — no `style={{ color: 'red' }}`; use `styled-components` and theme tokens.
+- CSS modules / Tailwind / plain `.css` imports — only `styled-components` inside `src/`.
+- React class components — function components + hooks only.
+- Bare `fetch`/`axios` inside a component — go through `src/api/ApiFactory` and a per-domain client.
+- Log statements that include secrets / tokens / passwords — render sensitive values via the `<Input sensitive />` primitive and never pass them to any logger.
+- Blocking / synchronous calls inside a saga — use `call(effect, ...)` / `race` / `take` effects; never `await` a raw promise or call `.then`.
+- Secrets stored in environment variables — use the SQLite `settings` store and the sensitive-input primitive; env vars are for paths and feature flags only.
+- `#region` in C# — indicates a file that should be split.
+- Hand-written frontend feature scaffolds — run `npm run plop` instead.
 
 ## Layout
 
@@ -82,7 +100,7 @@ Frontend top-level:
 
 - One class per file. No `#region`. No primary constructors — explicit `readonly` fields in traditional ctors.
 - `sealed` on leaf classes. `internal` unless cross-project visibility is required.
-- Central package management via `Directory.Packages.props` (floating majors). Central build props: `TargetFramework=net10.0`, `LangVersion=14`, `Nullable=enable`, `TreatWarningsAsErrors=true`.
+- Central package management via `Directory.Packages.props` with exact pins on every package. Renovate opens weekly bump PRs. Central build props: `TargetFramework=net10.0`, `LangVersion=14`, `Nullable=enable`, `TreatWarningsAsErrors=true`.
 - Tests: MSTest + FluentAssertions + NSubstitute. Integration tests spin real SQLite temp files via the shared test database.
 
 ## Frontend conventions
@@ -101,6 +119,7 @@ Frontend top-level:
 - New frontend feature → use the plop generator. Never hand-write the scaffold.
 - New architectural decision → `docs/features/<feature>/decisions/<slug>.md` in robot style.
 - New deferred item → `docs/features/<feature>/backlog/<slug>.md`, one concept per file. Move to `.archive/` when retired.
+- New known bug → `docs/features/<feature>/bugs/<slug>.md`, one issue per file. Move to `.archive/` when the fix ships.
 
 ## Config & environment
 

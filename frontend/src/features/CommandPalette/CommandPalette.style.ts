@@ -3,9 +3,8 @@ import styled from "styled-components";
 export const Backdrop = styled.div`
   position: fixed;
   inset: 0;
-  background: rgba(10, 12, 18, 0.55);
+  background: rgb(10, 12, 18, 0.55);
   backdrop-filter: blur(10px) saturate(140%);
-  -webkit-backdrop-filter: blur(10px) saturate(140%);
   display: flex;
   align-items: flex-start;
   justify-content: center;

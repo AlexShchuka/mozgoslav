@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -25,6 +26,8 @@ public sealed class FfmpegAudioConverter : IAudioConverter
         _logger = logger;
     }
 
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP001:Dispose created",
+        Justification = "CliWrap Command + ExecuteAsync own and dispose the underlying process and its pipe targets internally; no caller-visible disposable escapes this method.")]
     public async Task<string> ConvertToWavAsync(string inputPath, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(inputPath);
@@ -40,7 +43,6 @@ public sealed class FfmpegAudioConverter : IAudioConverter
 
         try
         {
-#pragma warning disable IDISP001
             var result = await Cli.Wrap(FfmpegExecutable)
                 .WithArguments(args => args
                     .Add("-y")
@@ -53,7 +55,6 @@ public sealed class FfmpegAudioConverter : IAudioConverter
                 .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync(ct)
                 .ConfigureAwait(false);
-#pragma warning restore IDISP001
 
             if (result.ExitCode != 0)
             {

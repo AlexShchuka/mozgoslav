@@ -1,5 +1,6 @@
 import { FC, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import type { Action, Dispatch } from "redux";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -25,7 +26,7 @@ const TABS: readonly { key: SyncView; labelKey: string }[] = [
 const Sync: FC = () => {
   const { t } = useTranslation();
   const [view, setView] = useState<SyncView>("devices");
-  const dispatch = useDispatch() as (action: any) => void;
+  const dispatch = useDispatch<Dispatch<Action>>();
   const status = useSelector(selectSyncStatus);
 
   useEffect(() => {

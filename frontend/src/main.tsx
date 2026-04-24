@@ -9,7 +9,7 @@ import App from "./App";
 import { configureAppStore } from "./store";
 import MozgoslavThemeProvider from "./styles/ThemeProvider";
 import "./i18n";
-import "react-toastify/dist/ReactToastify.css";
+import "react-toastify/ReactToastify.css";
 
 const { store } = configureAppStore();
 

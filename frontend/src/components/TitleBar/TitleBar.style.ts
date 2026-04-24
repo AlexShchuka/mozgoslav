@@ -34,6 +34,7 @@ export const TitleBarRoot = styled.header`
   align-items: center;
   justify-content: center;
   gap: ${({ theme }) => theme.space(2)};
+
   /* 78 px left reservation keeps the macOS traffic-light buttons
        (titleBarStyle: "hiddenInset") clear of bar content. */
   padding: 0 ${({ theme }) => theme.space(4)} 0 78px;

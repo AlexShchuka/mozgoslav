@@ -16,15 +16,14 @@ using Mozgoslav.Domain.Enums;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class ObsidianBulkExportTests
+public sealed class ObsidianBulkExportTests : IntegrationTestsBase
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     [TestMethod]
     public async Task Post_ExportAll_NoVaultConfigured_ReturnsBadRequest()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsync(
             "/api/obsidian/export-all",
@@ -41,8 +40,7 @@ public sealed class ObsidianBulkExportTests
         Directory.CreateDirectory(vaultDir);
         try
         {
-            await using var factory = new ApiFactory();
-            using (var scope = factory.Services.CreateScope())
+            using (var scope = Factory.Services.CreateScope())
             {
                 var settings = scope.ServiceProvider.GetRequiredService<IAppSettings>();
                 await settings.SaveAsync(settings.Snapshot with { VaultPath = vaultDir }, TestContext.CancellationToken);
@@ -81,7 +79,7 @@ public sealed class ObsidianBulkExportTests
                 }, TestContext.CancellationToken);
             }
 
-            using var client = factory.CreateClient();
+            using var client = CreateClient();
             using var response = await client.PostAsync(
                 "/api/obsidian/export-all",
                 content: null,
@@ -118,14 +116,13 @@ public sealed class ObsidianBulkExportTests
         Directory.CreateDirectory(vaultDir);
         try
         {
-            await using var factory = new ApiFactory();
-            using (var scope = factory.Services.CreateScope())
+            using (var scope = Factory.Services.CreateScope())
             {
                 var settings = scope.ServiceProvider.GetRequiredService<IAppSettings>();
                 await settings.SaveAsync(settings.Snapshot with { VaultPath = vaultDir }, TestContext.CancellationToken);
             }
 
-            using var client = factory.CreateClient();
+            using var client = CreateClient();
             using var response = await client.PostAsync(
                 "/api/obsidian/apply-layout",
                 content: null,
@@ -151,6 +148,4 @@ public sealed class ObsidianBulkExportTests
             }
         }
     }
-
-    public TestContext TestContext { get; set; } = null!;
 }

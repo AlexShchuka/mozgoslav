@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -20,28 +21,26 @@ using WireMock.Server;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class AnthropicLlmProviderTests
+public sealed class AnthropicLlmProviderTests : IDisposable
 {
+    private HttpClient _httpClient = null!;
+    private IHttpClientFactory _stubFactory = null!;
     private WireMockServer _server = null!;
     private IAppSettings _settings = null!;
-    private IHttpClientFactory _httpFactory = null!;
     private AnthropicLlmProvider _provider = null!;
 
     [TestInitialize]
     public void Init()
     {
+        _httpClient = new HttpClient();
+        _stubFactory = new StubHttpClientFactory(_httpClient);
         _server = WireMockServer.Start();
         _settings = Substitute.For<IAppSettings>();
         _settings.LlmEndpoint.Returns(_server.Urls[0]);
         _settings.LlmApiKey.Returns("sk-ant-test");
         _settings.LlmModel.Returns("claude-3-5-sonnet-20241022");
 
-        _httpFactory = Substitute.For<IHttpClientFactory>();
-#pragma warning disable CA2000, IDISP004
-        _httpFactory.CreateClient(Arg.Any<string>()).Returns(_ => new HttpClient());
-#pragma warning restore CA2000, IDISP004
-
-        _provider = new AnthropicLlmProvider(_settings, _httpFactory, NullLogger<AnthropicLlmProvider>.Instance);
+        _provider = new AnthropicLlmProvider(_settings, _stubFactory, NullLogger<AnthropicLlmProvider>.Instance);
     }
 
     [TestCleanup]
@@ -49,6 +48,13 @@ public sealed class AnthropicLlmProviderTests
     {
         _server.Stop();
         _server.Dispose();
+        _httpClient.Dispose();
+    }
+
+    public void Dispose()
+    {
+        _server?.Dispose();
+        _httpClient?.Dispose();
     }
 
     [TestMethod]
@@ -65,7 +71,8 @@ public sealed class AnthropicLlmProviderTests
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")
                 .WithBody(
-                    """
+                                         /*lang=json,strict*/
+                                         """
                     {
                       "id": "msg_01",
                       "type": "message",
@@ -110,13 +117,14 @@ public sealed class AnthropicLlmProviderTests
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")
                 .WithBody(
-                    """{"content":[{"type":"text","text":"ok"}]}"""));
+                                         /*lang=json,strict*/
+                                         """{"content":[{"type":"text","text":"ok"}]}"""));
 
         await _provider.ChatAsync("sys", "user", CancellationToken.None);
 
         var recorded = _server.LogEntries.Single();
-        recorded.RequestMessage.Headers.Should().ContainKey("x-api-key");
-        recorded.RequestMessage.Headers!["x-api-key"].Should().Contain("sk-ant-test");
-        recorded.RequestMessage.Headers.Should().ContainKey("anthropic-version");
+        recorded.RequestMessage!.Headers.Should().ContainKey("x-api-key");
+        recorded.RequestMessage!.Headers!["x-api-key"].Should().Contain("sk-ant-test");
+        recorded.RequestMessage!.Headers.Should().ContainKey("anthropic-version");
     }
 }

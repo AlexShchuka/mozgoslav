@@ -3,16 +3,26 @@
         <RootNamespace>Mozgoslav.Api</RootNamespace>
         <AssemblyName>Mozgoslav.Api</AssemblyName>
         <UserSecretsId>mozgoslav-backend</UserSecretsId>
+        <OpenApiGenerateDocuments>true</OpenApiGenerateDocuments>
+        <OpenApiGenerateDocumentsOnBuild>true</OpenApiGenerateDocumentsOnBuild>
+        <OpenApiDocumentsDirectory>$(MSBuildThisFileDirectory)..\..</OpenApiDocumentsDirectory>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\Mozgoslav.Application\Mozgoslav.Application.csproj"/>
         <ProjectReference Include="..\Mozgoslav.Domain\Mozgoslav.Domain.csproj"/>
         <ProjectReference Include="..\Mozgoslav.Infrastructure\Mozgoslav.Infrastructure.csproj"/>
     </ItemGroup>
+    <Target Name="RenameOpenApiDocument" AfterTargets="GenerateOpenApiDocuments">
+        <Move SourceFiles="$(OpenApiDocumentsDirectory)\$(AssemblyName).json"
+              DestinationFiles="$(OpenApiDocumentsDirectory)\openapi.json"
+              Condition="Exists('$(OpenApiDocumentsDirectory)\$(AssemblyName).json')" />
+    </Target>
     <ItemGroup>
-        <!-- ADR-011 step 1 — EF migration tooling (design-time only) lives alongside
-             the startup project so `dotnet ef migrations add ...` can spin up the
-             composition root without a separate tooling project. -->
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+        <PackageReference Include="Microsoft.Extensions.ApiDescription.Server">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>

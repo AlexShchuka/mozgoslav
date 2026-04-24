@@ -12,15 +12,14 @@ using FluentAssertions;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class ModelScanEndpointTests
+public sealed class ModelScanEndpointTests : IntegrationTestsBase
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     [TestMethod]
     public async Task Scan_NonExistentDir_Returns404()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         var missing = Path.Combine(Path.GetTempPath(), $"mozgoslav-missing-{Guid.NewGuid():N}");
         using var response = await client.GetAsync(
@@ -33,8 +32,7 @@ public sealed class ModelScanEndpointTests
     [TestMethod]
     public async Task Scan_MissingDirParameter_Returns404()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.GetAsync(
             "/api/models/scan",
@@ -66,9 +64,7 @@ public sealed class ModelScanEndpointTests
                 Path.Combine(dir, "notes.txt"),
                 [0],
                 TestContext.CancellationToken);
-
-            await using var factory = new ApiFactory();
-            using var client = factory.CreateClient();
+            using var client = CreateClient();
             using var response = await client.GetAsync(
                 $"/api/models/scan?dir={Uri.EscapeDataString(dir)}",
                 TestContext.CancellationToken);
@@ -76,7 +72,7 @@ public sealed class ModelScanEndpointTests
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             var payload = await response.Content.ReadFromJsonAsync<List<JsonElement>>(Json, TestContext.CancellationToken);
             payload.Should().NotBeNull();
-            payload!.Should().HaveCount(3);
+            payload.Should().HaveCount(3);
 
             var kinds = payload.Select(e => e.GetProperty("kind").GetString()).ToList();
             kinds.Should().Contain("whisper-ggml");
@@ -95,6 +91,4 @@ public sealed class ModelScanEndpointTests
             }
         }
     }
-
-    public TestContext TestContext { get; set; } = null!;
 }

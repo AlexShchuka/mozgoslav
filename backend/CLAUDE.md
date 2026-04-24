@@ -7,8 +7,9 @@ C# 14 / .NET 10 ASP.NET Minimal API. Clean Architecture split — `Mozgoslav.Dom
 ```bash
 dotnet restore Mozgoslav.sln -maxcpucount:1
 dotnet build   Mozgoslav.sln -maxcpucount:1
-dotnet test    Mozgoslav.sln -maxcpucount:1
-dotnet format whitespace Mozgoslav.sln --verify-no-changes
+dotnet test tests/Mozgoslav.Tests/Mozgoslav.Tests.csproj             --settings UnitTests.runsettings
+dotnet test tests/Mozgoslav.Tests.Integration/Mozgoslav.Tests.Integration.csproj --settings IntegrationTests.runsettings
+dotnet format Mozgoslav.sln --verify-no-changes
 ```
 
 ## conventions

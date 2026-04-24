@@ -15,13 +15,12 @@ using Mozgoslav.Infrastructure.Persistence;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class TranscriptCheckpointPersistenceTests
+public sealed class TranscriptCheckpointPersistenceTests : IntegrationTestsBase
 {
     [TestMethod]
     public async Task Transcript_WithCheckpointedSegment_RoundTripsThroughSqlite()
     {
-        await using var factory = new ApiFactory();
-        using var scope = factory.Services.CreateScope();
+        using var scope = Factory.Services.CreateScope();
         var transcripts = scope.ServiceProvider.GetRequiredService<ITranscriptRepository>();
         var recordings = scope.ServiceProvider.GetRequiredService<IRecordingRepository>();
 
@@ -59,6 +58,4 @@ public sealed class TranscriptCheckpointPersistenceTests
         loaded.Segments[1].CheckpointAt.Should().NotBeNull();
         loaded.Segments[1].CheckpointAt!.Value.Should().BeCloseTo(checkpoint, TimeSpan.FromMilliseconds(50));
     }
-
-    public TestContext TestContext { get; set; } = null!;
 }

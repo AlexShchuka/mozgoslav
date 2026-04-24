@@ -160,7 +160,7 @@ public static class RecordingEndpoints
             Directory.CreateDirectory(AppPaths.Recordings);
             var outputPath = string.IsNullOrWhiteSpace(request.OutputPath)
                 ? Path.Combine(AppPaths.Recordings, $"recording-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}.wav")
-                : request.OutputPath!;
+                : request.OutputPath;
 
             var sessionId = Guid.NewGuid().ToString("N");
             var started = new ActiveSession(sessionId, outputPath, DateTime.UtcNow);

@@ -64,6 +64,7 @@ export const Row = styled.div`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.space(4)};
+
   /* Bug 18 — bump from 2 to 4 so
         the Add / Record buttons breathe and do not abut the dropzone edge. */
   margin-top: ${({ theme }) => theme.space(4)};

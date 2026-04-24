@@ -10,7 +10,7 @@ export const OverlayRoot = styled.div`
   background: ${({ theme }) => theme.colors.bg.elevated2};
   border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   border-radius: ${({ theme }) => theme.radii.lg};
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12px 40px rgb(0, 0, 0, 0.25);
   overflow: hidden;
   box-sizing: border-box;
 `;

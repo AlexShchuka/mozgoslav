@@ -197,8 +197,9 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
       }
     }
 
-    const originalEventSource = (globalThis as any).EventSource;
-    (globalThis as any).EventSource = FakeEventSource;
+    const originalEventSource = (globalThis as { EventSource: typeof EventSource }).EventSource;
+    (globalThis as { EventSource: typeof EventSource }).EventSource =
+      FakeEventSource as unknown as typeof EventSource;
 
     try {
       renderDashboard();
@@ -215,7 +216,7 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
 
       await waitFor(() => expect(screen.getByText(/AirPods Pro/)).toBeInTheDocument());
     } finally {
-      (globalThis as any).EventSource = originalEventSource;
+      (globalThis as { EventSource: typeof EventSource }).EventSource = originalEventSource;
     }
   });
 

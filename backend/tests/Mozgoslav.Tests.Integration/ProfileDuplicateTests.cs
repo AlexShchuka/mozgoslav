@@ -13,15 +13,14 @@ using Mozgoslav.Domain.Entities;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class ProfileDuplicateTests
+public sealed class ProfileDuplicateTests : IntegrationTestsBase
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     [TestMethod]
     public async Task Post_Duplicate_BuiltIn_ReturnsNewUserProfile()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var list = await client.GetAsync("/api/profiles", TestContext.CancellationToken);
         var profiles = await list.Content.ReadFromJsonAsync<List<Profile>>(Json, TestContext.CancellationToken);
@@ -46,8 +45,7 @@ public sealed class ProfileDuplicateTests
     [TestMethod]
     public async Task Post_Duplicate_UnknownId_Returns404()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsync(
             $"/api/profiles/{Guid.NewGuid()}/duplicate",
@@ -56,6 +54,4 @@ public sealed class ProfileDuplicateTests
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
-
-    public TestContext TestContext { get; set; } = null!;
 }

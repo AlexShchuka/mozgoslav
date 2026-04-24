@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <RunConfiguration>
+    <ResultsDirectory>./TestResults</ResultsDirectory>
+    <TestSessionTimeout>1800000</TestSessionTimeout>
+  </RunConfiguration>
+  <LoggerRunSettings>
+    <Loggers>
+      <Logger friendlyName="trx" enabled="True">
+        <Configuration>
+          <LogFileName>integration.trx</LogFileName>
+        </Configuration>
+      </Logger>
+      <Logger friendlyName="console" enabled="True">
+        <Configuration>
+          <Verbosity>normal</Verbosity>
+        </Configuration>
+      </Logger>
+    </Loggers>
+  </LoggerRunSettings>
+  <MSTest>
+    <DeleteDeploymentDirectoryAfterTestRunIsComplete>False</DeleteDeploymentDirectoryAfterTestRunIsComplete>
+    <DeploymentEnabled>False</DeploymentEnabled>
+    <Parallelize>
+      <Workers>16</Workers>
+      <Scope>ClassLevel</Scope>
+    </Parallelize>
+  </MSTest>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage" enabled="True">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Exclude>[Mozgoslav.Tests*]*,[Mozgoslav.Api]Program</Exclude>
+          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+          <SingleHit>false</SingleHit>
+          <UseSourceLink>true</UseSourceLink>
+          <SkipAutoProps>true</SkipAutoProps>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

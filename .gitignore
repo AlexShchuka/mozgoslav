@@ -82,3 +82,7 @@ Package.resolved
 .vs/
 .vscode/
 *.iml
+
+# ---- Generated at build time ----
+backend/src/Mozgoslav.Infrastructure/Resources/ObsidianBootstrap/manifest.json
+backend/Mozgoslav.Api.json

@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
@@ -21,27 +22,26 @@ using WireMock.Server;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class OpenAiCompatibleLlmServiceTests
+public sealed class OpenAiCompatibleLlmServiceTests : IDisposable
 {
+    private HttpClient _httpClient = null!;
+    private IHttpClientFactory _stubFactory = null!;
     private WireMockServer _server = null!;
     private IAppSettings _settings = null!;
-    private IHttpClientFactory _httpFactory = null!;
     private OpenAiCompatibleLlmService _service = null!;
 
     [TestInitialize]
-    public void Init()
+    public async Task Init()
     {
+        _httpClient = new HttpClient();
+        _stubFactory = new StubHttpClientFactory(_httpClient);
         _server = WireMockServer.Start();
+        using var warmup = await _httpClient.GetAsync(_server.Urls[0] + "/__warmup");
         _settings = Substitute.For<IAppSettings>();
         _settings.LlmProvider.Returns("openai_compatible");
         _settings.LlmEndpoint.Returns(_server.Urls[0]);
         _settings.LlmApiKey.Returns("test-key");
         _settings.LlmModel.Returns("test-model");
-
-        _httpFactory = Substitute.For<IHttpClientFactory>();
-#pragma warning disable CA2000, IDISP004
-        _httpFactory.CreateClient(Arg.Any<string>()).Returns(_ => new HttpClient());
-#pragma warning restore CA2000, IDISP004
 
         var openAiProvider = new OpenAiCompatibleLlmProvider(
             _settings, NullLogger<OpenAiCompatibleLlmProvider>.Instance);
@@ -49,7 +49,7 @@ public sealed class OpenAiCompatibleLlmServiceTests
         providerFactory.GetCurrentAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult<ILlmProvider>(openAiProvider));
 
         _service = new OpenAiCompatibleLlmService(
-            providerFactory, _settings, _httpFactory, NullLogger<OpenAiCompatibleLlmService>.Instance);
+            providerFactory, _settings, _stubFactory, NullLogger<OpenAiCompatibleLlmService>.Instance);
     }
 
     [TestCleanup]
@@ -57,13 +57,20 @@ public sealed class OpenAiCompatibleLlmServiceTests
     {
         _server.Stop();
         _server.Dispose();
+        _httpClient.Dispose();
+    }
+
+    public void Dispose()
+    {
+        _server?.Dispose();
+        _httpClient?.Dispose();
     }
 
     [TestMethod]
     public async Task IsAvailableAsync_ServerReturns200_ReturnsTrue()
     {
         _server.Given(Request.Create().WithPath("/v1/models").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{\"data\":[]}"));
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(/*lang=json,strict*/ "{\"data\":[]}"));
 
         var result = await _service.IsAvailableAsync(CancellationToken.None);
 
@@ -103,7 +110,7 @@ public sealed class OpenAiCompatibleLlmServiceTests
     [TestMethod]
     public async Task ProcessAsync_ValidJsonResponse_ReturnsTypedResult()
     {
-        const string Content = """
+        const string Content = /*lang=json,strict*/ """
             {
               "summary": "A short summary",
               "key_points": ["point one", "point two"],
@@ -174,7 +181,7 @@ public sealed class OpenAiCompatibleLlmServiceTests
     [TestMethod]
     public async Task ProcessAsync_UnknownConversationType_FallsBackToOther()
     {
-        const string Content = """
+        const string Content = /*lang=json,strict*/ """
             {"summary": "x", "key_points": [], "decisions": [], "action_items": [], "unresolved_questions": [], "participants": [], "topic": "t", "conversation_type": "unknown-variant", "tags": []}
             """;
         StubChatCompletion(Content);

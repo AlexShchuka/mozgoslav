@@ -95,7 +95,7 @@ public sealed class ObsidianRestApiClientTests : IDisposable
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody("""
+                .WithBody(/*lang=json,strict*/ """
                     {
                       "service": "Obsidian Local REST API",
                       "manifest": { "version": "1.5.3" },

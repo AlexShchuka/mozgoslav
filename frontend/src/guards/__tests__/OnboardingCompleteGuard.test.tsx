@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { Provider } from "react-redux";
-import { combineReducers, createStore } from "redux";
+import { combineReducers, createStore, type Action } from "redux";
 
 import OnboardingCompleteGuard from "../OnboardingCompleteGuard";
 import { ROUTES } from "../../constants/routes";
@@ -12,7 +12,7 @@ const OnboardingPage = () => <div data-testid="onboarding">onboarding-content</d
 
 const renderGuarded = (initialPath: string, completed: boolean) => {
   const store = createStore(combineReducers({ onboarding: onboardingReducer }));
-  (store.dispatch as (action: any) => void)(completionLoaded(completed));
+  store.dispatch(completionLoaded(completed) as Action);
 
   return render(
     <Provider store={store}>

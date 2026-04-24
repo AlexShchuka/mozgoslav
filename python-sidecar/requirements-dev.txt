@@ -11,32 +11,32 @@
 #   covered by the C# integration test against the running sidecar.
 
 # --- Web framework ---
-fastapi>=0.115.0
-uvicorn[standard]>=0.32.0
-pydantic>=2.0
-pydantic-settings>=2.0
-httpx>=0.27
-python-multipart>=0.0.18
+fastapi==0.136.1
+uvicorn[standard]==0.46.0
+pydantic==2.13.3
+pydantic-settings==2.14.0
+httpx==0.28.1
+python-multipart==0.0.26
 
 # --- ML runtime (needed by Tier-1 diarize + ner) ---
 # Plain ``torch`` CPU is fine — the diarize test uses a fake embedder
 # so no actual inference runs in CI. PEP 440 forbids `>=` with local
 # version labels, so the Linux pin is exact.
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch>=2.6.0 ; sys_platform == 'darwin'
-torch==2.6.0+cpu ; sys_platform == 'linux'
-torchaudio>=2.6.0 ; sys_platform == 'darwin'
-torchaudio==2.6.0+cpu ; sys_platform == 'linux'
-numpy>=2.2.0
-librosa>=0.10.2
-soundfile>=0.13.0
+torch==2.11.0 ; sys_platform == 'darwin'
+torch==2.11.0+cpu ; sys_platform == 'linux'
+torchaudio==2.11.0 ; sys_platform == 'darwin'
+torchaudio==2.11.0+cpu ; sys_platform == 'linux'
+numpy==2.4.4
+librosa==0.11.0
+soundfile==0.13.1
 
 # --- Tier-1 services (always-available) ---
-silero-vad>=5.1.2
-resemblyzer>=0.1.4
-webrtcvad-wheels>=2.0.14
-scikit-learn>=1.6.1
-natasha>=1.6.0
+silero-vad==6.2.1
+resemblyzer==0.1.4
+webrtcvad-wheels==2.0.14
+scikit-learn==1.8.0
+natasha==1.6.0
 # pymorphy2 (transitive via natasha) imports `pkg_resources` at module
 # load time. setuptools>=81 removed that API, breaking NER tests.
 # Keep setuptools on the last version that still ships pkg_resources
@@ -44,6 +44,7 @@ natasha>=1.6.0
 setuptools<81
 
 # --- Dev / test tooling ---
-pytest>=8.0
-ruff>=0.5
-black>=24.0
+pytest==9.0.3
+pytest-cov==7.1.0
+ruff==0.15.11
+black==26.3.1

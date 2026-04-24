@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -20,28 +21,26 @@ using WireMock.Server;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class OllamaLlmProviderTests
+public sealed class OllamaLlmProviderTests : IDisposable
 {
+    private HttpClient _httpClient = null!;
+    private IHttpClientFactory _stubFactory = null!;
     private WireMockServer _server = null!;
     private IAppSettings _settings = null!;
-    private IHttpClientFactory _httpFactory = null!;
     private OllamaLlmProvider _provider = null!;
 
     [TestInitialize]
     public void Init()
     {
+        _httpClient = new HttpClient();
+        _stubFactory = new StubHttpClientFactory(_httpClient);
         _server = WireMockServer.Start();
         _settings = Substitute.For<IAppSettings>();
         _settings.LlmEndpoint.Returns(_server.Urls[0]);
         _settings.LlmApiKey.Returns(string.Empty);
         _settings.LlmModel.Returns("qwen2.5:14b");
 
-        _httpFactory = Substitute.For<IHttpClientFactory>();
-#pragma warning disable CA2000, IDISP004
-        _httpFactory.CreateClient(Arg.Any<string>()).Returns(_ => new HttpClient());
-#pragma warning restore CA2000, IDISP004
-
-        _provider = new OllamaLlmProvider(_settings, _httpFactory, NullLogger<OllamaLlmProvider>.Instance);
+        _provider = new OllamaLlmProvider(_settings, _stubFactory, NullLogger<OllamaLlmProvider>.Instance);
     }
 
     [TestCleanup]
@@ -49,6 +48,13 @@ public sealed class OllamaLlmProviderTests
     {
         _server.Stop();
         _server.Dispose();
+        _httpClient.Dispose();
+    }
+
+    public void Dispose()
+    {
+        _server?.Dispose();
+        _httpClient?.Dispose();
     }
 
     [TestMethod]
@@ -65,7 +71,8 @@ public sealed class OllamaLlmProviderTests
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")
                 .WithBody(
-                    """
+                                         /*lang=json,strict*/
+                                         """
                     {
                       "model": "qwen2.5:14b",
                       "created_at": "2026-04-17T12:00:00Z",
@@ -108,11 +115,12 @@ public sealed class OllamaLlmProviderTests
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")
                 .WithBody(
-                    """{"message":{"role":"assistant","content":"ok"},"done":true}"""));
+                                         /*lang=json,strict*/
+                                         """{"message":{"role":"assistant","content":"ok"},"done":true}"""));
 
         await _provider.ChatAsync("sys", "user", CancellationToken.None);
 
-        var body = _server.LogEntries.Single().RequestMessage.Body;
+        var body = _server.LogEntries.Single().RequestMessage!.Body;
         body.Should().Contain("\"stream\":false");
         body.Should().Contain("qwen2.5:14b");
     }

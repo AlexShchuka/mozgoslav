@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -9,9 +10,9 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Tests.Application;
 
-#pragma warning disable CA1711 
+[SuppressMessage("Naming", "CA1711:Identifiers should not have incorrect suffix",
+    Justification = "Mirrors IDictationPcmStream — the type IS a per-session stream, suffix is intentional.")]
 public sealed class FakeDictationPcmStream : IDictationPcmStream
-#pragma warning restore CA1711
 {
     private readonly ConcurrentDictionary<Guid, Channel<float[]>> _channels = new();
     private readonly ConcurrentDictionary<Guid, int> _writesByteCount = new();

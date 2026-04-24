@@ -9,13 +9,12 @@ using FluentAssertions;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class RecordingUploadEndpointTests
+public sealed class RecordingUploadEndpointTests : IntegrationTestsBase
 {
     [TestMethod]
     public async Task PostUpload_WithTinyWavFile_Returns200AndRecordings()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         var wavBytes = BuildSilentWav(durationSeconds: 1);
         using var form = new MultipartFormDataContent();
@@ -32,9 +31,6 @@ public sealed class RecordingUploadEndpointTests
         body.Should().Contain("\"id\":",
             "uploading a valid WAV creates at least one Recording entity");
     }
-
-    public TestContext TestContext { get; set; } = null!;
-
     private static byte[] BuildSilentWav(int durationSeconds)
     {
         const int sampleRate = 16_000;

@@ -1,4 +1,5 @@
-name: ci
+name: CI
+run-name: CI
 
 on:
   push:
@@ -7,13 +8,13 @@ on:
     branches: [ main ]
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
 
   verify:
-    name: verify / checks
+    name: validate / checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,9 +40,11 @@ jobs:
             echo "::error::uncomment would strip comments from the files listed above. Run the same command without --dry-run to fix."
             exit 1
           fi
+      - name: Encoding check (UTF-8 only, no BOM, no CRLF outside *.bat|*.cmd|*.ps1)
+        run: scripts/check-encoding.sh
 
   backend:
-    name: build / backend (${{ matrix.os }})
+    name: build & tests / backend (${{ matrix.os }})
     needs: verify
     strategy:
       fail-fast: false
@@ -53,6 +56,13 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('backend/Directory.Packages.props', 'backend/Directory.Build.props', 'backend/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
       - name: Install ffmpeg (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
@@ -61,15 +71,53 @@ jobs:
         run: brew install ffmpeg
       - name: Restore
         run: dotnet restore backend/Mozgoslav.sln -maxcpucount:1
-      - name: Format check
-        run: dotnet format whitespace backend/Mozgoslav.sln --verify-no-changes --no-restore --verbosity minimal
+      - name: Format check (full — whitespace + style + analyzers)
+        run: dotnet format backend/Mozgoslav.sln --verify-no-changes --no-restore --verbosity minimal
       - name: Build
         run: dotnet build backend/Mozgoslav.sln -maxcpucount:1 --no-restore -warnaserror
-      - name: Test
-        run: dotnet test backend/Mozgoslav.sln -maxcpucount:1 --no-build --nologo --verbosity normal
+      - name: Test — unit (with coverage, 1% floor)
+        run: dotnet test backend/tests/Mozgoslav.Tests/Mozgoslav.Tests.csproj --no-build --nologo --verbosity normal --settings backend/UnitTests.runsettings --results-directory backend/coverage/unit
+      - name: Test — integration (with coverage, 1% floor)
+        run: dotnet test backend/tests/Mozgoslav.Tests.Integration/Mozgoslav.Tests.Integration.csproj --no-build --nologo --verbosity normal --settings backend/IntegrationTests.runsettings --results-directory backend/coverage/integration
+      - name: Test timings report (top-N slowest + per-class totals)
+        if: runner.os == 'Linux' && always()
+        run: python3 scripts/analyze-test-timings.py backend/coverage
+      - name: Backend coverage floor (1% line, total across both suites)
+        if: runner.os == 'Linux'
+        run: |
+          set -euo pipefail
+          files=$(find backend/coverage -name "coverage.cobertura.xml" 2>/dev/null)
+          if [ -z "$files" ]; then
+            echo "::error::no cobertura coverage files found under backend/coverage"
+            exit 1
+          fi
+          ok=0
+          for f in $files; do
+            rate=$(grep -oE 'line-rate="[0-9.]+"' "$f" | head -1 | cut -d'"' -f2 || true)
+            [ -z "$rate" ] && continue
+            pct=$(awk -v r="$rate" 'BEGIN{ printf "%.2f", r*100 }')
+            echo "  $f: ${pct}% line coverage"
+            if awk -v r="$rate" 'BEGIN{ exit (r >= 0.01) ? 0 : 1 }'; then
+              ok=1
+            fi
+          done
+          if [ "$ok" != "1" ]; then
+            echo "::error::every cobertura report was below the 1% floor"
+            exit 1
+          fi
+      - name: Upload backend coverage
+        if: runner.os == 'Linux' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage/
+          retention-days: 7
+      - name: OpenAPI schema in sync
+        if: runner.os == 'Linux'
+        run: git diff --exit-code backend/openapi.json || (echo "::error::backend/openapi.json out of sync with build output. Rebuild backend and commit the regenerated file."; exit 1)
 
   frontend:
-    name: build / frontend (${{ matrix.os }})
+    name: build & tests / frontend (${{ matrix.os }})
     needs: verify
     strategy:
       fail-fast: false
@@ -83,21 +131,42 @@ jobs:
           node-version: '24'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
-      - name: Install
+      - name: Cache frontend node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-nodemodules-${{ hashFiles('frontend/package-lock.json') }}
+      - name: Install (only on cache miss)
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: cd frontend && npm ci
       - name: Typecheck
         run: cd frontend && npm run typecheck
       - name: ESLint
         run: cd frontend && npm run lint
+      - name: Knip (dead code / unused deps — advisory)
+        continue-on-error: true
+        run: cd frontend && npm run knip
+      - name: Stylelint
+        run: cd frontend && npm run check-styles
+      - name: Translation parity (ru.json vs en.json vs code)
+        run: cd frontend && npm run check-translations
       - name: Prettier (check)
         run: cd frontend && npx prettier --check "src/**/*.{ts,tsx,css}" "electron/**/*.ts"
-      - name: Test
-        run: cd frontend && npm test -- --watchAll=false
+      - name: Test (with coverage)
+        run: cd frontend && npm test -- --watchAll=false --coverage
+      - name: Upload frontend coverage
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          retention-days: 7
       - name: Build
         run: cd frontend && WATCHPACK_POLLING=true npm run build
 
   python:
-    name: build / python (${{ matrix.os }})
+    name: build & tests / python (${{ matrix.os }})
     needs: verify
     strategy:
       fail-fast: false
@@ -109,6 +178,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: python-sidecar/requirements-dev.txt
       - name: Install
         run: |
           cd python-sidecar
@@ -120,16 +191,126 @@ jobs:
         run: cd python-sidecar && source .venv/bin/activate && ruff check .
       - name: Black (check)
         run: cd python-sidecar && source .venv/bin/activate && black --check .
-      - name: Pytest
-        run: cd python-sidecar && source .venv/bin/activate && pytest
+      - name: Pytest (with coverage)
+        run: cd python-sidecar && source .venv/bin/activate && pytest --cov=app --cov-report=xml:coverage.cobertura.xml --cov-report=term-missing
+      - name: Upload python coverage
+        if: runner.os == 'Linux' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage
+          path: python-sidecar/coverage.cobertura.xml
+          retention-days: 7
+
+  commitlint:
+    name: validate / commitlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: Cache frontend node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-nodemodules-${{ hashFiles('frontend/package-lock.json') }}
+      - name: Install (only on cache miss)
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: cd frontend && npm ci
+      - name: Lint commit messages in PR
+        if: github.event_name == 'pull_request'
+        run: cd frontend && npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
+      - name: Lint commit messages on push
+        if: github.event_name == 'push'
+        run: cd frontend && npx commitlint --from HEAD~1 --to HEAD
 
   native:
-    name: build / native
+    name: build & tests / native (macos-latest)
     needs: verify
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - name: Build
         run: cd native/MozgoslavDictationHelper && swift build -c release
-      - name: Test
-        run: cd native/MozgoslavDictationHelper && swift test
+      - name: Test (with coverage)
+        run: cd native/MozgoslavDictationHelper && swift test --enable-code-coverage
+      - name: Export swift coverage (lcov)
+        if: always()
+        run: |
+          set -euo pipefail
+          cd native/MozgoslavDictationHelper
+          binaries_root=".build"
+          profdata=$(find "$binaries_root" -name default.profdata | head -n1)
+          if [ -z "$profdata" ]; then
+            echo "::warning::no default.profdata produced by swift test"
+            exit 0
+          fi
+          test_bundle=$(find "$binaries_root" -type d -name '*.xctest' | head -n1)
+          if [ -z "$test_bundle" ]; then
+            echo "::warning::no xctest bundle found"
+            exit 0
+          fi
+          bin_name=$(basename "$test_bundle" .xctest)
+          bin_path="${test_bundle}/Contents/MacOS/${bin_name}"
+          [ -f "$bin_path" ] || bin_path="${test_bundle}/${bin_name}"
+          xcrun llvm-cov export -format=lcov "$bin_path" -instr-profile "$profdata" > coverage.lcov
+          ls -la coverage.lcov
+      - name: Upload native coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-coverage
+          path: native/MozgoslavDictationHelper/coverage.lcov
+          retention-days: 7
+
+  coverage-comment:
+    name: post-checks / coverage
+    needs: [ backend, frontend, python, native ]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download backend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage
+      - name: Download frontend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage
+      - name: Download python coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: python-coverage
+          path: python-coverage
+      - name: Download native coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: native-coverage
+          path: native-coverage
+      - name: Build coverage markdown summary
+        id: summary
+        run: |
+          python3 scripts/coverage-summary.py > /tmp/coverage.md
+          {
+            echo 'body<<COVERAGE_EOF'
+            cat /tmp/coverage.md
+            echo 'COVERAGE_EOF'
+          } >> "$GITHUB_OUTPUT"
+      - name: Post or update coverage comment (sticky)
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: coverage
+          message: ${{ steps.summary.outputs.body }}
