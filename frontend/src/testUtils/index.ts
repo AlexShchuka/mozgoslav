@@ -10,5 +10,7 @@ export {
   mockRecordingState,
   recordingsById,
   mockUiState,
+  mockDictationState,
+  mockAudioDevicesState,
   mergeMockState,
 } from "./mockState";

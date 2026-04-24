@@ -30,3 +30,10 @@ export const selectDeletingRecordingIds = createSelector(
 
 export const selectIsDeletingRecording = (id: string) =>
   createSelector(selectRecordingState, (slice) => slice.deletingIds[id] === true);
+
+export const selectIsUploading = createSelector(selectRecordingState, (slice) => slice.isUploading);
+
+export const selectLastUploadError = createSelector(
+  selectRecordingState,
+  (slice) => slice.lastUploadError
+);

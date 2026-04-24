@@ -1,45 +1,36 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { ThemeProvider } from "styled-components";
-import { ToastContainer } from "react-toastify";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 
 import Dashboard from "../Dashboard";
-import { lightTheme } from "../../../styles/theme";
+import { renderWithStore } from "../../../testUtils";
+import {
+  mockDictationState,
+  mockAudioDevicesState,
+  mockRecordingState,
+  mergeMockState,
+} from "../../../testUtils/mockState";
+import { dictationStartRequested, dictationStopRequested } from "../../../store/slices/dictation";
+import { importRecordingsRequested } from "../../../store/slices/recording";
 import "../../../i18n";
-
-type SubscriptionSink<T> = {
-  next: (value: { data: T }) => void;
-  error: (err: unknown) => void;
-  complete: () => void;
-};
-
-let audioDeviceSink: SubscriptionSink<unknown> | null = null;
-// eslint-disable-next-line no-var -- jest.mock factories run before `let` is initialised; `var` keeps hoisting semantics
-var mockRequest: jest.Mock;
-
-jest.mock("../../../api/graphqlClient", () => {
-  mockRequest = jest.fn();
-  return {
-    graphqlClient: { request: mockRequest },
-    getGraphqlWsClient: jest.fn(() => ({
-      subscribe: jest.fn((query: { query: string }, sink: SubscriptionSink<unknown>) => {
-        if (query.query && query.query.includes("audioDeviceChanged")) {
-          audioDeviceSink = sink;
-        }
-        return () => {};
-      }),
-      dispose: jest.fn(),
-    })),
-  };
-});
 
 jest.mock("../../../api/dictationPush", () => ({
   pushDictationAudio: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { pushDictationAudio } from "../../../api/dictationPush";
+jest.mock("../../../hooks/usePushToTalk", () => ({
+  usePushToTalk: jest.fn(),
+}));
 
-const dictationPushMock = pushDictationAudio as jest.Mock;
+jest.mock("react-toastify", () => ({
+  toast: {
+    info: jest.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+  },
+  ToastContainer: () => null,
+}));
+
+import { toast } from "react-toastify";
 
 type DataHandler = (event: { data: Blob }) => void;
 
@@ -47,31 +38,26 @@ interface FakeMediaRecorderInstance {
   start: jest.Mock;
   stop: jest.Mock;
   ondataavailable: DataHandler | null;
-  onstop: (() => void) | null;
 }
 
 let lastRecorder: FakeMediaRecorderInstance | null = null;
 
-/* eslint-disable @typescript-eslint/no-this-alias */
 class FakeMediaRecorder {
   public start: jest.Mock = jest.fn();
   public stop: jest.Mock;
   public ondataavailable: DataHandler | null = null;
-  public onstop: (() => void) | null = null;
   private stopListeners: Array<() => void> = [];
 
   constructor(
     public stream: MediaStream,
     _opts?: unknown
   ) {
-    const recorderInstance = this;
     this.stop = jest.fn(() => {
-      recorderInstance.onstop?.();
-      const snapshot = recorderInstance.stopListeners.slice();
-      recorderInstance.stopListeners.length = 0;
+      const snapshot = this.stopListeners.slice();
+      this.stopListeners.length = 0;
       for (const listener of snapshot) listener();
     });
-    lastRecorder = recorderInstance;
+    lastRecorder = this as unknown as FakeMediaRecorderInstance;
   }
 
   public addEventListener(type: string, listener: () => void): void {
@@ -85,9 +71,7 @@ class FakeMediaRecorder {
   }
 }
 
-/* eslint-enable @typescript-eslint/no-this-alias */
-
-const installMocks = () => {
+const installMediaMocks = () => {
   const getUserMedia = jest.fn(
     async () =>
       ({
@@ -104,116 +88,86 @@ const installMocks = () => {
   return { getUserMedia };
 };
 
-const renderDashboard = () =>
-  render(
-    <ThemeProvider theme={lightTheme}>
-      <Dashboard />
-      <ToastContainer />
-    </ThemeProvider>
-  );
+const renderDashboard = (preloadedState: Parameters<typeof mergeMockState>[0] = {}) =>
+  renderWithStore(<Dashboard />, { preloadedState });
 
-describe("Dashboard record button (BC-004 / Bug 3)", () => {
+describe("Dashboard — migrated to Redux actions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     lastRecorder = null;
-    audioDeviceSink = null;
-    mockRequest.mockResolvedValue({});
   });
 
-  it("Dashboard_RecordButton_IdleToRecording", async () => {
-    installMocks();
-    mockRequest.mockResolvedValueOnce({
-      dictationStart: { sessionId: "sess-1", errors: [] },
-    });
-
-    renderDashboard();
-    const btn = await screen.findByTestId("dashboard-record");
-    await userEvent.click(btn);
-
-    await waitFor(() => expect(mockRequest).toHaveBeenCalled());
-    await waitFor(() => expect(lastRecorder).not.toBeNull());
-    expect(lastRecorder!.start).toHaveBeenCalledWith(250);
-    expect(await screen.findByText(/Остановить|Stop/)).toBeInTheDocument();
+  it("Dashboard_RenderRecordButton_Idle", async () => {
+    renderDashboard(mockDictationState());
+    expect(await screen.findByTestId("dashboard-record")).toBeInTheDocument();
   });
 
-  it("Dashboard_RecordButton_StopsAndRendersTranscript", async () => {
-    installMocks();
-    mockRequest
-      .mockResolvedValueOnce({ dictationStart: { sessionId: "sess-2", errors: [] } })
-      .mockResolvedValueOnce({
-        dictationStop: {
-          rawText: "Hello world",
-          polishedText: "Hello world",
-          durationMs: 1000,
-          errors: [],
-        },
-      });
-
-    renderDashboard();
+  it("Dashboard_ClickRecord_DispatchesDictationStart", async () => {
+    const { getActions } = renderDashboard(mockDictationState());
     const btn = await screen.findByTestId("dashboard-record");
-    await userEvent.click(btn);
-    await waitFor(() => expect(lastRecorder).not.toBeNull());
-
-    const buf = new ArrayBuffer(4);
-    const fakeBlob = {
-      size: 4,
-      type: "audio/webm",
-      arrayBuffer: async () => buf,
-    } as unknown as Blob;
     act(() => {
-      lastRecorder!.ondataavailable?.({ data: fakeBlob });
+      fireEvent.click(btn);
     });
-
-    await userEvent.click(screen.getByTestId("dashboard-record"));
-    await waitFor(() =>
-      expect(mockRequest).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ sessionId: "sess-2" })
-      )
+    expect(getActions()).toContainEqual(
+      dictationStartRequested({ source: "dashboard", persistOnStop: true })
     );
-    expect(await screen.findByText("Hello world")).toBeInTheDocument();
   });
 
-  it("Dashboard_RecordButton_PermissionDenied_ShowsError", async () => {
-    const { getUserMedia } = installMocks();
-    getUserMedia.mockRejectedValueOnce(new Error("NotAllowedError"));
-    mockRequest.mockResolvedValueOnce({ dictationStart: { sessionId: "sess-3", errors: [] } });
-
-    renderDashboard();
-    await userEvent.click(await screen.findByTestId("dashboard-record"));
-
-    await waitFor(() => expect(screen.getByText(/NotAllowedError/)).toBeInTheDocument());
+  it("Dashboard_TranscriptDisplayed_OnStopped", async () => {
+    const preloaded = mergeMockState(
+      mockDictationState({
+        status: { phase: "stopped", polishedText: "Hello world", persistOnStop: false },
+      })
+    );
+    renderDashboard(preloaded);
+    expect(await screen.findByTestId("dashboard-transcript")).toHaveTextContent("Hello world");
   });
 
-  it("Dashboard_DeviceChangedGql_ShowsToastOnHotPlug", async () => {
-    installMocks();
+  it("Dashboard_ErrorToast_OnFailed", () => {
+    const preloaded = mergeMockState(
+      mockDictationState({
+        status: { phase: "failed", error: "something went wrong" },
+      })
+    );
+    renderDashboard(preloaded);
+    expect(toast.error).toHaveBeenCalledWith("something went wrong");
+  });
 
-    renderDashboard();
+  it("Dashboard_DeviceChangeToast_FiresOnNewChange", () => {
+    const preloaded = mergeMockState(
+      mockAudioDevicesState({
+        lastChange: { id: 1, kind: "connected", defaultName: "AirPods Pro" },
+      })
+    );
+    renderDashboard(preloaded);
+    expect(toast.info).toHaveBeenCalledWith(expect.stringContaining("AirPods Pro"));
+  });
 
-    await waitFor(() => expect(audioDeviceSink).not.toBeNull());
+  it("Dashboard_PickViaDialog_NonElectron_InfoToast", async () => {
+    const winAny = window as unknown as Record<string, unknown>;
+    const original = winAny["mozgoslav"];
+    winAny["mozgoslav"] = undefined;
 
+    renderDashboard(mockDictationState());
+
+    const addBtn = screen.getByRole("button", { name: /add|добавить/i });
     act(() => {
-      audioDeviceSink!.next({
-        data: {
-          audioDeviceChanged: {
-            kind: "connected",
-            devices: [{ id: "id-1", name: "AirPods Pro", isDefault: true }],
-            observedAt: new Date().toISOString(),
-          },
-        },
-      });
+      fireEvent.click(addBtn);
     });
 
-    await waitFor(() => expect(screen.getByText(/AirPods Pro/)).toBeInTheDocument());
+    await waitFor(() => expect(toast.info).toHaveBeenCalledWith("Используй drag-and-drop"));
+
+    winAny["mozgoslav"] = original;
   });
 
-  it("Dashboard_GlobalHotkey_StartsDictation", async () => {
-    installMocks();
-    mockRequest.mockResolvedValueOnce({
-      dictationStart: { sessionId: "sess-hotkey", errors: [] },
-    });
+  it("Dashboard_UploadErrorToast", () => {
+    const preloaded = mergeMockState(mockRecordingState({ lastUploadError: "upload failed" }));
+    renderDashboard(preloaded);
+    expect(toast.error).toHaveBeenCalledWith("upload failed");
+  });
 
-    renderDashboard();
+  it("Dashboard_GlobalHotkey_DispatchesDictationStart", () => {
+    const { getActions } = renderDashboard(mockDictationState());
 
     act(() => {
       window.dispatchEvent(
@@ -223,34 +177,94 @@ describe("Dashboard record button (BC-004 / Bug 3)", () => {
       );
     });
 
-    await waitFor(() =>
-      expect(mockRequest).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ source: "global-hotkey" })
-      )
+    expect(getActions()).toContainEqual(
+      dictationStartRequested({ source: "global-hotkey", persistOnStop: false })
     );
   });
 
-  it("Dashboard_Push_UsesPushDictationAudio", async () => {
-    installMocks();
-    mockRequest.mockResolvedValueOnce({ dictationStart: { sessionId: "sess-push", errors: [] } });
+  it("Dashboard_ActivePhase_SetsUpMediaRecorder", async () => {
+    const { getUserMedia } = installMediaMocks();
+    const preloaded = mergeMockState(
+      mockDictationState({
+        status: {
+          phase: "active",
+          sessionId: "sess-active",
+          source: "dashboard",
+          persistOnStop: true,
+        },
+      })
+    );
+    renderDashboard(preloaded);
 
-    renderDashboard();
-    await userEvent.click(await screen.findByTestId("dashboard-record"));
+    await waitFor(() => expect(getUserMedia).toHaveBeenCalled());
+    await waitFor(() => expect(lastRecorder).not.toBeNull());
+    expect(lastRecorder!.start).toHaveBeenCalledWith(250);
+  });
+
+  it("Dashboard_StopButton_DispatchesDictationStopRequested", async () => {
+    installMediaMocks();
+    const preloaded = mergeMockState(
+      mockDictationState({
+        status: {
+          phase: "active",
+          sessionId: "sess-stop",
+          source: "dashboard",
+          persistOnStop: true,
+        },
+      })
+    );
+    const { getActions } = renderDashboard(preloaded);
+
     await waitFor(() => expect(lastRecorder).not.toBeNull());
 
-    const buf = new ArrayBuffer(4);
-    const fakeBlob = {
-      size: 4,
-      type: "audio/webm",
-      arrayBuffer: async () => buf,
-    } as unknown as Blob;
-
-    await act(async () => {
-      lastRecorder!.ondataavailable?.({ data: fakeBlob });
-      await Promise.resolve();
+    act(() => {
+      fireEvent.click(screen.getByTestId("dashboard-record"));
     });
 
-    await waitFor(() => expect(dictationPushMock).toHaveBeenCalledWith("sess-push", buf));
+    await waitFor(() => expect(getActions()).toContainEqual(dictationStopRequested()));
+  });
+
+  it("Dashboard_DropZone_NoPaths_ShowsInfoToast", async () => {
+    const preloaded = mergeMockState(mockDictationState());
+    renderDashboard(preloaded);
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (!fileInput) return;
+
+    const file = new File(["audio"], "test.mp3", { type: "audio/mp3" });
+    Object.defineProperty(file, "path", { value: "", configurable: true });
+
+    await act(async () => {
+      Object.defineProperty(fileInput, "files", {
+        value: [file],
+        configurable: true,
+      });
+      fireEvent.change(fileInput);
+    });
+
+    await waitFor(() => expect(toast.info).toHaveBeenCalled());
+  });
+
+  it("Dashboard_ImportRecordingsRequested_OnDialogPick", async () => {
+    const mockOpenAudioFiles = jest.fn().mockResolvedValue({
+      canceled: false,
+      filePaths: ["/path/to/audio.mp3"],
+    });
+    (window as unknown as Record<string, unknown>)["mozgoslav"] = {
+      openAudioFiles: mockOpenAudioFiles,
+    };
+
+    const { getActions } = renderDashboard(mockDictationState());
+
+    const addBtn = screen.getByRole("button", { name: /add|добавить/i });
+    act(() => {
+      fireEvent.click(addBtn);
+    });
+
+    await waitFor(() =>
+      expect(getActions()).toContainEqual(
+        importRecordingsRequested({ filePaths: ["/path/to/audio.mp3"] })
+      )
+    );
   });
 });

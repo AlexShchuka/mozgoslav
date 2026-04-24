@@ -4,6 +4,8 @@ import type { GlobalState } from "../store/rootReducer";
 import { initialJobsState, type JobsState } from "../store/slices/jobs";
 import { initialRecordingState, type RecordingState } from "../store/slices/recording";
 import { initialUiState, type UiState } from "../store/slices/ui";
+import { initialDictationState, type DictationState } from "../store/slices/dictation";
+import { initialAudioDevicesState, type AudioDevicesState } from "../store/slices/audioDevices";
 
 export const jobsById = (jobs: readonly ProcessingJob[]): Record<string, ProcessingJob> =>
   Object.fromEntries(jobs.map((job) => [job.id, job]));
@@ -23,6 +25,18 @@ export const mockRecordingState = (
 
 export const mockUiState = (patch: Partial<UiState> = {}): Pick<GlobalState, "ui"> => ({
   ui: { ...initialUiState, ...patch },
+});
+
+export const mockDictationState = (
+  patch: Partial<DictationState> = {}
+): Pick<GlobalState, "dictation"> => ({
+  dictation: { ...initialDictationState, ...patch },
+});
+
+export const mockAudioDevicesState = (
+  patch: Partial<AudioDevicesState> = {}
+): Pick<GlobalState, "audioDevices"> => ({
+  audioDevices: { ...initialAudioDevicesState, ...patch },
 });
 
 export const mergeMockState = (...parts: Partial<GlobalState>[]): Partial<GlobalState> =>
