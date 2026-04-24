@@ -1,0 +1,21 @@
+query QueryHealth {
+  health {
+    status
+    time
+  }
+}
+
+query QueryLlmHealth {
+  llmHealth {
+    available
+  }
+}
+
+query QueryMeta {
+  meta {
+    version
+    assemblyVersion
+    commit
+    buildDate
+  }
+}

@@ -17,11 +17,16 @@
     "dist:mac": "bash ../scripts/fetch-bundle-models.sh && npm run build && npm run build:helper:mac && electron-builder --mac",
     "knip": "knip",
     "check-styles": "stylelint \"src/**/*.{ts,tsx}\"",
-    "check-translations": "node scripts/check-translations.mjs"
+    "check-translations": "node scripts/check-translations.mjs",
+    "codegen": "graphql-codegen --config codegen.ts",
+    "codegen:watch": "graphql-codegen --config codegen.ts --watch"
   },
   "dependencies": {
     "axios": "1.15.2",
     "framer-motion": "12.38.0",
+    "graphql": "16.13.2",
+    "graphql-request": "7.4.0",
+    "graphql-ws": "6.0.8",
     "i18next": "26.0.7",
     "kbar": "0.1.0-beta.48",
     "lucide-react": "1.9.0",
@@ -46,6 +51,9 @@
     "@commitlint/cli": "20.5.0",
     "@commitlint/config-conventional": "20.5.0",
     "@eslint/js": "9.39.4",
+    "@graphql-codegen/cli": "6.3.1",
+    "@graphql-codegen/client-preset": "5.3.0",
+    "@parcel/watcher": "2.5.6",
     "@testing-library/dom": "10.4.1",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.2",

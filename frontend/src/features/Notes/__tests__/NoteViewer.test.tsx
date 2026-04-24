@@ -3,24 +3,20 @@ import { Route, Routes } from "react-router-dom";
 
 import NoteViewer from "../NoteViewer";
 import { ProcessedNote } from "../../../domain/ProcessedNote";
-import type { MockApiBundle } from "../../../testUtils";
 import { renderWithRouter } from "../../../testUtils";
 import "../../../i18n";
 
-jest.mock("../../../api", () => {
-  const actual = jest.requireActual("../../../api");
-  const { createMockApi } = jest.requireActual(
-    "../../../testUtils/mockApi"
-  ) as typeof import("../../../testUtils/mockApi");
-  const bundle = createMockApi();
-  return {
-    ...actual,
-    apiFactory: bundle.factory,
-    __bundle: bundle,
-  };
-});
+jest.mock("../../../api/graphqlClient", () => ({
+  graphqlClient: { request: jest.fn() },
+  getGraphqlWsClient: jest.fn(() => ({
+    subscribe: jest.fn(() => () => {}),
+    dispose: jest.fn(),
+  })),
+}));
 
-const mockApi = (jest.requireMock("../../../api") as { __bundle: MockApiBundle }).__bundle;
+import { graphqlClient } from "../../../api/graphqlClient";
+
+const mockedRequest = graphqlClient.request as jest.Mock;
 
 const buildSpeakerNote = (): ProcessedNote => ({
   id: "n1",
@@ -65,7 +61,7 @@ describe("NoteViewer — T3 speaker-aware transcript", () => {
 
   it("renders markdown speaker headers as bold text", async () => {
     const note = buildSpeakerNote();
-    mockApi.notesApi.getById.mockResolvedValue(note);
+    mockedRequest.mockResolvedValue({ note });
 
     renderWithRouter(
       <Routes>
@@ -74,7 +70,7 @@ describe("NoteViewer — T3 speaker-aware transcript", () => {
       { initialEntries: ["/notes/n1"] }
     );
 
-    await waitFor(() => expect(mockApi.notesApi.getById).toHaveBeenCalledWith("n1"));
+    await waitFor(() => expect(mockedRequest).toHaveBeenCalled());
 
     const strongNodes = await screen.findAllByText(
       (_, node) =>

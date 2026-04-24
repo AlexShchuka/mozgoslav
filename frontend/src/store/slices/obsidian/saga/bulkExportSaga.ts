@@ -1,9 +1,8 @@
-import axios from "axios";
 import { call, put, takeLatest } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 
 import { apiFactory } from "../../../../api";
-import type { ObsidianBulkExportError } from "../../../../api/ObsidianApi";
+import type { ObsidianBulkExportError } from "../apiTypes";
 import { notifyError, notifyInfo, notifySuccess } from "../../notifications";
 import { BULK_EXPORT, bulkExportDone, fetchDiagnostics } from "../actions";
 import type { ObsidianBulkExportReport } from "../types";
@@ -55,8 +54,13 @@ export function* watchBulkExport(): SagaIterator {
 }
 
 function extractEnrichedError(error: unknown): ObsidianBulkExportError | null {
-  if (!axios.isAxiosError(error)) return null;
-  const body = error.response?.data;
+  if (!(error instanceof Error)) return null;
+  let body: unknown;
+  try {
+    body = JSON.parse(error.message);
+  } catch {
+    return null;
+  }
   if (!body || typeof body !== "object") return null;
   const candidate = body as Partial<ObsidianBulkExportError>;
   if (typeof candidate.error !== "string" || typeof candidate.hint !== "string") return null;

@@ -7,24 +7,54 @@ import { ProcessedNote } from "../../../domain/ProcessedNote";
 import { watchNotificationsSagas } from "../../../store/slices/notifications";
 import { watchObsidianSagas } from "../../../store/slices/obsidian";
 import { watchSettingsSagas } from "../../../store/slices/settings";
-import type { MockApiBundle } from "../../../testUtils";
 import { renderWithStore } from "../../../testUtils";
 import "../../../i18n";
 
+jest.mock("../../../api/graphqlClient", () => ({
+  graphqlClient: { request: jest.fn() },
+  getGraphqlWsClient: jest.fn(() => ({
+    subscribe: jest.fn(() => () => {}),
+    dispose: jest.fn(),
+  })),
+}));
+
 jest.mock("../../../api", () => {
   const actual = jest.requireActual("../../../api");
-  const { createMockApi } = jest.requireActual(
-    "../../../testUtils/mockApi"
-  ) as typeof import("../../../testUtils/mockApi");
-  const bundle = createMockApi();
+  const obsidianApi = {
+    setup: jest.fn(),
+    bulkExport: jest.fn(),
+    applyLayout: jest.fn().mockResolvedValue({ createdFolders: 0, movedNotes: 0 }),
+    detect: jest.fn(),
+    restHealth: jest.fn(),
+    diagnostics: jest.fn(),
+    reapplyBootstrap: jest.fn(),
+    reinstallPlugins: jest.fn(),
+  };
+  const settingsApi = {
+    getSettings: jest.fn().mockResolvedValue({ vaultPath: "/tmp/vault" }),
+    saveSettings: jest.fn(),
+    checkLlm: jest.fn(),
+  };
   return {
     ...actual,
-    apiFactory: bundle.factory,
-    __bundle: bundle,
+    apiFactory: {
+      ...actual.apiFactory,
+      createObsidianApi: () => obsidianApi,
+      createSettingsApi: () => settingsApi,
+    },
+    __obsidianApi: obsidianApi,
+    __settingsApi: settingsApi,
   };
 });
 
-const mockApi = (jest.requireMock("../../../api") as { __bundle: MockApiBundle }).__bundle;
+import { graphqlClient } from "../../../api/graphqlClient";
+
+const mockedRequest = graphqlClient.request as jest.Mock;
+
+const getObsidianApi = () =>
+  (jest.requireMock("../../../api") as { __obsidianApi: Record<string, jest.Mock> }).__obsidianApi;
+const getSettingsApi = () =>
+  (jest.requireMock("../../../api") as { __settingsApi: Record<string, jest.Mock> }).__settingsApi;
 
 const buildNote = (patch: Partial<ProcessedNote>): ProcessedNote => ({
   id: patch.id ?? "n1",
@@ -59,14 +89,11 @@ const renderNotes = () =>
 describe("NotesList — add note (BC-022 / Bug 4)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockApi.settingsApi.getSettings.mockResolvedValue({
-      vaultPath: "/tmp/vault",
-    } as never);
+    getSettingsApi().getSettings.mockResolvedValue({ vaultPath: "/tmp/vault" });
+    mockedRequest.mockResolvedValue({ notes: { nodes: [], pageInfo: { hasNextPage: false } } });
   });
 
   it("NotesList_AddNote_OpensEditor", async () => {
-    mockApi.notesApi.list.mockResolvedValue([]);
-
     renderNotes();
 
     const btn = await screen.findByTestId("notes-add-button");
@@ -77,13 +104,18 @@ describe("NotesList — add note (BC-022 / Bug 4)", () => {
   });
 
   it("NotesList_AddNote_SubmitsAndInserts", async () => {
-    mockApi.notesApi.list.mockResolvedValue([]);
     const created = buildNote({
       id: "new-1",
       topic: "handwritten",
       markdownContent: "Hello",
     });
-    mockApi.notesApi.create.mockResolvedValue(created);
+    mockedRequest.mockImplementation((doc: unknown) => {
+      const docStr = JSON.stringify(doc);
+      if (docStr.includes("createNote")) {
+        return Promise.resolve({ createNote: { note: created, errors: [] } });
+      }
+      return Promise.resolve({ notes: { nodes: [], pageInfo: { hasNextPage: false } } });
+    });
 
     renderNotes();
 
@@ -93,16 +125,15 @@ describe("NotesList — add note (BC-022 / Bug 4)", () => {
     await userEvent.click(screen.getByTestId("notes-add-submit"));
 
     await waitFor(() =>
-      expect(mockApi.notesApi.create).toHaveBeenCalledWith({
-        title: "handwritten",
-        body: "Hello",
-      })
+      expect(mockedRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ input: expect.objectContaining({ title: "handwritten" }) })
+      )
     );
     expect(await screen.findByText(/handwritten/)).toBeInTheDocument();
   });
 
   it("NotesList_EmptyState", async () => {
-    mockApi.notesApi.list.mockResolvedValue([]);
     renderNotes();
     await waitFor(() =>
       expect(screen.getByText(/Пока пусто|Nothing here yet/)).toBeInTheDocument()
@@ -113,17 +144,60 @@ describe("NotesList — add note (BC-022 / Bug 4)", () => {
 describe("NotesList — grouping by vault path folder", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockApi.settingsApi.getSettings.mockResolvedValue({
-      vaultPath: "/vault",
-    } as never);
   });
 
   it("renders folder headers derived from vaultPath and click opens note", async () => {
-    mockApi.notesApi.list.mockResolvedValue([
-      buildNote({ id: "n1", topic: "Alpha", vaultPath: "/vault/Projects/Alpha.md" }),
-      buildNote({ id: "n2", topic: "Beta", vaultPath: "/vault/Archive/Beta.md" }),
-      buildNote({ id: "n3", topic: "Gamma", vaultPath: null }),
-    ]);
+    mockedRequest.mockImplementation((doc: unknown) => {
+      const docStr = JSON.stringify(doc);
+      if (docStr.includes("QuerySettings")) {
+        return Promise.resolve({
+          settings: {
+            vaultPath: "/vault",
+            llmEndpoint: "",
+            llmModel: "",
+            llmApiKey: "",
+            llmProvider: "",
+            obsidianApiHost: "",
+            obsidianApiToken: "",
+            whisperModelPath: "",
+            vadModelPath: "",
+            language: "ru",
+            themeMode: "system",
+            whisperThreads: 4,
+            dictationEnabled: false,
+            dictationHotkeyType: "mouse",
+            dictationMouseButton: 4,
+            dictationKeyboardHotkey: "",
+            dictationPushToTalk: false,
+            dictationLanguage: "ru",
+            dictationWhisperModelId: "",
+            dictationCaptureSampleRate: 16000,
+            dictationLlmPolish: false,
+            dictationInjectMode: "auto",
+            dictationOverlayEnabled: true,
+            dictationOverlayPosition: "bottom-center",
+            dictationSoundFeedback: true,
+            dictationVocabulary: [],
+            dictationModelUnloadMinutes: 10,
+            dictationTempAudioPath: "",
+            dictationAppProfiles: [],
+            syncthingEnabled: false,
+            syncthingObsidianVaultPath: "",
+            obsidianFeatureEnabled: false,
+          },
+        });
+      }
+      return Promise.resolve({
+        notes: {
+          nodes: [
+            buildNote({ id: "n1", topic: "Alpha", vaultPath: "/vault/Projects/Alpha.md" }),
+            buildNote({ id: "n2", topic: "Beta", vaultPath: "/vault/Archive/Beta.md" }),
+            buildNote({ id: "n3", topic: "Gamma", vaultPath: null }),
+          ],
+          pageInfo: { hasNextPage: false },
+        },
+      });
+    });
 
     renderNotes();
 
@@ -134,14 +208,56 @@ describe("NotesList — grouping by vault path folder", () => {
   });
 });
 
+const stubSettingsRequest = (vaultPath: string) => (doc: unknown) => {
+  const docStr = JSON.stringify(doc);
+  if (docStr.includes("QuerySettings")) {
+    return Promise.resolve({
+      settings: {
+        vaultPath,
+        llmEndpoint: "",
+        llmModel: "",
+        llmApiKey: "",
+        llmProvider: "",
+        obsidianApiHost: "",
+        obsidianApiToken: "",
+        whisperModelPath: "",
+        vadModelPath: "",
+        language: "ru",
+        themeMode: "system",
+        whisperThreads: 4,
+        dictationEnabled: false,
+        dictationHotkeyType: "mouse",
+        dictationMouseButton: 4,
+        dictationKeyboardHotkey: "",
+        dictationPushToTalk: false,
+        dictationLanguage: "ru",
+        dictationWhisperModelId: "",
+        dictationCaptureSampleRate: 16000,
+        dictationLlmPolish: false,
+        dictationInjectMode: "auto",
+        dictationOverlayEnabled: true,
+        dictationOverlayPosition: "bottom-center",
+        dictationSoundFeedback: true,
+        dictationVocabulary: [],
+        dictationModelUnloadMinutes: 10,
+        dictationTempAudioPath: "",
+        dictationAppProfiles: [],
+        syncthingEnabled: false,
+        syncthingObsidianVaultPath: "",
+        obsidianFeatureEnabled: false,
+      },
+    });
+  }
+  return Promise.resolve({ notes: { nodes: [], pageInfo: { hasNextPage: false } } });
+};
+
 describe("NotesList — organize button", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockApi.notesApi.list.mockResolvedValue([]);
   });
 
   it("disables organize when vault path is empty", async () => {
-    mockApi.settingsApi.getSettings.mockResolvedValue({ vaultPath: "" } as never);
+    mockedRequest.mockImplementation(stubSettingsRequest(""));
     renderNotes();
 
     const btn = await screen.findByTestId("notes-organize");
@@ -149,13 +265,8 @@ describe("NotesList — organize button", () => {
   });
 
   it("calls obsidian.applyLayout when vault path is configured", async () => {
-    mockApi.settingsApi.getSettings.mockResolvedValue({
-      vaultPath: "/vault",
-    } as never);
-    mockApi.obsidianApi.applyLayout.mockResolvedValue({
-      createdFolders: 0,
-      movedNotes: 0,
-    });
+    mockedRequest.mockImplementation(stubSettingsRequest("/vault"));
+    getObsidianApi().applyLayout.mockResolvedValue({ createdFolders: 0, movedNotes: 0 });
 
     renderNotes();
 
@@ -163,6 +274,6 @@ describe("NotesList — organize button", () => {
     await waitFor(() => expect(btn).not.toBeDisabled());
     await userEvent.click(btn);
 
-    await waitFor(() => expect(mockApi.obsidianApi.applyLayout).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(getObsidianApi().applyLayout).toHaveBeenCalledTimes(1));
   });
 });

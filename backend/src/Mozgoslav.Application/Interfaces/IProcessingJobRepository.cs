@@ -14,6 +14,7 @@ public interface IProcessingJobRepository
     Task<ProcessingJob?> GetByIdAsync(Guid id, CancellationToken ct);
     Task UpdateAsync(ProcessingJob job, CancellationToken ct);
     Task<IReadOnlyList<ProcessingJob>> GetAllAsync(CancellationToken ct);
+    Task<IReadOnlyList<ProcessingJob>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken ct);
     Task<IReadOnlyList<ProcessingJob>> GetByRecordingIdAsync(Guid recordingId, CancellationToken ct);
     Task<IReadOnlyList<ProcessingJob>> GetActiveAsync(CancellationToken ct);
     Task<IReadOnlyList<ProcessingJob>> GetByStatusAsync(JobStatus status, CancellationToken ct);

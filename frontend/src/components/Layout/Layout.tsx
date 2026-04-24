@@ -15,7 +15,6 @@ import {
   RefreshCw,
   Settings,
   Sparkles,
-  Wrench,
 } from "lucide-react";
 
 import { useBackendHealth } from "../../hooks/useBackendHealth";
@@ -101,9 +100,6 @@ const Layout: FC<LayoutProps> = ({ children }) => {
           <SidebarGroup>
             <NavItem to={ROUTES.settings} icon={<Settings size={16} />} onClick={onNavClick}>
               {t("nav.settings")}
-            </NavItem>
-            <NavItem to={ROUTES.logs} icon={<Wrench size={16} />} onClick={onNavClick}>
-              {t("nav.logs")}
             </NavItem>
             <NavItem to={ROUTES.backup} icon={<Archive size={16} />} onClick={onNavClick}>
               {t("nav.backup")}

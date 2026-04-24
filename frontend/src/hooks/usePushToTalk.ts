@@ -1,6 +1,10 @@
 import { useEffect } from "react";
 
-import { BACKEND_URL } from "../constants/api";
+import { print } from "graphql";
+
+import { SubscriptionHotkeyEventsDocument } from "../api/gql/graphql";
+import type { SubscriptionHotkeyEventsSubscription } from "../api/gql/graphql";
+import { getGraphqlWsClient } from "../api/graphqlClient";
 
 export interface HotkeyEventFrame {
   kind: "press" | "release";
@@ -15,21 +19,34 @@ export interface UsePushToTalkHandlers {
 
 export const usePushToTalk = (handlers: UsePushToTalkHandlers): void => {
   useEffect(() => {
-    if (typeof EventSource === "undefined") return;
-    const url = `${BACKEND_URL}/api/hotkey/stream`;
-    const source = new EventSource(url);
-    const handle = (ev: MessageEvent) => {
-      try {
-        const frame = JSON.parse(ev.data) as HotkeyEventFrame;
-        if (frame.kind === "press") handlers.onPress?.(frame);
-        else if (frame.kind === "release") handlers.onRelease?.(frame);
-      } catch {}
-    };
-    source.addEventListener("hotkey", handle);
-    source.onmessage = handle;
-    source.onerror = () => {};
+    const wsClient = getGraphqlWsClient();
+    const unsubscribe = wsClient.subscribe<SubscriptionHotkeyEventsSubscription>(
+      { query: print(SubscriptionHotkeyEventsDocument) },
+      {
+        next: (value) => {
+          if (!value.data) return;
+          const frame = value.data.hotkeyEvents;
+          if (frame.kind === "press") {
+            handlers.onPress?.({
+              kind: "press",
+              accelerator: frame.accelerator,
+              observedAt: frame.observedAt,
+            });
+          } else if (frame.kind === "release") {
+            handlers.onRelease?.({
+              kind: "release",
+              accelerator: frame.accelerator,
+              observedAt: frame.observedAt,
+            });
+          }
+        },
+        error: () => {},
+        complete: () => {},
+      }
+    );
     return () => {
-      source.close();
+      unsubscribe();
+      void wsClient.dispose();
     };
   }, [handlers]);
 };

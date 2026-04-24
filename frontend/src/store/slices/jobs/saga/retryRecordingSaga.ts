@@ -1,13 +1,16 @@
-import { call, takeEvery } from "redux-saga/effects";
+import { takeEvery } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 
-import { apiFactory } from "../../../../api";
+import { MutationReprocessRecordingDocument } from "../../../../api/gql/graphql";
+import { gqlRequest } from "../../../saga/graphql";
 import { RETRY_RECORDING, type RetryRecordingAction } from "../actions";
 
 export function* retryRecordingSaga(action: RetryRecordingAction): SagaIterator {
-  const api = apiFactory.createRecordingApi();
   try {
-    yield call([api, api.reprocess], action.payload.recordingId, action.payload.profileId);
+    yield* gqlRequest(MutationReprocessRecordingDocument, {
+      recordingId: action.payload.recordingId,
+      profileId: action.payload.profileId,
+    });
   } catch {}
 }
 

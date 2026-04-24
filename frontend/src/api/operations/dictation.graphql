@@ -1,0 +1,76 @@
+query QueryDictationAudioCapabilities {
+  dictationAudioCapabilities {
+    isSupported
+    detectedPlatform
+    permissionsRequired
+  }
+}
+
+query QueryDictationStatus($sessionId: UUID!) {
+  dictationStatus(sessionId: $sessionId) {
+    sessionId
+    state
+    source
+    startedAt
+  }
+}
+
+mutation MutationDictationStart($source: String) {
+  dictationStart(source: $source) {
+    sessionId
+    source
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationDictationStop($sessionId: UUID!, $bundleId: String) {
+  dictationStop(sessionId: $sessionId, bundleId: $bundleId) {
+    rawText
+    polishedText
+    durationMs
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationDictationCancel($sessionId: UUID!) {
+  dictationCancel(sessionId: $sessionId) {
+    errors {
+      code
+      message
+    }
+  }
+}
+
+subscription SubscriptionDictationEvents($sessionId: UUID!) {
+  dictationEvents(sessionId: $sessionId) {
+    sessionId
+    text
+    timestampMs
+  }
+}
+
+subscription SubscriptionAudioDeviceChanged {
+  audioDeviceChanged {
+    kind
+    devices {
+      id
+      name
+      isDefault
+    }
+    observedAt
+  }
+}
+
+subscription SubscriptionHotkeyEvents {
+  hotkeyEvents {
+    kind
+    accelerator
+    observedAt
+  }
+}

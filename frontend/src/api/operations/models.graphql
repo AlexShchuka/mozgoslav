@@ -1,0 +1,34 @@
+query QueryModels {
+  models {
+    id
+    name
+    description
+    url
+    sizeMb
+    kind
+    tier
+    isDefault
+    destinationPath
+    installed
+  }
+}
+
+mutation MutationDownloadModel($catalogueId: String!) {
+  downloadModel(catalogueId: $catalogueId) {
+    downloadId
+    errors {
+      code
+      message
+    }
+  }
+}
+
+subscription SubscriptionModelDownloadProgress($downloadId: String!) {
+  modelDownloadProgress(downloadId: $downloadId) {
+    downloadId
+    bytesRead
+    totalBytes
+    done
+    error
+  }
+}

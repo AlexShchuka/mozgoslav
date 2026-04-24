@@ -10,7 +10,6 @@ import RagChat from "./features/RagChat";
 import Profiles from "./features/Profiles";
 import Models from "./features/Models";
 import SettingsPage from "./features/Settings";
-import Logs from "./features/Logs";
 import Backups from "./features/Backups";
 import Obsidian from "./features/Obsidian";
 import Sync from "./features/Sync";
@@ -107,14 +106,6 @@ const AppShell: FC = () => {
             element={
               <OnboardingCompleteGuard>
                 <SettingsPage />
-              </OnboardingCompleteGuard>
-            }
-          />
-          <Route
-            path={ROUTES.logs}
-            element={
-              <OnboardingCompleteGuard>
-                <Logs />
               </OnboardingCompleteGuard>
             }
           />

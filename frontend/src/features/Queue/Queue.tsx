@@ -2,18 +2,22 @@ import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ListChecks, X } from "lucide-react";
 import { toast } from "react-toastify";
+import { print } from "graphql";
 
 import Badge, { BadgeTone } from "../../components/Badge";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
 import ProgressBar from "../../components/ProgressBar";
-import { apiFactory } from "../../api";
+import { graphqlClient, getGraphqlWsClient } from "../../api/graphqlClient";
+import {
+  MutationCancelJobDocument,
+  QueryJobsDocument,
+  SubscriptionJobProgressDocument,
+} from "../../api/gql/graphql";
+import type { SubscriptionJobProgressSubscription } from "../../api/gql/graphql";
 import { ProcessingJob } from "../../domain/ProcessingJob";
-import { API_ENDPOINTS, BACKEND_URL } from "../../constants/api";
 import { JobHeader, JobMeta, JobRow, PageRoot, PageTitle, ResumeCopy } from "./Queue.style";
-
-const jobsApi = apiFactory.createJobsApi();
 
 const TERMINAL: ProcessingJob["status"][] = ["Done", "Failed", "Cancelled"];
 
@@ -37,38 +41,44 @@ const Queue: FC = () => {
   const { t } = useTranslation();
   const [jobs, setJobs] = useState<ProcessingJob[]>([]);
   const [cancellingIds, setCancellingIds] = useState<Set<string>>(() => new Set());
-  const [reconnectKey, setReconnectKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
-        const initial = await jobsApi.list();
-        if (!cancelled) setJobs(initial);
+        const data = await graphqlClient.request(QueryJobsDocument, { first: 200 });
+        if (!cancelled) {
+          setJobs((data.jobs?.nodes ?? []) as unknown as ProcessingJob[]);
+        }
       } catch {}
     })();
 
-    const es = new EventSource(`${BACKEND_URL}${API_ENDPOINTS.jobsStream}`);
-    es.addEventListener("job", (ev) => {
-      const job = JSON.parse((ev as MessageEvent).data) as ProcessingJob;
-      setJobs((prev) => {
-        const idx = prev.findIndex((j) => j.id === job.id);
-        if (idx === -1) return [job, ...prev];
-        const copy = prev.slice();
-        copy[idx] = { ...copy[idx], ...job };
-        return copy;
-      });
-    });
-    es.onerror = () => {
-      es.close();
-      setReconnectKey((k) => k + 1);
-    };
+    const wsClient = getGraphqlWsClient();
+    const unsubscribe = wsClient.subscribe<SubscriptionJobProgressSubscription>(
+      { query: print(SubscriptionJobProgressDocument) },
+      {
+        next: (value) => {
+          if (!value.data) return;
+          const job = value.data.jobProgress as unknown as ProcessingJob;
+          setJobs((prev) => {
+            const idx = prev.findIndex((j) => j.id === job.id);
+            if (idx === -1) return [job, ...prev];
+            const copy = prev.slice();
+            copy[idx] = { ...copy[idx], ...job };
+            return copy;
+          });
+        },
+        error: () => {},
+        complete: () => {},
+      }
+    );
 
     return () => {
       cancelled = true;
-      es.close();
+      unsubscribe();
+      void wsClient.dispose();
     };
-  }, [reconnectKey]);
+  }, []);
 
   const sorted = useMemo(
     () =>
@@ -91,7 +101,7 @@ const Queue: FC = () => {
         return next;
       });
       try {
-        await jobsApi.cancel(job.id);
+        await graphqlClient.request(MutationCancelJobDocument, { id: job.id });
         setJobs((prev) => prev.filter((j) => j.id !== job.id));
       } catch (err) {
         toast.error(err instanceof Error ? err.message : String(err));

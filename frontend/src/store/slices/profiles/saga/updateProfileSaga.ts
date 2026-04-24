@@ -1,24 +1,31 @@
-import { call, put, takeEvery } from "redux-saga/effects";
+import { put, takeEvery } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 
-import { apiFactory } from "../../../../api";
-import type { Profile } from "../../../../domain/Profile";
+import type { MutationUpdateProfileMutation } from "../../../../api/gql/graphql";
+import { MutationUpdateProfileDocument } from "../../../../api/gql/graphql";
+import { gqlRequest } from "../../../saga/graphql";
 import {
   UPDATE_PROFILE,
   type UpdateProfileAction,
   updateProfileFailure,
   updateProfileSuccess,
 } from "../actions";
+import { mapDomainProfileToInput, mapGqlProfile } from "./profileMapper";
 
 export function* updateProfileSaga(action: UpdateProfileAction): SagaIterator {
-  const profilesApi = apiFactory.createProfilesApi();
   try {
-    const updated: Profile = yield call(
-      [profilesApi, profilesApi.update],
-      action.payload.id,
-      action.payload.draft
-    );
-    yield put(updateProfileSuccess(updated));
+    const result = (yield* gqlRequest(MutationUpdateProfileDocument, {
+      id: action.payload.id,
+      input: mapDomainProfileToInput(action.payload.draft),
+    })) as MutationUpdateProfileMutation;
+
+    const dto = result.updateProfile.profile;
+    if (dto) {
+      yield put(updateProfileSuccess(mapGqlProfile(dto)));
+    } else {
+      const firstError = result.updateProfile.errors[0];
+      yield put(updateProfileFailure(firstError?.message ?? "Update failed"));
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     yield put(updateProfileFailure(message));

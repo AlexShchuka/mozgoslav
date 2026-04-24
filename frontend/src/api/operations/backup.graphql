@@ -1,0 +1,23 @@
+query QueryBackups {
+  backups {
+    name
+    path
+    sizeBytes
+    createdAt
+  }
+}
+
+mutation MutationCreateBackup {
+  createBackup {
+    backup {
+      name
+      path
+      sizeBytes
+      createdAt
+    }
+    errors {
+      code
+      message
+    }
+  }
+}

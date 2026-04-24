@@ -2,35 +2,35 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 import Models from "../Models";
-import { type MockApiBundle, renderWithStore } from "../../../testUtils";
+import { renderWithStore } from "../../../testUtils";
 import { darkTheme } from "../../../styles/theme";
 import "../../../i18n";
 
-jest.mock("../../../api", () => {
-  const actual = jest.requireActual("../../../api");
-  const { createMockApi } = jest.requireActual(
-    "../../../testUtils/mockApi"
-  ) as typeof import("../../../testUtils/mockApi");
-  const bundle = createMockApi();
-  return {
-    ...actual,
-    apiFactory: bundle.factory,
-    __bundle: bundle,
-  };
-});
+jest.mock("../../../api/graphqlClient", () => ({
+  graphqlClient: { request: jest.fn() },
+  getGraphqlWsClient: jest.fn(() => ({
+    subscribe: jest.fn(() => jest.fn()),
+    dispose: jest.fn(),
+  })),
+}));
 
-const mockApi = (jest.requireMock("../../../api") as { __bundle: MockApiBundle }).__bundle;
+import { graphqlClient } from "../../../api/graphqlClient";
 
-class StubEventSource {
-  public onmessage: ((ev: MessageEvent) => void) | null = null;
-  public onerror: ((ev: Event) => void) | null = null;
+const mockedRequest = graphqlClient.request as jest.Mock;
 
-  public addEventListener(): void {}
-
-  public removeEventListener(): void {}
-
-  public close(): void {}
-}
+const fakeModel = {
+  __typename: "ModelEntry" as const,
+  id: "whisper-small-russian-bundle",
+  name: "Whisper Small",
+  description: "Bundled STT",
+  url: "u",
+  sizeMb: 260,
+  kind: "STT" as const,
+  tier: "BUNDLE" as const,
+  isDefault: false,
+  destinationPath: "/models/ggml-small-q8_0.bin",
+  installed: false,
+};
 
 const renderModels = () =>
   renderWithStore(
@@ -43,26 +43,13 @@ const renderModels = () =>
 describe("Models page — task #13 inline download progress", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (global as { EventSource: typeof EventSource }).EventSource =
-      StubEventSource as unknown as typeof EventSource;
-    mockApi.modelsApi.list.mockResolvedValue([
-      {
-        id: "whisper-small-russian-bundle",
-        name: "Whisper Small",
-        description: "Bundled STT",
-        url: "u",
-        sizeMb: 260,
-        kind: "Stt",
-        tier: "bundle",
-        isDefault: false,
-        destinationPath: "/models/ggml-small-q8_0.bin",
-        installed: false,
-      },
-    ]);
+    mockedRequest.mockResolvedValue({ models: [fakeModel] });
   });
 
   it("mounts <ModelDownloadProgress/> under a row when Download is clicked", async () => {
-    mockApi.modelsApi.download.mockResolvedValue({ downloadId: "dl-abc" });
+    mockedRequest.mockResolvedValueOnce({ models: [fakeModel] }).mockResolvedValueOnce({
+      downloadModel: { downloadId: "dl-abc", errors: [] },
+    });
 
     renderModels();
 
@@ -71,9 +58,6 @@ describe("Models page — task #13 inline download progress", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /скачать/i }));
 
-    await waitFor(() =>
-      expect(mockApi.modelsApi.download).toHaveBeenCalledWith("whisper-small-russian-bundle")
-    );
     await waitFor(() => expect(screen.getByTestId("model-download-dl-abc")).toBeInTheDocument());
   });
 

@@ -5,11 +5,7 @@ import { watchCancelJob } from "./cancelJobSaga";
 import { watchRetryRecording } from "./retryRecordingSaga";
 import { watchSubscribeJobs } from "./subscribeJobsSaga";
 
-export {
-  subscribeJobsSaga,
-  createJobsChannel,
-  __setEventSourceFactoryForTests,
-} from "./subscribeJobsSaga";
+export { subscribeJobsSaga } from "./subscribeJobsSaga";
 export { cancelJobSaga } from "./cancelJobSaga";
 export { retryRecordingSaga } from "./retryRecordingSaga";
 

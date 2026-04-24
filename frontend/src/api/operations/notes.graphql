@@ -1,0 +1,118 @@
+query QueryNotes($first: Int, $after: String, $last: Int, $before: String) {
+  notes(first: $first, after: $after, last: $last, before: $before) {
+    totalCount
+    nodes {
+      id
+      transcriptId
+      profileId
+      version
+      source
+      title
+      summary
+      keyPoints
+      decisions
+      actionItems {
+        person
+        task
+        deadline
+      }
+      unresolvedQuestions
+      participants
+      topic
+      conversationType
+      cleanTranscript
+      fullTranscript
+      tags
+      markdownContent
+      exportedToVault
+      vaultPath
+      createdAt
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+
+query QueryNote($id: UUID!) {
+  note(id: $id) {
+    id
+    transcriptId
+    profileId
+    version
+    source
+    title
+    summary
+    keyPoints
+    decisions
+    actionItems {
+      person
+      task
+      deadline
+    }
+    unresolvedQuestions
+    participants
+    topic
+    conversationType
+    cleanTranscript
+    fullTranscript
+    tags
+    markdownContent
+    exportedToVault
+    vaultPath
+    createdAt
+  }
+}
+
+mutation MutationDeleteNote($id: UUID!) {
+  deleteNote(id: $id) {
+    note {
+      id
+    }
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationCreateNote($input: CreateNoteInput!) {
+  createNote(input: $input) {
+    note {
+      id
+      title
+      topic
+      summary
+      source
+      markdownContent
+      exportedToVault
+      vaultPath
+      tags
+      version
+      transcriptId
+      profileId
+      createdAt
+    }
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationExportNote($id: UUID!) {
+  exportNote(id: $id) {
+    note {
+      id
+      exportedToVault
+      vaultPath
+    }
+    errors {
+      code
+      message
+    }
+  }
+}

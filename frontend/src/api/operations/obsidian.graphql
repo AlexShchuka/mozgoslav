@@ -1,0 +1,23 @@
+query QueryObsidianDetect {
+  obsidianDetect {
+    detected {
+      path
+      name
+    }
+    searched
+  }
+}
+
+mutation MutationSetupObsidian($vaultPath: String) {
+  setupObsidian(vaultPath: $vaultPath) {
+    report {
+      vaultPath
+      createdPaths
+      skippedPaths
+    }
+    errors {
+      code
+      message
+    }
+  }
+}

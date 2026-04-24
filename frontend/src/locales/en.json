@@ -12,7 +12,6 @@
     "profiles": "Profiles",
     "models": "Models",
     "settings": "Settings",
-    "logs": "Logs",
     "backup": "Backups",
     "obsidian": "Obsidian",
     "sync": "Sync"
@@ -88,7 +87,8 @@
     "deviceChanged": "Microphone \"{{name}}\" — {{kind}}",
     "recentTitle": "Recent recordings",
     "empty": "No recordings yet — import or record your first one.",
-    "recordedSaved": "Recording saved and queued for processing"
+    "recordedSaved": "Recording saved and queued for processing",
+    "dropRequiresElectron": "Drag-and-drop is only available in the desktop app"
   },
   "queue": {
     "title": "Processing queue",
@@ -396,12 +396,6 @@
     "reprocess": "Reprocess note",
     "exportNote": "Export note",
     "toggleRecord": "Record / stop"
-  },
-  "logs": {
-    "title": "Logs",
-    "download": "Download file",
-    "refresh": "Refresh",
-    "empty": "No log lines yet — run the pipeline."
   },
   "backup": {
     "title": "Backups",

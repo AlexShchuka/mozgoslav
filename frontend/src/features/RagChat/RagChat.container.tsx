@@ -1,11 +1,12 @@
-import { FC, useCallback, useEffect, useMemo, useState } from "react";
+import { FC, useCallback, useEffect, useState } from "react";
 import { connect } from "react-redux";
 import { bindActionCreators, type Dispatch } from "redux";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 
-import { apiFactory } from "../../api";
+import { graphqlClient } from "../../api/graphqlClient";
+import { MutationRagReindexDocument, QueryRagStatusDocument } from "../../api/gql/graphql";
 import { askQuestion, selectRagIsAsking, selectRagMessages } from "../../store/slices/rag";
 import type { RagCitation, RagMessage } from "../../store/slices/rag/types";
 import type { GlobalState } from "../../store";
@@ -40,18 +41,19 @@ type Wired = StateProps & DispatchProps;
 const RagChatContainer: FC<Wired> = (props) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const ragApi = useMemo(() => apiFactory.createRagApi(), []);
   const [status, setStatus] = useState<RagIndexStatus | null>(null);
   const [isReindexing, setIsReindexing] = useState(false);
 
   const refreshStatus = useCallback(async (): Promise<void> => {
     try {
-      const next = await ragApi.status();
-      setStatus(next);
+      const data = await graphqlClient.request(QueryRagStatusDocument);
+      if (data.ragStatus) {
+        setStatus({ chunks: data.ragStatus.chunks, notes: data.ragStatus.embeddedNotes });
+      }
     } catch {
       setStatus(null);
     }
-  }, [ragApi]);
+  }, []);
 
   useEffect(() => {
     void refreshStatus();
@@ -67,7 +69,8 @@ const RagChatContainer: FC<Wired> = (props) => {
     if (isReindexing) return;
     setIsReindexing(true);
     try {
-      const result = await ragApi.reindex();
+      const data = await graphqlClient.request(MutationRagReindexDocument);
+      const result = data.ragReindex;
       toast.success(t("rag.reindexedToast", { count: result.embeddedNotes }));
       await refreshStatus();
     } catch (err) {
@@ -75,7 +78,7 @@ const RagChatContainer: FC<Wired> = (props) => {
     } finally {
       setIsReindexing(false);
     }
-  }, [isReindexing, ragApi, refreshStatus, t]);
+  }, [isReindexing, refreshStatus, t]);
 
   return (
     <RagChat

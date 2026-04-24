@@ -162,6 +162,25 @@ jobs:
           name: frontend-coverage
           path: frontend/coverage/
           retention-days: 7
+      - name: Phase 13 drift guard — no feature-level apiFactory imports
+        run: |
+          set -euo pipefail
+          hits=$(grep -rn "apiFactory" frontend/src/features/ --include="*.ts" --include="*.tsx" | grep -v "__tests__" | grep -v "\.test\." || true)
+          if [ -n "$hits" ]; then
+            echo "::error::Feature files must not import apiFactory directly (obsidian sagas are the only allowed consumers, under store/slices/obsidian/)."
+            echo "$hits"
+            exit 1
+          fi
+      - name: Phase 13 drift guard — no deleted *Api.ts imports
+        run: |
+          set -euo pipefail
+          deleted="BackupApi|DictationApi|HealthApi|JobsApi|LogsApi|MetaApi|ModelsApi|NotesApi|ProfilesApi|RagApi|RecordingApi|SettingsApi|SyncApi"
+          hits=$(grep -rn "from.*'.*\(${deleted}\)'" frontend/src/ --include="*.ts" --include="*.tsx" | grep -v "node_modules" || true)
+          if [ -n "$hits" ]; then
+            echo "::error::Imports of deleted API clients detected. Migrate to graphqlClient.request."
+            echo "$hits"
+            exit 1
+          fi
       - name: Build
         run: cd frontend && WATCHPACK_POLLING=true npm run build
 

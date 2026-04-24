@@ -1,8 +1,20 @@
 import type { SagaIterator, Task } from "redux-saga";
-import { END, eventChannel, type EventChannel } from "redux-saga";
-import { call, cancel, cancelled, fork, put, take, takeLatest } from "redux-saga/effects";
+import { cancel, cancelled, fork, put, take, takeLatest } from "redux-saga/effects";
+import type { EventChannel } from "redux-saga";
 
-import { createSyncEventSource, syncApi } from "../../../api/SyncApi";
+import {
+  MutationAcceptSyncDeviceDocument,
+  QuerySyncPairingPayloadDocument,
+  QuerySyncStatusDocument,
+  SubscriptionSyncEventsDocument,
+} from "../../../api/gql/graphql";
+import type {
+  MutationAcceptSyncDeviceMutation,
+  QuerySyncPairingPayloadQuery,
+  QuerySyncStatusQuery,
+  SubscriptionSyncEventsSubscription,
+} from "../../../api/gql/graphql";
+import { gqlRequest, gqlSubscriptionChannel } from "../../saga/graphql";
 import {
   ACCEPT_DEVICE,
   type AcceptDeviceAction,
@@ -20,17 +32,56 @@ import {
   syncEventStreamConnected,
   syncEventStreamDisconnected,
 } from "./actions";
-import type { SyncEvent } from "./types";
+import type { SyncEvent, SyncStatusSnapshot } from "./types";
 
-type StreamMessage = { kind: "open" } | { kind: "event"; event: SyncEvent } | { kind: "error" };
+function mapGqlStatus(data: QuerySyncStatusQuery): SyncStatusSnapshot | null {
+  if (!data.syncStatus) return null;
+  return {
+    folders: data.syncStatus.folders.map((f) => ({
+      id: f.id,
+      state: f.state,
+      completionPct: f.completionPct,
+      conflicts: f.conflicts,
+    })),
+    devices: data.syncStatus.devices.map((d) => ({
+      id: d.id,
+      name: d.name,
+      connected: d.connected,
+      lastSeen: d.lastSeen ?? null,
+    })),
+  };
+}
+
+function mapGqlEvent(evt: SubscriptionSyncEventsSubscription["syncEvents"]): SyncEvent {
+  return {
+    id: Number(evt.id),
+    type: evt.type,
+    time: String(evt.time),
+    folderCompletion: evt.folderCompletion
+      ? { folderId: evt.folderCompletion.folder, completionPct: evt.folderCompletion.completion }
+      : null,
+    deviceConnection: evt.deviceConnection
+      ? { deviceId: evt.deviceConnection.deviceId, connected: evt.deviceConnection.connected }
+      : null,
+    pendingDevices:
+      evt.pendingDevices?.added.map((e) => ({
+        deviceId: e.deviceId,
+        name: e.name ?? "",
+        address: e.address ?? null,
+      })) ?? null,
+    fileConflict: evt.fileConflict
+      ? { folderId: evt.fileConflict.folder, path: evt.fileConflict.path }
+      : null,
+  };
+}
 
 export function* loadStatusSaga(): SagaIterator {
   try {
-    const snapshot: Awaited<ReturnType<typeof syncApi.getStatus>> = yield call([
-      syncApi,
-      syncApi.getStatus,
-    ]);
-    yield put(loadSyncStatusSuccess(snapshot));
+    const data = (yield* gqlRequest(QuerySyncStatusDocument, {})) as QuerySyncStatusQuery;
+    const snapshot = mapGqlStatus(data);
+    if (snapshot) {
+      yield put(loadSyncStatusSuccess(snapshot));
+    }
   } catch (error) {
     yield put(loadSyncStatusFailure(extractMessage(error)));
   }
@@ -38,11 +89,19 @@ export function* loadStatusSaga(): SagaIterator {
 
 export function* loadPairingSaga(): SagaIterator {
   try {
-    const payload: Awaited<ReturnType<typeof syncApi.getPairingPayload>> = yield call([
-      syncApi,
-      syncApi.getPairingPayload,
-    ]);
-    yield put(loadPairingSuccess(payload));
+    const data = (yield* gqlRequest(
+      QuerySyncPairingPayloadDocument,
+      {}
+    )) as QuerySyncPairingPayloadQuery;
+    if (data.syncPairingPayload) {
+      yield put(
+        loadPairingSuccess({
+          deviceId: data.syncPairingPayload.deviceId,
+          folderIds: [...data.syncPairingPayload.folderIds],
+          uri: data.syncPairingPayload.uri,
+        })
+      );
+    }
   } catch (error) {
     yield put(loadPairingFailure(extractMessage(error)));
   }
@@ -51,40 +110,53 @@ export function* loadPairingSaga(): SagaIterator {
 export function* acceptDeviceSaga(action: AcceptDeviceAction): SagaIterator {
   const { deviceId, name } = action.payload;
   try {
-    yield call([syncApi, syncApi.acceptDevice], deviceId, name);
-    yield put(acceptDeviceSuccess(deviceId));
+    const data = (yield* gqlRequest(MutationAcceptSyncDeviceDocument, {
+      deviceId,
+      name,
+    })) as MutationAcceptSyncDeviceMutation;
+    if (data.acceptSyncDevice.errors.length > 0) {
+      yield put(acceptDeviceFailure(deviceId, data.acceptSyncDevice.errors[0].message));
+    } else {
+      yield put(acceptDeviceSuccess(deviceId));
+    }
   } catch (error) {
     yield put(acceptDeviceFailure(deviceId, extractMessage(error)));
   }
 }
 
-export function* syncEventStreamSaga(): SagaIterator {
-  const channel: EventChannel<StreamMessage> = yield call(buildEventChannel);
+function* consumeChannel(channel: EventChannel<SubscriptionSyncEventsSubscription>): SagaIterator {
   try {
+    yield put(syncEventStreamConnected());
     while (true) {
-      const message: StreamMessage = yield take(channel);
-      if (message.kind === "open") {
-        yield put(syncEventStreamConnected());
-      } else if (message.kind === "event") {
-        yield put(syncEventReceived(message.event));
-      } else {
-        yield put(syncEventStreamDisconnected());
-      }
+      const data: SubscriptionSyncEventsSubscription = yield take(channel);
+      yield put(syncEventReceived(mapGqlEvent(data.syncEvents)));
     }
   } finally {
     if (yield cancelled()) {
       channel.close();
-      yield put(syncEventStreamDisconnected());
     }
+    yield put(syncEventStreamDisconnected());
+  }
+}
+
+export function* syncEventStreamSaga(): SagaIterator {
+  const channel: EventChannel<SubscriptionSyncEventsSubscription> = gqlSubscriptionChannel(
+    SubscriptionSyncEventsDocument,
+    {}
+  );
+  const consumer: Task = yield fork(consumeChannel, channel);
+
+  try {
+    yield take(STOP_EVENT_STREAM);
+  } finally {
+    yield cancel(consumer);
   }
 }
 
 export function* watchSyncEventStream(): SagaIterator {
   while (true) {
     yield take(START_EVENT_STREAM);
-    const task: Task = yield fork(syncEventStreamSaga);
-    yield take(STOP_EVENT_STREAM);
-    yield cancel(task);
+    yield fork(syncEventStreamSaga);
   }
 }
 
@@ -94,26 +166,6 @@ export function* watchSyncSagas(): SagaIterator {
   yield takeLatest(ACCEPT_DEVICE, acceptDeviceSaga);
   yield fork(watchSyncEventStream);
 }
-
-export const buildEventChannel = (): EventChannel<StreamMessage> =>
-  eventChannel<StreamMessage>((emit) => {
-    const source = createSyncEventSource();
-    source.onopen = () => emit({ kind: "open" });
-    source.onerror = () => {
-      emit({ kind: "error" });
-    };
-    source.addEventListener("syncthing", (raw) => {
-      const messageEvent = raw as MessageEvent<string>;
-      try {
-        const parsed: SyncEvent = JSON.parse(messageEvent.data);
-        emit({ kind: "event", event: parsed });
-      } catch {}
-    });
-    return () => {
-      source.close();
-      emit(END);
-    };
-  });
 
 const extractMessage = (error: unknown): string => {
   if (error instanceof Error) return error.message;

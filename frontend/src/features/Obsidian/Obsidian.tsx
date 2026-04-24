@@ -15,7 +15,7 @@ import {
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import { AppSettings, DEFAULT_SETTINGS } from "../../domain/Settings";
-import type { CheckSeverity } from "../../api/ObsidianApi";
+import type { CheckSeverity } from "../../store/slices/obsidian/apiTypes";
 import type { ObsidianProps } from "./types";
 import {
   BulkButtonRow,

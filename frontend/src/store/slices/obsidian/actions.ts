@@ -1,4 +1,4 @@
-import type { VaultDiagnosticsReport } from "../../../api/ObsidianApi";
+import type { VaultDiagnosticsReport } from "./apiTypes";
 
 export const SETUP_OBSIDIAN = "obsidian/SETUP";
 export const SETUP_OBSIDIAN_DONE = "obsidian/SETUP_DONE";

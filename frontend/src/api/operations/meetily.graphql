@@ -1,0 +1,12 @@
+mutation MutationImportFromMeetily($meetilyDatabasePath: String!) {
+  importFromMeetily(meetilyDatabasePath: $meetilyDatabasePath) {
+    totalMeetings
+    importedRecordings
+    skippedDuplicates
+    importErrors
+    errors {
+      code
+      message
+    }
+  }
+}

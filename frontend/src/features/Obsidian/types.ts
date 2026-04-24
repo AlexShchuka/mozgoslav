@@ -1,5 +1,5 @@
 import type { AppSettings } from "../../domain/Settings";
-import type { VaultDiagnosticsReport } from "../../api/ObsidianApi";
+import type { VaultDiagnosticsReport } from "../../store/slices/obsidian/apiTypes";
 
 export interface ObsidianStateProps {
   readonly settings: AppSettings | null;

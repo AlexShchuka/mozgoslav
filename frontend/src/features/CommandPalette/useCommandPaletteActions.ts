@@ -4,12 +4,13 @@ import { useTranslation } from "react-i18next";
 import { Action, useRegisterActions } from "kbar";
 import { toast } from "react-toastify";
 
-import { apiFactory } from "../../api";
+import { graphqlClient } from "../../api/graphqlClient";
+import {
+  MutationCreateBackupDocument,
+  MutationRagReindexDocument,
+  QuerySettingsDocument,
+} from "../../api/gql/graphql";
 import { ROUTES } from "../../constants/routes";
-
-const ragApi = apiFactory.createRagApi();
-const backupApi = apiFactory.createBackupApi();
-const settingsApi = apiFactory.createSettingsApi();
 
 export const useCommandPaletteActions = (): void => {
   const { t } = useTranslation();
@@ -82,13 +83,6 @@ export const useCommandPaletteActions = (): void => {
         perform: () => navigate(ROUTES.settings),
       },
       {
-        id: "nav-logs",
-        name: t("nav.logs"),
-        keywords: "logs debug tail",
-        section: t("commandPalette.sections.navigation"),
-        perform: () => navigate(ROUTES.logs),
-      },
-      {
         id: "nav-backup",
         name: t("nav.backup"),
         keywords: "backup archive restore",
@@ -113,9 +107,11 @@ export const useCommandPaletteActions = (): void => {
         keywords: "reindex rag embeddings vector refresh",
         section: t("commandPalette.sections.quick"),
         perform: () => {
-          void ragApi
-            .reindex()
-            .then((res) => toast.success(t("rag.reindexedToast", { count: res.embeddedNotes })))
+          void graphqlClient
+            .request(MutationRagReindexDocument)
+            .then((data) =>
+              toast.success(t("rag.reindexedToast", { count: data.ragReindex.embeddedNotes }))
+            )
             .catch((err) => toast.error(err instanceof Error ? err.message : String(err)));
         },
       },
@@ -125,8 +121,8 @@ export const useCommandPaletteActions = (): void => {
         keywords: "backup create snapshot archive",
         section: t("commandPalette.sections.quick"),
         perform: () => {
-          void backupApi
-            .create()
+          void graphqlClient
+            .request(MutationCreateBackupDocument)
             .then(() => toast.success(t("commandPalette.actions.backupStarted")))
             .catch((err) => toast.error(err instanceof Error ? err.message : String(err)));
         },
@@ -143,8 +139,8 @@ export const useCommandPaletteActions = (): void => {
               : undefined;
           void (async () => {
             try {
-              const settings = await settingsApi.getSettings();
-              if (!settings.vaultPath) {
+              const data = await graphqlClient.request(QuerySettingsDocument);
+              if (!data.settings.vaultPath) {
                 toast.info(t("commandPalette.actions.vaultMissing"));
                 return;
               }
@@ -152,7 +148,7 @@ export const useCommandPaletteActions = (): void => {
                 toast.info(t("commandPalette.actions.bridgeMissing"));
                 return;
               }
-              await bridge.openPath(settings.vaultPath);
+              await bridge.openPath(data.settings.vaultPath);
             } catch (err) {
               toast.error(err instanceof Error ? err.message : String(err));
             }

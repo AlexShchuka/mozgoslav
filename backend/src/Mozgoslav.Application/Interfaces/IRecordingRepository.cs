@@ -13,6 +13,7 @@ public interface IRecordingRepository
     Task<Recording?> GetByIdAsync(Guid id, CancellationToken ct);
     Task<Recording?> GetBySha256Async(string sha256, CancellationToken ct);
     Task<IReadOnlyList<Recording>> GetAllAsync(CancellationToken ct);
+    Task<IReadOnlyList<Recording>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken ct);
     Task UpdateAsync(Recording recording, CancellationToken ct);
     Task<bool> TryDeleteAsync(Guid id, CancellationToken ct);
 }

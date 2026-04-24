@@ -12,6 +12,10 @@ using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 
 using Mozgoslav.Api.Endpoints;
+using Mozgoslav.Api.GraphQL;
+using Mozgoslav.Api.GraphQL.Jobs;
+using Mozgoslav.Api.GraphQL.SchemaExport;
+using Mozgoslav.Api.Services;
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Obsidian;
 using Mozgoslav.Application.Rag;
@@ -220,6 +224,7 @@ try
     builder.Services.AddSingleton<ModelDownloadService>();
     builder.Services.AddSingleton<IModelDownloadCoordinator, ModelDownloadCoordinator>();
     builder.Services.AddSingleton<BackupService>();
+    builder.Services.AddSingleton<RecordingSessionRegistry>();
     builder.Services.AddSingleton<MozgoslavMetrics>();
     builder.Services.AddSingleton<SyncthingConfigService>();
 
@@ -311,34 +316,34 @@ try
     builder.Services.AddHostedService<ProcessingJobRehydrator>();
     builder.Services.AddHostedService<SyncthingVersioningVerifier>();
     builder.Services.AddHostedService<SyncthingLifecycleService>();
+    builder.Services.AddHostedService<JobProgressBridge>();
+    builder.Services.AddHostedService<Mozgoslav.Api.GraphQL.Dictation.AudioDeviceChangedBridge>();
+    builder.Services.AddHostedService<Mozgoslav.Api.GraphQL.Dictation.HotkeyEventsBridge>();
+    builder.Services.AddHostedService<Mozgoslav.Api.GraphQL.Sync.SyncEventsBridge>();
 
-    builder.Services.AddControllers();
+    builder.Services.AddMozgoslavGraphQL(builder.Environment);
+
     builder.Services.AddOpenApi();
 
     var app = builder.Build();
+
+    if (args.Length > 0 && args[0] == "export-schema")
+    {
+        var outputPath = args.Length > 1 ? args[1] : "schema.graphql";
+        var command = SchemaExportCommand.Create(app.Services);
+        await command.RunAsync(outputPath);
+        return;
+    }
 
     app.UseSerilogRequestLogging();
     app.UseCors(DevelopmentCorsPolicy);
 
     app.MapOpenApi();
     app.MapPrometheusScrapingEndpoint();
-    app.MapControllers();
 
-    app.MapHealthEndpoints();
-    app.MapRecordingEndpoints();
-    app.MapJobEndpoints();
-    app.MapNoteEndpoints();
-    app.MapProfileEndpoints();
-    app.MapSettingsEndpoints();
-    app.MapModelEndpoints();
-    app.MapMeetilyEndpoints();
-    app.MapObsidianEndpoints();
-    app.MapSseEndpoints();
-    app.MapBackupEndpoints();
-    app.MapDictationEndpoints();
-    app.MapSyncEndpoints();
-    app.MapRagEndpoints();
-    app.MapMetaEndpoints();
+    app.MapGraphQL("/graphql");
+
+    app.MapInternalEndpoints();
 
     await app.RunAsync();
 }

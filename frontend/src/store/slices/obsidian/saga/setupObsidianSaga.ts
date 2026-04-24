@@ -1,24 +1,32 @@
-import { call, put, takeLatest } from "redux-saga/effects";
+import { put, takeLatest } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 
-import { apiFactory } from "../../../../api";
+import { MutationSetupObsidianDocument } from "../../../../api/gql/graphql";
+import type { MutationSetupObsidianMutation } from "../../../../api/gql/graphql";
+import { gqlRequest } from "../../../saga/graphql";
 import { notifyError, notifySuccess } from "../../notifications";
 import { SETUP_OBSIDIAN, type SetupObsidianAction, setupObsidianDone } from "../actions";
-import type { ObsidianSetupReport } from "../types";
 
 export function* setupObsidianSaga(action: SetupObsidianAction): SagaIterator {
-  const obsidianApi = apiFactory.createObsidianApi();
   try {
-    const report: ObsidianSetupReport = yield call(
-      [obsidianApi, obsidianApi.setup],
-      action.payload.vaultPath
-    );
-    yield put(
-      notifySuccess({
-        messageKey: "obsidian.setupSuccess",
-        params: { created: report.createdPaths.length },
-      })
-    );
+    const data = (yield* gqlRequest(MutationSetupObsidianDocument, {
+      vaultPath: action.payload.vaultPath,
+    })) as MutationSetupObsidianMutation;
+    if (data.setupObsidian.errors.length > 0) {
+      yield put(
+        notifyError({
+          messageKey: "errors.genericErrorWithMessage",
+          params: { message: data.setupObsidian.errors[0].message },
+        })
+      );
+    } else if (data.setupObsidian.report) {
+      yield put(
+        notifySuccess({
+          messageKey: "obsidian.setupSuccess",
+          params: { created: data.setupObsidian.report.createdPaths.length },
+        })
+      );
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     yield put(
