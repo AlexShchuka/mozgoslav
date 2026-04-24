@@ -63,6 +63,41 @@ mutation MutationUploadRecordings($input: UploadRecordingsInput!) {
   }
 }
 
+mutation MutationDeleteRecording($id: UUID!) {
+  deleteRecording(id: $id) {
+    recording {
+      id
+    }
+    errors {
+      code
+      message
+    }
+  }
+}
+
+query QueryRecordingWithNotes($id: UUID!) {
+  recording(id: $id) {
+    id
+    fileName
+    status
+    notes {
+      id
+      title
+      topic
+      summary
+      createdAt
+      transcriptId
+      profileId
+      version
+      source
+      markdownContent
+      exportedToVault
+      vaultPath
+      tags
+    }
+  }
+}
+
 mutation MutationReprocessRecording($recordingId: UUID!, $profileId: UUID!) {
   reprocessRecording(recordingId: $recordingId, profileId: $profileId) {
     recording {

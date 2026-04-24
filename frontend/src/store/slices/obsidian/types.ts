@@ -1,4 +1,4 @@
-import type { VaultDiagnosticsReport } from "../../../api/ObsidianApi";
+import type { VaultDiagnosticsReport } from "./apiTypes";
 
 export interface ObsidianSetupReport {
   readonly createdPaths: readonly string[];

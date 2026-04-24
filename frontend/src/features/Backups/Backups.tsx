@@ -6,11 +6,16 @@ import { toast } from "react-toastify";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
-import type { BackupFile } from "../../api";
-import { apiFactory } from "../../api";
+import { graphqlClient } from "../../api/graphqlClient";
+import { MutationCreateBackupDocument, QueryBackupsDocument } from "../../api/gql/graphql";
 import { BackupMeta, BackupName, BackupRow, PageRoot, PageTitle, Toolbar } from "./Backups.style";
 
-const backupApi = apiFactory.createBackupApi();
+interface BackupFile {
+  readonly name: string;
+  readonly path: string;
+  readonly sizeBytes: number;
+  readonly createdAt: string;
+}
 
 const Backups: FC = () => {
   const { t } = useTranslation();
@@ -19,8 +24,15 @@ const Backups: FC = () => {
 
   const refresh = useCallback(async () => {
     try {
-      const list = await backupApi.list();
-      setItems(list);
+      const data = await graphqlClient.request(QueryBackupsDocument);
+      setItems(
+        data.backups.map((b) => ({
+          name: b.name,
+          path: b.path,
+          sizeBytes: Number(b.sizeBytes),
+          createdAt: b.createdAt,
+        }))
+      );
     } catch {
       setItems([]);
     }
@@ -33,7 +45,7 @@ const Backups: FC = () => {
   const onCreate = async () => {
     setCreating(true);
     try {
-      await backupApi.create();
+      await graphqlClient.request(MutationCreateBackupDocument);
       toast.success(t("backup.successToast"));
       await refresh();
     } catch (err) {

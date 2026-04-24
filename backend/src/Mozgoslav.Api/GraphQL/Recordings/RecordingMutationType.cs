@@ -92,6 +92,19 @@ public sealed class RecordingMutationType
         }
     }
 
+    public async Task<RecordingPayload> DeleteRecording(
+        Guid id,
+        [Service] IRecordingRepository recordings,
+        CancellationToken ct)
+    {
+        var deleted = await recordings.TryDeleteAsync(id, ct);
+        if (!deleted)
+        {
+            return new RecordingPayload(null, [new NotFoundError("NOT_FOUND", "Recording not found", "Recording", id.ToString())]);
+        }
+        return new RecordingPayload(null, []);
+    }
+
     public async Task<StartRecordingPayload> StartRecording(
         string? outputPath,
         [Service] IAudioRecorder recorder,

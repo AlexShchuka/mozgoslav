@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,4 +22,13 @@ public sealed class RecordingType
         [Service] IRecordingRepository repository,
         CancellationToken ct)
         => repository.GetByIdAsync(id, ct);
+
+    public async Task<IReadOnlyList<ProcessedNote>> Notes(
+        [Parent] Recording recording,
+        NotesByRecordingIdDataLoader loader,
+        CancellationToken ct)
+    {
+        var result = await loader.LoadAsync(recording.Id, ct);
+        return result ?? [];
+    }
 }

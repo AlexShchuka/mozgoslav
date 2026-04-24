@@ -2,7 +2,7 @@ import { call, put, takeLatest } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 
 import { apiFactory } from "../../../../api";
-import type { ObsidianReapplyResult } from "../../../../api/ObsidianApi";
+import type { ObsidianReapplyResult } from "../apiTypes";
 import { notifyError, notifySuccess } from "../../notifications";
 import { REAPPLY_BOOTSTRAP, fetchDiagnosticsDone, reapplyBootstrapDone } from "../actions";
 

@@ -2,7 +2,7 @@ import { call, put, takeLatest } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 
 import { apiFactory } from "../../../../api";
-import type { ObsidianReinstallResult } from "../../../../api/ObsidianApi";
+import type { ObsidianReinstallResult } from "../apiTypes";
 import { notifyError, notifySuccess } from "../../notifications";
 import { REINSTALL_PLUGINS, fetchDiagnosticsDone, reinstallPluginsDone } from "../actions";
 

@@ -1,0 +1,995 @@
+﻿schema {
+  query: QueryType
+  mutation: MutationType
+  subscription: SubscriptionType
+}
+
+interface IUserError {
+  code: String!
+  message: String!
+}
+
+"The node interface is implemented by entities that have a global unique identifier."
+interface Node {
+  id: ID!
+}
+
+type AcceptSyncDevicePayload {
+  accepted: Boolean!
+  errors: [IUserError!]!
+}
+
+type ActionItem {
+  person: String!
+  task: String!
+  deadline: String
+}
+
+type AppSettingsDto {
+  vaultPath: String!
+  llmProvider: String!
+  llmEndpoint: String!
+  llmModel: String!
+  llmApiKey: String!
+  obsidianApiHost: String!
+  obsidianApiToken: String!
+  whisperModelPath: String!
+  vadModelPath: String!
+  language: String!
+  themeMode: String!
+  whisperThreads: Int!
+  dictationEnabled: Boolean!
+  dictationHotkeyType: String!
+  dictationMouseButton: Int!
+  dictationKeyboardHotkey: String!
+  dictationLanguage: String!
+  dictationWhisperModelId: String!
+  dictationCaptureSampleRate: Int!
+  dictationLlmPolish: Boolean!
+  dictationInjectMode: String!
+  dictationOverlayEnabled: Boolean!
+  dictationOverlayPosition: String!
+  dictationSoundFeedback: Boolean!
+  dictationVocabulary: [String!]!
+  dictationModelUnloadMinutes: Int!
+  dictationTempAudioPath: String!
+  dictationAppProfiles: [KeyValuePairOfStringAndString!]!
+  syncthingEnabled: Boolean!
+  syncthingObsidianVaultPath: String!
+  syncthingApiKey: String!
+  syncthingBaseUrl: String!
+  dictationPushToTalk: Boolean!
+  obsidianFeatureEnabled: Boolean!
+}
+
+type AudioDeviceChangedEvent {
+  kind: String!
+  devices: [AudioDeviceEntry!]!
+  observedAt: DateTime!
+}
+
+type AudioDeviceEntry {
+  id: String!
+  name: String!
+  isDefault: Boolean!
+}
+
+type BackupEntry {
+  name: String!
+  path: String!
+  sizeBytes: Long!
+  createdAt: DateTime!
+}
+
+type CancelJobPayload {
+  errors: [IUserError!]!
+}
+
+type ConflictError implements IUserError {
+  code: String!
+  message: String!
+}
+
+type CreateBackupPayload {
+  backup: BackupEntry
+  errors: [IUserError!]!
+}
+
+type DeviceConnectionPayload {
+  deviceId: String!
+  connected: Boolean!
+  address: String
+  error: String
+}
+
+type DictationAudioCapabilities {
+  isSupported: Boolean!
+  detectedPlatform: String!
+  permissionsRequired: [String!]!
+}
+
+type DictationCancelPayload {
+  errors: [IUserError!]!
+}
+
+type DictationPartialEvent {
+  sessionId: UUID!
+  text: String!
+  timestampMs: Float!
+}
+
+type DictationSessionStatus {
+  sessionId: UUID!
+  state: String!
+  source: String
+  startedAt: DateTime!
+}
+
+type DictationStartPayload {
+  sessionId: UUID
+  source: String
+  errors: [IUserError!]!
+}
+
+type DictationStopPayload {
+  rawText: String
+  polishedText: String
+  durationMs: Float
+  errors: [IUserError!]!
+}
+
+type DownloadModelPayload {
+  downloadId: String
+  errors: [IUserError!]!
+}
+
+type FileConflictPayload {
+  folder: String!
+  path: String!
+}
+
+type FolderCompletionPayload {
+  folder: String!
+  device: String!
+  completion: Float!
+  needBytes: Long!
+  globalBytes: Long!
+}
+
+type HealthStatus {
+  status: String!
+  time: String!
+}
+
+type HotkeyEventMessage {
+  kind: String!
+  accelerator: String!
+  observedAt: DateTime!
+}
+
+type ImportRecordingsPayload {
+  recordings: [Recording!]!
+  errors: [IUserError!]!
+}
+
+type JobPayload {
+  job: ProcessingJob
+  errors: [IUserError!]!
+}
+
+"A connection to a list of items."
+type JobsConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [JobsEdge!]
+  "A flattened list of the nodes."
+  nodes: [ProcessingJob!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type JobsEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: ProcessingJob!
+}
+
+type KeyValuePairOfStringAndString {
+  key: String!
+  value: String!
+}
+
+type LlmHealthStatus {
+  available: Boolean!
+}
+
+type LogFileEntry {
+  fileName: String!
+  sizeBytes: Long!
+  lastModifiedUtc: DateTime!
+}
+
+type LogTailResult {
+  file: String!
+  lines: [String!]!
+  totalLines: Int!
+}
+
+type MeetilyImportPayload {
+  totalMeetings: Int
+  importedRecordings: Int
+  skippedDuplicates: Int
+  importErrors: Int
+  errors: [IUserError!]!
+}
+
+type MetaInfo {
+  version: String!
+  assemblyVersion: String!
+  commit: String!
+  buildDate: String!
+}
+
+type ModelDownloadProgressEvent {
+  downloadId: String!
+  bytesRead: Long!
+  totalBytes: Long
+  done: Boolean!
+  error: String
+}
+
+type ModelEntry {
+  id: String!
+  name: String!
+  description: String!
+  url: String!
+  sizeMb: Int!
+  kind: ModelKind!
+  tier: ModelTier!
+  isDefault: Boolean!
+  destinationPath: String!
+  installed: Boolean!
+}
+
+type MutationType {
+  updateSettings(input: UpdateSettingsInput!): UpdateSettingsPayload! @cost(weight: "10")
+  createProfile(input: CreateProfileInput!): ProfilePayload! @cost(weight: "10")
+  updateProfile(id: UUID! input: CreateProfileInput!): ProfilePayload! @cost(weight: "10")
+  deleteProfile(id: UUID!): ProfilePayload! @cost(weight: "10")
+  duplicateProfile(id: UUID!): ProfilePayload! @cost(weight: "10")
+  downloadModel(catalogueId: String!): DownloadModelPayload! @cost(weight: "10")
+  importRecordings(input: ImportRecordingsInput!): ImportRecordingsPayload! @cost(weight: "10")
+  uploadRecordings(input: UploadRecordingsInput!): ImportRecordingsPayload! @cost(weight: "10")
+  reprocessRecording(recordingId: UUID! profileId: UUID!): RecordingPayload! @cost(weight: "10")
+  deleteRecording(id: UUID!): RecordingPayload! @cost(weight: "10")
+  startRecording(outputPath: String): StartRecordingPayload! @cost(weight: "10")
+  stopRecording(sessionId: String!): StopRecordingPayload! @cost(weight: "10")
+  deleteNote(id: UUID!): NotePayload! @cost(weight: "10")
+  createNote(input: CreateNoteInput!): NotePayload! @cost(weight: "10")
+  exportNote(id: UUID!): NotePayload! @cost(weight: "10")
+  enqueueJob(input: EnqueueJobInput!): JobPayload! @cost(weight: "10")
+  cancelJob(id: UUID!): CancelJobPayload! @cost(weight: "10")
+  dictationStart(source: String): DictationStartPayload! @cost(weight: "10")
+  dictationStop(sessionId: UUID! bundleId: String): DictationStopPayload! @cost(weight: "10")
+  dictationCancel(sessionId: UUID!): DictationCancelPayload! @cost(weight: "10")
+  setupObsidian(vaultPath: String): SetupObsidianPayload! @cost(weight: "10")
+  importFromMeetily(meetilyDatabasePath: String!): MeetilyImportPayload! @cost(weight: "10")
+  createBackup: CreateBackupPayload! @cost(weight: "10")
+  ragReindex: RagReindexPayload! @cost(weight: "10")
+  acceptSyncDevice(deviceId: String! name: String folderIds: [String!]): AcceptSyncDevicePayload! @cost(weight: "10")
+}
+
+type NotFoundError implements IUserError {
+  code: String!
+  message: String!
+  resourceKind: String!
+  resourceId: String!
+}
+
+type NotePayload {
+  note: ProcessedNote
+  errors: [IUserError!]!
+}
+
+"A connection to a list of items."
+type NotesConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [NotesEdge!]
+  "A flattened list of the nodes."
+  nodes: [ProcessedNote!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type NotesEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: ProcessedNote!
+}
+
+type ObsidianDetectionResult {
+  detected: [ObsidianVaultEntry!]!
+  searched: [String!]!
+}
+
+type ObsidianSetupReport {
+  vaultPath: String!
+  createdPaths: [String!]!
+  skippedPaths: [String!]!
+}
+
+type ObsidianVaultEntry {
+  path: String!
+  name: String!
+}
+
+"Information about pagination in a connection."
+type PageInfo {
+  "Indicates whether more edges exist following the set defined by the clients arguments."
+  hasNextPage: Boolean!
+  "Indicates whether more edges exist prior the set defined by the clients arguments."
+  hasPreviousPage: Boolean!
+  "When paginating backwards, the cursor to continue."
+  startCursor: String
+  "When paginating forwards, the cursor to continue."
+  endCursor: String
+}
+
+type PendingDeviceEntry {
+  deviceId: String!
+  name: String
+  address: String
+}
+
+type PendingDevicesPayload {
+  added: [PendingDeviceEntry!]!
+  removed: [String!]!
+}
+
+type ProcessedNote implements Node {
+  id: ID!
+  transcriptId: UUID!
+  profileId: UUID!
+  version: Int!
+  source: NoteSource!
+  title: String!
+  summary: String!
+  keyPoints: [String!]!
+  decisions: [String!]!
+  actionItems: [ActionItem!]!
+  unresolvedQuestions: [String!]!
+  participants: [String!]!
+  topic: String!
+  conversationType: ConversationType!
+  cleanTranscript: String!
+  fullTranscript: String!
+  tags: [String!]!
+  markdownContent: String!
+  exportedToVault: Boolean!
+  vaultPath: String
+  createdAt: DateTime!
+}
+
+type ProcessingJob implements Node {
+  id: ID!
+  recordingId: UUID!
+  profileId: UUID!
+  status: JobStatus!
+  progress: Int!
+  currentStep: String
+  errorMessage: String
+  userHint: String
+  createdAt: DateTime!
+  startedAt: DateTime
+  finishedAt: DateTime
+  cancelRequested: Boolean!
+}
+
+type Profile implements Node {
+  id: ID!
+  name: String!
+  systemPrompt: String!
+  transcriptionPromptOverride: String!
+  outputTemplate: String!
+  cleanupLevel: CleanupLevel!
+  exportFolder: String!
+  autoTags: [String!]!
+  isDefault: Boolean!
+  isBuiltIn: Boolean!
+  glossary: [String!]!
+  llmCorrectionEnabled: Boolean!
+}
+
+type ProfilePayload {
+  profile: Profile
+  errors: [IUserError!]!
+}
+
+type QueryType {
+  "Fetches an object given its ID."
+  node("ID of the object." id: ID!): Node @cost(weight: "10")
+  "Lookup nodes by a list of IDs."
+  nodes("The list of node IDs." ids: [ID!]!): [Node]! @cost(weight: "10")
+  health: HealthStatus!
+  llmHealth: LlmHealthStatus! @cost(weight: "10")
+  meta: MetaInfo!
+  settings: AppSettingsDto! @cost(weight: "10")
+  profiles: [Profile!]! @cost(weight: "10")
+  profile(id: UUID!): Profile @cost(weight: "10")
+  models: [ModelEntry!]!
+  recordings("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: RecordingFilterInput @cost(weight: "10") order: [RecordingSortInput!] @cost(weight: "10")): RecordingsConnection @listSize(assumedSize: 200, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 25, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  recording(id: UUID!): Recording @cost(weight: "10")
+  notes("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: ProcessedNoteFilterInput @cost(weight: "10") order: [ProcessedNoteSortInput!] @cost(weight: "10")): NotesConnection @listSize(assumedSize: 200, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 25, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  note(id: UUID!): ProcessedNote @cost(weight: "10")
+  jobs("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: ProcessingJobFilterInput @cost(weight: "10") order: [ProcessingJobSortInput!] @cost(weight: "10")): JobsConnection @listSize(assumedSize: 200, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 25, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  activeJobs: [ProcessingJob!]! @cost(weight: "10")
+  job(id: UUID!): ProcessingJob @cost(weight: "10")
+  dictationAudioCapabilities: DictationAudioCapabilities!
+  dictationStatus(sessionId: UUID!): DictationSessionStatus @cost(weight: "10")
+  obsidianDetect: ObsidianDetectionResult!
+  backups: [BackupEntry!]!
+  logs: [LogFileEntry!]!
+  logTail(file: String lines: Int!): LogTailResult @cost(weight: "10")
+  ragStatus: RagIndexStatus! @cost(weight: "10")
+  ragQuery(question: String! topK: Int): RagQueryResult @cost(weight: "10")
+  syncStatus: SyncStatusResult @cost(weight: "10")
+  syncHealth: Boolean! @cost(weight: "10")
+  syncPairingPayload: SyncPairingPayloadResult @cost(weight: "10")
+}
+
+type RagCitation {
+  noteId: UUID!
+  segmentId: String!
+  text: String!
+  snippet: String!
+}
+
+type RagIndexStatus {
+  embeddedNotes: Int!
+  chunks: Int!
+}
+
+type RagQueryResult {
+  answer: String!
+  citations: [RagCitation!]!
+  llmAvailable: Boolean!
+}
+
+type RagReindexPayload {
+  embeddedNotes: Int
+  chunks: Int
+  errors: [IUserError!]!
+}
+
+type Recording implements Node {
+  id: ID!
+  fileName: String!
+  filePath: String!
+  sha256: String!
+  duration: TimeSpan!
+  format: AudioFormat!
+  sourceType: SourceType!
+  status: RecordingStatus!
+  createdAt: DateTime!
+  notes: [ProcessedNote!]! @cost(weight: "10")
+}
+
+type RecordingPayload {
+  recording: Recording
+  errors: [IUserError!]!
+}
+
+"A connection to a list of items."
+type RecordingsConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [RecordingsEdge!]
+  "A flattened list of the nodes."
+  nodes: [Recording!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type RecordingsEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: Recording!
+}
+
+type SetupObsidianPayload {
+  report: ObsidianSetupReport
+  errors: [IUserError!]!
+}
+
+type StartRecordingPayload {
+  sessionId: String
+  outputPath: String
+  errors: [IUserError!]!
+}
+
+type StopRecordingPayload {
+  sessionId: String
+  recordings: [Recording!]!
+  errors: [IUserError!]!
+}
+
+type SubscriptionType {
+  modelDownloadProgress(downloadId: String!): ModelDownloadProgressEvent!
+  jobProgress: ProcessingJob!
+  dictationEvents(sessionId: UUID!): DictationPartialEvent!
+  audioDeviceChanged: AudioDeviceChangedEvent!
+  hotkeyEvents: HotkeyEventMessage!
+  syncEvents: SyncEventMessage!
+}
+
+type SyncDeviceEntry {
+  id: String!
+  name: String!
+  connected: Boolean!
+  lastSeen: DateTime
+}
+
+type SyncEventMessage {
+  id: Long!
+  type: String!
+  time: DateTime!
+  folderCompletion: FolderCompletionPayload
+  deviceConnection: DeviceConnectionPayload
+  pendingDevices: PendingDevicesPayload
+  fileConflict: FileConflictPayload
+}
+
+type SyncFolderEntry {
+  id: String!
+  state: String!
+  completionPct: Float!
+  conflicts: Int!
+}
+
+type SyncPairingPayloadResult {
+  deviceId: String!
+  folderIds: [String!]!
+  uri: String!
+}
+
+type SyncStatusResult {
+  folders: [SyncFolderEntry!]!
+  devices: [SyncDeviceEntry!]!
+}
+
+type UnavailableError implements IUserError {
+  code: String!
+  message: String!
+}
+
+type UpdateSettingsPayload {
+  settings: AppSettingsDto
+  errors: [IUserError!]!
+}
+
+type ValidationError implements IUserError {
+  code: String!
+  message: String!
+  field: String!
+}
+
+input ActionItemFilterInput {
+  and: [ActionItemFilterInput!]
+  or: [ActionItemFilterInput!]
+  person: StringOperationFilterInput
+  task: StringOperationFilterInput
+  deadline: StringOperationFilterInput
+}
+
+input AudioFormatOperationFilterInput {
+  eq: AudioFormat @cost(weight: "10")
+  neq: AudioFormat @cost(weight: "10")
+  in: [AudioFormat!] @cost(weight: "10")
+  nin: [AudioFormat!] @cost(weight: "10")
+}
+
+input BooleanOperationFilterInput {
+  eq: Boolean @cost(weight: "10")
+  neq: Boolean @cost(weight: "10")
+}
+
+input ConversationTypeOperationFilterInput {
+  eq: ConversationType @cost(weight: "10")
+  neq: ConversationType @cost(weight: "10")
+  in: [ConversationType!] @cost(weight: "10")
+  nin: [ConversationType!] @cost(weight: "10")
+}
+
+input CreateNoteInput {
+  title: String!
+  body: String
+}
+
+input CreateProfileInput {
+  name: String!
+  systemPrompt: String!
+  outputTemplate: String!
+  cleanupLevel: CleanupLevel!
+  exportFolder: String!
+  autoTags: [String!]!
+  glossary: [String!]!
+  llmCorrectionEnabled: Boolean!
+  isDefault: Boolean!
+}
+
+input DateTimeOperationFilterInput {
+  eq: DateTime @cost(weight: "10")
+  neq: DateTime @cost(weight: "10")
+  in: [DateTime] @cost(weight: "10")
+  nin: [DateTime] @cost(weight: "10")
+  gt: DateTime @cost(weight: "10")
+  ngt: DateTime @cost(weight: "10")
+  gte: DateTime @cost(weight: "10")
+  ngte: DateTime @cost(weight: "10")
+  lt: DateTime @cost(weight: "10")
+  nlt: DateTime @cost(weight: "10")
+  lte: DateTime @cost(weight: "10")
+  nlte: DateTime @cost(weight: "10")
+}
+
+input EnqueueJobInput {
+  recordingId: UUID!
+  profileId: UUID!
+}
+
+input ImportRecordingsInput {
+  filePaths: [String!]!
+  profileId: UUID
+}
+
+input IntOperationFilterInput {
+  eq: Int @cost(weight: "10")
+  neq: Int @cost(weight: "10")
+  in: [Int] @cost(weight: "10")
+  nin: [Int] @cost(weight: "10")
+  gt: Int @cost(weight: "10")
+  ngt: Int @cost(weight: "10")
+  gte: Int @cost(weight: "10")
+  ngte: Int @cost(weight: "10")
+  lt: Int @cost(weight: "10")
+  nlt: Int @cost(weight: "10")
+  lte: Int @cost(weight: "10")
+  nlte: Int @cost(weight: "10")
+}
+
+input JobStatusOperationFilterInput {
+  eq: JobStatus @cost(weight: "10")
+  neq: JobStatus @cost(weight: "10")
+  in: [JobStatus!] @cost(weight: "10")
+  nin: [JobStatus!] @cost(weight: "10")
+}
+
+input KeyValuePairOfStringAndStringInput {
+  key: String!
+  value: String!
+}
+
+input ListFilterInputTypeOfActionItemFilterInput {
+  all: ActionItemFilterInput @cost(weight: "10")
+  none: ActionItemFilterInput @cost(weight: "10")
+  some: ActionItemFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListStringOperationFilterInput {
+  all: StringOperationFilterInput @cost(weight: "10")
+  none: StringOperationFilterInput @cost(weight: "10")
+  some: StringOperationFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input NoteSourceOperationFilterInput {
+  eq: NoteSource @cost(weight: "10")
+  neq: NoteSource @cost(weight: "10")
+  in: [NoteSource!] @cost(weight: "10")
+  nin: [NoteSource!] @cost(weight: "10")
+}
+
+input ProcessedNoteFilterInput {
+  and: [ProcessedNoteFilterInput!]
+  or: [ProcessedNoteFilterInput!]
+  id: UuidOperationFilterInput
+  transcriptId: UuidOperationFilterInput
+  profileId: UuidOperationFilterInput
+  version: IntOperationFilterInput
+  source: NoteSourceOperationFilterInput
+  title: StringOperationFilterInput
+  summary: StringOperationFilterInput
+  keyPoints: ListStringOperationFilterInput
+  decisions: ListStringOperationFilterInput
+  actionItems: ListFilterInputTypeOfActionItemFilterInput
+  unresolvedQuestions: ListStringOperationFilterInput
+  participants: ListStringOperationFilterInput
+  topic: StringOperationFilterInput
+  conversationType: ConversationTypeOperationFilterInput
+  cleanTranscript: StringOperationFilterInput
+  fullTranscript: StringOperationFilterInput
+  tags: ListStringOperationFilterInput
+  markdownContent: StringOperationFilterInput
+  exportedToVault: BooleanOperationFilterInput
+  vaultPath: StringOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+}
+
+input ProcessedNoteSortInput {
+  id: SortEnumType @cost(weight: "10")
+  transcriptId: SortEnumType @cost(weight: "10")
+  profileId: SortEnumType @cost(weight: "10")
+  version: SortEnumType @cost(weight: "10")
+  source: SortEnumType @cost(weight: "10")
+  title: SortEnumType @cost(weight: "10")
+  summary: SortEnumType @cost(weight: "10")
+  topic: SortEnumType @cost(weight: "10")
+  conversationType: SortEnumType @cost(weight: "10")
+  cleanTranscript: SortEnumType @cost(weight: "10")
+  fullTranscript: SortEnumType @cost(weight: "10")
+  markdownContent: SortEnumType @cost(weight: "10")
+  exportedToVault: SortEnumType @cost(weight: "10")
+  vaultPath: SortEnumType @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+}
+
+input ProcessingJobFilterInput {
+  and: [ProcessingJobFilterInput!]
+  or: [ProcessingJobFilterInput!]
+  id: UuidOperationFilterInput
+  recordingId: UuidOperationFilterInput
+  profileId: UuidOperationFilterInput
+  status: JobStatusOperationFilterInput
+  progress: IntOperationFilterInput
+  currentStep: StringOperationFilterInput
+  errorMessage: StringOperationFilterInput
+  userHint: StringOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+  startedAt: DateTimeOperationFilterInput
+  finishedAt: DateTimeOperationFilterInput
+  cancelRequested: BooleanOperationFilterInput
+}
+
+input ProcessingJobSortInput {
+  id: SortEnumType @cost(weight: "10")
+  recordingId: SortEnumType @cost(weight: "10")
+  profileId: SortEnumType @cost(weight: "10")
+  status: SortEnumType @cost(weight: "10")
+  progress: SortEnumType @cost(weight: "10")
+  currentStep: SortEnumType @cost(weight: "10")
+  errorMessage: SortEnumType @cost(weight: "10")
+  userHint: SortEnumType @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+  startedAt: SortEnumType @cost(weight: "10")
+  finishedAt: SortEnumType @cost(weight: "10")
+  cancelRequested: SortEnumType @cost(weight: "10")
+}
+
+input RecordingFilterInput {
+  and: [RecordingFilterInput!]
+  or: [RecordingFilterInput!]
+  id: UuidOperationFilterInput
+  fileName: StringOperationFilterInput
+  filePath: StringOperationFilterInput
+  sha256: StringOperationFilterInput
+  duration: TimeSpanOperationFilterInput
+  format: AudioFormatOperationFilterInput
+  sourceType: SourceTypeOperationFilterInput
+  status: RecordingStatusOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+}
+
+input RecordingSortInput {
+  id: SortEnumType @cost(weight: "10")
+  fileName: SortEnumType @cost(weight: "10")
+  filePath: SortEnumType @cost(weight: "10")
+  sha256: SortEnumType @cost(weight: "10")
+  duration: SortEnumType @cost(weight: "10")
+  format: SortEnumType @cost(weight: "10")
+  sourceType: SortEnumType @cost(weight: "10")
+  status: SortEnumType @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+}
+
+input RecordingStatusOperationFilterInput {
+  eq: RecordingStatus @cost(weight: "10")
+  neq: RecordingStatus @cost(weight: "10")
+  in: [RecordingStatus!] @cost(weight: "10")
+  nin: [RecordingStatus!] @cost(weight: "10")
+}
+
+input SourceTypeOperationFilterInput {
+  eq: SourceType @cost(weight: "10")
+  neq: SourceType @cost(weight: "10")
+  in: [SourceType!] @cost(weight: "10")
+  nin: [SourceType!] @cost(weight: "10")
+}
+
+input StringOperationFilterInput {
+  and: [StringOperationFilterInput!]
+  or: [StringOperationFilterInput!]
+  eq: String @cost(weight: "10")
+  neq: String @cost(weight: "10")
+  contains: String @cost(weight: "20")
+  ncontains: String @cost(weight: "20")
+  in: [String] @cost(weight: "10")
+  nin: [String] @cost(weight: "10")
+  startsWith: String @cost(weight: "20")
+  nstartsWith: String @cost(weight: "20")
+  endsWith: String @cost(weight: "20")
+  nendsWith: String @cost(weight: "20")
+}
+
+input TimeSpanOperationFilterInput {
+  eq: TimeSpan @cost(weight: "10")
+  neq: TimeSpan @cost(weight: "10")
+  in: [TimeSpan] @cost(weight: "10")
+  nin: [TimeSpan] @cost(weight: "10")
+  gt: TimeSpan @cost(weight: "10")
+  ngt: TimeSpan @cost(weight: "10")
+  gte: TimeSpan @cost(weight: "10")
+  ngte: TimeSpan @cost(weight: "10")
+  lt: TimeSpan @cost(weight: "10")
+  nlt: TimeSpan @cost(weight: "10")
+  lte: TimeSpan @cost(weight: "10")
+  nlte: TimeSpan @cost(weight: "10")
+}
+
+input UpdateSettingsInput {
+  vaultPath: String!
+  llmProvider: String!
+  llmEndpoint: String!
+  llmModel: String!
+  llmApiKey: String!
+  obsidianApiHost: String!
+  obsidianApiToken: String!
+  whisperModelPath: String!
+  vadModelPath: String!
+  language: String!
+  themeMode: String!
+  whisperThreads: Int!
+  dictationEnabled: Boolean!
+  dictationHotkeyType: String!
+  dictationMouseButton: Int!
+  dictationKeyboardHotkey: String!
+  dictationLanguage: String!
+  dictationWhisperModelId: String!
+  dictationCaptureSampleRate: Int!
+  dictationLlmPolish: Boolean!
+  dictationInjectMode: String!
+  dictationOverlayEnabled: Boolean!
+  dictationOverlayPosition: String!
+  dictationSoundFeedback: Boolean!
+  dictationVocabulary: [String!]!
+  dictationModelUnloadMinutes: Int!
+  dictationTempAudioPath: String!
+  dictationAppProfiles: [KeyValuePairOfStringAndStringInput!]!
+  syncthingEnabled: Boolean!
+  syncthingObsidianVaultPath: String!
+  syncthingApiKey: String!
+  syncthingBaseUrl: String!
+  dictationPushToTalk: Boolean! = true
+  obsidianFeatureEnabled: Boolean! = false
+}
+
+input UploadRecordingsInput {
+  filePaths: [String!]!
+  profileId: UUID
+}
+
+input UuidOperationFilterInput {
+  eq: UUID @cost(weight: "10")
+  neq: UUID @cost(weight: "10")
+  in: [UUID] @cost(weight: "10")
+  nin: [UUID] @cost(weight: "10")
+  gt: UUID @cost(weight: "10")
+  ngt: UUID @cost(weight: "10")
+  gte: UUID @cost(weight: "10")
+  ngte: UUID @cost(weight: "10")
+  lt: UUID @cost(weight: "10")
+  nlt: UUID @cost(weight: "10")
+  lte: UUID @cost(weight: "10")
+  nlte: UUID @cost(weight: "10")
+}
+
+enum AudioFormat {
+  MP3
+  M4A
+  WAV
+  MP4
+  OGG
+  FLAC
+  WEBM
+  AAC
+}
+
+enum CleanupLevel {
+  NONE
+  LIGHT
+  AGGRESSIVE
+}
+
+enum ConversationType {
+  MEETING
+  ONE_ON_ONE
+  IDEA
+  PERSONAL
+  OTHER
+}
+
+enum JobStatus {
+  QUEUED
+  TRANSCRIBING
+  CORRECTING
+  SUMMARIZING
+  EXPORTING
+  DONE
+  FAILED
+  CANCELLED
+}
+
+enum ModelKind {
+  STT
+  VAD
+  LLM
+  AUDIO_ML
+  NLP_ML
+}
+
+enum ModelTier {
+  BUNDLE
+  DOWNLOADABLE
+}
+
+enum NoteSource {
+  PROCESSED
+  MANUAL
+}
+
+enum RecordingStatus {
+  NEW
+  TRANSCRIBING
+  TRANSCRIBED
+  FAILED
+}
+
+enum SortEnumType {
+  ASC
+  DESC
+}
+
+enum SourceType {
+  RECORDED
+  IMPORTED
+}
+
+"The purpose of the `cost` directive is to define a `weight` for GraphQL types, fields, and arguments. Static analysis can use these weights when calculating the overall cost of a query or response."
+directive @cost("The `weight` argument defines what value to add to the overall cost for every appearance, or possible appearance, of a type, field, argument, etc." weight: String!) on SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM | INPUT_FIELD_DEFINITION
+
+"The purpose of the `@listSize` directive is to either inform the static analysis about the size of returned lists (if that information is statically available), or to point the analysis to where to find that information."
+directive @listSize("The `assumedSize` argument can be used to statically define the maximum length of a list returned by a field." assumedSize: Int "The `slicingArguments` argument can be used to define which of the field's arguments with numeric type are slicing arguments, so that their value determines the size of the list returned by that field. It may specify a list of multiple slicing arguments." slicingArguments: [String!] "The `slicingArgumentDefaultValue` argument can be used to define a default value for a slicing argument, which is used if the argument is not present in a query." slicingArgumentDefaultValue: Int "The `sizedFields` argument can be used to define that the value of the `assumedSize` argument or of a slicing argument does not affect the size of a list returned by a field itself, but that of a list returned by one of its sub-fields." sizedFields: [String!] "The `requireOneSlicingArgument` argument can be used to inform the static analysis that it should expect that exactly one of the defined slicing arguments is present in a query. If that is not the case (i.e., if none or multiple slicing arguments are present), the static analysis may throw an error." requireOneSlicingArgument: Boolean! = true) on FIELD_DEFINITION
+
+"The `@specifiedBy` directive is used within the type system definition language to provide a URL for specifying the behavior of custom scalar definitions."
+directive @specifiedBy("The specifiedBy URL points to a human-readable specification. This field will only read a result for scalar types." url: String!) on SCALAR
+
+"The `DateTime` scalar represents an ISO-8601 compliant date time type."
+scalar DateTime @specifiedBy(url: "https:\/\/www.graphql-scalars.com\/date-time")
+
+"The `Long` scalar type represents non-fractional signed whole 64-bit numeric values. Long can represent values between -(2^63) and 2^63 - 1."
+scalar Long
+
+"The `TimeSpan` scalar represents an ISO-8601 compliant duration type."
+scalar TimeSpan
+
+scalar UUID @specifiedBy(url: "https:\/\/tools.ietf.org\/html\/rfc4122")

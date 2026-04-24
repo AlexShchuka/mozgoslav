@@ -67,6 +67,42 @@ query QueryNote($id: UUID!) {
   }
 }
 
+mutation MutationDeleteNote($id: UUID!) {
+  deleteNote(id: $id) {
+    note {
+      id
+    }
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationCreateNote($input: CreateNoteInput!) {
+  createNote(input: $input) {
+    note {
+      id
+      title
+      topic
+      summary
+      source
+      markdownContent
+      exportedToVault
+      vaultPath
+      tags
+      version
+      transcriptId
+      profileId
+      createdAt
+    }
+    errors {
+      code
+      message
+    }
+  }
+}
+
 mutation MutationExportNote($id: UUID!) {
   exportNote(id: $id) {
     note {

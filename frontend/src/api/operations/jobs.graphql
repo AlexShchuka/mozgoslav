@@ -1,3 +1,25 @@
+query QueryJobs($first: Int, $after: String) {
+  jobs(first: $first, after: $after) {
+    nodes {
+      id
+      recordingId
+      profileId
+      status
+      progress
+      currentStep
+      errorMessage
+      userHint
+      createdAt
+      startedAt
+      finishedAt
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
 query QueryActiveJobs {
   activeJobs {
     id

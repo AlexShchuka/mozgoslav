@@ -169,6 +169,11 @@ export type CreateBackupPayload = {
   errors: Array<IUserError>;
 };
 
+export type CreateNoteInput = {
+  body?: InputMaybe<Scalars["String"]["input"]>;
+  title: Scalars["String"]["input"];
+};
+
 export type CreateProfileInput = {
   autoTags: Array<Scalars["String"]["input"]>;
   cleanupLevel: CleanupLevel;
@@ -464,8 +469,11 @@ export type MutationType = {
   acceptSyncDevice: AcceptSyncDevicePayload;
   cancelJob: CancelJobPayload;
   createBackup: CreateBackupPayload;
+  createNote: NotePayload;
   createProfile: ProfilePayload;
+  deleteNote: NotePayload;
   deleteProfile: ProfilePayload;
+  deleteRecording: RecordingPayload;
   dictationCancel: DictationCancelPayload;
   dictationStart: DictationStartPayload;
   dictationStop: DictationStopPayload;
@@ -495,11 +503,23 @@ export type MutationTypeCancelJobArgs = {
   id: Scalars["UUID"]["input"];
 };
 
+export type MutationTypeCreateNoteArgs = {
+  input: CreateNoteInput;
+};
+
 export type MutationTypeCreateProfileArgs = {
   input: CreateProfileInput;
 };
 
+export type MutationTypeDeleteNoteArgs = {
+  id: Scalars["UUID"]["input"];
+};
+
 export type MutationTypeDeleteProfileArgs = {
+  id: Scalars["UUID"]["input"];
+};
+
+export type MutationTypeDeleteRecordingArgs = {
   id: Scalars["UUID"]["input"];
 };
 
@@ -831,6 +851,7 @@ export type QueryType = {
   profile?: Maybe<Profile>;
   profiles: Array<Profile>;
   ragQuery?: Maybe<RagQueryResult>;
+  ragStatus: RagIndexStatus;
   recording?: Maybe<Recording>;
   recordings?: Maybe<RecordingsConnection>;
   settings: AppSettingsDto;
@@ -912,6 +933,12 @@ export type RagCitation = {
   text: Scalars["String"]["output"];
 };
 
+export type RagIndexStatus = {
+  __typename?: "RagIndexStatus";
+  chunks: Scalars["Int"]["output"];
+  embeddedNotes: Scalars["Int"]["output"];
+};
+
 export type RagQueryResult = {
   __typename?: "RagQueryResult";
   answer: Scalars["String"]["output"];
@@ -934,6 +961,7 @@ export type Recording = Node & {
   filePath: Scalars["String"]["output"];
   format: AudioFormat;
   id: Scalars["ID"]["output"];
+  notes: Array<ProcessedNote>;
   sha256: Scalars["String"]["output"];
   sourceType: SourceType;
   status: RecordingStatus;
@@ -1397,6 +1425,33 @@ export type QueryMetaQuery = {
   };
 };
 
+export type QueryJobsQueryVariables = Exact<{
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+}>;
+
+export type QueryJobsQuery = {
+  __typename?: "QueryType";
+  jobs?: {
+    __typename?: "JobsConnection";
+    nodes?: Array<{
+      __typename?: "ProcessingJob";
+      id: string;
+      recordingId: string;
+      profileId: string;
+      status: JobStatus;
+      progress: number;
+      currentStep?: string | null;
+      errorMessage?: string | null;
+      userHint?: string | null;
+      createdAt: string;
+      startedAt?: string | null;
+      finishedAt?: string | null;
+    }> | null;
+    pageInfo: { __typename?: "PageInfo"; hasNextPage: boolean; endCursor?: string | null };
+  } | null;
+};
+
 export type QueryActiveJobsQueryVariables = Exact<{ [key: string]: never }>;
 
 export type QueryActiveJobsQuery = {
@@ -1667,6 +1722,57 @@ export type QueryNoteQuery = {
   } | null;
 };
 
+export type MutationDeleteNoteMutationVariables = Exact<{
+  id: Scalars["UUID"]["input"];
+}>;
+
+export type MutationDeleteNoteMutation = {
+  __typename?: "MutationType";
+  deleteNote: {
+    __typename?: "NotePayload";
+    note?: { __typename?: "ProcessedNote"; id: string } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationCreateNoteMutationVariables = Exact<{
+  input: CreateNoteInput;
+}>;
+
+export type MutationCreateNoteMutation = {
+  __typename?: "MutationType";
+  createNote: {
+    __typename?: "NotePayload";
+    note?: {
+      __typename?: "ProcessedNote";
+      id: string;
+      title: string;
+      topic: string;
+      summary: string;
+      source: NoteSource;
+      markdownContent: string;
+      exportedToVault: boolean;
+      vaultPath?: string | null;
+      tags: Array<string>;
+      version: number;
+      transcriptId: string;
+      profileId: string;
+      createdAt: string;
+    } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
 export type MutationExportNoteMutationVariables = Exact<{
   id: Scalars["UUID"]["input"];
 }>;
@@ -1860,6 +1966,13 @@ export type MutationDuplicateProfileMutation = {
   };
 };
 
+export type QueryRagStatusQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QueryRagStatusQuery = {
+  __typename?: "QueryType";
+  ragStatus: { __typename?: "RagIndexStatus"; embeddedNotes: number; chunks: number };
+};
+
 export type QueryRagQueryVariables = Exact<{
   question: Scalars["String"]["input"];
   topK?: InputMaybe<Scalars["Int"]["input"]>;
@@ -1996,6 +2109,54 @@ export type MutationUploadRecordingsMutation = {
       | { __typename?: "ValidationError"; code: string; message: string }
     >;
   };
+};
+
+export type MutationDeleteRecordingMutationVariables = Exact<{
+  id: Scalars["UUID"]["input"];
+}>;
+
+export type MutationDeleteRecordingMutation = {
+  __typename?: "MutationType";
+  deleteRecording: {
+    __typename?: "RecordingPayload";
+    recording?: { __typename?: "Recording"; id: string } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type QueryRecordingWithNotesQueryVariables = Exact<{
+  id: Scalars["UUID"]["input"];
+}>;
+
+export type QueryRecordingWithNotesQuery = {
+  __typename?: "QueryType";
+  recording?: {
+    __typename?: "Recording";
+    id: string;
+    fileName: string;
+    status: RecordingStatus;
+    notes: Array<{
+      __typename?: "ProcessedNote";
+      id: string;
+      title: string;
+      topic: string;
+      summary: string;
+      createdAt: string;
+      transcriptId: string;
+      profileId: string;
+      version: number;
+      source: NoteSource;
+      markdownContent: string;
+      exportedToVault: boolean;
+      vaultPath?: string | null;
+      tags: Array<string>;
+    }>;
+  } | null;
 };
 
 export type MutationReprocessRecordingMutationVariables = Exact<{
@@ -2782,6 +2943,85 @@ export const QueryMetaDocument = {
     },
   ],
 } as unknown as DocumentNode<QueryMetaQuery, QueryMetaQueryVariables>;
+export const QueryJobsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryJobs" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "first" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "Int" } },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "after" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "jobs" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "first" },
+                value: { kind: "Variable", name: { kind: "Name", value: "first" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "after" },
+                value: { kind: "Variable", name: { kind: "Name", value: "after" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "nodes" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "recordingId" } },
+                      { kind: "Field", name: { kind: "Name", value: "profileId" } },
+                      { kind: "Field", name: { kind: "Name", value: "status" } },
+                      { kind: "Field", name: { kind: "Name", value: "progress" } },
+                      { kind: "Field", name: { kind: "Name", value: "currentStep" } },
+                      { kind: "Field", name: { kind: "Name", value: "errorMessage" } },
+                      { kind: "Field", name: { kind: "Name", value: "userHint" } },
+                      { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                      { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+                      { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "pageInfo" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "hasNextPage" } },
+                      { kind: "Field", name: { kind: "Name", value: "endCursor" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryJobsQuery, QueryJobsQueryVariables>;
 export const QueryActiveJobsDocument = {
   kind: "Document",
   definitions: [
@@ -3444,6 +3684,140 @@ export const QueryNoteDocument = {
     },
   ],
 } as unknown as DocumentNode<QueryNoteQuery, QueryNoteQueryVariables>;
+export const MutationDeleteNoteDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationDeleteNote" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "deleteNote" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "note" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [{ kind: "Field", name: { kind: "Name", value: "id" } }],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationDeleteNoteMutation, MutationDeleteNoteMutationVariables>;
+export const MutationCreateNoteDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationCreateNote" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "input" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "CreateNoteInput" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createNote" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: { kind: "Variable", name: { kind: "Name", value: "input" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "note" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "title" } },
+                      { kind: "Field", name: { kind: "Name", value: "topic" } },
+                      { kind: "Field", name: { kind: "Name", value: "summary" } },
+                      { kind: "Field", name: { kind: "Name", value: "source" } },
+                      { kind: "Field", name: { kind: "Name", value: "markdownContent" } },
+                      { kind: "Field", name: { kind: "Name", value: "exportedToVault" } },
+                      { kind: "Field", name: { kind: "Name", value: "vaultPath" } },
+                      { kind: "Field", name: { kind: "Name", value: "tags" } },
+                      { kind: "Field", name: { kind: "Name", value: "version" } },
+                      { kind: "Field", name: { kind: "Name", value: "transcriptId" } },
+                      { kind: "Field", name: { kind: "Name", value: "profileId" } },
+                      { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationCreateNoteMutation, MutationCreateNoteMutationVariables>;
 export const MutationExportNoteDocument = {
   kind: "Document",
   definitions: [
@@ -3945,6 +4319,32 @@ export const MutationDuplicateProfileDocument = {
   MutationDuplicateProfileMutation,
   MutationDuplicateProfileMutationVariables
 >;
+export const QueryRagStatusDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryRagStatus" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "ragStatus" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "embeddedNotes" } },
+                { kind: "Field", name: { kind: "Name", value: "chunks" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryRagStatusQuery, QueryRagStatusQueryVariables>;
 export const QueryRagDocument = {
   kind: "Document",
   definitions: [
@@ -4332,6 +4732,135 @@ export const MutationUploadRecordingsDocument = {
   MutationUploadRecordingsMutation,
   MutationUploadRecordingsMutationVariables
 >;
+export const MutationDeleteRecordingDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationDeleteRecording" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "deleteRecording" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "recording" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [{ kind: "Field", name: { kind: "Name", value: "id" } }],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationDeleteRecordingMutation,
+  MutationDeleteRecordingMutationVariables
+>;
+export const QueryRecordingWithNotesDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryRecordingWithNotes" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "recording" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "fileName" } },
+                { kind: "Field", name: { kind: "Name", value: "status" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "notes" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "title" } },
+                      { kind: "Field", name: { kind: "Name", value: "topic" } },
+                      { kind: "Field", name: { kind: "Name", value: "summary" } },
+                      { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                      { kind: "Field", name: { kind: "Name", value: "transcriptId" } },
+                      { kind: "Field", name: { kind: "Name", value: "profileId" } },
+                      { kind: "Field", name: { kind: "Name", value: "version" } },
+                      { kind: "Field", name: { kind: "Name", value: "source" } },
+                      { kind: "Field", name: { kind: "Name", value: "markdownContent" } },
+                      { kind: "Field", name: { kind: "Name", value: "exportedToVault" } },
+                      { kind: "Field", name: { kind: "Name", value: "vaultPath" } },
+                      { kind: "Field", name: { kind: "Name", value: "tags" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryRecordingWithNotesQuery, QueryRecordingWithNotesQueryVariables>;
 export const MutationReprocessRecordingDocument = {
   kind: "Document",
   definitions: [

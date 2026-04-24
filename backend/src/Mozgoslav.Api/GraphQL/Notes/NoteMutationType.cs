@@ -8,12 +8,48 @@ using HotChocolate.Types;
 using Mozgoslav.Api.GraphQL.Errors;
 using Mozgoslav.Api.GraphQL.Mutations;
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Domain.Entities;
+using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Api.GraphQL.Notes;
 
 [ExtendObjectType(typeof(MutationType))]
 public sealed class NoteMutationType
 {
+    public async Task<NotePayload> DeleteNote(
+        Guid id,
+        [Service] IProcessedNoteRepository notes,
+        CancellationToken ct)
+    {
+        var deleted = await notes.TryDeleteAsync(id, ct);
+        if (!deleted)
+        {
+            return new NotePayload(null, [new NotFoundError("NOT_FOUND", "Note not found", "ProcessedNote", id.ToString())]);
+        }
+        return new NotePayload(null, []);
+    }
+
+    public async Task<NotePayload> CreateNote(
+        CreateNoteInput input,
+        [Service] IProcessedNoteRepository notes,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(input.Title))
+        {
+            return new NotePayload(null, [new ValidationError("VALIDATION_ERROR", "title must not be empty", "title")]);
+        }
+
+        var note = new ProcessedNote
+        {
+            Source = NoteSource.Manual,
+            Title = input.Title,
+            MarkdownContent = input.Body ?? string.Empty,
+        };
+
+        var saved = await notes.AddAsync(note, ct);
+        return new NotePayload(saved, []);
+    }
+
     public async Task<NotePayload> ExportNote(
         Guid id,
         [Service] IProcessedNoteRepository notes,

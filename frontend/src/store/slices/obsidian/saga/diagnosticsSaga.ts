@@ -2,7 +2,7 @@ import { call, put, takeLatest } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 
 import { apiFactory } from "../../../../api";
-import type { VaultDiagnosticsReport } from "../../../../api/ObsidianApi";
+import type { VaultDiagnosticsReport } from "../apiTypes";
 import { FETCH_DIAGNOSTICS, fetchDiagnosticsDone, fetchDiagnosticsFailed } from "../actions";
 
 export function* diagnosticsSaga(): SagaIterator {

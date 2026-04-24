@@ -1,3 +1,10 @@
+query QueryRagStatus {
+  ragStatus {
+    embeddedNotes
+    chunks
+  }
+}
+
 query QueryRag($question: String!, $topK: Int) {
   ragQuery(question: $question, topK: $topK) {
     answer

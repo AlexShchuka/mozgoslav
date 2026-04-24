@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 
-import { apiFactory } from "../../api";
-
-const healthApi = apiFactory.createHealthApi();
-const obsidianApi = apiFactory.createObsidianApi();
-const dictationApi = apiFactory.createDictationApi();
+import { graphqlClient } from "../../api/graphqlClient";
+import {
+  QueryDictationAudioCapabilitiesDocument,
+  QueryLlmHealthDocument,
+  QueryObsidianDetectDocument,
+} from "../../api/gql/graphql";
 
 export const useLlmDetection = (enabled: boolean): { reachable: boolean } => {
   const [reachable, setReachable] = useState(false);
@@ -14,8 +15,8 @@ export const useLlmDetection = (enabled: boolean): { reachable: boolean } => {
     let active = true;
     const poll = async () => {
       try {
-        const value = await healthApi.checkLlm();
-        if (active) setReachable(value);
+        const data = await graphqlClient.request(QueryLlmHealthDocument);
+        if (active) setReachable(data.llmHealth.available);
       } catch {
         if (active) setReachable(false);
       }
@@ -44,8 +45,10 @@ export const useObsidianDetection = (
     let active = true;
     const poll = async () => {
       try {
-        const result = await obsidianApi.detect();
-        if (active) setState({ detected: result.detected, loaded: true });
+        const data = await graphqlClient.request(QueryObsidianDetectDocument);
+        if (active) {
+          setState({ detected: data.obsidianDetect.detected, loaded: true });
+        }
       } catch {
         if (active) setState({ detected: [], loaded: true });
       }
@@ -80,8 +83,17 @@ export const useAudioPermissions = (
     let active = true;
     const poll = async () => {
       try {
-        const result = await dictationApi.audioCapabilities();
-        if (active) setState({ capabilities: result, loaded: true });
+        const data = await graphqlClient.request(QueryDictationAudioCapabilitiesDocument);
+        if (active) {
+          setState({
+            capabilities: {
+              isSupported: data.dictationAudioCapabilities.isSupported,
+              detectedPlatform: data.dictationAudioCapabilities.detectedPlatform,
+              permissionsRequired: data.dictationAudioCapabilities.permissionsRequired,
+            },
+            loaded: true,
+          });
+        }
       } catch {
         if (active) setState({ capabilities: null, loaded: true });
       }

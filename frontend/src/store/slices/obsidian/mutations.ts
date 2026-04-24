@@ -1,4 +1,4 @@
-import type { VaultDiagnosticsReport } from "../../../api/ObsidianApi";
+import type { VaultDiagnosticsReport } from "./apiTypes";
 import type { ObsidianState } from "./types";
 
 export const beginSetup = (state: ObsidianState): ObsidianState => ({

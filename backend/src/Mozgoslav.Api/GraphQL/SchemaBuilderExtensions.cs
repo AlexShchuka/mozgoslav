@@ -25,6 +25,7 @@ internal static class SchemaBuilderExtensions
             .AddTypeExtension<ProfileType>()
             .AddTypeExtension<RecordingType>()
             .AddDataLoader<RecordingByIdDataLoader>()
+            .AddDataLoader<NotesByRecordingIdDataLoader>()
             .AddTypeExtension<ProcessedNoteType>()
             .AddDataLoader<ProcessedNoteByIdDataLoader>()
             .AddTypeExtension<ProcessingJobType>()

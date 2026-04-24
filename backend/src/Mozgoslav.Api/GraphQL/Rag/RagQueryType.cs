@@ -7,6 +7,7 @@ using HotChocolate;
 using HotChocolate.Types;
 
 using Mozgoslav.Api.GraphQL.Queries;
+using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Rag;
 
 namespace Mozgoslav.Api.GraphQL.Rag;
@@ -15,6 +16,15 @@ namespace Mozgoslav.Api.GraphQL.Rag;
 public sealed class RagQueryType
 {
     private const int SnippetMaxChars = 200;
+
+    public async Task<RagIndexStatus> RagStatus(
+        [Service] IProcessedNoteRepository notes,
+        [Service] IVectorIndex index,
+        CancellationToken ct)
+    {
+        var allNotes = await notes.GetAllAsync(ct);
+        return new RagIndexStatus(allNotes.Count, index.Count);
+    }
 
     public async Task<RagQueryResult?> RagQuery(
         string question,

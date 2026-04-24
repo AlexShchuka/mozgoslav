@@ -9,7 +9,11 @@ import { ArrowLeft, Copy, FolderOutput, RefreshCw } from "lucide-react";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import Badge from "../../components/Badge";
-import { apiFactory } from "../../api";
+import { graphqlClient } from "../../api/graphqlClient";
+import {
+  MutationExportNoteDocument,
+  QueryNoteDocument,
+} from "../../api/gql/graphql";
 import { ProcessedNote } from "../../domain/ProcessedNote";
 import { ROUTES } from "../../constants/routes";
 import { stripFrontmatter } from "./markdown";
@@ -26,8 +30,6 @@ import {
   SummaryLead,
 } from "./NoteViewer.style";
 
-const notesApi = apiFactory.createNotesApi();
-
 const NoteViewer: FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -36,9 +38,9 @@ const NoteViewer: FC = () => {
 
   useEffect(() => {
     if (!id) return;
-    void notesApi
-      .getById(id)
-      .then(setNote)
+    void graphqlClient
+      .request(QueryNoteDocument, { id })
+      .then((data) => setNote(data.note as ProcessedNote | null))
       .catch(() => setNote(null));
   }, [id]);
 
@@ -61,8 +63,11 @@ const NoteViewer: FC = () => {
   const onExport = async () => {
     if (!note) return;
     try {
-      const updated = await notesApi.exportNote(note.id);
-      setNote(updated);
+      const data = await graphqlClient.request(MutationExportNoteDocument, { id: note.id });
+      const updated = data.exportNote.note;
+      if (updated) {
+        setNote((prev) => (prev ? { ...prev, ...updated } : null));
+      }
       toast.success(t("common.apply"));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err));

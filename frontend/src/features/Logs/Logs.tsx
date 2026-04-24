@@ -5,10 +5,9 @@ import { RefreshCw } from "lucide-react";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
-import { apiFactory } from "../../api";
+import { graphqlClient } from "../../api/graphqlClient";
+import { QueryLogTailDocument } from "../../api/gql/graphql";
 import { FileName, LogPre, PageRoot, PageTitle, Toolbar } from "./Logs.style";
-
-const logsApi = apiFactory.createLogsApi();
 
 const Logs: FC = () => {
   const { t } = useTranslation();
@@ -17,9 +16,9 @@ const Logs: FC = () => {
 
   const refresh = useCallback(async () => {
     try {
-      const tail = await logsApi.tail(undefined, 400);
-      setLines(tail.lines ?? []);
-      setFileName(tail.file ?? "");
+      const data = await graphqlClient.request(QueryLogTailDocument, { lines: 400 });
+      setLines(data.logTail?.lines ?? []);
+      setFileName(data.logTail?.file ?? "");
     } catch {
       setLines([]);
     }

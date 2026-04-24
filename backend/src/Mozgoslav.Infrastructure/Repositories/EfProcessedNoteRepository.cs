@@ -38,6 +38,16 @@ public sealed class EfProcessedNoteRepository : IProcessedNoteRepository
             .OrderByDescending(n => n.Version)
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<ProcessedNote>> GetByRecordingIdsAsync(IReadOnlyList<Guid> recordingIds, CancellationToken ct) =>
+        await _db.ProcessedNotes.AsNoTracking()
+            .Join(
+                _db.Transcripts.AsNoTracking().Where(t => recordingIds.Contains(t.RecordingId)),
+                note => note.TranscriptId,
+                transcript => transcript.Id,
+                (note, transcript) => new { note, transcript.RecordingId })
+            .Select(x => x.note)
+            .ToListAsync(ct);
+
     public async Task<IReadOnlyList<ProcessedNote>> GetAllAsync(CancellationToken ct) =>
         await _db.ProcessedNotes.AsNoTracking()
             .OrderByDescending(n => n.CreatedAt)
