@@ -1,58 +1,32 @@
-import { FC, useCallback, useEffect, useState } from "react";
+import { FC, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Archive } from "lucide-react";
-import { toast } from "react-toastify";
+import { useDispatch, useSelector } from "react-redux";
+import type { Action, Dispatch } from "redux";
 
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
-import { graphqlClient } from "../../api/graphqlClient";
-import { MutationCreateBackupDocument, QueryBackupsDocument } from "../../api/gql/graphql";
+import {
+  loadBackups,
+  createBackup,
+  selectAllBackups,
+  selectBackupsCreating,
+} from "../../store/slices/backups";
 import { BackupMeta, BackupName, BackupRow, PageRoot, PageTitle, Toolbar } from "./Backups.style";
-
-interface BackupFile {
-  readonly name: string;
-  readonly path: string;
-  readonly sizeBytes: number;
-  readonly createdAt: string;
-}
 
 const Backups: FC = () => {
   const { t } = useTranslation();
-  const [items, setItems] = useState<BackupFile[]>([]);
-  const [creating, setCreating] = useState(false);
-
-  const refresh = useCallback(async () => {
-    try {
-      const data = await graphqlClient.request(QueryBackupsDocument);
-      setItems(
-        data.backups.map((b) => ({
-          name: b.name,
-          path: b.path,
-          sizeBytes: Number(b.sizeBytes),
-          createdAt: b.createdAt,
-        }))
-      );
-    } catch {
-      setItems([]);
-    }
-  }, []);
+  const dispatch = useDispatch<Dispatch<Action>>();
+  const items = useSelector(selectAllBackups);
+  const creating = useSelector(selectBackupsCreating);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    dispatch(loadBackups());
+  }, [dispatch]);
 
-  const onCreate = async () => {
-    setCreating(true);
-    try {
-      await graphqlClient.request(MutationCreateBackupDocument);
-      toast.success(t("backup.successToast"));
-      await refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err));
-    } finally {
-      setCreating(false);
-    }
+  const onCreate = () => {
+    dispatch(createBackup());
   };
 
   const openInFinder = (path: string) => {

@@ -13,6 +13,7 @@ import { watchDictationSagas } from "./slices/dictation";
 import { subscribeAudioDevices, watchAudioDevicesSagas } from "./slices/audioDevices";
 import { watchNotesSagas } from "./slices/notes";
 import { watchModelsSagas } from "./slices/models";
+import { watchBackupsSagas } from "./slices/backups";
 
 function* bootstrapJobsSubscription(): SagaIterator {
   yield put(subscribeJobs());
@@ -39,5 +40,6 @@ export function* rootSaga(): SagaIterator {
     fork(bootstrapAudioDevicesSubscription),
     fork(watchNotesSagas),
     fork(watchModelsSagas),
+    fork(watchBackupsSagas),
   ]);
 }

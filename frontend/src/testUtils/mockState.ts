@@ -12,6 +12,7 @@ import { initialAudioDevicesState, type AudioDevicesState } from "../store/slice
 import { initialNotesState, type NotesState } from "../store/slices/notes";
 import { initialSettingsState, type SettingsState } from "../store/slices/settings";
 import { initialModelsState, type ModelsState } from "../store/slices/models";
+import { initialBackupsState, type BackupsState } from "../store/slices/backups";
 
 export const jobsById = (jobs: readonly ProcessingJob[]): Record<string, ProcessingJob> =>
   Object.fromEntries(jobs.map((job) => [job.id, job]));
@@ -69,6 +70,12 @@ export const mockProfilesState = (
   patch: Partial<ProfilesState> = {}
 ): Pick<GlobalState, "profiles"> => ({
   profiles: { ...initialProfilesState, ...patch },
+});
+
+export const mockBackupsState = (
+  patch: Partial<BackupsState> = {}
+): Pick<GlobalState, "backups"> => ({
+  backups: { ...initialBackupsState, ...patch },
 });
 
 export const mergeMockState = (...parts: Partial<GlobalState>[]): Partial<GlobalState> =>
