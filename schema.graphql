@@ -1,0 +1,17 @@
+schema {
+  query: QueryType
+  mutation: MutationType
+  subscription: SubscriptionType
+}
+
+type MutationType {
+  placeholder: Boolean!
+}
+
+type QueryType {
+  placeholder: Boolean!
+}
+
+type SubscriptionType {
+  placeholder: Boolean!
+}

@@ -12,6 +12,8 @@ using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 
 using Mozgoslav.Api.Endpoints;
+using Mozgoslav.Api.GraphQL;
+using Mozgoslav.Api.GraphQL.SchemaExport;
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Obsidian;
 using Mozgoslav.Application.Rag;
@@ -312,10 +314,20 @@ try
     builder.Services.AddHostedService<SyncthingVersioningVerifier>();
     builder.Services.AddHostedService<SyncthingLifecycleService>();
 
+    builder.Services.AddMozgoslavGraphQL(builder.Environment);
+
     builder.Services.AddControllers();
     builder.Services.AddOpenApi();
 
     var app = builder.Build();
+
+    if (args.Length > 0 && args[0] == "export-schema")
+    {
+        var outputPath = args.Length > 1 ? args[1] : "schema.graphql";
+        var command = SchemaExportCommand.Create(app.Services);
+        await command.RunAsync(outputPath);
+        return;
+    }
 
     app.UseSerilogRequestLogging();
     app.UseCors(DevelopmentCorsPolicy);
@@ -323,6 +335,8 @@ try
     app.MapOpenApi();
     app.MapPrometheusScrapingEndpoint();
     app.MapControllers();
+
+    app.MapGraphQL("/graphql");
 
     app.MapHealthEndpoints();
     app.MapRecordingEndpoints();

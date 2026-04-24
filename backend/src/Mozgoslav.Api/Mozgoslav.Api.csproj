@@ -27,5 +27,9 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
+        <PackageReference Include="HotChocolate.AspNetCore" />
+        <PackageReference Include="HotChocolate.Data" />
+        <PackageReference Include="HotChocolate.Data.EntityFramework" />
+        <PackageReference Include="HotChocolate.Subscriptions.InMemory" />
     </ItemGroup>
 </Project>

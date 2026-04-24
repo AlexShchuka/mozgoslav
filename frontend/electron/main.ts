@@ -134,7 +134,7 @@ app.whenReady().then(async () => {
             "default-src 'self'",
             "script-src 'self' 'unsafe-inline'",
             "style-src 'self' 'unsafe-inline'",
-            `connect-src 'self' ${BACKEND_ORIGIN} ws://localhost:5173 http://localhost:5173`,
+            `connect-src 'self' ${BACKEND_ORIGIN} ws://localhost:5173 http://localhost:5173 ws://localhost:5050 ws://127.0.0.1:5050`,
             "img-src 'self' data: blob:",
             "font-src 'self' data:",
             "object-src 'none'",
