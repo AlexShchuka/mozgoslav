@@ -28,7 +28,7 @@
   </MSTest>
   <DataCollectionRunSettings>
     <DataCollectors>
-      <DataCollector friendlyName="XPlat code coverage">
+      <DataCollector friendlyName="XPlat code coverage" enabled="True">
         <Configuration>
           <Format>cobertura</Format>
           <Exclude>[Mozgoslav.Tests*]*,[Mozgoslav.Api]Program</Exclude>

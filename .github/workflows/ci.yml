@@ -190,8 +190,15 @@ jobs:
         run: cd python-sidecar && source .venv/bin/activate && ruff check .
       - name: Black (check)
         run: cd python-sidecar && source .venv/bin/activate && black --check .
-      - name: Pytest
-        run: cd python-sidecar && source .venv/bin/activate && pytest
+      - name: Pytest (with coverage)
+        run: cd python-sidecar && source .venv/bin/activate && pytest --cov=app --cov-report=xml:coverage.cobertura.xml --cov-report=term-missing
+      - name: Upload python coverage
+        if: runner.os == 'Linux' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage
+          path: python-sidecar/coverage.cobertura.xml
+          retention-days: 7
 
   commitlint:
     name: verify / commitlint
@@ -229,12 +236,40 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build
         run: cd native/MozgoslavDictationHelper && swift build -c release
-      - name: Test
-        run: cd native/MozgoslavDictationHelper && swift test
+      - name: Test (with coverage)
+        run: cd native/MozgoslavDictationHelper && swift test --enable-code-coverage
+      - name: Export swift coverage (lcov)
+        if: always()
+        run: |
+          set -euo pipefail
+          cd native/MozgoslavDictationHelper
+          binaries_root=".build"
+          profdata=$(find "$binaries_root" -name default.profdata | head -n1)
+          if [ -z "$profdata" ]; then
+            echo "::warning::no default.profdata produced by swift test"
+            exit 0
+          fi
+          test_bundle=$(find "$binaries_root" -type d -name '*.xctest' | head -n1)
+          if [ -z "$test_bundle" ]; then
+            echo "::warning::no xctest bundle found"
+            exit 0
+          fi
+          bin_name=$(basename "$test_bundle" .xctest)
+          bin_path="${test_bundle}/Contents/MacOS/${bin_name}"
+          [ -f "$bin_path" ] || bin_path="${test_bundle}/${bin_name}"
+          xcrun llvm-cov export -format=lcov "$bin_path" -instr-profile "$profdata" > coverage.lcov
+          ls -la coverage.lcov
+      - name: Upload native coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-coverage
+          path: native/MozgoslavDictationHelper/coverage.lcov
+          retention-days: 7
 
   coverage-comment:
     name: coverage / pr-comment
-    needs: [ backend, frontend ]
+    needs: [ backend, frontend, python, native ]
     if: github.event_name == 'pull_request' && always()
     runs-on: ubuntu-latest
     permissions:
@@ -256,6 +291,18 @@ jobs:
         with:
           name: frontend-coverage
           path: frontend/coverage
+      - name: Download python coverage
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: python-coverage
+          path: python-coverage
+      - name: Download native coverage
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: native-coverage
+          path: native-coverage
       - name: Build coverage markdown summary
         id: summary
         run: |
