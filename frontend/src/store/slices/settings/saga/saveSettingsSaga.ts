@@ -8,7 +8,7 @@ import type {
 import { MutationUpdateSettingsDocument } from "../../../../api/gql/graphql";
 import { gqlRequest } from "../../../saga/graphql";
 import type { AppSettings } from "../../../../domain/Settings";
-import { notifyError } from "../../notifications";
+import { notifyError, notifySuccess } from "../../notifications";
 import {
   SAVE_SETTINGS,
   type SaveSettingsAction,
@@ -106,6 +106,7 @@ export function* saveSettingsSaga(action: SaveSettingsAction): SagaIterator {
     const dto = result.updateSettings.settings;
     if (dto) {
       yield put(saveSettingsSuccess(mapSavedToSettings(dto)));
+      yield put(notifySuccess({ messageKey: "settings.savedToast" }));
     } else {
       yield put(saveSettingsFailure());
     }

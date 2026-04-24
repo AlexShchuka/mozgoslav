@@ -1,17 +1,12 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Provider } from "react-redux";
-import { applyMiddleware, createStore } from "redux";
-import type { SagaIterator } from "redux-saga";
-import createSagaMiddleware from "redux-saga";
-import { all, fork } from "redux-saga/effects";
-import { ThemeProvider } from "styled-components";
-import { ToastContainer } from "react-toastify";
 import { MemoryRouter } from "react-router-dom";
 
 import Sync from "../Sync";
-import { syncReducer, watchSyncSagas } from "../../../store/slices/sync";
-import { lightTheme } from "../../../styles/theme";
+import { watchSyncSagas } from "../../../store/slices/sync";
+import { watchSettingsSagas, SAVE_SETTINGS } from "../../../store/slices/settings";
+import { DEFAULT_SETTINGS } from "../../../domain/Settings";
+import { renderWithStore, mockSettingsState } from "../../../testUtils";
 import "../../../i18n";
 
 jest.mock("../../../api/graphqlClient", () => ({
@@ -26,89 +21,24 @@ import { graphqlClient } from "../../../api/graphqlClient";
 
 const mockedRequest = graphqlClient.request as jest.Mock;
 
-const stubSettings = {
-  vaultPath: "",
-  llmProvider: "",
-  llmEndpoint: "",
-  llmModel: "",
-  llmApiKey: "",
-  obsidianApiHost: "",
-  obsidianApiToken: "",
-  whisperModelPath: "",
-  vadModelPath: "",
-  language: "ru",
-  themeMode: "system",
-  whisperThreads: 4,
-  dictationEnabled: false,
-  dictationHotkeyType: "mouse",
-  dictationMouseButton: 4,
-  dictationKeyboardHotkey: "",
-  dictationPushToTalk: false,
-  dictationLanguage: "ru",
-  dictationWhisperModelId: "",
-  dictationCaptureSampleRate: 16000,
-  dictationLlmPolish: false,
-  dictationInjectMode: "auto",
-  dictationOverlayEnabled: true,
-  dictationOverlayPosition: "bottom-center",
-  dictationSoundFeedback: true,
-  dictationVocabulary: [],
-  dictationModelUnloadMinutes: 10,
-  dictationTempAudioPath: "",
-  dictationAppProfiles: [],
-  syncthingEnabled: false,
-  syncthingObsidianVaultPath: "",
-  obsidianFeatureEnabled: false,
-};
+const stubSettingsLoaded = { ...DEFAULT_SETTINGS, syncthingEnabled: false };
 
-const buildStore = () => {
-  const saga = createSagaMiddleware();
-
-  function* root(): SagaIterator {
-    yield all([fork(watchSyncSagas)]);
-  }
-
-  const rootReducer = (
-    state: { sync: ReturnType<typeof syncReducer> } | undefined,
-    action: { type: string }
-  ) => ({
-    sync: syncReducer(state?.sync, action),
-  });
-  const store = createStore(
-    rootReducer as unknown as Parameters<typeof createStore>[0],
-    applyMiddleware(saga)
+const renderSync = (settingsPatch: Parameters<typeof mockSettingsState>[0] = {}) =>
+  renderWithStore(
+    <MemoryRouter>
+      <Sync />
+    </MemoryRouter>,
+    {
+      preloadedState: mockSettingsState(settingsPatch),
+      sagas: [watchSyncSagas, watchSettingsSagas],
+    }
   );
-  saga.run(root);
-  return store;
-};
-
-const renderSync = () => {
-  const store = buildStore();
-  return render(
-    <Provider store={store}>
-      <ThemeProvider theme={lightTheme}>
-        <MemoryRouter>
-          <Sync />
-          <ToastContainer />
-        </MemoryRouter>
-      </ThemeProvider>
-    </Provider>
-  );
-};
 
 describe("Sync tab — BC-050 / Bug 23", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedRequest.mockImplementation((doc: unknown) => {
       const docStr = JSON.stringify(doc);
-      if (docStr.includes("QuerySettings")) {
-        return Promise.resolve({ settings: stubSettings });
-      }
-      if (docStr.includes("MutationUpdateSettings")) {
-        return Promise.resolve({
-          updateSettings: { settings: { ...stubSettings, syncthingEnabled: true } },
-        });
-      }
       if (docStr.includes("syncStatus")) {
         return Promise.resolve({
           syncStatus: {
@@ -172,18 +102,15 @@ describe("Sync tab — BC-050 / Bug 23", () => {
     expect(await screen.findByTestId("sync-pairing-modal-body")).toBeInTheDocument();
   });
 
-  it("SyncTab_EnableToggle_CallsSettingsMutation", async () => {
-    renderSync();
+  it("SyncTab_EnableToggle_DispatchesSaveSettings", async () => {
+    const { getActions } = renderSync({ settings: stubSettingsLoaded });
     await userEvent.click(screen.getByTestId("sync-tab-settings"));
     const toggle = await screen.findByTestId("sync-settings-enabled");
     await userEvent.click(toggle);
     await waitFor(() =>
-      expect(mockedRequest).toHaveBeenCalledWith(
-        expect.objectContaining({ kind: "Document" }),
-        expect.objectContaining({
-          input: expect.objectContaining({ syncthingEnabled: true }),
-        })
-      )
+      expect(
+        getActions().some((a) => a.type === SAVE_SETTINGS && a.payload?.syncthingEnabled === true)
+      ).toBe(true)
     );
   });
 
