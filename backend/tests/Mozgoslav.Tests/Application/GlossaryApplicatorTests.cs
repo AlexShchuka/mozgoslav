@@ -7,9 +7,6 @@ using Mozgoslav.Domain.Entities;
 
 namespace Mozgoslav.Tests.Application;
 
-/// <summary>
-/// Plan v0.8 Block 5 — glossary projection helpers. Pure logic, no mocks.
-/// </summary>
 [TestClass]
 public sealed class GlossaryApplicatorTests
 {

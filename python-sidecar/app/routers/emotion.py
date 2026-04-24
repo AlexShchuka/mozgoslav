@@ -1,4 +1,3 @@
-"""``POST /api/emotion`` — audeering emotion MSP-dim (Tier 2, 503 when absent)."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -19,7 +18,7 @@ router = APIRouter(prefix="/api", tags=["emotion"])
 )
 async def classify_emotion(
     payload: EmotionRequest,
-    service = Depends(get_emotion_service),  # noqa: ANN001 — deferred import
+    service=Depends(get_emotion_service),  # noqa: ANN001 — deferred import
 ):
     try:
         result = service.classify(payload)

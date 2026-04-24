@@ -8,12 +8,6 @@ using FluentAssertions;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// U1 — onboarding try-it-now button uploads a bundled sample WAV via the
-/// standard multipart path. The endpoint has to accept a minimal WAV body
-/// and produce a non-empty Recording list that the onboarding flow can
-/// forward into the queue.
-/// </summary>
 [TestClass]
 public sealed class RecordingUploadEndpointTests
 {
@@ -41,11 +35,6 @@ public sealed class RecordingUploadEndpointTests
 
     public TestContext TestContext { get; set; } = null!;
 
-    /// <summary>
-    /// Builds a minimal but decoder-valid PCM WAV in memory. 16 kHz mono
-    /// 16-bit little-endian silence; enough metadata for WhisperNet to
-    /// accept the file shape even though the test does not run Whisper.
-    /// </summary>
     private static byte[] BuildSilentWav(int durationSeconds)
     {
         const int sampleRate = 16_000;
@@ -61,8 +50,8 @@ public sealed class RecordingUploadEndpointTests
         writer.Write(fileSize);
         writer.Write("WAVE"u8.ToArray());
         writer.Write("fmt "u8.ToArray());
-        writer.Write(16); // fmt chunk size
-        writer.Write((short)1); // PCM
+        writer.Write(16);
+        writer.Write((short)1);
         writer.Write((short)channels);
         writer.Write(sampleRate);
         writer.Write(sampleRate * channels * (bitsPerSample / 8));

@@ -12,23 +12,8 @@ using Mozgoslav.Application.Rag;
 
 namespace Mozgoslav.Api.Endpoints;
 
-/// <summary>
-/// ADR-005 + ADR-007-shared §2.4 — thin HTTP surface over <see cref="IRagService"/>.
-/// Contract:
-/// <list type="bullet">
-///   <item><c>GET  /api/rag/status</c>  → <c>{ chunks, notes }</c></item>
-///   <item><c>POST /api/rag/reindex</c> → <c>{ embeddedNotes, chunks }</c></item>
-///   <item><c>POST /api/rag/query</c>   → <c>{ answer, citations:[{noteId, segmentId, text, snippet}] }</c></item>
-/// </list>
-/// Frontend MR C consumes this shape verbatim; Phase 2 Backend MR C owns it.
-/// </summary>
 public static class RagEndpoints
 {
-    /// <summary>
-    /// Short preview used in <c>citations[].snippet</c>. Long enough to be
-    /// meaningful on its own, short enough that a list of 5 snippets fits on
-    /// screen without scrolling.
-    /// </summary>
     private const int SnippetMaxChars = 200;
 
     public sealed record QueryRequest(string Question, int? TopK);

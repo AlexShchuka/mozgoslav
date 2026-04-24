@@ -10,12 +10,6 @@ using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Tests.Infrastructure;
 
-/// <summary>
-/// ADR-011 step 4 — pin the behaviours <c>OpenAiCompatibleLlmService.ChunkByTokens</c>
-/// relies on: the tokenizer is cl100k_base (shared with GPT-4), slices never
-/// exceed the configured budget, every source character lands in exactly one
-/// slice, and short inputs pass through unchanged.
-/// </summary>
 [TestClass]
 public sealed class OpenAiCompatibleLlmServiceChunkByTokensTests
 {

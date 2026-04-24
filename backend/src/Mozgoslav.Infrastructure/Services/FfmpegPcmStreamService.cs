@@ -16,27 +16,11 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// <see cref="IDictationPcmStream"/> backed by a long-running <c>ffmpeg</c>
-/// process per session. The browser's <c>MediaRecorder</c> splits a single
-/// WebM/Opus recording into many chunks whose bodies are header-less EBML
-/// clusters; feeding them through one-shot ffmpeg invocations fails with exit
-/// code 183 (invalid data). Holding ffmpeg's stdin open for the duration of
-/// the session lets EBML parsing see the original header + the clusters in
-/// order, producing PCM continuously on stdout.
-/// <para>
-/// This path deliberately shells out via <see cref="Process"/> instead of
-/// CliWrap because we need interleaved reads and writes against the process's
-/// standard streams; CliWrap is optimised for one-shot request/response
-/// shapes. Stderr is forwarded to the logger so D4 regressions surface as
-/// structured log entries rather than silent decode failures.
-/// </para>
-/// </summary>
 public sealed class FfmpegPcmStreamService : IDictationPcmStream, IAsyncDisposable
 {
     private const string FfmpegExecutable = "ffmpeg";
     private const int DefaultSampleRate = 16_000;
-    private const int PcmChunkBytes = 16_000 * sizeof(float); // ~1 s of audio per pump.
+    private const int PcmChunkBytes = 16_000 * sizeof(float);
     private static readonly TimeSpan DrainTimeout = TimeSpan.FromSeconds(5);
 
     private readonly ILogger<FfmpegPcmStreamService> _logger;
@@ -78,7 +62,7 @@ public sealed class FfmpegPcmStreamService : IDictationPcmStream, IAsyncDisposab
             DefaultSampleRate.ToString(CultureInfo.InvariantCulture));
         startInfo.ArgumentList.Add("pipe:1");
 
-#pragma warning disable IDISP001 // Ownership transferred to Session.
+#pragma warning disable IDISP001 
         var process = new Process { StartInfo = startInfo };
 #pragma warning restore IDISP001
         try
@@ -98,21 +82,21 @@ public sealed class FfmpegPcmStreamService : IDictationPcmStream, IAsyncDisposab
             throw;
         }
 
-#pragma warning disable IDISP001 // Ownership transferred to _sessions (removed on Stop/Cancel/Dispose).
+#pragma warning disable IDISP001 
         var session = new Session(sessionId);
 #pragma warning restore IDISP001
         session.AttachProcess(process);
 
         if (!_sessions.TryAdd(sessionId, session))
         {
-#pragma warning disable IDISP016 // The local wrapper never reached _sessions; safe to dispose.
+#pragma warning disable IDISP016 
             session.Dispose();
 #pragma warning restore IDISP016
             throw new InvalidOperationException(
                 $"Dictation PCM stream for session {sessionId} is already active.");
         }
 
-#pragma warning disable CA2025 // Tasks live for the session lifetime; Stop/Cancel awaits / cancels them.
+#pragma warning disable CA2025 
         session.StdoutPump = Task.Run(() => PumpStdoutAsync(session), CancellationToken.None);
         session.StderrPump = Task.Run(() => PumpStderrAsync(session), CancellationToken.None);
 #pragma warning restore CA2025

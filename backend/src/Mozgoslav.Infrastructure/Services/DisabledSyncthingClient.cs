@@ -7,14 +7,6 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// No-op Syncthing client used before the Syncthing lifecycle service lands in
-/// Phase 2 Backend MR D. Avoids the log spam "Syncthing REST: Connection
-/// refused (127.0.0.1:8384)" on every boot (ADR-007 bug 6) by short-circuiting
-/// every call with a safe empty-state response. All methods return
-/// <c>IsHealthy:false</c>-equivalent payloads and <see cref="ShutdownAsync"/>
-/// is a no-op so app quit stays idempotent.
-/// </summary>
 public sealed class DisabledSyncthingClient : ISyncthingClient
 {
     public Task<bool> IsHealthyAsync(CancellationToken ct) => Task.FromResult(false);

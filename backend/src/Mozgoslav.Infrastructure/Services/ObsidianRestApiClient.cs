@@ -13,19 +13,6 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// Plan v0.8 Block 6 — HTTP client for the Obsidian Local REST API plugin.
-/// Uses the <c>Mozgoslav.Obsidian</c> named <see cref="HttpClient"/> so the
-/// composition root can attach a localhost-scoped certificate validation
-/// callback for the plugin's self-signed certificate.
-/// <para>
-/// Every method uses <see cref="IAppSettings.ObsidianApiHost"/> +
-/// <see cref="IAppSettings.ObsidianApiToken"/> resolved from the DB at call
-/// time so the user can change the host/token in Settings without a backend
-/// restart. An empty token short-circuits to "unreachable" so the client
-/// never bangs the REST surface with invalid credentials.
-/// </para>
-/// </summary>
 public sealed class ObsidianRestApiClient : IObsidianRestClient
 {
     public const string HttpClientName = "Mozgoslav.Obsidian";

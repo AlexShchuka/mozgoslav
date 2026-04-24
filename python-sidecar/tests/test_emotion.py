@@ -1,9 +1,3 @@
-"""Tests for ``app/services/emotion_service.py`` (``POST /api/emotion``).
-
-Tier-2 service — we exercise the absent-weights / 503 envelope path
-and the deterministic label-mapping helper
-(:func:`app.services.emotion_service._label_from_av`).
-"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -18,7 +12,9 @@ from app.models.schemas import EmotionRequest
 from app.services.emotion_service import EmotionService, _label_from_av
 
 
-def test_classify_raises_model_not_available_when_weights_absent(tmp_path: Path) -> None:
+def test_classify_raises_model_not_available_when_weights_absent(
+    tmp_path: Path,
+) -> None:
     service = EmotionService(ModelPaths(tmp_path))
     with pytest.raises(ModelNotAvailableError) as excinfo:
         service.classify(EmotionRequest(audio_path="/tmp/any.wav"))

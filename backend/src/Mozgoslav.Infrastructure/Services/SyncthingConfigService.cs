@@ -10,13 +10,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// ADR-003 D2+D4 and ADR-004 R8: generates Syncthing's <c>config.xml</c> for
-/// our three managed folders — recordings (staggered versioning, 30d),
-/// notes (trashcan, 30d) and the optional Obsidian vault (trashcan, 14d).
-/// Idempotent: if a config already exists we leave it alone so the user's
-/// manual edits survive upgrades.
-/// </summary>
 public sealed class SyncthingConfigService
 {
     public const string RecordingsFolderId = "mozgoslav-recordings";
@@ -30,11 +23,6 @@ public sealed class SyncthingConfigService
         _logger = logger;
     }
 
-    /// <summary>
-    /// Writes a fresh <c>config.xml</c> at <paramref name="configPath"/> if one
-    /// does not already exist. Returns <c>true</c> when a new config was
-    /// written, <c>false</c> when an existing one was preserved.
-    /// </summary>
     public bool EnsureConfig(
         string configPath,
         SyncthingConfigInputs inputs)
@@ -57,7 +45,6 @@ public sealed class SyncthingConfigService
         return true;
     }
 
-    /// <summary>Deterministic XML builder — exposed so tests can assert over the document without touching disk.</summary>
     public static XDocument Build(SyncthingConfigInputs inputs)
     {
         ArgumentNullException.ThrowIfNull(inputs);
@@ -123,7 +110,6 @@ public sealed class SyncthingConfigService
         return folder;
     }
 
-    /// <summary>Produces a fresh Syncthing GUI API key (base64-hex, 32 bytes).</summary>
     public static string GenerateApiKey()
     {
         Span<byte> buffer = stackalloc byte[32];
@@ -174,10 +160,6 @@ public sealed class SyncthingConfigService
     }
 }
 
-/// <summary>
-/// Inputs for <see cref="SyncthingConfigService.EnsureConfig"/> —
-/// grouped into a record to keep the call-site self-documenting.
-/// </summary>
 public sealed record SyncthingConfigInputs(
     string LocalDeviceId,
     string LocalDeviceName,

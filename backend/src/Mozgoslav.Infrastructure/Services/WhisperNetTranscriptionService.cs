@@ -16,26 +16,6 @@ using Whisper.net;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// Native Whisper.net-based transcription (no subprocess). Uses CoreML acceleration
-/// when the runtime package finds the <c>.mlmodelc</c> companion next to the ggml
-/// model. Parameters are those verified by the prototype pipeline (BACKEND-SPEC §9).
-/// Also implements <see cref="IStreamingTranscriptionService"/> for the push-to-talk
-/// dictation pipeline: samples arrive in short 16 kHz PCM chunks and the service
-/// emits partial transcripts roughly every <see cref="StreamWindowMs"/> milliseconds
-/// of accumulated speech.
-/// <para>
-/// ADR-004 R4 / ADR-011 step 2 — the <see cref="WhisperFactory"/> (which holds the
-/// loaded model in RAM — several hundred MB for <c>large-v3</c>) is cached via
-/// <see cref="IMemoryCache"/> with a sliding expiration matching
-/// <see cref="IAppSettings.DictationModelUnloadMinutes"/>. The cache entry's
-/// <see cref="MemoryCacheEntryOptions.PostEvictionCallbacks"/> dispose the factory
-/// when the entry is evicted; the next call re-loads it with a ~1-2 s first-call
-/// latency penalty. During long streams the service touches the cache on every
-/// windowed emit so the sliding window never elapses while transcription is
-/// actively running.
-/// </para>
-/// </summary>
 public sealed class WhisperNetTranscriptionService
     : ITranscriptionService, IStreamingTranscriptionService
 {

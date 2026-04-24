@@ -8,27 +8,8 @@ namespace Mozgoslav.Infrastructure.Services;
 
 #pragma warning disable IDISP004
 
-/// <summary>
-/// Pure JSON parser that turns a single event object received from Syncthing's
-/// <c>/rest/events</c> long-polling endpoint into a
-/// <see cref="SyncthingEvent"/>. Kept deliberately I/O-free and stateless so
-/// it can be covered by plain unit tests over golden payloads.
-/// <para>
-/// <b>Note.</b> Syncthing's /rest/events endpoint is NOT RFC 8895 Server-Sent
-/// Events — it is long-polled JSON (<c>GET /rest/events?since=&lt;lastId&gt;</c>
-/// returns <c>[{event1}, {event2}, ...]</c>). The class name uses "Sse" to
-/// match the C# naming of our own SSE bridge endpoint (<c>/api/sync/events</c>)
-/// that pumps these events downstream to the frontend in the standard SSE format.
-/// </para>
-/// </summary>
 public static class SyncthingSseEventParser
 {
-    /// <summary>
-    /// Parses a single event JSON object. Returns <c>null</c> for JSON that
-    /// doesn't have the upstream envelope (<c>id</c>/<c>type</c>/<c>time</c>/<c>data</c>) —
-    /// callers should log and skip, never throw: upstream adds event types
-    /// between minor versions and we should survive them.
-    /// </summary>
     public static SyncthingEvent? Parse(JsonElement element)
     {
         if (element.ValueKind != JsonValueKind.Object)
@@ -65,7 +46,6 @@ public static class SyncthingSseEventParser
         };
     }
 
-    /// <summary>Parses a JSON array of envelopes; silently skips malformed entries.</summary>
     public static IReadOnlyList<SyncthingEvent> ParseBatch(string json)
     {
         ArgumentNullException.ThrowIfNull(json);

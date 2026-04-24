@@ -1,10 +1,3 @@
-"""Tests for ``app/services/ner_service.py`` (``POST /api/ner``).
-
-Natasha is pure-Python — it ships its own model artefacts inside the
-pip package — so these tests exercise the real pipeline and validate
-the PER / ORG / LOC / date extraction contract on a known Russian
-sample.
-"""
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
@@ -15,30 +8,26 @@ from app.models.schemas import NerRequest
 
 def test_ner_extracts_person_and_location_from_russian_text() -> None:
     service = NerService()
-    result = service.extract(NerRequest(
-        text="Иван встретился с Мариной в Москве вчера."
-    ))
+    result = service.extract(
+        NerRequest(text="Иван встретился с Мариной в Москве вчера.")
+    )
 
     assert any("Иван" in name for name in result.people), result.people
-    # Natasha's normalize lemmatizes "Мариной" → "Марина" when morph
-    # tagger is wired in.
     assert any("Марин" in name for name in result.people), result.people
     assert any("Моск" in loc for loc in result.locations), result.locations
 
 
 def test_ner_extracts_organisation() -> None:
     service = NerService()
-    result = service.extract(NerRequest(
-        text="Компания Яндекс объявила о новом проекте."
-    ))
+    result = service.extract(
+        NerRequest(text="Компания Яндекс объявила о новом проекте.")
+    )
     assert any("Яндекс" in org for org in result.orgs), result.orgs
 
 
 def test_ner_extracts_date() -> None:
     service = NerService()
-    result = service.extract(NerRequest(
-        text="Встреча назначена на 15 мая 2024 года."
-    ))
+    result = service.extract(NerRequest(text="Встреча назначена на 15 мая 2024 года."))
     assert result.dates, "date extractor must catch '15 мая 2024 года'"
     assert "2024" in result.dates[0]
 
@@ -51,17 +40,15 @@ def test_ner_empty_text_returns_empty_buckets() -> None:
 
 def test_ner_dedupes_repeated_mentions() -> None:
     service = NerService()
-    result = service.extract(NerRequest(
-        text="Пётр пришёл. Пётр ушёл. Пётр вернулся."
-    ))
+    result = service.extract(NerRequest(text="Пётр пришёл. Пётр ушёл. Пётр вернулся."))
     petr_count = sum(1 for name in result.people if "Пётр" in name or "Петр" in name)
     assert petr_count == 1, f"expected a single deduped Пётр entry, got {result.people}"
 
 
 def test_ner_http_endpoint_returns_expected_shape(client: TestClient) -> None:
-    response = client.post("/api/ner", json={
-        "text": "Мария работает в Сбербанке в Санкт-Петербурге."
-    })
+    response = client.post(
+        "/api/ner", json={"text": "Мария работает в Сбербанке в Санкт-Петербурге."}
+    )
     assert response.status_code == 200
     payload = response.json()
     assert set(payload.keys()) == {"people", "orgs", "locations", "dates"}

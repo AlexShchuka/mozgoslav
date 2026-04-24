@@ -14,11 +14,6 @@ using Mozgoslav.Infrastructure.Persistence;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// ADR-007 §2.8 BC-017 — transcript-segment checkpoint survives a save/load
-/// round-trip. Resume logic belongs to ProcessQueueWorker and is covered in
-/// the dictation resume tests; this one freezes the storage contract.
-/// </summary>
 [TestClass]
 public sealed class TranscriptCheckpointPersistenceTests
 {

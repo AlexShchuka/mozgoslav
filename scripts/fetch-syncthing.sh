@@ -1,18 +1,4 @@
 #!/usr/bin/env bash
-# ADR-003 D4 — fetch the latest stable Syncthing release binary for every
-# platform Mozgoslav ships on, verify its sha256 against the published
-# signed checksum file, and unpack it into frontend/resources/syncthing
-# where electron-builder picks it up via extraResources.
-#
-# Idempotent: skips downloads that are already present and valid.
-# No-ops cleanly when offline (exits 1 with a clear message).
-#
-# Usage:
-#   scripts/fetch-syncthing.sh                (all platforms)
-#   scripts/fetch-syncthing.sh darwin-arm64   (just one)
-#
-# Pre-req: curl, tar, shasum/sha256sum, and either gpg (for signature
-# verification, recommended) or tolerate --no-verify-signature.
 
 set -euo pipefail
 
@@ -20,7 +6,6 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT_DIR="$REPO_ROOT/frontend/resources/syncthing"
 GH_API="https://api.github.com/repos/syncthing/syncthing/releases/latest"
 
-# Platform → asset filename suffix (without version prefix).
 declare -A SUFFIX
 SUFFIX["darwin-arm64"]="macos-arm64.zip"
 SUFFIX["darwin-amd64"]="macos-amd64.zip"
@@ -49,12 +34,10 @@ fetch_json() {
 }
 
 extract_version() {
-  # tag_name looks like "v1.27.8"
   echo "$1" | python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"].lstrip("v"))'
 }
 
 checksum_for() {
-  # $1 = sha256sums.txt content; $2 = asset filename
   awk -v f="$2" '$2 == f || $2 == "./"f {print $1; exit}' <<<"$1"
 }
 
@@ -95,7 +78,6 @@ fetch_platform() {
   case "$filename" in
     *.tar.gz) tar -xzf "$tmp/$filename" -C "$dest_dir" --strip-components=1 ;;
     *.zip)    unzip -q "$tmp/$filename" -d "$tmp/unzipped"
-              # Zip archives contain a top-level dir — copy its contents up.
               shopt -s dotglob
               cp -R "$tmp/unzipped/"*/* "$dest_dir/"
               shopt -u dotglob ;;

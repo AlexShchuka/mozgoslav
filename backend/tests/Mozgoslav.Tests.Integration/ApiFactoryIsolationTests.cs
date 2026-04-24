@@ -11,24 +11,6 @@ using Mozgoslav.Domain.Entities;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// Regression tests for the database-initialization RCA (2026-04-17):
-/// <para>
-/// <c>Program.cs</c> used to read <c>Mozgoslav:DatabasePath</c> from
-/// <c>builder.Configuration</c> before <c>ApiFactory.ConfigureWebHost</c>'s
-/// <c>AddInMemoryCollection</c> had been applied. Every integration test host
-/// therefore fell back to the relative default <c>"mozgoslav.db"</c> in
-/// <c>appsettings.json</c>, so all 32 MSTest workers competed for the same
-/// database file: concurrent <c>EnsureCreatedAsync</c> calls raced and
-/// produced <c>SqliteException: table "processed_notes" already exists</c>;
-/// test data from one method leaked into another.
-/// </para>
-/// <para>
-/// These tests lock in the invariant that every <see cref="ApiFactory"/>
-/// instance runs against its own isolated SQLite file and cannot see data
-/// written by a concurrent factory.
-/// </para>
-/// </summary>
 [TestClass]
 public sealed class ApiFactoryIsolationTests
 {

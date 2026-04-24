@@ -12,21 +12,6 @@ using Mozgoslav.Application.Rag;
 
 namespace Mozgoslav.Infrastructure.Rag;
 
-/// <summary>
-/// ADR-005 D2 production path — persists chunk embeddings in a SQLite
-/// <c>rag_chunks</c> table so the index survives process restarts. The
-/// search path is still brute-force cosine (fetch all vectors, compute
-/// locally); this is the classic fallback for <c>sqlite-vss</c> / <c>sqlite-vec</c>:
-/// drop in the extension and change <c>SearchAsync</c> to delegate to the
-/// virtual table without touching the rest of the pipeline.
-/// <para>
-/// The chunker produces a few thousand chunks for a personal note corpus,
-/// which is comfortably within brute-force territory (&lt;50 ms search
-/// with 384-dim vectors on a laptop). Anything larger benefits from ANN,
-/// at which point the user should install the extension — see
-/// <c>docs/rag-persistence.md</c>.
-/// </para>
-/// </summary>
 public sealed class SqliteVectorIndex : IVectorIndex, IAsyncDisposable
 {
     private readonly string _connectionString;

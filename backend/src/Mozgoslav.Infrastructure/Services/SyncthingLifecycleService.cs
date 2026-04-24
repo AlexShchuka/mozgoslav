@@ -17,32 +17,6 @@ using Mozgoslav.Infrastructure.Platform;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// ADR-007-phase2-backend §2.3 BC-048 / BC-049 — spawns the bundled Syncthing
-/// binary on a random free loopback port with a freshly generated API-key,
-/// then tears it down gracefully on app shutdown (POST /rest/system/shutdown,
-/// SIGTERM fallback).
-/// <para>
-/// This replaces the Phase-1 <c>NotYetWiredSyncthingLifecycleService</c> stub.
-/// When the bundled binary is absent from the expected locations (pod-only
-/// sandbox, dev box without the Electron wrapper that ships the binary,
-/// …) the service logs an INF line once and becomes a no-op — it does NOT
-/// log WRN / ERR spam on every boot. The existing
-/// <see cref="DisabledSyncthingClient"/> registration in <c>Program.cs</c>
-/// continues to answer <c>/api/sync/*</c> with empty-state payloads, which
-/// is the intentional fallback behaviour for the "no Syncthing" path
-/// (ADR-007 bug 6).
-/// </para>
-/// <para>
-/// Binary discovery order:
-/// <list type="number">
-///   <item><c>MOZGOSLAV_SYNCTHING_BINARY</c> environment variable (primary override).</item>
-///   <item><c>SYNCTHING_BINARY</c> environment variable (legacy alias).</item>
-///   <item><c>syncthing</c> on <c>PATH</c>.</item>
-/// </list>
-/// First match wins; missing all three puts us into the no-op branch.
-/// </para>
-/// </summary>
 public sealed class SyncthingLifecycleService : IHostedService, IAsyncDisposable
 {
     private static readonly TimeSpan GracefulShutdownTimeout = TimeSpan.FromSeconds(5);

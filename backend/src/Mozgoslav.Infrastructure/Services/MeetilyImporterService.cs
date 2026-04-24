@@ -17,12 +17,6 @@ using Mozgoslav.Domain.Services;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// Reads the Meetily desktop app's SQLite database (<c>meeting_minutes.sqlite</c>)
-/// and imports each meeting as a Mozgoslav Recording + Transcript, so the user can
-/// re-run them through any of our profiles. Idempotent: a meeting whose audio file
-/// already exists as a Recording (by SHA-256 or path) is skipped.
-/// </summary>
 public sealed class MeetilyImporterService
 {
     public record ImportReport(int TotalMeetings, int ImportedRecordings, int SkippedDuplicates, int Errors);

@@ -8,12 +8,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// Prepares an Obsidian vault for Mozgoslav use: creates the expected folder
-/// structure (inbox + aggregation folders), drops a Templater-style note template,
-/// and writes a minimal <c>.obsidian/plugins</c> hint file. Idempotent: existing
-/// files are preserved untouched.
-/// </summary>
 public sealed class ObsidianSetupService
 {
     public record SetupReport(string VaultPath, IReadOnlyList<string> CreatedPaths, IReadOnlyList<string> SkippedPaths);

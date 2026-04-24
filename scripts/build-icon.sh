@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-# Plan v0.8 Block 7 §2.5 — generate frontend/build/icon.icns from the source PNG.
-#
-# Requires macOS (iconutil ships with Xcode CLT). On Linux/Windows, ship the
-# pre-built icon.icns committed alongside the source PNG.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -8,12 +8,6 @@ using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Tests.Integration.AudioRecorder;
 
-/// <summary>
-/// Verifies the non-macOS fallback recorder honestly gates the feature per
-/// ADR-009 §2.1 row 1. The UI uses <c>IsSupported=false</c> to hide the
-/// Record button; explicit calls to <c>StartAsync</c> throw a typed
-/// <c>PlatformNotSupportedException</c>.
-/// </summary>
 [TestClass]
 public sealed class PlatformUnsupportedAudioRecorderTests
 {

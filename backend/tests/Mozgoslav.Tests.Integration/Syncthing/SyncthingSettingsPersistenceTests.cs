@@ -10,11 +10,6 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Tests.Integration.Syncthing;
 
-/// <summary>
-/// ADR-007-shared §2.8 / Migration 0010 — persisted Syncthing coordinates
-/// (api key + base url) survive a backend restart so the Electron host can
-/// resume talking to the same Syncthing instance without re-spawning it.
-/// </summary>
 [TestClass]
 public sealed class SyncthingSettingsPersistenceTests
 {

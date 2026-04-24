@@ -7,12 +7,6 @@ using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Tests.Domain;
 
-/// <summary>
-/// ADR-007 §2.6 BC-025 — FolderMapping + ParaCategory basics.
-/// These are data-class invariants: build the record, verify properties stick,
-/// verify the enum covers the PARA methodology (Project, Area, Resource,
-/// Archive). Full routing behaviour lives in the export-all service tests.
-/// </summary>
 [TestClass]
 public sealed class FolderMappingTests
 {

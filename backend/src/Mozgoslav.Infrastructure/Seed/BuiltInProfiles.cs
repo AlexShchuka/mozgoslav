@@ -6,11 +6,6 @@ using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Infrastructure.Seed;
 
-/// <summary>
-/// Built-in profiles seeded on first run. Stable Ids allow idempotent seeding
-/// across restarts: if a record with the same Id already exists, seeding is a
-/// no-op. System prompts come from DEFAULT-CONFIG §6.
-/// </summary>
 public static class BuiltInProfiles
 {
     private static readonly Guid WorkId = new("00000000-0000-0000-0000-00000000A001");

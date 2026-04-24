@@ -14,17 +14,8 @@ using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Tests.Infrastructure;
 
-/// <summary>
-/// TODO-9 — <c>BackupService</c> drives a one-click SQLite backup. The work
-/// must happen on a background thread (no synchronous ZipFile call under a
 /// <c>#pragma warning disable CA1849</c>) so the caller's request thread is
-/// not blocked while we compress hundreds of megabytes.
-/// <para>
 /// NOTE: AppPaths is a static; we are exercising the real app-data root here.
-/// Tests seed and clean up the files they create under <see cref="AppPaths.Database"/>
-/// and <see cref="AppPaths.Models"/> so repeated runs stay deterministic.
-/// </para>
-/// </summary>
 [TestClass]
 [DoNotParallelize]
 public sealed class BackupServiceTests

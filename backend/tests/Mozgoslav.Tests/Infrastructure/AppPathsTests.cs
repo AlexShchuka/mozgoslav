@@ -6,12 +6,6 @@ using Mozgoslav.Infrastructure.Platform;
 
 namespace Mozgoslav.Tests.Infrastructure;
 
-/// <summary>
-/// Task #12 — verifies the bundle-aware default-path resolver. Tests use
-/// <see cref="AppPaths.ResolveBundledOrUserModel(string, string, string)"/>
-/// with explicit arguments so they stay hermetic and parallelisable (no env
-/// var / filesystem shared state).
-/// </summary>
 [TestClass]
 public sealed class AppPathsTests
 {

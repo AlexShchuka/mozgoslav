@@ -6,12 +6,6 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// Platform-gated audio recorder for non-macOS hosts. Per ADR-009 §2.1 row 1,
-/// <see cref="IsSupported"/> is <c>false</c> so the UI can hide the Record
-/// button; attempts to call <see cref="StartAsync"/> throw a typed
-/// <see cref="PlatformNotSupportedException"/> with an actionable message.
-/// </summary>
 public sealed class PlatformUnsupportedAudioRecorder : IAudioRecorder
 {
     public bool IsSupported => false;

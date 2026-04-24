@@ -16,11 +16,6 @@ public static class NoteEndpoints
 {
     public sealed record ReprocessRequest(Guid ProfileId);
 
-    /// <summary>
-    /// ADR-007-shared §2.6 BC-022 — payload accepted by the manual-note
-    /// endpoint. All fields are optional; absence means "empty stub that the
-    /// user will fill in via the editor".
-    /// </summary>
     public sealed record ManualNoteRequest(string? Title, string? Body, string? TemplateId);
 
     public static IEndpointRouteBuilder MapNoteEndpoints(this IEndpointRouteBuilder endpoints)

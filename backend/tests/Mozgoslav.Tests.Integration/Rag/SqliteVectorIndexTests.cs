@@ -9,23 +9,6 @@ using Mozgoslav.Infrastructure.Rag;
 
 namespace Mozgoslav.Tests.Integration.Rag;
 
-/// <summary>
-/// ADR-005 — persistence tests for the SQLite-backed vector index.
-///
-/// Test list:
-///  - Upsert_And_Count_Roundtrip
-///  - Upsert_SameId_Replaces
-///  - RemoveByNote_DeletesAllChunksForThatNote
-///  - Search_Returns_TopK_Ordered_By_Cosine
-///  - Search_SkipsDimensionMismatch
-///  - Search_EmptyIndex_ReturnsEmpty
-///  - Persistence_SurvivesInstanceReopen
-///
-/// Each test spins up a throw-away <see cref="TestDatabase"/> so the EF Core
-/// migration that owns the <c>rag_chunks</c> schema runs exactly like it does
-/// in production. The index itself is instantiated against the same SQLite
-/// file — by construction it never creates or mutates schema on its own.
-/// </summary>
 [TestClass]
 public sealed class SqliteVectorIndexTests
 {

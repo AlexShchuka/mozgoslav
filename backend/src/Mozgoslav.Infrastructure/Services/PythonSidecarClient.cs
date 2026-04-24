@@ -16,17 +16,6 @@ using Mozgoslav.Domain.ValueObjects;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// Default <see cref="IPythonSidecarClient"/> — one HTTP call per
-/// endpoint, domain records in / domain records out, typed-exception
-/// for the 503 model-not-installed envelope.
-///
-/// The client does NOT retry or cache — each call is a thin projection
-/// onto the sidecar's contract so higher-level pipelines (queue worker,
-/// dictation polish) can decide whether to degrade or surface the
-/// error. A network-level failure surfaces as the underlying
-/// <see cref="HttpRequestException"/> unchanged.
-/// </summary>
 public sealed class PythonSidecarClient : IPythonSidecarClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);

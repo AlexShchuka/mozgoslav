@@ -7,13 +7,6 @@ using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Tests.Domain;
 
-/// <summary>
-/// ADR-015 — the <see cref="JobStatus.Cancelled"/> value must survive the
-/// EF Core enum-to-string value converter round-trip. The converter uses the
-/// enum member name (not the ordinal), so int-ordering isn't load-bearing,
-/// but we still place <c>Cancelled</c> at the end of the enum to be safe if
-/// future callers read the int value.
-/// </summary>
 [TestClass]
 public sealed class JobStatusTests
 {

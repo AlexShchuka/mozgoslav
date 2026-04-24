@@ -20,11 +20,6 @@ using NSubstitute;
 
 namespace Mozgoslav.Tests.Application;
 
-/// <summary>
-/// ADR-011 step 6 — the worker is no longer loop-driven; Quartz triggers hand
-/// it a specific job id. These tests pin the per-id pipeline semantics (happy
-/// path, LLM unavailable, vault empty, transcription failure, host shutdown).
-/// </summary>
 [TestClass]
 public sealed class ProcessQueueWorkerTests
 {
@@ -368,11 +363,6 @@ public sealed class ProcessQueueWorkerTests
         }
     }
 
-    /// <summary>
-    /// In-test implementation of <see cref="IJobCancellationRegistry"/> that
-    /// supports pre-cancelling a registered CTS. Mirrors the production
-    /// <c>JobCancellationRegistry</c> shape without the full static wiring.
-    /// </summary>
     private sealed class TestJobCancellationRegistry : IJobCancellationRegistry
     {
         private readonly ConcurrentDictionary<Guid, CancellationTokenSource> _map = new();

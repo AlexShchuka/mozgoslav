@@ -9,15 +9,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-using Mozgoslav.Infrastructure.Platform;
-
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// Progress event for an async model download (ADR-007-shared §2.3).
-/// A terminal event is one where <see cref="Done"/> is true; subscribers may
-/// then close the SSE stream client-side.
-/// </summary>
 public sealed record ModelDownloadProgress(
     string DownloadId,
     long BytesRead,
@@ -25,30 +18,10 @@ public sealed record ModelDownloadProgress(
     bool Done,
     string? Error);
 
-/// <summary>
-/// Orchestrates asynchronous model downloads (BC-034, bug 1/2 follow-up). A
-/// caller invokes <see cref="Start"/> with a catalogue id and receives a
-/// <c>downloadId</c> immediately; the actual HTTP transfer runs in the
-/// background and publishes <see cref="ModelDownloadProgress"/> records onto
-/// a per-download channel. <see cref="StreamAsync"/> replays any existing
-/// progress for late subscribers and then fans out subsequent events.
-/// </summary>
 public interface IModelDownloadCoordinator
 {
-    /// <summary>
-    /// Starts a background download for the given catalogue id. Returns the
-    /// download id used to subscribe via <see cref="StreamAsync"/>.
-    /// </summary>
-    /// <param name="catalogueId">Canonical catalogue id or alias.</param>
-    /// <param name="url">Source URL resolved from the catalogue.</param>
-    /// <param name="destinationPath">Filesystem destination (under <see cref="AppPaths.Models"/>).</param>
-    /// <param name="ct">Cancellation token for the host shutdown.</param>
     string Start(string catalogueId, string url, string destinationPath, CancellationToken ct);
 
-    /// <summary>
-    /// Streams progress events for a specific download. Completes when the
-    /// download itself completes (success, error, or unknown id).
-    /// </summary>
     IAsyncEnumerable<ModelDownloadProgress> StreamAsync(string downloadId, CancellationToken ct);
 }
 

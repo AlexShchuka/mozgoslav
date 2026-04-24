@@ -1,38 +1,38 @@
-import {createSelector} from "reselect";
-import type {GlobalState} from "../../rootReducer";
-import type {ObsidianState} from "./types";
+import { createSelector } from "reselect";
+import type { GlobalState } from "../../rootReducer";
+import type { ObsidianState } from "./types";
 
 const selectObsidianState = (state: GlobalState): ObsidianState => state.obsidian;
 
 export const selectObsidianIsBulkExporting = createSelector(
-    selectObsidianState,
-    (slice) => slice.isBulkExporting,
+  selectObsidianState,
+  (slice) => slice.isBulkExporting
 );
 export const selectObsidianIsApplyingLayout = createSelector(
-    selectObsidianState,
-    (slice) => slice.isApplyingLayout,
+  selectObsidianState,
+  (slice) => slice.isApplyingLayout
 );
 export const selectObsidianIsSetupInProgress = createSelector(
-    selectObsidianState,
-    (slice) => slice.isSetupInProgress,
+  selectObsidianState,
+  (slice) => slice.isSetupInProgress
 );
 export const selectObsidianDiagnostics = createSelector(
-    selectObsidianState,
-    (slice) => slice.diagnostics,
+  selectObsidianState,
+  (slice) => slice.diagnostics
 );
 export const selectObsidianDiagnosticsLoading = createSelector(
-    selectObsidianState,
-    (slice) => slice.isDiagnosticsLoading,
+  selectObsidianState,
+  (slice) => slice.isDiagnosticsLoading
 );
 export const selectObsidianDiagnosticsError = createSelector(
-    selectObsidianState,
-    (slice) => slice.diagnosticsError,
+  selectObsidianState,
+  (slice) => slice.diagnosticsError
 );
 export const selectObsidianIsReapplyingBootstrap = createSelector(
-    selectObsidianState,
-    (slice) => slice.isReapplyingBootstrap,
+  selectObsidianState,
+  (slice) => slice.isReapplyingBootstrap
 );
 export const selectObsidianIsReinstallingPlugins = createSelector(
-    selectObsidianState,
-    (slice) => slice.isReinstallingPlugins,
+  selectObsidianState,
+  (slice) => slice.isReinstallingPlugins
 );

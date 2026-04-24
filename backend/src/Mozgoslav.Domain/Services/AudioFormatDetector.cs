@@ -4,9 +4,6 @@ using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Domain.Services;
 
-/// <summary>
-/// Maps a file extension to a known <see cref="AudioFormat"/> value.
-/// </summary>
 public static class AudioFormatDetector
 {
     public static AudioFormat FromExtension(string extension)

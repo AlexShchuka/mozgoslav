@@ -12,12 +12,6 @@ using Mozgoslav.Domain.ValueObjects;
 
 namespace Mozgoslav.Infrastructure.Persistence;
 
-/// <summary>
-/// EF Core DbContext for Mozgoslav. Follows the team C# service pattern:
-/// thin entity configurations, enums stored as strings, collections/value objects
-/// stored as JSON via value converters. Schema is created via
-/// <c>DatabaseFacade.EnsureCreated()</c> during startup.
-/// </summary>
 public sealed class MozgoslavDbContext : DbContext
 {
     public MozgoslavDbContext(DbContextOptions<MozgoslavDbContext> options) : base(options)

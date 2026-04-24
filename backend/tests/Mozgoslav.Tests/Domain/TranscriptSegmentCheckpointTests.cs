@@ -6,12 +6,6 @@ using Mozgoslav.Domain.ValueObjects;
 
 namespace Mozgoslav.Tests.Domain;
 
-/// <summary>
-/// ADR-007 §2.8 / BC-017 — transcript_segments carries a nullable checkpoint
-/// column so long jobs can resume after a crash/restart. This test freezes
-/// the value-object contract; behavioural resume logic lives in the
-/// TranscriptCheckpointTests integration suite.
-/// </summary>
 [TestClass]
 public sealed class TranscriptSegmentCheckpointTests
 {

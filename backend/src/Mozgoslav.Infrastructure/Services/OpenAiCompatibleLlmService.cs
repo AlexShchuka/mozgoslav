@@ -16,18 +16,6 @@ using Mozgoslav.Domain.ValueObjects;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// Thin adapter implementing <see cref="ILlmService"/> by delegating
-/// the transport to whatever <see cref="ILlmProvider"/> the
-/// <see cref="ILlmProviderFactory"/> selects at runtime. Keeps the legacy
-/// JSON-schema parsing + chunking pipeline; the provider only has to hand back
-/// a single string.
-/// <para>
-/// Kept under the original class name so the rest of the codebase does not
-/// need to change DI bindings; <c>ILlmService</c> is still the upstream-facing
-/// port.
-/// </para>
-/// </summary>
 public sealed class OpenAiCompatibleLlmService : ILlmService
 {
     private const int MaxTokensPerChunk = 6_000;
@@ -117,14 +105,6 @@ public sealed class OpenAiCompatibleLlmService : ILlmService
         return content;
     }
 
-    /// <summary>
-    /// ADR-011 step 4 — token-aware splitter. Uses <see cref="TiktokenTokenizer"/>
-    /// (cl100k_base) to encode the full transcript once, then rebuilds contiguous
-    /// slices of at most <paramref name="maxTokens"/> tokens back into their
-    /// source substrings via the token offset map. The result never exceeds the
-    /// upstream LLM's per-call budget, unlike the pre-ADR character heuristic
-    /// that could overshoot by ~3-4x on dense Cyrillic text.
-    /// </summary>
     internal static IEnumerable<string> ChunkByTokens(string text, int maxTokens)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxTokens);

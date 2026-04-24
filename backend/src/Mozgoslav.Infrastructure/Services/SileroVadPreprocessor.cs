@@ -8,18 +8,10 @@ using Mozgoslav.Domain.ValueObjects;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// Silero-backed voice activity detector for the dictation pipeline. Whisper.net
-/// 1.x does not expose a stable Silero interop API for short streaming chunks,
-/// so the implementation runs a fast RMS-energy gate as its primary signal and
-/// uses the Silero model (if present at <see cref="IAppSettings.VadModelPath"/>)
-/// as a lazy sanity check. Both paths return the same boolean decision and the
-/// class stays a narrow <see cref="IVadPreprocessor"/>.
-/// </summary>
 public sealed class SileroVadPreprocessor : IVadPreprocessor
 {
     private const float RmsThreshold = 0.005f;
-    private const int MinSamples = 160; // 10 ms at 16 kHz — ignore micro-chunks
+    private const int MinSamples = 160;
 
     private readonly IAppSettings _settings;
     private readonly ILogger<SileroVadPreprocessor> _logger;

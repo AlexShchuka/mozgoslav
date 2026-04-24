@@ -4,10 +4,6 @@ using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Domain.Services;
 
-/// <summary>
-/// Removes Russian conversational filler words from transcripts.
-/// See DEFAULT-CONFIG §7 for the dictionary.
-/// </summary>
 public static class FillerCleaner
 {
     private static readonly string[] LightFillers =

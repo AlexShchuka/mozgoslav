@@ -14,15 +14,6 @@ using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Tests.Integration.Rag;
 
-/// <summary>
-/// Freezes the ADR-007-shared §2.4 public contract for the RAG HTTP surface.
-/// Phase 2 Backend MR C is wholly responsible for this shape — Frontend MR C
-/// will consume it verbatim.
-///
-/// Reindex response: { embeddedNotes: int, chunks: int }
-/// Query   response: { answer: string,
-///                     citations: [ { noteId, segmentId, text, snippet } ] }
-/// </summary>
 [TestClass]
 public sealed class RagEndpointsContractTests
 {

@@ -12,12 +12,6 @@ using Mozgoslav.Application.Obsidian;
 
 namespace Mozgoslav.Infrastructure.Obsidian;
 
-/// <summary>
-/// ADR-019 §5.9 — reads the build-time-generated <c>manifest.json</c> +
-/// streams individual bootstrap files from embedded resources inside
-/// <c>Mozgoslav.Infrastructure</c>. Hash-verified on read: the caller may
-/// compare the stream's SHA-256 against <see cref="BootstrapManifestEntry.Sha256"/>.
-/// </summary>
 public sealed class EmbeddedVaultBootstrap : IVaultBootstrapProvider
 {
     private const string ManifestResourceKey = "Mozgoslav.Infrastructure.Resources.ObsidianBootstrap.manifest.json";

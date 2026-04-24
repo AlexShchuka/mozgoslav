@@ -12,13 +12,6 @@ using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Infrastructure.Seed;
 
-/// <summary>
-/// ADR-004 R8 runtime check: once Syncthing is reachable, confirm each managed
-/// folder's versioning policy matches what <see cref="SyncthingConfigService"/>
-/// wrote on first boot. Any drift (type or key params) is logged as a warning;
-/// we don't auto-repair because a user may have intentionally relaxed the
-/// policy via the Syncthing UI.
-/// </summary>
 public sealed class SyncthingVersioningVerifier : BackgroundService
 {
     private static readonly IReadOnlyDictionary<string, ExpectedPolicy> Expected =

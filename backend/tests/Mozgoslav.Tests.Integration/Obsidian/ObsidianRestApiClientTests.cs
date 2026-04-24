@@ -17,12 +17,6 @@ using WireMock.Server;
 
 namespace Mozgoslav.Tests.Integration.Obsidian;
 
-/// <summary>
-/// Plan v0.8 Block 6 — contract tests for <see cref="ObsidianRestApiClient"/>
-/// via WireMock. Covers happy path, unreachable, empty-token, 401 / cert
-/// mismatch (simulated through WireMock status codes; the real cert callback
-/// lives in DI and runs on shuka's Mac validation pass).
-/// </summary>
 [TestClass]
 public sealed class ObsidianRestApiClientTests : IDisposable
 {

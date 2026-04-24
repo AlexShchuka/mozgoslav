@@ -10,11 +10,6 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// BC-036 routes runtime LLM calls to the provider whose
-/// <see cref="ILlmProvider.Kind"/> matches <see cref="IAppSettings.LlmProvider"/>.
-/// Unknown / empty values fall back to <see cref="DefaultKind"/> with a WARN.
-/// </summary>
 public sealed class LlmProviderFactory : ILlmProviderFactory
 {
     public const string DefaultKind = "openai_compatible";

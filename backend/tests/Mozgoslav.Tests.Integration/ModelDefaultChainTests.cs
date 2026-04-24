@@ -13,12 +13,6 @@ using Mozgoslav.Infrastructure.Platform;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// ADR-007 BC-034 / bugs 1 + 2 — verifies the Whisper default-chain integrity:
-/// catalogue entry filename equals AppPaths.DefaultWhisperModelPath filename,
-/// short alias `antony66-ggml` resolves to the canonical entry, and the
-/// `/api/models/download` async contract returns 202 with a downloadId.
-/// </summary>
 [TestClass]
 public sealed class ModelDefaultChainTests
 {

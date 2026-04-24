@@ -11,11 +11,6 @@ using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Tests.Application;
 
-/// <summary>
-/// Verifies the generated Syncthing <c>config.xml</c> (ADR-003 D4 + ADR-004 R8):
-/// three folders with the right ids and versioning policies, plus the usual
-/// GUI + discovery / relay defaults.
-/// </summary>
 [TestClass]
 public sealed class SyncthingConfigServiceTests
 {

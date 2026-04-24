@@ -4,16 +4,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// ADR-003 D6 + ADR-004 R7: creates the three Syncthing-managed folders
-/// (<c>recordings</c>, <c>notes</c>, optional Obsidian vault) and seeds a
-/// baseline <c>.stignore</c> in each so that system files, temp files and
-/// Obsidian-local state never cross devices. Idempotent — re-running the
-/// initializer after a user has edited a <c>.stignore</c> leaves the user's
-/// version untouched. <br/>
-/// Responsibility: file-system layout only. Does NOT touch the Syncthing
-/// REST API, does NOT launch any process, does NOT talk to EF Core.
-/// </summary>
 public sealed class SyncthingFolderInitializer
 {
     private const string StignoreTemplate = """
@@ -63,11 +53,6 @@ public sealed class SyncthingFolderInitializer
         _logger = logger;
     }
 
-    /// <summary>
-    /// Creates missing folders and writes a default <c>.stignore</c> into
-    /// each folder that does not already have one. Never overwrites an
-    /// existing <c>.stignore</c>.
-    /// </summary>
     public void Initialize()
     {
         EnsureFolderWithStignore(_recordingsPath);

@@ -13,19 +13,6 @@ using Mozgoslav.Infrastructure.Persistence;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// Spins up the real <c>Mozgoslav.Api</c> composition root backed by a temp SQLite
-/// file. Each factory instance gets its own DB so tests are fully isolated.
-/// <para>
-/// Isolation is achieved by replacing the <see cref="DbContextOptions{TContext}"/>
-/// registration via <c>ConfigureTestServices</c> AFTER
-/// <c>Program.cs</c> has registered its own. The alternative of setting
-/// <c>Mozgoslav:DatabasePath</c> via <c>AddInMemoryCollection</c> fails silently
-/// because <c>Program.cs</c> reads <c>builder.Configuration</c> at configure-time,
-/// before <c>ConfigureAppConfiguration</c> callbacks are applied to the web host —
-/// see <c>docs/database-initializer-rca.md</c>.
-/// </para>
-/// </summary>
 internal sealed class ApiFactory : WebApplicationFactory<Program>
 {
     public ApiFactory()

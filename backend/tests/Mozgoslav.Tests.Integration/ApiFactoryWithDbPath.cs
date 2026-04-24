@@ -12,12 +12,6 @@ using Mozgoslav.Infrastructure.Persistence;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// Variant of <see cref="ApiFactory"/> that lets tests pin the SQLite path —
-/// required for multi-boot persistence tests where two factory instances must
-/// share the same database file (see
-/// <see cref="Syncthing.SyncthingSettingsPersistenceTests"/>).
-/// </summary>
 internal sealed class ApiFactoryWithDbPath : WebApplicationFactory<Program>
 {
     public ApiFactoryWithDbPath(string databasePath)

@@ -9,13 +9,6 @@ using Mozgoslav.Domain.Entities;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// ADR-007 BC-051 / bug 7 — in-place list mutations on mapped collection
-/// properties must be picked up by the change tracker. Without a
-/// <see cref="Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer{T}"/>,
-/// EF only notices a new reference, not a sequence edit — so an element
-/// appended to <c>KeyPoints</c> never persists.
-/// </summary>
 [TestClass]
 public sealed class DbContextValueComparerTests
 {

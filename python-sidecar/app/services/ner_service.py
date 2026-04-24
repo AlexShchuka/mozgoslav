@@ -1,27 +1,9 @@
-"""Russian named entity recognition via Natasha.
-
-Natasha is pure-Python and ships its own artefacts inside the pip
-package — nothing to download at runtime. Pipeline per
-``plan/v0.8/02-ml-sidecar-production.md §3.2``:
-
-* ``Segmenter`` tokenizes the text.
-* ``NewsEmbedding`` supplies the pre-trained Russian news embeddings.
-* ``NewsMorphTagger`` populates morphology so ``span.normalize`` can
-  lemmatize proper nouns to nominative case (required so the C#
-  consumer sees "Марина" instead of the genitive "Марины").
-* ``NewsNERTagger`` extracts PER / ORG / LOC spans.
-* ``DatesExtractor`` picks d.m.y dates.
-
-Heavy imports are deferred to :meth:`_ensure_loaded` so test collection
-stays cheap and the cold start cost is paid on the first real request.
-"""
 from __future__ import annotations
 
 from app.models.schemas import NerRequest, NerResponse
 
 
 class NerService:
-    """Loads the Natasha pipeline on first use, reuses it thereafter."""
 
     def __init__(self) -> None:
         self._segmenter = None
@@ -46,8 +28,6 @@ class NerService:
             dates=_dedupe(dates),
         )
 
-    # ---- internals --------------------------------------------------------
-
     def _ensure_loaded(self) -> None:
         if self._ner_tagger is not None:
             return
@@ -68,9 +48,7 @@ class NerService:
         self._ner_tagger = NewsNERTagger(embedding)
         self._dates_extractor = DatesExtractor(self._morph_vocab)
 
-    def _extract_spans(
-        self, text: str
-    ) -> tuple[list[str], list[str], list[str]]:
+    def _extract_spans(self, text: str) -> tuple[list[str], list[str], list[str]]:
         from natasha import Doc  # noqa: PLC0415
 
         doc = Doc(text)
@@ -83,8 +61,6 @@ class NerService:
         locations: list[str] = []
 
         for span in doc.spans:
-            # ``normalize`` needs the morph vocab to lemmatize to
-            # nominative; without it "Мариной" stays in instrumental.
             span.normalize(self._morph_vocab)
             text_value = span.normal or span.text
             if span.type == "PER":
@@ -111,7 +87,6 @@ class NerService:
 
 
 def _dedupe(values: list[str]) -> list[str]:
-    """Stable dedupe — preserves first-occurrence order."""
 
     seen: set[str] = set()
     out: list[str] = []

@@ -13,12 +13,6 @@ using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Tests.Infrastructure;
 
-/// <summary>
-/// D4 — per-session long-running ffmpeg decoder. Exercises the write/stop
-/// lifecycle against a real 3-second WebM/Opus sample split into header-less
-/// continuation chunks (the exact MediaRecorder failure mode). Requires
-/// ffmpeg on PATH; tests are skipped on the rare sandbox that is missing it.
-/// </summary>
 [TestClass]
 public sealed class FfmpegPcmStreamServiceTests
 {
@@ -143,7 +137,7 @@ public sealed class FfmpegPcmStreamServiceTests
     private static string LocateFixtureDirectory()
     {
         var root = Path.Combine(AppContext.BaseDirectory, "Fixtures", "dictation-webm-chunks");
-        return Directory.Exists(root) ? root : root; // Tests surface FileNotFound when absent.
+        return Directory.Exists(root) ? root : root;
     }
 
     private static bool HasFfmpeg()

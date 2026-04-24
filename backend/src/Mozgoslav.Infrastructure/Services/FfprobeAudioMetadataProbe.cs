@@ -14,13 +14,6 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// <see cref="IAudioMetadataProbe"/> backed by <c>ffprobe</c>. Runs
-/// <c>ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1</c>
-/// against the source file and parses the float64 seconds from stdout.
-/// Task #19 — called at import time so <c>Recording.Duration</c> reflects
-/// the real media length before the transcription pipeline runs.
-/// </summary>
 public sealed class FfprobeAudioMetadataProbe : IAudioMetadataProbe
 {
     private const string FfprobeExecutable = "ffprobe";

@@ -11,17 +11,6 @@ using Mozgoslav.Infrastructure.Platform;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// Downloads Whisper / VAD models from their public URLs (HuggingFace) with
-/// streaming progress reporting and atomic writes (<c>.tmp</c> rename on
-/// success). URLs and defaults come from the in-app model catalog.
-/// <para>
-/// ADR-011 step 9 — retry / timeout / circuit-breaker live on the named
-/// <c>"models"</c> HttpClient in <c>Program.cs</c> via
-/// <c>AddStandardResilienceHandler</c>. This service no longer rolls its own
-/// retry loop or timeout override.
-/// </para>
-/// </summary>
 public sealed class ModelDownloadService
 {
     public record Progress(long BytesReceived, long? TotalBytes, int Percent);

@@ -1,14 +1,3 @@
-"""FastAPI application factory and ASGI entry point.
-
-The sidecar runs locally (``localhost:5060``) and is consumed by the
-C# backend. Dev CORS is wide-open because every caller is on the same
-loopback interface; production deployment is out of scope for this
-scaffold (the sidecar is launched as a child process of the desktop app).
-
-Run with::
-
-    uvicorn app.main:app --host 127.0.0.1 --port 5060 --reload
-"""
 from __future__ import annotations
 
 import logging
@@ -22,25 +11,17 @@ from app.ml.loader import get_model_paths
 from app.models.common import HealthResponse
 from app.routers import cleanup, diarize, embed, emotion, gender, ner
 
-
 _logger = logging.getLogger("mozgoslav.sidecar")
 
 
 @asynccontextmanager
 async def _lifespan(_app: FastAPI):
-    """FastAPI lifespan — logs model availability on startup.
-
-    Modern replacement for ``@app.on_event("startup")`` which is
-    deprecated in FastAPI 0.112+. Tests can patch
-    ``_log_model_availability`` if they need to suppress the noise.
-    """
 
     _log_model_availability()
     yield
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
-    """Build a fully-wired FastAPI application."""
 
     cfg = settings or get_settings()
 
@@ -81,12 +62,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
 
 def _log_model_availability() -> None:
-    """Emit an info-level audit of which ML models are installed.
-
-    The user sees this the first time the sidecar boots. When a Tier-2
-    model is missing, the startup line points at the download URL
-    verbatim so there is no searching for links later.
-    """
 
     paths = get_model_paths()
     _logger.info("Sidecar models directory: %s", paths.root)

@@ -9,14 +9,7 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Tests.Application;
 
-/// <summary>
-/// Test double for <see cref="IDictationPcmStream"/>. Pretends to be a
-/// long-running ffmpeg decoder: each input byte becomes one synthetic PCM
-/// sample (value = byte / 255) so the session manager can forward something
-/// measurable to the transcription service without anyone needing the
-/// <c>ffmpeg</c> binary on PATH.
-/// </summary>
-#pragma warning disable CA1711 // Test double mirrors the production interface name.
+#pragma warning disable CA1711 
 public sealed class FakeDictationPcmStream : IDictationPcmStream
 #pragma warning restore CA1711
 {

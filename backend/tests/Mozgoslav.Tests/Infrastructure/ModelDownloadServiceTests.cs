@@ -17,12 +17,6 @@ using NSubstitute;
 
 namespace Mozgoslav.Tests.Infrastructure;
 
-/// <summary>
-/// ADR-007 BC-034 / bug 1 — covers the model downloader's happy-path,
-/// progress reporting, and failure translation. Uses an injected fake
-/// HttpMessageHandler so the test stays in the unit-test assembly and never
-/// hits the real network.
-/// </summary>
 [TestClass]
 public sealed class ModelDownloadServiceTests : IDisposable
 {
@@ -54,7 +48,7 @@ public sealed class ModelDownloadServiceTests : IDisposable
                 Directory.Delete(_tempDirectory, recursive: true);
             }
         }
-        catch { /* best effort */ }
+        catch { }
     }
 
     [TestMethod]
@@ -120,7 +114,7 @@ public sealed class ModelDownloadServiceTests : IDisposable
         _handler = handler;
         _client = client;
         var factory = Substitute.For<IHttpClientFactory>();
-#pragma warning disable IDISP004 // Don't ignore created IDisposable
+#pragma warning disable IDISP004 
         factory.CreateClient(Arg.Any<string>()).Returns(client);
 #pragma warning restore IDISP004
         return factory;
@@ -144,13 +138,6 @@ public sealed class ModelDownloadServiceTests : IDisposable
         }
     }
 
-    /// <summary>
-    /// Synchronous <see cref="IProgress{T}"/> implementation. Unlike
-    /// <see cref="Progress{T}"/> which dispatches to the captured
-    /// <see cref="SynchronizationContext"/> or the thread pool, this
-    /// appends on the caller thread so tests can assert immediately after
-    /// the <c>await</c> without racing the callback.
-    /// </summary>
     private sealed class SynchronousProgress<T> : IProgress<T>
     {
         public List<T> Reports { get; } = [];

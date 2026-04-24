@@ -13,18 +13,6 @@ using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Application.UseCases;
 
-/// <summary>
-/// Runs a single <see cref="ProcessingJob"/> through the transcription →
-/// correction → summarization → export pipeline. Catches all exceptions and
-/// marks the job as <see cref="JobStatus.Failed"/> on error so that a single
-/// bad file never stalls downstream Quartz triggers.
-/// <para>
-/// ADR-011 step 6 — this type used to drive the queue loop itself
-/// (<c>ProcessNextAsync</c>) by polling <c>IProcessingJobRepository.DequeueNextAsync</c>.
-/// The loop has moved into Quartz.NET; this worker now accepts a job id from
-/// whichever Quartz <c>IJob</c> trigger fired and processes that one job.
-/// </para>
-/// </summary>
 public sealed class ProcessQueueWorker
 {
     private const int TranscribeEnd = 50;
@@ -86,15 +74,6 @@ public sealed class ProcessQueueWorker
         _logger = logger;
     }
 
-    /// <summary>
-    /// Loads <paramref name="jobId"/> from the repository and runs the full
-    /// pipeline against it. Never throws for pipeline-internal failures — the
-    /// job row transitions to <see cref="JobStatus.Failed"/> (or
-    /// <see cref="JobStatus.Cancelled"/> on user-initiated cancel via ADR-015)
-    /// with the error message. Host-shutdown
-    /// <see cref="OperationCanceledException"/> DOES propagate so Quartz can
-    /// ack the trigger cleanly.
-    /// </summary>
     public async Task ProcessJobAsync(Guid jobId, CancellationToken ct)
     {
         var job = await _jobs.GetByIdAsync(jobId, ct);
@@ -260,19 +239,6 @@ public sealed class ProcessQueueWorker
         await _progressNotifier.PublishAsync(job, ct);
     }
 
-    /// <summary>
-    /// Progress tick from <see cref="Progress{T}"/> handlers — fired on pool
-    /// threads concurrently with the main pipeline and with each other. MUST
-    /// NOT touch the scoped DbContext: concurrent <c>SaveChangesAsync</c>
-    /// calls on a single context trip EF Core's <c>ConcurrencyDetector</c>
-    /// (InvalidOperationException "A second operation was started...") or —
-    /// worse — corrupt the change tracker and surface later as
-    /// <c>NullReferenceException</c> inside <c>StateManager.CascadeChanges</c>.
-    /// Progress ticks are a UI concern; they travel via SSE only. Durable
-    /// progress is persisted on stage boundaries in
-    /// <see cref="TransitionAsync"/>, which runs awaited on the pipeline's
-    /// single logical thread.
-    /// </summary>
     private async Task NotifyProgressAsync(ProcessingJob job, int progress, CancellationToken ct)
     {
         job.Progress = progress;
@@ -288,11 +254,6 @@ public sealed class ProcessQueueWorker
         await _progressNotifier.PublishAsync(job, ct);
     }
 
-    /// <summary>
-    /// ADR-015 — terminal transition for user-initiated cancellation. Uses
-    /// <see cref="CancellationToken.None"/> so the persistence + SSE publish
-    /// complete even though the per-job token is already in the cancelled state.
-    /// </summary>
     private async Task MarkCancelledAsync(ProcessingJob job)
     {
         job.Status = JobStatus.Cancelled;

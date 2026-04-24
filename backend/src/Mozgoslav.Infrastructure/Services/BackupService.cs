@@ -13,21 +13,6 @@ using Mozgoslav.Infrastructure.Platform;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// Creates a timestamped ZIP snapshot of the app data directory
-/// (<see cref="AppPaths.Root"/>) — database, settings, models-metadata. Logs are
-/// excluded to keep the archive small; vault content is the user's responsibility
-/// and lives outside our directory.
-/// <para>
-/// Note: .NET 10's <c>ZipFile</c> API still does not expose
-/// <c>OpenAsync</c>, so the actual compression loop runs on a background
-/// thread via <see cref="Task.Run(System.Action,System.Threading.CancellationToken)"/>.
-/// This keeps the calling request thread free while hundreds of megabytes are
-/// compressed, and avoids the <c>CA1849</c> pragma the previous revision
-/// needed. The cancellation token is observed before the background task
-/// starts and is re-checked inside <see cref="AddDirectory"/> for each file.
-/// </para>
-/// </summary>
 public sealed class BackupService
 {
     private readonly ILogger<BackupService> _logger;

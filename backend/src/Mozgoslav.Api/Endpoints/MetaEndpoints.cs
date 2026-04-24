@@ -9,11 +9,6 @@ using Microsoft.AspNetCore.Routing;
 
 namespace Mozgoslav.Api.Endpoints;
 
-/// <summary>
-/// Plan v0.8 Block 7 — <c>GET /api/meta</c>. Exposes build metadata so the
-/// DMG validation pass can verify "this is the right build" quickly without
-/// scraping the package.
-/// </summary>
 public static class MetaEndpoints
 {
     public static IEndpointRouteBuilder MapMetaEndpoints(this IEndpointRouteBuilder endpoints)

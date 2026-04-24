@@ -13,7 +13,6 @@ namespace Mozgoslav.Infrastructure.Persistence.EfMigrations
     [Migration("20260417232231_Baseline")]
     partial class Baseline
     {
-        /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618

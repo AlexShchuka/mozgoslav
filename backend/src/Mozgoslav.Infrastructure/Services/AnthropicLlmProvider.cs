@@ -14,12 +14,6 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// <see cref="ILlmProvider"/> for Anthropic's Claude Messages API.
-/// Deliberately written against raw <see cref="HttpClient"/> (no SDK) to keep
-/// the dependency surface narrow — no silent NuGet installs.
-/// Network failures log WARN and return an empty string.
-/// </summary>
 public sealed class AnthropicLlmProvider : ILlmProvider
 {
     private const int MaxTokens = 4096;

@@ -11,13 +11,6 @@ using FluentAssertions;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// ADR-007-shared §2.7 BC-033 — filesystem scan endpoint.
-/// Contract:
-///   GET /api/models/scan?dir=&lt;path&gt;
-///     → 200 OK + [{ path, filename, size, kind: "whisper-ggml"|"vad-gguf"|"unknown" }]
-///     → 404 Not Found when the directory does not exist.
-/// </summary>
 [TestClass]
 public sealed class ModelScanEndpointTests
 {
@@ -98,7 +91,7 @@ public sealed class ModelScanEndpointTests
         {
             if (Directory.Exists(dir))
             {
-                try { Directory.Delete(dir, recursive: true); } catch { /* best effort */ }
+                try { Directory.Delete(dir, recursive: true); } catch { }
             }
         }
     }

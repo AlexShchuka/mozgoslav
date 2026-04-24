@@ -1,4 +1,4 @@
-name: CI
+name: ci
 
 on:
   push:
@@ -11,23 +11,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Secret scan first so if a PAT / key slipped past the lefthook pre-push the
-  # build fails fast, before burning minutes on backend/frontend matrices.
-  gitleaks:
-    name: Gitleaks (secret scan)
+
+  verify:
+    name: verify / checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          # fetch-depth: 0 lets gitleaks diff the full branch history on PRs,
-          # matching what the local pre-push hook sees.
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install uncomment
+        run: pip install 'uncomment==3.0.2'
+      - name: Verify no comments or docstrings remain
+        run: |
+          set -euo pipefail
+          report=$(mktemp)
+          uncomment --dry-run --remove-todo --remove-fixme --remove-doc \
+            backend frontend/src frontend/electron python-sidecar native scripts \
+            | tee "$report"
+          if grep -q '^Modified:' "$report"; then
+            echo "::error::uncomment would strip comments from the files listed above. Run the same command without --dry-run to fix."
+            exit 1
+          fi
 
   backend:
-    name: Backend (.NET ${{ matrix.os }})
+    name: build / backend (${{ matrix.os }})
+    needs: verify
     strategy:
       fail-fast: false
       matrix:
@@ -38,10 +53,6 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      # ffmpeg powers FfmpegPcmDecoder (decodes Opus-in-WebM dictation chunks
-      # into 16 kHz float32 mono PCM) and FfmpegAudioConverter. Integration
-      # tests exercise the real binary — installing it explicitly keeps CI
-      # deterministic across runner image updates.
       - name: Install ffmpeg (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
@@ -50,13 +61,16 @@ jobs:
         run: brew install ffmpeg
       - name: Restore
         run: dotnet restore backend/Mozgoslav.sln -maxcpucount:1
+      - name: Format check
+        run: dotnet format whitespace backend/Mozgoslav.sln --verify-no-changes --no-restore --verbosity minimal
       - name: Build
         run: dotnet build backend/Mozgoslav.sln -maxcpucount:1 --no-restore -warnaserror
       - name: Test
         run: dotnet test backend/Mozgoslav.sln -maxcpucount:1 --no-build --nologo --verbosity normal
 
   frontend:
-    name: Frontend (${{ matrix.os }})
+    name: build / frontend (${{ matrix.os }})
+    needs: verify
     strategy:
       fail-fast: false
       matrix:
@@ -73,15 +87,18 @@ jobs:
         run: cd frontend && npm ci
       - name: Typecheck
         run: cd frontend && npm run typecheck
-      - name: Lint
+      - name: ESLint
         run: cd frontend && npm run lint
+      - name: Prettier (check)
+        run: cd frontend && npx prettier --check "src/**/*.{ts,tsx,css}" "electron/**/*.ts"
       - name: Test
         run: cd frontend && npm test -- --watchAll=false
       - name: Build
         run: cd frontend && WATCHPACK_POLLING=true npm run build
 
   python:
-    name: Python sidecar (${{ matrix.os }})
+    name: build / python (${{ matrix.os }})
+    needs: verify
     strategy:
       fail-fast: false
       matrix:
@@ -98,25 +115,21 @@ jobs:
           python -m venv .venv
           source .venv/bin/activate
           pip install --upgrade pip
-          # requirements-dev.txt is intentionally a lighter superset of
-          # requirements.txt (no transformers / no sentence-transformers).
-          # Tier-2 endpoints are covered via ModelNotAvailableError paths;
-          # the heavy production wheels ship only in the DMG bundle.
           pip install -r requirements-dev.txt
       - name: Ruff
         run: cd python-sidecar && source .venv/bin/activate && ruff check .
+      - name: Black (check)
+        run: cd python-sidecar && source .venv/bin/activate && black --check .
       - name: Pytest
         run: cd python-sidecar && source .venv/bin/activate && pytest
 
-  dictation-helper:
-    name: Dictation helper (macOS Swift)
-    # The helper links AppKit / AVFoundation / ApplicationServices (macOS-only),
-    # so we only build and test it on a macOS runner. Core JSON-RPC / strategy
-    # logic still has unit coverage on the same runner.
+  native:
+    name: build / native
+    needs: verify
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - name: Build
-        run: cd helpers/MozgoslavDictationHelper && swift build -c release
+        run: cd native/MozgoslavDictationHelper && swift build -c release
       - name: Test
-        run: cd helpers/MozgoslavDictationHelper && swift test
+        run: cd native/MozgoslavDictationHelper && swift test

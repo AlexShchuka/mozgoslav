@@ -1,14 +1,14 @@
-import {all, fork} from "redux-saga/effects";
-import type {SagaIterator} from "redux-saga";
+import { all, fork } from "redux-saga/effects";
+import type { SagaIterator } from "redux-saga";
 
-import {watchCheckLlm} from "./checkLlmSaga";
-import {watchLoadSettings} from "./loadSettingsSaga";
-import {watchSaveSettings} from "./saveSettingsSaga";
+import { watchCheckLlm } from "./checkLlmSaga";
+import { watchLoadSettings } from "./loadSettingsSaga";
+import { watchSaveSettings } from "./saveSettingsSaga";
 
-export {checkLlmSaga} from "./checkLlmSaga";
-export {loadSettingsSaga} from "./loadSettingsSaga";
-export {saveSettingsSaga} from "./saveSettingsSaga";
+export { checkLlmSaga } from "./checkLlmSaga";
+export { loadSettingsSaga } from "./loadSettingsSaga";
+export { saveSettingsSaga } from "./saveSettingsSaga";
 
 export function* watchSettingsSagas(): SagaIterator {
-    yield all([fork(watchLoadSettings), fork(watchSaveSettings), fork(watchCheckLlm)]);
+  yield all([fork(watchLoadSettings), fork(watchSaveSettings), fork(watchCheckLlm)]);
 }

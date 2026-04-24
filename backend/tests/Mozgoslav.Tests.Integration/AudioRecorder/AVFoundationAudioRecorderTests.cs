@@ -14,13 +14,6 @@ using WireMock.Server;
 
 namespace Mozgoslav.Tests.Integration.AudioRecorder;
 
-/// <summary>
-/// Contract tests for <see cref="AVFoundationAudioRecorder"/> against a
-/// WireMock bridge. We do not run AVFoundation in CI (the Linux sandbox has
-/// no audio hardware); instead we assert the backend-to-Electron loopback
-/// bridge shape. Port is injected directly via constructor — no env vars,
-/// so test parallelism is safe.
-/// </summary>
 [TestClass]
 public sealed class AVFoundationAudioRecorderTests : IDisposable
 {

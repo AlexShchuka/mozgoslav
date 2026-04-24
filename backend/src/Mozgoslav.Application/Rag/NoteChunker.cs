@@ -3,16 +3,6 @@ using System.Collections.Generic;
 
 namespace Mozgoslav.Application.Rag;
 
-/// <summary>
-/// ADR-005 D4 — splits a markdown note into chunks suitable for embedding.
-/// The strategy is paragraph-based with a soft character cap: paragraphs
-/// shorter than <see cref="MaxChars"/> are emitted as-is; longer ones are
-/// sliced at the nearest sentence-like boundary.
-/// <para>
-/// Kept intentionally deterministic and side-effect-free so it's cheap to
-/// unit-test over golden corpora.
-/// </para>
-/// </summary>
 public static class NoteChunker
 {
     public const int MaxChars = 800;

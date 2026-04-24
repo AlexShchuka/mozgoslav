@@ -16,11 +16,6 @@ using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// ADR-015 — <c>POST /api/jobs/{id:guid}/cancel</c> contract tests.
-/// Happy path covers all four outcomes: 204 (Queued), 202 (Active),
-/// 409 (terminal), 404 (unknown id).
-/// </summary>
 [TestClass]
 public sealed class JobCancelEndpointsTests
 {

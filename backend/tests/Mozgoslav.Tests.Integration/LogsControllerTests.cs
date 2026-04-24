@@ -13,11 +13,6 @@ using Mozgoslav.Infrastructure.Platform;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// ADR-007 BC-042 / BC-043 / bug 9 / D5 — Logs is an MVC controller (single
-/// opt-out from the Minimal API convention). This suite verifies the two
-/// routes and the tail behaviour at the content boundary.
-/// </summary>
 [TestClass]
 public sealed class LogsControllerTests
 {

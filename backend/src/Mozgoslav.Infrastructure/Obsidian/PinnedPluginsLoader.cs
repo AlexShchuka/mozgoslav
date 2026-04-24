@@ -9,18 +9,11 @@ using Mozgoslav.Application.Obsidian;
 
 namespace Mozgoslav.Infrastructure.Obsidian;
 
-/// <summary>
-/// ADR-019 §5.8 — resolves the pinned <see cref="PluginInstallSpec"/> set from
-/// the embedded <c>pinned-plugins.json</c> shipped inside
-/// <c>Mozgoslav.Infrastructure</c>. Registered as a singleton in the DI
-/// container so every consumer sees the same immutable pinned list.
-/// </summary>
 public static class PinnedPluginsLoader
 {
     private const string ResourceKey = "Mozgoslav.Infrastructure.Resources.ObsidianBootstrap.pinned-plugins.json";
     private static readonly JsonSerializerOptions PinnedJson = new(JsonSerializerDefaults.Web);
 
-    /// <summary>Factory callable from DI: returns the frozen pinned-plugins list.</summary>
     public static IReadOnlyList<PluginInstallSpec> LoadFromEmbeddedResource()
     {
         return Load(typeof(PinnedPluginsLoader).Assembly);

@@ -9,11 +9,6 @@ using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Tests.Application;
 
-/// <summary>
-/// ADR-003 D6 + ADR-004 R7: SyncthingFolderInitializer creates the three
-/// data directories and seeds a shared <c>.stignore</c> in each. Tests use a
-/// temp root so they never touch the real <c>~/Library/Application Support</c>.
-/// </summary>
 [TestClass]
 public sealed class SyncthingFolderInitializerTests
 {

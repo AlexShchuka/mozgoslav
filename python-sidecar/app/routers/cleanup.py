@@ -1,4 +1,3 @@
-"""``POST /api/cleanup`` — regex filler removal (real implementation)."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends

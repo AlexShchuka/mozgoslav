@@ -11,14 +11,6 @@ using Mozgoslav.Domain.Entities;
 
 namespace Mozgoslav.Infrastructure.Repositories;
 
-/// <summary>
-/// ADR-005 RAG auto-indexing hook — decorator around
-/// <see cref="IProcessedNoteRepository"/> that feeds every
-/// <c>AddAsync</c>/<c>UpdateAsync</c> through <see cref="IRagService.IndexAsync"/>
-/// and every <c>TryDeleteAsync</c> through <see cref="IRagService.DeindexAsync"/>.
-/// Indexing failures are logged and swallowed: a broken embedding service
-/// must never block note persistence (ADR-005 D6 graceful degradation).
-/// </summary>
 public sealed class RagIndexingProcessedNoteRepository : IProcessedNoteRepository
 {
     private readonly IProcessedNoteRepository _inner;

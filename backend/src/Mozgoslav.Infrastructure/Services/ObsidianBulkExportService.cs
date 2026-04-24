@@ -10,20 +10,6 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// ADR-007-shared §2.6 BC-025 — iterates every ProcessedNote whose
-/// <c>ExportedToVault</c> flag is false, calls the existing per-note
-/// <see cref="IMarkdownExporter"/>, and aggregates the result into a
-/// <see cref="BulkExportResult"/>.
-/// <para>
-/// Failure isolation: a single exception (missing profile, missing
-/// transcript, IO error) does not abort the batch. The offending note is
-/// recorded in <see cref="BulkExportResult.Failures"/>; other notes continue
-/// to export. Manual notes (BC-022) have <c>TranscriptId = Guid.Empty</c> and
-/// are reported as a failure with reason "manual note has no transcript" —
-/// they should be exported through a different code path (future work).
-/// </para>
-/// </summary>
 public sealed class ObsidianBulkExportService : IObsidianExportService
 {
     private readonly IProcessedNoteRepository _notes;

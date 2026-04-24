@@ -9,15 +9,6 @@ namespace Mozgoslav.Tests.Infrastructure;
 
 #pragma warning disable IDISP001, CA2000
 
-/// <summary>
-/// ADR-011 step 2 — the homebrew <c>IdleResourceCache&lt;T&gt;</c> has been
-/// replaced with <see cref="IMemoryCache"/> + <see cref="MemoryCacheEntryOptions.SlidingExpiration"/>
-/// + post-eviction callback. These tests pin the library-level behaviours the
-/// production code relies on:
-///  - reading an entry returns the cached instance (sliding window);
-///  - removal triggers the post-eviction callback;
-///  - the callback can dispose the cached resource without racing the cache itself.
-/// </summary>
 [TestClass]
 public sealed class MemoryCacheIdleEvictionTests
 {

@@ -12,11 +12,6 @@ using Mozgoslav.Infrastructure.Persistence;
 
 namespace Mozgoslav.Infrastructure.Services;
 
-/// <summary>
-/// Settings store on top of the EF Core <c>AppSetting</c> key/value table.
-/// Caches the latest snapshot in memory; writes are wrapped in a transaction so
-/// partial failures never leave the table in a split state.
-/// </summary>
 public sealed class EfAppSettings : IAppSettings, IDisposable
 {
     private readonly IDbContextFactory<MozgoslavDbContext> _contextFactory;

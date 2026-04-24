@@ -4,11 +4,6 @@ using System.Threading.Tasks;
 
 namespace Mozgoslav.Application.Interfaces;
 
-/// <summary>
-/// Persistent application settings, stored in the <c>settings</c> key/value table.
-/// Secrets (LLM API key, Obsidian token) stay local — they are never sent anywhere
-/// outside the user-configured endpoint they belong to.
-/// </summary>
 public interface IAppSettings
 {
     string VaultPath { get; }

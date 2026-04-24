@@ -15,12 +15,6 @@ using Mozgoslav.Domain.Enums;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// ADR-007-shared §2.6 BC-025 — Obsidian bulk export + PARA layout endpoints.
-/// Contract:
-///   POST /api/obsidian/export-all    → { exportedCount, skippedCount, failures:[{noteId, reason}] }
-///   POST /api/obsidian/apply-layout  → { createdFolders, movedNotes }
-/// </summary>
 [TestClass]
 public sealed class ObsidianBulkExportTests
 {
@@ -112,7 +106,7 @@ public sealed class ObsidianBulkExportTests
         {
             if (Directory.Exists(vaultDir))
             {
-                try { Directory.Delete(vaultDir, recursive: true); } catch { /* best effort */ }
+                try { Directory.Delete(vaultDir, recursive: true); } catch { }
             }
         }
     }
@@ -153,7 +147,7 @@ public sealed class ObsidianBulkExportTests
         {
             if (Directory.Exists(vaultDir))
             {
-                try { Directory.Delete(vaultDir, recursive: true); } catch { /* best effort */ }
+                try { Directory.Delete(vaultDir, recursive: true); } catch { }
             }
         }
     }

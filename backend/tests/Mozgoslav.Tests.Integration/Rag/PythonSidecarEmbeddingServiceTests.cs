@@ -19,18 +19,6 @@ using WireMock.Server;
 
 namespace Mozgoslav.Tests.Integration.Rag;
 
-/// <summary>
-/// ADR-005 — contract tests for the Python-sidecar-backed embedding
-/// service, including the graceful-fallback behaviour when the sidecar
-/// is down or returns garbage.
-///
-/// Test list:
-///  - EmbedAsync_HappyPath_ReturnsSidecarVector_AndAdvertisesDimensions
-///  - EmbedAsync_WhenSidecarDown_FallsBackToInnerEmbedding
-///  - EmbedAsync_WhenSidecarReturns500_FallsBackToInnerEmbedding
-///  - EmbedAsync_EmptyVectors_FallsBackToInnerEmbedding
-///  - EmbedAsync_DimensionDrift_AfterFirstCall_IsIgnored
-/// </summary>
 [TestClass]
 public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
 {

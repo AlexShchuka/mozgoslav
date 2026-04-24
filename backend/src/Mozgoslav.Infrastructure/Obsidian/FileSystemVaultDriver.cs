@@ -12,14 +12,6 @@ using Mozgoslav.Application.Obsidian;
 
 namespace Mozgoslav.Infrastructure.Obsidian;
 
-/// <summary>
-/// ADR-019 §5.2 / §5.4 — the single writer into the Obsidian vault. Atomic
-/// writes via <c>*.tmp</c> + <c>File.Move</c>. Respects <see cref="WritePolicy"/>
-/// (Overwrite / CreateIfMissing / UserOwned). Backs up overwritten files under
-/// <c>&lt;vault&gt;/.mozgoslav/bootstrap-backups/&lt;iso-utc&gt;/&lt;relpath&gt;</c>.
-/// Rejects any path escape outside the vault root. Reads the vault root from
-/// <see cref="IAppSettings.VaultPath"/> at call time.
-/// </summary>
 public sealed class FileSystemVaultDriver : IVaultDriver
 {
     private const string BackupFolder = ".mozgoslav";

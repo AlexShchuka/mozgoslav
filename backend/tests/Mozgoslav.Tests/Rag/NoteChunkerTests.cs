@@ -6,16 +6,6 @@ using Mozgoslav.Application.Rag;
 
 namespace Mozgoslav.Tests.Rag;
 
-/// <summary>
-/// ADR-005 D4 — chunker splits notes at paragraph boundaries and falls back
-/// to sentence-aware slicing when a paragraph is longer than the cap.
-///
-/// Test list:
-///  - Chunk_EmptyOrWhitespace_ReturnsEmpty
-///  - Chunk_ParagraphsSplit_AtDoubleNewline
-///  - Chunk_LongParagraph_SplitAtSentenceBoundary
-///  - Chunk_TrimsAndDropsBlankParagraphs
-/// </summary>
 [TestClass]
 public sealed class NoteChunkerTests
 {

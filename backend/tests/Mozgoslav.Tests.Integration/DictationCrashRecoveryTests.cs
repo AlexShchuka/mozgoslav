@@ -24,14 +24,6 @@ using Mozgoslav.Infrastructure.Persistence;
 
 namespace Mozgoslav.Tests.Integration;
 
-/// <summary>
-/// ADR-004 R5 / BC-009 — crash-recovery PCM dump. Every audio chunk written
-/// during a dictation session is mirrored to a per-session file in the temp
-/// dir. On clean stop / cancel the file is deleted; if the backend crashes
-/// mid-session the file is left behind so the user can recover audio that
-/// never reached the LLM. On the next start the session manager logs a WARN
-/// for every orphan it finds.
-/// </summary>
 [TestClass]
 public sealed class DictationCrashRecoveryTests
 {
@@ -254,10 +246,6 @@ public sealed class DictationCrashRecoveryTests
 
     }
 
-    /// <summary>
-    /// Drains the audio stream without emitting any partials — exercises the
-    /// tee-to-PCM-buffer path without needing a real Whisper model on disk.
-    /// </summary>
     private sealed class PassThroughStreamingService : IStreamingTranscriptionService
     {
         public async IAsyncEnumerable<PartialTranscript> TranscribeStreamAsync(

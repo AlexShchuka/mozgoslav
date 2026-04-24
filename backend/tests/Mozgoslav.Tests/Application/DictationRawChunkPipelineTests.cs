@@ -16,12 +16,6 @@ using NSubstitute;
 
 namespace Mozgoslav.Tests.Application;
 
-/// <summary>
-/// D4 — Dashboard record button posts Opus-in-WebM chunks. The session
-/// manager forwards each raw chunk to the long-running PCM decoder; the
-/// resulting samples flow into the same streaming transcription pipeline as
-/// PCM pushed from the Electron native path.
-/// </summary>
 [TestClass]
 public sealed class DictationRawChunkPipelineTests
 {

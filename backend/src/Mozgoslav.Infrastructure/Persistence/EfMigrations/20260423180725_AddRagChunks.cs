@@ -6,10 +6,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Mozgoslav.Infrastructure.Persistence.EfMigrations;
 
-/// <inheritdoc />
 public partial class AddRagChunks : Migration
 {
-    /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
     {
         ArgumentNullException.ThrowIfNull(migrationBuilder);
@@ -29,7 +27,6 @@ public partial class AddRagChunks : Migration
             "CREATE INDEX IF NOT EXISTS ix_rag_chunks_note_id ON rag_chunks(note_id);");
     }
 
-    /// <inheritdoc />
     protected override void Down(MigrationBuilder migrationBuilder)
     {
         ArgumentNullException.ThrowIfNull(migrationBuilder);

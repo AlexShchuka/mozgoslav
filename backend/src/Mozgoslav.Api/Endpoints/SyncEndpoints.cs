@@ -15,10 +15,6 @@ using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Api.Endpoints;
 
-/// <summary>
-/// ADR-003 D8 + ADR-004 R10: thin HTTP facade over <see cref="ISyncthingClient"/>.
-/// Kept small by design — full Sync settings UI is an out-of-scope follow-up ADR.
-/// </summary>
 public static class SyncEndpoints
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);

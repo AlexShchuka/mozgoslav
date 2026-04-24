@@ -1,107 +1,99 @@
-import {fireEvent, render, screen, waitFor} from "@testing-library/react";
-import {MemoryRouter} from "react-router-dom";
-import {ThemeProvider} from "styled-components";
-import {KBarProvider} from "kbar";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { ThemeProvider } from "styled-components";
+import { KBarProvider } from "kbar";
 
 import CommandPalette from "../CommandPalette";
-import {useCommandPaletteActions} from "../useCommandPaletteActions";
-import {lightTheme} from "../../../styles/theme";
+import { useCommandPaletteActions } from "../useCommandPaletteActions";
+import { lightTheme } from "../../../styles/theme";
 import "../../../i18n";
 
 let lastNavigatedTo: string | null = null;
 
 jest.mock("react-router-dom", () => {
-    const actual = jest.requireActual("react-router-dom");
-    return {
-        ...actual,
-        useNavigate: () => (path: string) => {
-            lastNavigatedTo = path;
-        },
-    };
+  const actual = jest.requireActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => (path: string) => {
+      lastNavigatedTo = path;
+    },
+  };
 });
 
-const ActionsRegistrar: React.FC<React.PropsWithChildren> = ({children}) => {
-    useCommandPaletteActions();
-    return <>{children}</>;
+const ActionsRegistrar: React.FC<React.PropsWithChildren> = ({ children }) => {
+  useCommandPaletteActions();
+  return <>{children}</>;
 };
 
 const renderPalette = () =>
-    render(
-        <MemoryRouter>
-            <ThemeProvider theme={lightTheme}>
-                <KBarProvider>
-                    <ActionsRegistrar>
-                        <CommandPalette/>
-                    </ActionsRegistrar>
-                </KBarProvider>
-            </ThemeProvider>
-        </MemoryRouter>,
-    );
+  render(
+    <MemoryRouter>
+      <ThemeProvider theme={lightTheme}>
+        <KBarProvider>
+          <ActionsRegistrar>
+            <CommandPalette />
+          </ActionsRegistrar>
+        </KBarProvider>
+      </ThemeProvider>
+    </MemoryRouter>
+  );
 
 describe("CommandPalette — kbar integration", () => {
-    beforeEach(() => {
-        lastNavigatedTo = null;
+  beforeEach(() => {
+    lastNavigatedTo = null;
+  });
+
+  it("CommandPalette_CtrlK_OpensOverlay", async () => {
+    renderPalette();
+
+    fireEvent.keyDown(window, { key: "k", code: "KeyK", ctrlKey: true });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("kbar-palette")).toBeInTheDocument();
     });
+  });
 
-    it("CommandPalette_CtrlK_OpensOverlay", async () => {
-        renderPalette();
+  it("CommandPalette_NavigationAction_RoutesToPath", async () => {
+    renderPalette();
 
-        fireEvent.keyDown(window, {key: "k", code: "KeyK", ctrlKey: true});
+    fireEvent.keyDown(window, { key: "k", code: "KeyK", ctrlKey: true });
+    await waitFor(() => expect(screen.getByTestId("kbar-palette")).toBeInTheDocument());
 
-        await waitFor(() => {
-            expect(screen.getByTestId("kbar-palette")).toBeInTheDocument();
-        });
-    });
+    const search = screen.getByTestId("kbar-search") as HTMLInputElement;
+    fireEvent.change(search, { target: { value: "queue" } });
 
-    it("CommandPalette_NavigationAction_RoutesToPath", async () => {
-        renderPalette();
+    const queueItem = await screen.findByTestId("kbar-item-nav-queue");
+    fireEvent.click(queueItem);
 
-        fireEvent.keyDown(window, {key: "k", code: "KeyK", ctrlKey: true});
-        await waitFor(() =>
-            expect(screen.getByTestId("kbar-palette")).toBeInTheDocument(),
-        );
+    await waitFor(() => expect(lastNavigatedTo).toBe("/queue"));
+  });
 
-        const search = screen.getByTestId("kbar-search") as HTMLInputElement;
-        fireEvent.change(search, {target: {value: "queue"}});
+  it("CommandPalette_RendersFooterKeyboardHints", async () => {
+    renderPalette();
 
-        const queueItem = await screen.findByTestId("kbar-item-nav-queue");
-        fireEvent.click(queueItem);
+    fireEvent.keyDown(window, { key: "k", code: "KeyK", ctrlKey: true });
+    await waitFor(() => expect(screen.getByTestId("kbar-palette")).toBeInTheDocument());
 
-        await waitFor(() => expect(lastNavigatedTo).toBe("/queue"));
-    });
+    const footer = screen.getByTestId("kbar-footer");
+    expect(footer).toBeInTheDocument();
+    expect(footer.textContent).toContain("↑");
+    expect(footer.textContent).toContain("↓");
+    expect(footer.textContent).toContain("↵");
+    expect(footer.textContent).toContain("Esc");
+  });
 
-    it("CommandPalette_RendersFooterKeyboardHints", async () => {
-        renderPalette();
+  it("CommandPalette_QuickAction_NewNote_DispatchesNoteCreate", async () => {
+    renderPalette();
 
-        fireEvent.keyDown(window, {key: "k", code: "KeyK", ctrlKey: true});
-        await waitFor(() =>
-            expect(screen.getByTestId("kbar-palette")).toBeInTheDocument(),
-        );
+    fireEvent.keyDown(window, { key: "k", code: "KeyK", ctrlKey: true });
+    await waitFor(() => expect(screen.getByTestId("kbar-palette")).toBeInTheDocument());
 
-        const footer = screen.getByTestId("kbar-footer");
-        expect(footer).toBeInTheDocument();
-        expect(footer.textContent).toContain("↑");
-        expect(footer.textContent).toContain("↓");
-        expect(footer.textContent).toContain("↵");
-        expect(footer.textContent).toContain("Esc");
-    });
+    const search = screen.getByTestId("kbar-search") as HTMLInputElement;
+    fireEvent.change(search, { target: { value: "new note" } });
 
-    it("CommandPalette_QuickAction_NewNote_DispatchesNoteCreate", async () => {
-        renderPalette();
+    const newNoteItem = await screen.findByTestId("kbar-item-quick-new-note");
+    fireEvent.click(newNoteItem);
 
-        fireEvent.keyDown(window, {key: "k", code: "KeyK", ctrlKey: true});
-        await waitFor(() =>
-            expect(screen.getByTestId("kbar-palette")).toBeInTheDocument(),
-        );
-
-        const search = screen.getByTestId("kbar-search") as HTMLInputElement;
-        fireEvent.change(search, {target: {value: "new note"}});
-
-        const newNoteItem = await screen.findByTestId("kbar-item-quick-new-note");
-        fireEvent.click(newNoteItem);
-
-        await waitFor(() =>
-            expect(lastNavigatedTo).toMatch(/^\/notes\?new=1$/),
-        );
-    });
+    await waitFor(() => expect(lastNavigatedTo).toMatch(/^\/notes\?new=1$/));
+  });
 });

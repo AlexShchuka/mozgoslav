@@ -1,4 +1,3 @@
-"""Smoke tests for the /health probe."""
 from __future__ import annotations
 
 from fastapi.testclient import TestClient

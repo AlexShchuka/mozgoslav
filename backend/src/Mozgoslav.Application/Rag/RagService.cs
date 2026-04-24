@@ -13,17 +13,6 @@ using Mozgoslav.Domain.Entities;
 
 namespace Mozgoslav.Application.Rag;
 
-/// <summary>
-/// ADR-005 — orchestrates the full retrieval-augmented QA pipeline:
-///   1. chunk the note via <see cref="NoteChunker"/>
-///   2. embed each chunk and the incoming question via <see cref="IEmbeddingService"/>
-///   3. store / search chunks in <see cref="IVectorIndex"/>
-///   4. pass the question + top-K chunks to the LLM for answer synthesis
-///
-/// The LLM step is best-effort: if the local endpoint is down we still
-/// return the citations so the user gets useful output (ADR-005 D6 —
-/// graceful degradation).
-/// </summary>
 public sealed class RagService : IRagService
 {
     private const int MinTopK = 1;
