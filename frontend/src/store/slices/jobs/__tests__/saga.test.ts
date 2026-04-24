@@ -75,10 +75,12 @@ beforeEach(() => {
 });
 
 describe("subscribeJobsSaga", () => {
-  it("seeds from activeJobs and emits JOBS_SEEDED", async () => {
+  it("seeds from QueryJobs(first:200) and emits JOBS_SEEDED", async () => {
     const wsStub = makeWsClientStub();
     mockedGetWsClient.mockReturnValue(wsStub);
-    mockedRequest.mockResolvedValueOnce({ activeJobs: [gqlJobA] });
+    mockedRequest.mockResolvedValueOnce({
+      jobs: { nodes: [gqlJobA], pageInfo: { hasNextPage: false, endCursor: null } },
+    });
 
     const result = await expectSaga(subscribeJobsSaga)
       .withReducer(jobsReducer)
@@ -103,7 +105,7 @@ describe("subscribeJobsSaga", () => {
     expect(result.storeState.byId.a.id).toBe("a");
   });
 
-  it("emits JOBS_SEED_FAILED when activeJobs throws but still opens the stream", async () => {
+  it("emits JOBS_SEED_FAILED when QueryJobs throws but still opens the stream", async () => {
     const wsStub = makeWsClientStub();
     mockedGetWsClient.mockReturnValue(wsStub);
     mockedRequest.mockRejectedValueOnce(new Error("boom"));
@@ -127,7 +129,9 @@ describe("subscribeJobsSaga", () => {
     });
     const wsStub = { subscribe, dispose };
     mockedGetWsClient.mockReturnValue(wsStub);
-    mockedRequest.mockResolvedValueOnce({ activeJobs: [] });
+    mockedRequest.mockResolvedValueOnce({
+      jobs: { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } },
+    });
 
     const incoming = makeJob({
       id: "x",

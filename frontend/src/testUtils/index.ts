@@ -4,3 +4,4 @@ export { renderWithRouter } from "./renderWithRouter";
 export type { RenderWithRouterOptions } from "./renderWithRouter";
 export { createMockApi } from "./mockApi";
 export type { MockApiBundle } from "./mockApi";
+export { mockJobsState, jobsById } from "./mockState";

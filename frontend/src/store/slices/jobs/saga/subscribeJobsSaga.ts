@@ -3,13 +3,10 @@ import type { SagaIterator } from "redux-saga";
 import type { Task, EventChannel } from "redux-saga";
 
 import type {
-  QueryActiveJobsQuery,
+  QueryJobsQuery,
   SubscriptionJobProgressSubscription,
 } from "../../../../api/gql/graphql";
-import {
-  QueryActiveJobsDocument,
-  SubscriptionJobProgressDocument,
-} from "../../../../api/gql/graphql";
+import { QueryJobsDocument, SubscriptionJobProgressDocument } from "../../../../api/gql/graphql";
 import { gqlRequest, gqlSubscriptionChannel } from "../../../saga/graphql";
 import { mapGqlJob } from "../jobMapper";
 import {
@@ -39,8 +36,8 @@ function* consumeChannel(channel: EventChannel<SubscriptionJobProgressSubscripti
 
 export function* subscribeJobsSaga(): SagaIterator {
   try {
-    const result = (yield* gqlRequest(QueryActiveJobsDocument, {})) as QueryActiveJobsQuery;
-    const jobs = (result.activeJobs ?? []).map(mapGqlJob);
+    const result = (yield* gqlRequest(QueryJobsDocument, { first: 200 })) as QueryJobsQuery;
+    const jobs = (result.jobs?.nodes ?? []).map(mapGqlJob);
     yield put(jobsSeeded(jobs));
   } catch (error) {
     yield put(jobsSeedFailed(error instanceof Error ? error.message : String(error)));
