@@ -39,6 +39,8 @@ jobs:
             echo "::error::uncomment would strip comments from the files listed above. Run the same command without --dry-run to fix."
             exit 1
           fi
+      - name: Encoding check (UTF-8 only, no BOM, no CRLF outside *.bat|*.cmd|*.ps1)
+        run: scripts/check-encoding.sh
 
   backend:
     name: build / backend (${{ matrix.os }})
