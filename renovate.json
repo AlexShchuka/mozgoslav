@@ -1,0 +1,74 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommitTypeAll(chore)"
+  ],
+  "timezone": "Europe/Moscow",
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 0,
+  "rangeStrategy": "pin",
+  "separateMinorPatch": true,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "packageRules": [
+    {
+      "matchManagers": ["nuget"],
+      "groupName": "nuget (minor+patch)",
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "matchManagers": ["npm"],
+      "groupName": "npm (minor+patch)",
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "matchManagers": ["pip_requirements", "pep621"],
+      "groupName": "python (minor+patch)",
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions",
+      "matchUpdateTypes": ["minor", "patch", "digest"]
+    },
+    {
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true,
+      "description": "auto-merge patch bumps after CI passes"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["dependencies", "major"],
+      "description": "majors require manual review"
+    },
+    {
+      "matchPackageNames": ["FluentAssertions"],
+      "allowedVersions": "< 8.0.0",
+      "description": "FluentAssertions v8+ requires a commercial Xceed license"
+    },
+    {
+      "matchPackageNames": ["setuptools"],
+      "allowedVersions": "< 81",
+      "description": "setuptools>=81 removes pkg_resources; breaks pymorphy2 used by natasha NER"
+    },
+    {
+      "matchPackageNames": ["vite", "@vitejs/plugin-react"],
+      "allowedVersions": "< 8.0.0",
+      "description": "vite-plugin-electron 0.29 is not compatible with vite 8+"
+    },
+    {
+      "matchPackageNames": ["eslint", "@eslint/js", "eslint-plugin-react-hooks"],
+      "allowedVersions": "< 10.0.0",
+      "description": "eslint-plugin-react 7.x throws on eslint 10"
+    }
+  ]
+}
