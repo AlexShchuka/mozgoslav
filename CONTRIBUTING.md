@@ -24,6 +24,15 @@ Starts backend + python sidecar + Electron UI. First run bootstraps everything; 
 
 Run the same gates CI runs. Pushing without these is a regression risk — CI is not a linter of last resort.
 
+**Always auto-format first**, then verify. CI runs `--verify-no-changes` / `--check` and fails without diff context — fix it locally:
+
+```bash
+dotnet format backend/Mozgoslav.sln --verbosity minimal
+cd frontend && npx prettier --write "src/**/*.{ts,tsx,css}" "electron/**/*.ts" && cd ..
+```
+
+Then run the gates:
+
 ```bash
 scripts/check-encoding.sh
 uncomment --dry-run --remove-todo --remove-fixme --remove-doc backend frontend/src frontend/electron python-sidecar native scripts

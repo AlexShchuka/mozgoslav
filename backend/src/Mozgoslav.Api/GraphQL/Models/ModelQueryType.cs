@@ -34,7 +34,7 @@ public sealed class ModelQueryType
 
     private static string ResolveDestination(CatalogEntry entry)
     {
-        var fileName = System.IO.Path.GetFileName(new System.Uri(entry.Url).AbsolutePath);
-        return System.IO.Path.Combine(AppPaths.Models, fileName);
+        var fileName = Path.GetFileName(new System.Uri(entry.Url).AbsolutePath);
+        return Path.Combine(AppPaths.Models, fileName);
     }
 }

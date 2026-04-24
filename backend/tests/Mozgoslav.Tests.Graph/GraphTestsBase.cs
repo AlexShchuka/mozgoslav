@@ -44,6 +44,6 @@ public abstract class GraphTestsBase : IDisposable
         var json = await response.Content.ReadAsStringAsync();
         var node = JsonNode.Parse(json);
         node.Should().NotBeNull();
-        return node!;
+        return node;
     }
 }

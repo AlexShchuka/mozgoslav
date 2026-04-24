@@ -25,9 +25,9 @@ public sealed class JobQueryType
 
     public IQueryable<ProcessingJob> ActiveJobs([Service] MozgoslavDbContext db) =>
         db.ProcessingJobs
-            .Where(j => j.Status != Mozgoslav.Domain.Enums.JobStatus.Done
-                && j.Status != Mozgoslav.Domain.Enums.JobStatus.Failed
-                && j.Status != Mozgoslav.Domain.Enums.JobStatus.Cancelled)
+            .Where(j => j.Status != Domain.Enums.JobStatus.Done
+                && j.Status != Domain.Enums.JobStatus.Failed
+                && j.Status != Domain.Enums.JobStatus.Cancelled)
             .OrderByDescending(j => j.CreatedAt);
 
     public async Task<ProcessingJob?> Job(
