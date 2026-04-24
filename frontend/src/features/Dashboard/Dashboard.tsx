@@ -1,7 +1,7 @@
 import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useTranslation } from "react-i18next";
-import { FileAudio, Mic, Square, Upload } from "lucide-react";
+import { Ban, FileAudio, Mic, Square, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
 import type { Dispatch } from "redux";
@@ -19,6 +19,7 @@ import {
   dictationStopRequested,
   dictationReset,
   dictationFailed,
+  dictationCancelRequested,
   selectDictationStatus,
 } from "../../store/slices/dictation";
 import {
@@ -160,6 +161,25 @@ const Dashboard: FC = () => {
     dispatch(dictationReset());
   }, [status, dispatch]);
 
+  const cancellingSessionId = status.phase === "cancelling" ? status.sessionId : null;
+  useEffect(() => {
+    if (cancellingSessionId === null) return;
+    const active = sessionRef.current;
+    if (active) {
+      try {
+        active.recorder.stop();
+      } catch {}
+      active.stream.getTracks().forEach((t) => {
+        try {
+          t.stop();
+        } catch {}
+      });
+    }
+    sessionRef.current = null;
+    setActiveStream(null);
+    chunksRef.current = [];
+  }, [cancellingSessionId]);
+
   const stopRecording = useCallback(async () => {
     const active = sessionRef.current;
     if (!active) {
@@ -244,6 +264,7 @@ const Dashboard: FC = () => {
 
   const isRecording = status.phase === "active";
   const isTransitioning = status.phase === "starting" || status.phase === "stopping";
+  const isCancelling = status.phase === "cancelling";
 
   return (
     <DashboardRoot>
@@ -276,6 +297,17 @@ const Dashboard: FC = () => {
           >
             {isRecording ? t("dashboard.recordStop") : t("dashboard.recordStart")}
           </Button>
+          {isRecording && (
+            <Button
+              variant="ghost"
+              leftIcon={<Ban size={16} />}
+              data-testid="dashboard-cancel"
+              isLoading={isCancelling}
+              onClick={() => dispatch(dictationCancelRequested())}
+            >
+              {t("dictation.cancel")}
+            </Button>
+          )}
         </Row>
         {isRecording && activeStream && (
           <div style={{ marginTop: 12 }} data-testid="dashboard-levels">

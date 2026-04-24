@@ -8,7 +8,11 @@ import {
   mockRecordingState,
   mergeMockState,
 } from "../../../testUtils/mockState";
-import { dictationStartRequested, dictationStopRequested } from "../../../store/slices/dictation";
+import {
+  dictationStartRequested,
+  dictationStopRequested,
+  dictationCancelRequested,
+} from "../../../store/slices/dictation";
 import { importRecordingsRequested } from "../../../store/slices/recording";
 import "../../../i18n";
 
@@ -239,6 +243,34 @@ describe("Dashboard — migrated to Redux actions", () => {
     });
 
     await waitFor(() => expect(toast.info).toHaveBeenCalled());
+  });
+
+  it("Dashboard_CancelClick_DuringActive_DispatchesCancelRequested", async () => {
+    installMediaMocks();
+    const preloaded = mergeMockState(
+      mockDictationState({
+        status: {
+          phase: "active",
+          sessionId: "s1",
+          source: "dashboard",
+          persistOnStop: true,
+        },
+      })
+    );
+    const { getActions } = renderDashboard(preloaded);
+
+    await waitFor(() => expect(screen.getByTestId("dashboard-cancel")).toBeInTheDocument());
+
+    act(() => {
+      fireEvent.click(screen.getByTestId("dashboard-cancel"));
+    });
+
+    expect(getActions()).toContainEqual(dictationCancelRequested());
+  });
+
+  it("Dashboard_CancelButton_HiddenWhenIdle", () => {
+    renderDashboard(mockDictationState());
+    expect(screen.queryByTestId("dashboard-cancel")).not.toBeInTheDocument();
   });
 
   it("Dashboard_ImportRecordingsRequested_OnDialogPick", async () => {

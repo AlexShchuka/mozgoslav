@@ -4,6 +4,9 @@ export const DICTATION_STOP_REQUESTED = "dictation/STOP_REQUESTED";
 export const DICTATION_STOPPED = "dictation/STOPPED";
 export const DICTATION_FAILED = "dictation/FAILED";
 export const DICTATION_RESET = "dictation/RESET";
+export const DICTATION_CANCEL_REQUESTED = "dictation/CANCEL_REQUESTED";
+export const DICTATION_CANCELLED = "dictation/CANCELLED";
+export const DICTATION_CANCEL_FAILED = "dictation/CANCEL_FAILED";
 
 export interface DictationStartRequestedAction {
   type: typeof DICTATION_START_REQUESTED;
@@ -33,13 +36,29 @@ export interface DictationResetAction {
   type: typeof DICTATION_RESET;
 }
 
+export interface DictationCancelRequestedAction {
+  type: typeof DICTATION_CANCEL_REQUESTED;
+}
+
+export interface DictationCancelledAction {
+  type: typeof DICTATION_CANCELLED;
+}
+
+export interface DictationCancelFailedAction {
+  type: typeof DICTATION_CANCEL_FAILED;
+  payload: { error: string };
+}
+
 export type DictationAction =
   | DictationStartRequestedAction
   | DictationStartedAction
   | DictationStopRequestedAction
   | DictationStoppedAction
   | DictationFailedAction
-  | DictationResetAction;
+  | DictationResetAction
+  | DictationCancelRequestedAction
+  | DictationCancelledAction
+  | DictationCancelFailedAction;
 
 export const dictationStartRequested = (payload: {
   source: string;
@@ -72,4 +91,17 @@ export const dictationFailed = (payload: { error: string }): DictationFailedActi
 
 export const dictationReset = (): DictationResetAction => ({
   type: DICTATION_RESET,
+});
+
+export const dictationCancelRequested = (): DictationCancelRequestedAction => ({
+  type: DICTATION_CANCEL_REQUESTED,
+});
+
+export const dictationCancelled = (): DictationCancelledAction => ({
+  type: DICTATION_CANCELLED,
+});
+
+export const dictationCancelFailed = (payload: { error: string }): DictationCancelFailedAction => ({
+  type: DICTATION_CANCEL_FAILED,
+  payload,
 });
