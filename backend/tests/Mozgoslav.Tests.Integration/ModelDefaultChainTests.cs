@@ -14,7 +14,7 @@ using Mozgoslav.Infrastructure.Platform;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class ModelDefaultChainTests
+public sealed class ModelDefaultChainTests : IntegrationTestsBase
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -49,8 +49,7 @@ public sealed class ModelDefaultChainTests
     [TestMethod]
     public async Task ModelsDownload_Post_WithAlias_Returns202AndDownloadId()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsJsonAsync(
             "/api/models/download",
@@ -67,8 +66,7 @@ public sealed class ModelDefaultChainTests
     [TestMethod]
     public async Task ModelsDownload_Post_UnknownId_ReturnsBadRequest()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsJsonAsync(
             "/api/models/download",
@@ -81,8 +79,7 @@ public sealed class ModelDefaultChainTests
     [TestMethod]
     public async Task ModelsDownload_Post_MissingId_ReturnsBadRequest()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsJsonAsync(
             "/api/models/download",
@@ -91,8 +88,5 @@ public sealed class ModelDefaultChainTests
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
-
-    public required TestContext TestContext { get; set; }
-
     private sealed record DownloadAcceptance(string DownloadId);
 }

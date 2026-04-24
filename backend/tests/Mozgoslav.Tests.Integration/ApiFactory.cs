@@ -13,7 +13,7 @@ using Mozgoslav.Infrastructure.Persistence;
 
 namespace Mozgoslav.Tests.Integration;
 
-internal sealed class ApiFactory : WebApplicationFactory<Program>
+public sealed class ApiFactory : WebApplicationFactory<Program>
 {
     public ApiFactory()
     {

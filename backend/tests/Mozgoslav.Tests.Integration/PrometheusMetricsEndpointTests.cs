@@ -6,13 +6,12 @@ using FluentAssertions;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class PrometheusMetricsEndpointTests
+public sealed class PrometheusMetricsEndpointTests : IntegrationTestsBase
 {
     [TestMethod]
     public async Task Metrics_ReturnsOk_AndExposesAspNetCoreCounters()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.GetAsync("/metrics");
 

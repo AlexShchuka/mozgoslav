@@ -15,15 +15,14 @@ using Mozgoslav.Domain.Enums;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class ApiEndpointsTests
+public sealed class ApiEndpointsTests : IntegrationTestsBase
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     [TestMethod]
     public async Task Health_ReturnsOk()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.GetAsync("/api/health", TestContext.CancellationToken);
 
@@ -35,8 +34,7 @@ public sealed class ApiEndpointsTests
     [TestMethod]
     public async Task Profiles_Get_ReturnsSeededBuiltInProfiles()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.GetAsync("/api/profiles", TestContext.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -52,8 +50,7 @@ public sealed class ApiEndpointsTests
     [TestMethod]
     public async Task Profiles_Post_MissingName_ReturnsBadRequest()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsJsonAsync(
             "/api/profiles",
@@ -71,8 +68,7 @@ public sealed class ApiEndpointsTests
     [TestMethod]
     public async Task Profiles_Post_Valid_CreatesAndListsProfile()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var create = await client.PostAsJsonAsync(
             "/api/profiles",
@@ -97,8 +93,7 @@ public sealed class ApiEndpointsTests
     [TestMethod]
     public async Task Profiles_Get_UnknownId_Returns404()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.GetAsync($"/api/profiles/{Guid.NewGuid()}", TestContext.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -107,8 +102,7 @@ public sealed class ApiEndpointsTests
     [TestMethod]
     public async Task Recordings_Get_EmptyList_OnFreshDb()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.GetAsync("/api/recordings", TestContext.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -120,8 +114,7 @@ public sealed class ApiEndpointsTests
     [TestMethod]
     public async Task Recordings_Import_EmptyFilePaths_Returns400()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsJsonAsync(
             "/api/recordings/import",
@@ -136,8 +129,7 @@ public sealed class ApiEndpointsTests
     [TestMethod]
     public async Task Recordings_Import_MissingFile_Returns400_WithMessage()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsJsonAsync(
             "/api/recordings/import",
@@ -156,9 +148,7 @@ public sealed class ApiEndpointsTests
     {
         var tempFile = Path.Combine(Path.GetTempPath(), $"mozgoslav-api-upload-{Guid.NewGuid():N}.wav");
         await File.WriteAllBytesAsync(tempFile, [1, 2, 3, 4], TestContext.CancellationToken);
-
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         try
         {
@@ -187,8 +177,7 @@ public sealed class ApiEndpointsTests
     [TestMethod]
     public async Task Jobs_Get_EmptyList_OnFreshDb()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.GetAsync("/api/jobs", TestContext.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -200,8 +189,7 @@ public sealed class ApiEndpointsTests
     [TestMethod]
     public async Task Settings_Get_ReturnsDefaultsOnFreshDb()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.GetAsync("/api/settings", TestContext.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -209,6 +197,4 @@ public sealed class ApiEndpointsTests
         var body = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
         body.Should().Contain("llmEndpoint");
     }
-
-    public required TestContext TestContext { get; set; }
 }

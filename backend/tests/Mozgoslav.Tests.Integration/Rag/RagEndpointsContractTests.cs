@@ -15,15 +15,14 @@ using Mozgoslav.Domain.Enums;
 namespace Mozgoslav.Tests.Integration.Rag;
 
 [TestClass]
-public sealed class RagEndpointsContractTests
+public sealed class RagEndpointsContractTests : IntegrationTestsBase
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     [TestMethod]
     public async Task Reindex_EmptyDb_ReturnsEmbeddedNotesAndChunksShape()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsync("/api/rag/reindex", content: null, TestContext.CancellationToken);
 
@@ -41,8 +40,7 @@ public sealed class RagEndpointsContractTests
     [TestMethod]
     public async Task Query_EmptyIndex_ReturnsAnswerAndEmptyCitationsArray()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsJsonAsync(
             "/api/rag/query",
@@ -63,8 +61,7 @@ public sealed class RagEndpointsContractTests
     [TestMethod]
     public async Task Query_MissingQuestion_ReturnsBadRequest()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsJsonAsync(
             "/api/rag/query",
@@ -77,8 +74,7 @@ public sealed class RagEndpointsContractTests
     [TestMethod]
     public async Task Query_DefaultTopK_IsFive_WhenNotProvided()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsJsonAsync(
             "/api/rag/query",
@@ -93,9 +89,8 @@ public sealed class RagEndpointsContractTests
     [TestMethod]
     public async Task Query_WithSeededNote_ReturnsCitationShape_NoteId_SegmentId_Text_Snippet()
     {
-        await using var factory = new ApiFactory();
         Guid seededNoteId;
-        using (var scope = factory.Services.CreateScope())
+        using (var scope = Factory.Services.CreateScope())
         {
             var profiles = scope.ServiceProvider.GetRequiredService<IProfileRepository>();
             var notes = scope.ServiceProvider.GetRequiredService<IProcessedNoteRepository>();
@@ -132,7 +127,7 @@ public sealed class RagEndpointsContractTests
             seededNoteId = note.Id;
         }
 
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
         using (var r = await client.PostAsync("/api/rag/reindex", content: null, TestContext.CancellationToken))
         {
             r.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -168,8 +163,7 @@ public sealed class RagEndpointsContractTests
     [TestMethod]
     public async Task Reindex_AfterSeedingNotes_CountsMatchContractFields()
     {
-        await using var factory = new ApiFactory();
-        using (var scope = factory.Services.CreateScope())
+        using (var scope = Factory.Services.CreateScope())
         {
             var notes = scope.ServiceProvider.GetRequiredService<IProcessedNoteRepository>();
             var transcripts = scope.ServiceProvider.GetRequiredService<ITranscriptRepository>();
@@ -205,7 +199,7 @@ public sealed class RagEndpointsContractTests
             await notes.AddAsync(note, TestContext.CancellationToken);
         }
 
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
         using var response = await client.PostAsync("/api/rag/reindex", content: null, TestContext.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -213,6 +207,4 @@ public sealed class RagEndpointsContractTests
         payload.GetProperty("embeddedNotes").GetInt32().Should().Be(1);
         payload.GetProperty("chunks").GetInt32().Should().BeGreaterThanOrEqualTo(1);
     }
-
-    public TestContext TestContext { get; set; } = null!;
 }

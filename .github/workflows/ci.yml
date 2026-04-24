@@ -71,6 +71,9 @@ jobs:
         run: dotnet test backend/tests/Mozgoslav.Tests/Mozgoslav.Tests.csproj --no-build --nologo --verbosity normal --settings backend/UnitTests.runsettings --results-directory backend/coverage/unit
       - name: Test — integration (with coverage, 1% floor)
         run: dotnet test backend/tests/Mozgoslav.Tests.Integration/Mozgoslav.Tests.Integration.csproj --no-build --nologo --verbosity normal --settings backend/IntegrationTests.runsettings --results-directory backend/coverage/integration
+      - name: Test timings report (top-N slowest + per-class totals)
+        if: runner.os == 'Linux' && always()
+        run: python3 scripts/analyze-test-timings.py backend/coverage
       - name: Backend coverage floor (1% line, total across both suites)
         if: runner.os == 'Linux'
         run: |

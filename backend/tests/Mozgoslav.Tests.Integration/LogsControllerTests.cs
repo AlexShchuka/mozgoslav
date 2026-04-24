@@ -14,7 +14,7 @@ using Mozgoslav.Infrastructure.Platform;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class LogsControllerTests
+public sealed class LogsControllerTests : IntegrationTestsBase
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -42,8 +42,7 @@ public sealed class LogsControllerTests
     [TestMethod]
     public async Task List_ReturnsFiles_IncludingFreshlySeededOne()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.GetAsync("/api/logs", TestContext.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -57,8 +56,7 @@ public sealed class LogsControllerTests
     [TestMethod]
     public async Task Tail_Default_ReturnsLines()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         var fileName = Path.GetFileName(_tempLog!);
         using var response = await client.GetAsync($"/api/logs/tail?file={Uri.EscapeDataString(fileName)}&lines=5", TestContext.CancellationToken);
@@ -75,8 +73,7 @@ public sealed class LogsControllerTests
     [TestMethod]
     public async Task Tail_LinesOutOfRange_ReturnsBadRequest()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.GetAsync("/api/logs/tail?lines=0", TestContext.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -85,14 +82,10 @@ public sealed class LogsControllerTests
     [TestMethod]
     public async Task Tail_UnknownFile_ReturnsNotFound()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.GetAsync("/api/logs/tail?file=mozgoslav-missing.log&lines=1", TestContext.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
-
-    public required TestContext TestContext { get; set; }
-
     private sealed record TailResponse(string File, IReadOnlyList<string> Lines, int TotalLines);
 }

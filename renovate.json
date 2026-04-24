@@ -6,7 +6,7 @@
     ":semanticCommitTypeAll(chore)"
   ],
   "timezone": "Europe/Moscow",
-  "schedule": ["before 6am on monday"],
+  "schedule": ["after 10am and before 11am every weekday", "after 10am and before 11am every weekend"],
   "labels": ["dependencies"],
   "prConcurrentLimit": 5,
   "prHourlyLimit": 0,
@@ -14,7 +14,7 @@
   "separateMinorPatch": true,
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 6am on monday"]
+    "schedule": ["after 10am and before 11am every weekday", "after 10am and before 11am every weekend"]
   },
   "packageRules": [
     {

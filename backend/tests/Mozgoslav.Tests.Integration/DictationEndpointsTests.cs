@@ -9,15 +9,14 @@ using FluentAssertions;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class DictationEndpointsTests
+public sealed class DictationEndpointsTests : IntegrationTestsBase
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     [TestMethod]
     public async Task Start_ReturnsSessionId()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsync("/api/dictation/start", content: null, TestContext.CancellationToken);
 
@@ -32,8 +31,7 @@ public sealed class DictationEndpointsTests
     [TestMethod]
     public async Task Start_WhenSessionAlreadyActive_ReturnsConflict()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var first = await client.PostAsync("/api/dictation/start", content: null, TestContext.CancellationToken);
         first.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -48,8 +46,7 @@ public sealed class DictationEndpointsTests
     [TestMethod]
     public async Task Push_UnknownSession_Returns404()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         var payload = new
         {
@@ -66,8 +63,7 @@ public sealed class DictationEndpointsTests
     [TestMethod]
     public async Task Push_EmptySamples_Returns400()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var start = await client.PostAsync("/api/dictation/start", content: null, TestContext.CancellationToken);
         var session = await start.Content.ReadFromJsonAsync<StartResponse>(Json, TestContext.CancellationToken);
@@ -89,8 +85,7 @@ public sealed class DictationEndpointsTests
     [TestMethod]
     public async Task Cancel_ClearsActiveSessionAndAllowsNewStart()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var start1 = await client.PostAsync("/api/dictation/start", content: null, TestContext.CancellationToken);
         var first = await start1.Content.ReadFromJsonAsync<StartResponse>(Json, TestContext.CancellationToken);
@@ -110,8 +105,7 @@ public sealed class DictationEndpointsTests
     [TestMethod]
     public async Task Cancel_UnknownSession_ReturnsOk()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsync(
             $"/api/dictation/cancel/{Guid.NewGuid()}", content: null, TestContext.CancellationToken);
@@ -122,8 +116,7 @@ public sealed class DictationEndpointsTests
     [TestMethod]
     public async Task Stream_UnknownSession_Returns404()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.GetAsync($"/api/dictation/stream/{Guid.NewGuid()}", TestContext.CancellationToken);
 
@@ -133,8 +126,7 @@ public sealed class DictationEndpointsTests
     [TestMethod]
     public async Task Stop_UnknownSession_Returns404()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsync(
             $"/api/dictation/stop/{Guid.NewGuid()}", content: null, TestContext.CancellationToken);
@@ -143,6 +135,4 @@ public sealed class DictationEndpointsTests
     }
 
     private sealed record StartResponse(Guid SessionId);
-
-    public required TestContext TestContext { get; set; }
 }

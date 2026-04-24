@@ -17,17 +17,16 @@ using Mozgoslav.Domain.Enums;
 namespace Mozgoslav.Tests.Integration;
 
 [TestClass]
-public sealed class JobCancelEndpointsTests
+public sealed class JobCancelEndpointsTests : IntegrationTestsBase
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     [TestMethod]
     public async Task Cancel_QueuedJob_Returns204_AndTransitionsToCancelled()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
-        var jobId = await SeedJobAsync(factory, JobStatus.Queued);
+        var jobId = await SeedJobAsync(JobStatus.Queued);
 
         using var response = await client.PostAsync(
             $"/api/jobs/{jobId}/cancel", content: null, TestContext.CancellationToken);
@@ -44,17 +43,16 @@ public sealed class JobCancelEndpointsTests
     [TestMethod]
     public async Task Cancel_ActiveJob_Returns202_AndFlipsCancelRequestedFlag()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
-        var jobId = await SeedJobAsync(factory, JobStatus.Transcribing);
+        var jobId = await SeedJobAsync(JobStatus.Transcribing);
 
         using var response = await client.PostAsync(
             $"/api/jobs/{jobId}/cancel", content: null, TestContext.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Accepted);
 
-        using var scope = factory.Services.CreateScope();
+        using var scope = Factory.Services.CreateScope();
         var repo = scope.ServiceProvider.GetRequiredService<IProcessingJobRepository>();
         var reloaded = (await repo.GetAllAsync(TestContext.CancellationToken)).Single(j => j.Id == jobId);
         reloaded.CancelRequested.Should().BeTrue();
@@ -64,12 +62,11 @@ public sealed class JobCancelEndpointsTests
     [TestMethod]
     public async Task Cancel_TerminalJob_Returns409_Conflict()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         foreach (var terminal in new[] { JobStatus.Done, JobStatus.Failed, JobStatus.Cancelled })
         {
-            var jobId = await SeedJobAsync(factory, terminal);
+            var jobId = await SeedJobAsync(terminal);
 
             using var response = await client.PostAsync(
                 $"/api/jobs/{jobId}/cancel", content: null, TestContext.CancellationToken);
@@ -81,8 +78,7 @@ public sealed class JobCancelEndpointsTests
     [TestMethod]
     public async Task Cancel_UnknownId_Returns404_NotFound()
     {
-        await using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = CreateClient();
 
         using var response = await client.PostAsync(
             $"/api/jobs/{Guid.NewGuid()}/cancel", content: null, TestContext.CancellationToken);
@@ -90,9 +86,9 @@ public sealed class JobCancelEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    private async Task<Guid> SeedJobAsync(ApiFactory factory, JobStatus status)
+    private async Task<Guid> SeedJobAsync(JobStatus status)
     {
-        using var scope = factory.Services.CreateScope();
+        using var scope = Factory.Services.CreateScope();
         var repo = scope.ServiceProvider.GetRequiredService<IProcessingJobRepository>();
         var job = new ProcessingJob
         {
@@ -107,6 +103,4 @@ public sealed class JobCancelEndpointsTests
         await repo.EnqueueAsync(job, TestContext.CancellationToken);
         return job.Id;
     }
-
-    public required TestContext TestContext { get; set; }
 }
