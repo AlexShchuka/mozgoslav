@@ -29,9 +29,13 @@ mozgoslav/
 - Все секреты (LLM API key, Obsidian token) живут в SQLite `settings`. Никогда не передаются никуда, кроме endpoint'а,
   куда явно адресованы.
 - Zero telemetry. Никаких crash-reporters / analytics / auto-update checks.
-- Логи — только локально в `~/Library/Application Support/Mozgoslav/logs/`. Просматривать прямо в UI (Logs page).
+- Логи — только локально в `~/Library/Application Support/Mozgoslav/logs/` (Serilog rolling daily, 14-day retention). Смотрятся любым текстовым клиентом — in-app viewer'а нет.
 - Downloads моделей — только HuggingFace HTTPS URL из встроенного каталога (`ModelCatalog.cs`) либо релиз
   `models-bundle-v1` (sha256-checked).
+
+## Observability
+
+`GET http://localhost:5050/metrics` — Prometheus scrape endpoint. Listens on loopback only, никакого внешнего exposure. Экспортирует кастомный `MozgoslavMetrics` meter (`mozgoslav_recordings_imported`, `mozgoslav_jobs_completed`, `mozgoslav_pipeline_transcription_duration`, …) + ASP.NET Core + .NET runtime counters. Подцепить локальную Grafana или `curl localhost:5050/metrics | grep mozgoslav` для быстрого замера.
 
 ## Бэкапы
 

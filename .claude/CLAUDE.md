@@ -162,6 +162,7 @@ Frontend layering:
 | Whisper model | Settings UI → Models page | Must be downloaded first |
 | Python sidecar base URL | Env `Mozgoslav:PythonSidecar:BaseUrl` | Disabled if unset |
 | Bundled backend binary (packaged) | `process.resourcesPath/backend/Mozgoslav.Api` | Published by `scripts/publish-backend-osx.sh` |
+| Prometheus scrape | `GET http://localhost:5050/metrics` | Always on; loopback only. Exporter = `AddPrometheusExporter()` + `MapPrometheusScrapingEndpoint()` in `Program.cs`. |
 
 ## 9. When the agent is stuck
 
