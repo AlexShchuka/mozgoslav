@@ -8,7 +8,7 @@ public sealed class RecordingSessionRegistry
     private readonly Lock _lock = new();
     private ActiveRecordingSession? _session;
 
-    public bool TryStart(string outputPath, out ActiveRecordingSession session)
+    public bool TryStart(Guid recordingId, Guid dictationSessionId, string outputPath, out ActiveRecordingSession session)
     {
         lock (_lock)
         {
@@ -17,7 +17,12 @@ public sealed class RecordingSessionRegistry
                 session = _session;
                 return false;
             }
-            session = new ActiveRecordingSession(Guid.NewGuid().ToString("N"), outputPath, DateTime.UtcNow);
+            session = new ActiveRecordingSession(
+                Guid.NewGuid().ToString("N"),
+                recordingId,
+                dictationSessionId,
+                outputPath,
+                DateTime.UtcNow);
             _session = session;
             return true;
         }
@@ -50,4 +55,9 @@ public sealed class RecordingSessionRegistry
     }
 }
 
-public sealed record ActiveRecordingSession(string SessionId, string OutputPath, DateTime StartedAtUtc);
+public sealed record ActiveRecordingSession(
+    string SessionId,
+    Guid RecordingId,
+    Guid DictationSessionId,
+    string OutputPath,
+    DateTime StartedAtUtc);

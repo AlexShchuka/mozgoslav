@@ -6,6 +6,8 @@ import {
   IMPORT_RECORDINGS_FAILURE,
   IMPORT_RECORDINGS_REQUESTED,
   IMPORT_RECORDINGS_SUCCESS,
+  LIVE_TRANSCRIPT_CLEARED,
+  LIVE_TRANSCRIPT_PARTIAL,
   LOAD_RECORDINGS,
   LOAD_RECORDINGS_FAILURE,
   LOAD_RECORDINGS_SUCCESS,
@@ -98,6 +100,27 @@ export const recordingReducer: Reducer<RecordingState> = (
         isUploading: false,
         lastUploadError: (typed as { payload: { error: string } }).payload.error,
       };
+    case LIVE_TRANSCRIPT_PARTIAL: {
+      const { recordingId, text, observedAt } = (
+        typed as { payload: { recordingId: string; text: string; observedAt: string } }
+      ).payload;
+      return {
+        ...state,
+        livePartials: {
+          ...state.livePartials,
+          [recordingId]: { text, observedAt },
+        },
+      };
+    }
+    case LIVE_TRANSCRIPT_CLEARED: {
+      const { recordingId } = (typed as { payload: { recordingId: string } }).payload;
+      const next = { ...state.livePartials };
+      delete next[recordingId];
+      return {
+        ...state,
+        livePartials: next,
+      };
+    }
     default:
       return state;
   }

@@ -24,7 +24,7 @@ public sealed class PlatformUnsupportedAudioRecorderTests
     public async Task StartAsync_ThrowsPlatformNotSupported()
     {
         var recorder = new PlatformUnsupportedAudioRecorder();
-        var act = () => recorder.StartAsync("/tmp/x.wav", CancellationToken.None);
+        var act = () => recorder.StartAsync("/tmp/x.wav", null, CancellationToken.None);
         await act.Should().ThrowAsync<PlatformNotSupportedException>();
     }
 

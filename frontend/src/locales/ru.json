@@ -74,7 +74,9 @@
     "openNote": "Открыть заметку",
     "noNoteYet": "Заметка ещё не готова",
     "deleteConfirm": "Удалить запись «{{name}}» и её аудио-файл? Заметки останутся.",
-    "deleted": "Запись удалена"
+    "deleted": "Запись удалена",
+    "liveTranscriptLabel": "Идёт расшифровка",
+    "liveTranscriptWaiting": "Слушаю микрофон…"
   },
   "dashboard": {
     "title": "Дашборд",

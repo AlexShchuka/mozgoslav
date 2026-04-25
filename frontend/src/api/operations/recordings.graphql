@@ -113,6 +113,8 @@ mutation MutationReprocessRecording($recordingId: UUID!, $profileId: UUID!) {
 mutation MutationStartRecording($outputPath: String) {
   startRecording(outputPath: $outputPath) {
     sessionId
+    recordingId
+    dictationSessionId
     outputPath
     errors {
       code

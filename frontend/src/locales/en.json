@@ -74,7 +74,9 @@
     "openNote": "Open note",
     "noNoteYet": "Note is not ready yet",
     "deleteConfirm": "Delete recording \"{{name}}\" and its audio file? Notes will remain.",
-    "deleted": "Recording deleted"
+    "deleted": "Recording deleted",
+    "liveTranscriptLabel": "Live transcription",
+    "liveTranscriptWaiting": "Listening…"
   },
   "dashboard": {
     "title": "Dashboard",
