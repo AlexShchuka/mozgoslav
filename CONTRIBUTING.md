@@ -36,22 +36,12 @@ The script auto-formats first, then runs the same verify / build / test / lint s
 
 - Branch `<username>/<kebab-slug>` off `main`; one logical change per branch.
 - Squash-merge only. PR title becomes the commit message.
-- PR title is linted against `@commitlint/config-conventional` (`validate / commitlint` in CI). Header ≤ 100 chars. Types: `feat fix docs style refactor perf test build ci chore`. Breaking: `feat(scope)!: …`.
+- PR title follows `@commitlint/config-conventional` (locally enforced by the `commit-msg` lefthook). Header ≤ 100 chars. Types: `feat fix docs style refactor perf test build ci chore`. Breaking: `feat(scope)!: …`.
 - PR body: bullets — what / why / risk / test plan. No motivation essays.
 
 ## Issues
 
 Open new Issues via `.github/ISSUE_TEMPLATE/{backlog,bug,decision}.yml`. Labels `feature/<name>` + `type/{backlog|bug|decision}` are applied from the form; do not open blank Issues.
-
-## Push (humans only)
-
-The repo's `pre-push` lefthook refuses pushes unless `MOZGOSLAV_HUMAN_PUSH=1` is set. Push from a terminal a human is watching:
-
-```bash
-MOZGOSLAV_HUMAN_PUSH=1 git push -u origin <branch>
-```
-
-AI agents never push. They open local branches and hand over to a human for the push step.
 
 ## Release
 

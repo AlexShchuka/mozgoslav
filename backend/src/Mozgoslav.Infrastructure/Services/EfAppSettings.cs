@@ -58,6 +58,9 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     public string SyncthingApiKey => Snapshot.SyncthingApiKey;
     public string SyncthingBaseUrl => Snapshot.SyncthingBaseUrl;
     public bool ObsidianFeatureEnabled => Snapshot.ObsidianFeatureEnabled;
+    public bool DictationDumpEnabled => Snapshot.DictationDumpEnabled;
+    public string DictationDumpHotkeyToggle => Snapshot.DictationDumpHotkeyToggle;
+    public string DictationDumpHotkeyHold => Snapshot.DictationDumpHotkeyHold;
     public AppSettingsDto Snapshot { get; private set; } = AppSettingsDto.Defaults;
 
     public async Task<AppSettingsDto> LoadAsync(CancellationToken ct)
@@ -100,7 +103,10 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             SyncthingApiKey: map.GetValueOrDefault(Keys.SyncthingApiKey, defaults.SyncthingApiKey),
             SyncthingBaseUrl: map.GetValueOrDefault(Keys.SyncthingBaseUrl, defaults.SyncthingBaseUrl),
             DictationPushToTalk: ParseBool(map, Keys.DictationPushToTalk, defaults.DictationPushToTalk),
-            ObsidianFeatureEnabled: ParseObsidianFeatureEnabled(map));
+            ObsidianFeatureEnabled: ParseObsidianFeatureEnabled(map),
+            DictationDumpEnabled: ParseBool(map, Keys.DictationDumpEnabled, defaults.DictationDumpEnabled),
+            DictationDumpHotkeyToggle: map.GetValueOrDefault(Keys.DictationDumpHotkeyToggle, defaults.DictationDumpHotkeyToggle),
+            DictationDumpHotkeyHold: map.GetValueOrDefault(Keys.DictationDumpHotkeyHold, defaults.DictationDumpHotkeyHold));
 
         await _lock.WaitAsync(ct);
         try { Snapshot = dto; }
@@ -149,6 +155,9 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             (Keys.SyncthingBaseUrl, dto.SyncthingBaseUrl),
             (Keys.DictationPushToTalk, BoolToString(dto.DictationPushToTalk)),
             (Keys.ObsidianFeatureEnabled, BoolToString(dto.ObsidianFeatureEnabled)),
+            (Keys.DictationDumpEnabled, BoolToString(dto.DictationDumpEnabled)),
+            (Keys.DictationDumpHotkeyToggle, dto.DictationDumpHotkeyToggle),
+            (Keys.DictationDumpHotkeyHold, dto.DictationDumpHotkeyHold),
         };
 
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
@@ -280,5 +289,8 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         public const string SyncthingApiKey = "syncthing_api_key";
         public const string SyncthingBaseUrl = "syncthing_base_url";
         public const string ObsidianFeatureEnabled = "obsidian_feature_enabled";
+        public const string DictationDumpEnabled = "dictation_dump_enabled";
+        public const string DictationDumpHotkeyToggle = "dictation_dump_hotkey_toggle";
+        public const string DictationDumpHotkeyHold = "dictation_dump_hotkey_hold";
     }
 }

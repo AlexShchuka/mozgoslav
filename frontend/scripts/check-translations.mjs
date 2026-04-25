@@ -45,10 +45,6 @@ for (const f of walk(join(root, "src"), [".ts", ".tsx"])) {
 const missingInRu = [...codeKeys].filter((k) => !ru.has(k) && !k.includes("${")).sort();
 const missingInEn = [...codeKeys].filter((k) => !en.has(k) && !k.includes("${")).sort();
 
-const dynamicKeys = [...codeKeys].filter((k) => k.includes("${"));
-const orphanRu = [...ru].filter((k) => !codeKeys.has(k) && !dynamicKeys.some((d) => k.startsWith(d.replace(/\$\{[^}]+\}/g, "")))).sort();
-const orphanEn = [...en].filter((k) => !codeKeys.has(k) && !dynamicKeys.some((d) => k.startsWith(d.replace(/\$\{[^}]+\}/g, "")))).sort();
-
 let bad = 0;
 function report(label, list) {
   if (!list.length) return;

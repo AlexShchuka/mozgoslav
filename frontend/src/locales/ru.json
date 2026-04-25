@@ -216,10 +216,15 @@
       "whisperThreads": "Whisper threads (0 = авто)",
       "dictationKeyboardHotkey": "Глобальный хоткей диктовки",
       "dictationPushToTalk": "Удерживать для записи (отпустил — стоп)",
+      "dictationDumpEnabled": "Voice dump-mode (запись в _inbox/ через глобальный хоткей)",
+      "dictationDumpHotkeyToggle": "Дамп-мод: tap-toggle хоткей",
+      "dictationDumpHotkeyHold": "Дамп-мод: hold-to-record хоткей",
       "obsidianApiHost": "Obsidian Local REST API host",
       "obsidianApiToken": "Obsidian Local REST API token"
     },
     "hotkeyHint": "Нажми на поле и зажми желаемую комбинацию. Для активации требуется перезапуск приложения (hot-reload — в H1).",
+    "dumpHotkeyToggleHint": "Нажал — пошла запись в дефолт-профиль. Нажал ещё раз — стоп, файл уезжает в pipeline и экспорт в _inbox/.",
+    "dumpHotkeyHoldHint": "Удерживай — пишет, отпустил — стоп. Тот же путь: дефолт-профиль → pipeline → _inbox/.",
     "theme": {
       "system": "Как в системе",
       "light": "Светлая",

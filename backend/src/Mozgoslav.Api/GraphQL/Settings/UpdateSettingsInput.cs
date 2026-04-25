@@ -36,4 +36,7 @@ public sealed record UpdateSettingsInput(
     string SyncthingApiKey,
     string SyncthingBaseUrl,
     bool DictationPushToTalk = true,
-    bool ObsidianFeatureEnabled = false);
+    bool ObsidianFeatureEnabled = false,
+    bool DictationDumpEnabled = false,
+    string DictationDumpHotkeyToggle = "",
+    string DictationDumpHotkeyHold = "");

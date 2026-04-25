@@ -12,6 +12,7 @@ public final class DictationHelper {
     private let textInjector: TextInjectionService
     private let focusDetector: FocusedAppDetector
     private let hotkeyMonitor: HotkeyMonitor
+    private let dumpHotkeyMonitor: HotkeyMonitor
     private let writeQueue = DispatchQueue(label: "mozgoslav.helper.stdout")
     private let pcmUploader: BackendPcmUploader
 
@@ -25,6 +26,7 @@ public final class DictationHelper {
         self.textInjector = TextInjectionService()
         self.focusDetector = FocusedAppDetector()
         self.hotkeyMonitor = HotkeyMonitor()
+        self.dumpHotkeyMonitor = HotkeyMonitor()
         self.pcmUploader = BackendPcmUploader()
     }
 
@@ -42,6 +44,15 @@ public final class DictationHelper {
         hotkeyMonitor.onEvent = { [weak self] payload in
             FileLog.shared.info("DictationHelper: emit hotkey kind=\(payload.kind)")
             self?.emit(event: "hotkey", params: .object([
+                "kind": .string(payload.kind),
+                "accelerator": .string(payload.accelerator),
+                "observedAt": .string(payload.observedAt),
+            ]))
+        }
+
+        dumpHotkeyMonitor.onEvent = { [weak self] payload in
+            FileLog.shared.info("DictationHelper: emit dumpHotkey kind=\(payload.kind)")
+            self?.emit(event: "dumpHotkey", params: .object([
                 "kind": .string(payload.kind),
                 "accelerator": .string(payload.accelerator),
                 "observedAt": .string(payload.observedAt),
@@ -253,8 +264,22 @@ public final class DictationHelper {
             hotkeyMonitor.stop()
             return JsonRpcResponse(id: request.id, result: .object(["stopped": .bool(true)]))
 
+        case "dumpHotkey.start":
+            let params = request.params?.objectValue() ?? [:]
+            let accelerator = params["accelerator"]?.stringValue() ?? ""
+            dumpHotkeyMonitor.start(accelerator: accelerator)
+            return JsonRpcResponse(id: request.id, result: .object([
+                "started": .bool(!accelerator.isEmpty),
+                "accelerator": .string(accelerator),
+            ]))
+
+        case "dumpHotkey.stop":
+            dumpHotkeyMonitor.stop()
+            return JsonRpcResponse(id: request.id, result: .object(["stopped": .bool(true)]))
+
         case "shutdown":
             hotkeyMonitor.stop()
+            dumpHotkeyMonitor.stop()
             audioCapture.stop()
             exit(0)
 

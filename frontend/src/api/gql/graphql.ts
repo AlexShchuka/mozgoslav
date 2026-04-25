@@ -52,6 +52,9 @@ export type AppSettingsDto = {
   __typename?: "AppSettingsDto";
   dictationAppProfiles: Array<KeyValuePairOfStringAndString>;
   dictationCaptureSampleRate: Scalars["Int"]["output"];
+  dictationDumpEnabled: Scalars["Boolean"]["output"];
+  dictationDumpHotkeyHold: Scalars["String"]["output"];
+  dictationDumpHotkeyToggle: Scalars["String"]["output"];
   dictationEnabled: Scalars["Boolean"]["output"];
   dictationHotkeyType: Scalars["String"]["output"];
   dictationInjectMode: Scalars["String"]["output"];
@@ -1168,6 +1171,9 @@ export type UnavailableError = IUserError & {
 export type UpdateSettingsInput = {
   dictationAppProfiles: Array<KeyValuePairOfStringAndStringInput>;
   dictationCaptureSampleRate: Scalars["Int"]["input"];
+  dictationDumpEnabled?: Scalars["Boolean"]["input"];
+  dictationDumpHotkeyHold?: Scalars["String"]["input"];
+  dictationDumpHotkeyToggle?: Scalars["String"]["input"];
   dictationEnabled: Scalars["Boolean"]["input"];
   dictationHotkeyType: Scalars["String"]["input"];
   dictationInjectMode: Scalars["String"]["input"];
@@ -2257,6 +2263,9 @@ export type QuerySettingsQuery = {
     syncthingApiKey: string;
     syncthingBaseUrl: string;
     obsidianFeatureEnabled: boolean;
+    dictationDumpEnabled: boolean;
+    dictationDumpHotkeyToggle: string;
+    dictationDumpHotkeyHold: string;
     dictationAppProfiles: Array<{
       __typename?: "KeyValuePairOfStringAndString";
       key: string;
@@ -2308,6 +2317,9 @@ export type MutationUpdateSettingsMutation = {
       syncthingApiKey: string;
       syncthingBaseUrl: string;
       obsidianFeatureEnabled: boolean;
+      dictationDumpEnabled: boolean;
+      dictationDumpHotkeyToggle: string;
+      dictationDumpHotkeyHold: string;
       dictationAppProfiles: Array<{
         __typename?: "KeyValuePairOfStringAndString";
         key: string;
@@ -5109,6 +5121,9 @@ export const QuerySettingsDocument = {
                 { kind: "Field", name: { kind: "Name", value: "syncthingApiKey" } },
                 { kind: "Field", name: { kind: "Name", value: "syncthingBaseUrl" } },
                 { kind: "Field", name: { kind: "Name", value: "obsidianFeatureEnabled" } },
+                { kind: "Field", name: { kind: "Name", value: "dictationDumpEnabled" } },
+                { kind: "Field", name: { kind: "Name", value: "dictationDumpHotkeyToggle" } },
+                { kind: "Field", name: { kind: "Name", value: "dictationDumpHotkeyHold" } },
               ],
             },
           },
@@ -5209,6 +5224,9 @@ export const MutationUpdateSettingsDocument = {
                       { kind: "Field", name: { kind: "Name", value: "syncthingApiKey" } },
                       { kind: "Field", name: { kind: "Name", value: "syncthingBaseUrl" } },
                       { kind: "Field", name: { kind: "Name", value: "obsidianFeatureEnabled" } },
+                      { kind: "Field", name: { kind: "Name", value: "dictationDumpEnabled" } },
+                      { kind: "Field", name: { kind: "Name", value: "dictationDumpHotkeyToggle" } },
+                      { kind: "Field", name: { kind: "Name", value: "dictationDumpHotkeyHold" } },
                     ],
                   },
                 },

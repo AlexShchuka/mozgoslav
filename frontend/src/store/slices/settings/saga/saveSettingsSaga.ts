@@ -55,6 +55,9 @@ function mapSettingsToInput(s: AppSettings): MutationUpdateSettingsMutationVaria
     syncthingApiKey: "",
     syncthingBaseUrl: "",
     obsidianFeatureEnabled: false,
+    dictationDumpEnabled: s.dictationDumpEnabled,
+    dictationDumpHotkeyToggle: s.dictationDumpHotkeyToggle,
+    dictationDumpHotkeyHold: s.dictationDumpHotkeyHold,
   };
 }
 
@@ -95,6 +98,9 @@ function mapSavedToSettings(
     ),
     syncthingEnabled: dto.syncthingEnabled,
     syncthingObsidianVaultPath: dto.syncthingObsidianVaultPath,
+    dictationDumpEnabled: dto.dictationDumpEnabled,
+    dictationDumpHotkeyToggle: dto.dictationDumpHotkeyToggle,
+    dictationDumpHotkeyHold: dto.dictationDumpHotkeyHold,
   };
 }
 

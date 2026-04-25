@@ -51,7 +51,10 @@ public sealed class SettingsMutationType
             input.SyncthingApiKey,
             input.SyncthingBaseUrl,
             input.DictationPushToTalk,
-            input.ObsidianFeatureEnabled);
+            input.ObsidianFeatureEnabled,
+            input.DictationDumpEnabled,
+            input.DictationDumpHotkeyToggle,
+            input.DictationDumpHotkeyHold);
 
         await appSettings.SaveAsync(dto, ct);
         var saved = await appSettings.LoadAsync(ct);

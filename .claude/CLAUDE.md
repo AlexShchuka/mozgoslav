@@ -6,7 +6,6 @@ Contract between this repo and any coding agent. Only things you cannot infer fr
 
 **Never do:**
 
-- Push to any remote. The `pre-push` lefthook refuses unless `MOZGOSLAV_HUMAN_PUSH=1` is set by a human.
 - Bump package versions, introduce backwards-compat shims, add telemetry, enable auto-update, or add crash reporters. Renovate owns dependency updates.
 - Open outbound network calls from the app to anything other than: configured LLM endpoint, configured Obsidian endpoint, loopback sidecars (`python-sidecar`, `searxng-sidecar`), and web-fetch URLs that originated from the local SearXNG aggregator. Anything else is denied.
 - Put secrets in env vars or logs. Secrets live in the SQLite `settings` store and render through `<Input sensitive />`.
