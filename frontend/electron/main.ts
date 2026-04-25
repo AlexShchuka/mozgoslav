@@ -468,7 +468,9 @@ const applyDumpModeFromSettings = async (): Promise<void> => {
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
-  console.warn("[dump-mode] backend unreachable after 8 attempts — dump-mode disabled this session.");
+  console.warn(
+    "[dump-mode] backend unreachable after 8 attempts — dump-mode disabled this session."
+  );
 };
 
 const initializeDictation = async (): Promise<void> => {
