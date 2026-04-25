@@ -309,13 +309,6 @@ app.whenReady().then(async () => {
 
   createWindow();
 
-  const defaultHotkeyOk = registerGlobalDictationHotkey();
-  if (!defaultHotkeyOk) {
-    console.warn(
-      "[globalShortcut] Failed to register CommandOrControl+Shift+Space — likely a conflicting OS binding."
-    );
-  }
-
   if (process.platform === "darwin") {
     await initializeDictation();
     await initializeDumpMode();
