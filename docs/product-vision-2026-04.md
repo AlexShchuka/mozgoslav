@@ -290,7 +290,9 @@ deny by default:
 - **`uncomment --dry-run`** — hard-gate: ноль `// /* */ ///` комментариев в коде. Имена должны говорить сами.
 - **ADRs as GitHub issues** с label `type/decision` — не файлы в `docs/`. Шаблон `.github/ISSUE_TEMPLATE/decision.yml`.
 - **Backlog as GitHub issues** с label `type/backlog`. Шаблон `.github/ISSUE_TEMPLATE/backlog.yml`. Структура: Context / Problem / Proposal / Acceptance / Rejected.
-- **Зависимости issue'ов через GitHub Tasklists** (parent-issue с чек-листом подчиненных) — не прозой "blocked by".
+- **Эпики = GitHub Milestones**. Children-issue имеют milestone-binding; прогресс эпика виден на milestone-странице. Никаких parent-issue per эпик — milestone заменяет.
+- **Roadmap = GitHub Projects** ([project board](https://github.com/users/AlexShchuka/projects/1)). Columns waves: Now / Next / Later. Не отдельный markdown-файл.
+- **Зависимости между issue'ями** — GitHub native Issue Dependencies (`Blocked by` / `Blocks`), задаются через UI или API. Прозы `Depends on: #N` в body избегаем — есть native механизм с graph-view'ем.
 - **Renovate** управляет dependency-обновлениями. Pinning у всех пакетов.
 - **Lefthook**: pre-commit (format), pre-push (gitleaks + `MOZGOSLAV_HUMAN_PUSH=1` гейт — агенты не пушат сами).
 - **Conventional commits** через commitlint. PR-title = squash-merge сообщение, ≤100 chars.
