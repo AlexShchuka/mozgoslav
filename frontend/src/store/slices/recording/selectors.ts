@@ -37,3 +37,6 @@ export const selectLastUploadError = createSelector(
   selectRecordingState,
   (slice) => slice.lastUploadError
 );
+
+export const selectLivePartial = (recordingId: string) =>
+  createSelector(selectRecordingState, (slice) => slice.livePartials[recordingId] ?? null);

@@ -78,6 +78,31 @@ export interface ImportRecordingsFailureAction {
   payload: { error: string };
 }
 
+export const LIVE_TRANSCRIPT_SUBSCRIBE = "recording/LIVE_TRANSCRIPT_SUBSCRIBE";
+export const LIVE_TRANSCRIPT_UNSUBSCRIBE = "recording/LIVE_TRANSCRIPT_UNSUBSCRIBE";
+export const LIVE_TRANSCRIPT_PARTIAL = "recording/LIVE_TRANSCRIPT_PARTIAL";
+export const LIVE_TRANSCRIPT_CLEARED = "recording/LIVE_TRANSCRIPT_CLEARED";
+
+export interface LiveTranscriptSubscribeAction {
+  type: typeof LIVE_TRANSCRIPT_SUBSCRIBE;
+  payload: { recordingId: string };
+}
+
+export interface LiveTranscriptUnsubscribeAction {
+  type: typeof LIVE_TRANSCRIPT_UNSUBSCRIBE;
+  payload: { recordingId: string };
+}
+
+export interface LiveTranscriptPartialAction {
+  type: typeof LIVE_TRANSCRIPT_PARTIAL;
+  payload: { recordingId: string; text: string; observedAt: string };
+}
+
+export interface LiveTranscriptClearedAction {
+  type: typeof LIVE_TRANSCRIPT_CLEARED;
+  payload: { recordingId: string };
+}
+
 export type RecordingAction =
   | LoadRecordingsAction
   | LoadRecordingsSuccessAction
@@ -91,7 +116,11 @@ export type RecordingAction =
   | UploadRecordingsFailureAction
   | ImportRecordingsRequestedAction
   | ImportRecordingsSuccessAction
-  | ImportRecordingsFailureAction;
+  | ImportRecordingsFailureAction
+  | LiveTranscriptSubscribeAction
+  | LiveTranscriptUnsubscribeAction
+  | LiveTranscriptPartialAction
+  | LiveTranscriptClearedAction;
 
 export const loadRecordings = (): LoadRecordingsAction => ({
   type: LOAD_RECORDINGS,
@@ -169,4 +198,30 @@ export const importRecordingsFailure = (payload: {
 }): ImportRecordingsFailureAction => ({
   type: IMPORT_RECORDINGS_FAILURE,
   payload,
+});
+
+export const liveTranscriptSubscribe = (recordingId: string): LiveTranscriptSubscribeAction => ({
+  type: LIVE_TRANSCRIPT_SUBSCRIBE,
+  payload: { recordingId },
+});
+
+export const liveTranscriptUnsubscribe = (
+  recordingId: string
+): LiveTranscriptUnsubscribeAction => ({
+  type: LIVE_TRANSCRIPT_UNSUBSCRIBE,
+  payload: { recordingId },
+});
+
+export const liveTranscriptPartial = (payload: {
+  recordingId: string;
+  text: string;
+  observedAt: string;
+}): LiveTranscriptPartialAction => ({
+  type: LIVE_TRANSCRIPT_PARTIAL,
+  payload,
+});
+
+export const liveTranscriptCleared = (recordingId: string): LiveTranscriptClearedAction => ({
+  type: LIVE_TRANSCRIPT_CLEARED,
+  payload: { recordingId },
 });

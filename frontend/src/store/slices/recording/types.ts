@@ -1,5 +1,10 @@
 import type { Recording } from "../../../domain";
 
+export interface LivePartialEntry {
+  text: string;
+  observedAt: string;
+}
+
 export interface RecordingState {
   recordings: Record<string, Recording>;
   isLoading: boolean;
@@ -8,6 +13,7 @@ export interface RecordingState {
   deletingIds: Record<string, true>;
   isUploading: boolean;
   lastUploadError: string | null;
+  livePartials: Record<string, LivePartialEntry>;
 }
 
 export const initialRecordingState: RecordingState = {
@@ -18,4 +24,5 @@ export const initialRecordingState: RecordingState = {
   deletingIds: {},
   isUploading: false,
   lastUploadError: null,
+  livePartials: {},
 };

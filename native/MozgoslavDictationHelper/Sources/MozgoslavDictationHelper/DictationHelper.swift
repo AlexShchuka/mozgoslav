@@ -13,6 +13,7 @@ public final class DictationHelper {
     private let focusDetector: FocusedAppDetector
     private let hotkeyMonitor: HotkeyMonitor
     private let writeQueue = DispatchQueue(label: "mozgoslav.helper.stdout")
+    private let pcmUploader: BackendPcmUploader
 
     public init(
         stdin: FileHandle = .standardInput,
@@ -24,6 +25,7 @@ public final class DictationHelper {
         self.textInjector = TextInjectionService()
         self.focusDetector = FocusedAppDetector()
         self.hotkeyMonitor = HotkeyMonitor()
+        self.pcmUploader = BackendPcmUploader()
     }
 
     public func run() {
@@ -143,17 +145,36 @@ public final class DictationHelper {
             let sessionId = params["sessionId"]?.stringValue() ?? ""
             let outputPath = params["outputPath"]?.stringValue() ?? ""
             let sampleRate = params["sampleRate"]?.intValue() ?? 16_000
+            let streamSessionId = params["streamSessionId"]?.stringValue()
+            let backendBaseUrl = params["backendBaseUrl"]?.stringValue()
             guard !sessionId.isEmpty, !outputPath.isEmpty else {
                 throw HelperError(code: -32602, message: "capture.startFile requires sessionId and outputPath")
+            }
+            let onPcmFrame: ((Data) -> Void)?
+            if let id = streamSessionId,
+               let baseUrl = backendBaseUrl,
+               !id.isEmpty,
+               !baseUrl.isEmpty {
+                let uploader = pcmUploader
+                onPcmFrame = { bytes in
+                    uploader.upload(streamSessionId: id, baseUrl: baseUrl, payload: bytes)
+                }
+                FileLog.shared.info(
+                    "capture.startFile: streaming enabled streamSessionId=\(id) backendBaseUrl=\(baseUrl)"
+                )
+            } else {
+                onPcmFrame = nil
             }
             try audioCapture.startFileCapture(
                 sessionId: sessionId,
                 outputPath: outputPath,
-                sampleRate: sampleRate
+                sampleRate: sampleRate,
+                onPcmFrame: onPcmFrame
             )
             return JsonRpcResponse(id: request.id, result: .object([
                 "started": .bool(true),
                 "sessionId": .string(sessionId),
+                "streaming": .bool(onPcmFrame != nil),
             ]))
 
         case "capture.stopFile":

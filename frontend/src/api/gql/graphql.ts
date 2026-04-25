@@ -1052,8 +1052,10 @@ export type SourceTypeOperationFilterInput = {
 
 export type StartRecordingPayload = {
   __typename?: "StartRecordingPayload";
+  dictationSessionId?: Maybe<Scalars["UUID"]["output"]>;
   errors: Array<IUserError>;
   outputPath?: Maybe<Scalars["String"]["output"]>;
+  recordingId?: Maybe<Scalars["UUID"]["output"]>;
   sessionId?: Maybe<Scalars["String"]["output"]>;
 };
 
@@ -2180,6 +2182,8 @@ export type MutationStartRecordingMutation = {
   startRecording: {
     __typename?: "StartRecordingPayload";
     sessionId?: string | null;
+    recordingId?: string | null;
+    dictationSessionId?: string | null;
     outputPath?: string | null;
     errors: Array<
       | { __typename?: "ConflictError"; code: string; message: string }
@@ -4955,6 +4959,8 @@ export const MutationStartRecordingDocument = {
               kind: "SelectionSet",
               selections: [
                 { kind: "Field", name: { kind: "Name", value: "sessionId" } },
+                { kind: "Field", name: { kind: "Name", value: "recordingId" } },
+                { kind: "Field", name: { kind: "Name", value: "dictationSessionId" } },
                 { kind: "Field", name: { kind: "Name", value: "outputPath" } },
                 {
                   kind: "Field",

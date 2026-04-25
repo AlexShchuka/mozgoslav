@@ -63,7 +63,7 @@ public sealed class AVFoundationAudioRecorderTests : IDisposable
     {
         if (!OperatingSystem.IsMacOS())
         {
-            var nonMacAct = () => _recorder.StartAsync("/tmp/out.wav", TestContext.CancellationToken);
+            var nonMacAct = () => _recorder.StartAsync("/tmp/out.wav", null, TestContext.CancellationToken);
             await nonMacAct.Should().ThrowAsync<PlatformNotSupportedException>();
             return;
         }
@@ -74,7 +74,7 @@ public sealed class AVFoundationAudioRecorderTests : IDisposable
                 .WithHeader("Content-Type", "application/json")
                 .WithBody(/*lang=json,strict*/ """{"sessionId":"abc-123"}"""));
 
-        await _recorder.StartAsync("/tmp/out.wav", TestContext.CancellationToken);
+        await _recorder.StartAsync("/tmp/out.wav", null, TestContext.CancellationToken);
         _recorder.IsRecording.Should().BeTrue();
     }
 
@@ -105,7 +105,7 @@ public sealed class AVFoundationAudioRecorderTests : IDisposable
                 .WithHeader("Content-Type", "application/json")
                 .WithBody(/*lang=json,strict*/ """{"sessionId":"abc-123"}"""));
 
-        await loggingRecorder.StartAsync("/tmp/out.wav", TestContext.CancellationToken);
+        await loggingRecorder.StartAsync("/tmp/out.wav", null, TestContext.CancellationToken);
 
         var lines = messages.ToArray();
         lines.Should().Contain(line => line.Contains("D1 handoff", StringComparison.Ordinal));

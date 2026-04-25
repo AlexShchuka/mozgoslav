@@ -36,6 +36,7 @@ import {
   RowTitle,
   RowTop,
 } from "./HomeList.style";
+import LiveTranscript from "./LiveTranscript";
 
 const TERMINAL: ProcessingJob["status"][] = ["Done", "Failed", "Cancelled"];
 
@@ -209,6 +210,7 @@ const HomeList: FC = () => {
                   label={job?.errorMessage ?? undefined}
                   indeterminate={indeterminate}
                 />
+                {rec.status === "New" && <LiveTranscript recordingId={rec.id} />}
               </Card>
             );
           })
