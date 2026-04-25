@@ -14,7 +14,7 @@ public sealed class PlatformUnsupportedAudioRecorder : IAudioRecorder
 
     public TimeSpan CurrentDuration => TimeSpan.Zero;
 
-    public Task StartAsync(string outputPath, CancellationToken ct) =>
+    public Task StartAsync(string outputPath, Guid? streamSessionId, CancellationToken ct) =>
         throw new PlatformNotSupportedException(
             "Audio recording requires macOS (AVFoundation). " +
             "The Mozgoslav backend detects the platform at startup and falls back " +

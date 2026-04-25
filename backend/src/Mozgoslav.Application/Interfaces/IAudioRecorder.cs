@@ -10,6 +10,6 @@ public interface IAudioRecorder
     bool IsRecording { get; }
     TimeSpan CurrentDuration { get; }
 
-    Task StartAsync(string outputPath, CancellationToken ct);
+    Task StartAsync(string outputPath, Guid? streamSessionId, CancellationToken ct);
     Task<string> StopAsync(CancellationToken ct);
 }

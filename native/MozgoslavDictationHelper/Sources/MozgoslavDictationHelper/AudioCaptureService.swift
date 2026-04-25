@@ -172,19 +172,32 @@ public final class AudioCaptureService {
         var file: AVAudioFile?
         let startedAt: Date
         var stopped = false
+        let onPcmFrame: ((Data) -> Void)?
 
-        init(sessionId: String, outputPath: String, file: AVAudioFile, startedAt: Date) {
+        init(
+            sessionId: String,
+            outputPath: String,
+            file: AVAudioFile,
+            startedAt: Date,
+            onPcmFrame: ((Data) -> Void)?
+        ) {
             self.sessionId = sessionId
             self.outputPath = outputPath
             self.file = file
             self.startedAt = startedAt
+            self.onPcmFrame = onPcmFrame
         }
     }
 
     private var fileSessions: [String: FileSession] = [:]
     #endif
 
-    public func startFileCapture(sessionId: String, outputPath: String, sampleRate: Int) throws {
+    public func startFileCapture(
+        sessionId: String,
+        outputPath: String,
+        sampleRate: Int,
+        onPcmFrame: ((Data) -> Void)? = nil
+    ) throws {
         #if canImport(AVFoundation)
         guard !isRunning else {
             throw HelperError(
@@ -233,7 +246,8 @@ public final class AudioCaptureService {
             sessionId: sessionId,
             outputPath: outputPath,
             file: file,
-            startedAt: Date()
+            startedAt: Date(),
+            onPcmFrame: onPcmFrame
         )
         fileSessions[sessionId] = session
 
@@ -254,6 +268,7 @@ public final class AudioCaptureService {
         _ = sessionId
         _ = outputPath
         _ = sampleRate
+        _ = onPcmFrame
         throw HelperError(code: -32020, message: "File capture is macOS-only")
         #endif
     }
@@ -313,9 +328,22 @@ public final class AudioCaptureService {
 
         guard status != .error, outputBuffer.frameLength > 0 else { return }
 
+        var pcmFrameData: Data?
+        let activeStreamingSessions = fileSessions.values.contains { !$0.stopped && $0.onPcmFrame != nil }
+        if activeStreamingSessions {
+            let frameCount = Int(outputBuffer.frameLength)
+            if let channelData = outputBuffer.floatChannelData?.pointee {
+                let byteCount = frameCount * MemoryLayout<Float>.size
+                pcmFrameData = Data(bytes: channelData, count: byteCount)
+            }
+        }
+
         for session in fileSessions.values where !session.stopped {
             if let file = session.file {
                 try? file.write(from: outputBuffer)
+            }
+            if let onPcmFrame = session.onPcmFrame, let payload = pcmFrameData {
+                onPcmFrame(payload)
             }
         }
     }

@@ -67,7 +67,7 @@ public sealed class AVFoundationAudioRecorder : IAudioRecorder
         }
     }
 
-    public async Task StartAsync(string outputPath, CancellationToken ct)
+    public async Task StartAsync(string outputPath, Guid? streamSessionId, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(outputPath);
         EnsureSupported();
@@ -83,12 +83,12 @@ public sealed class AVFoundationAudioRecorder : IAudioRecorder
 
         var bridgeUri = ResolveBridgeUri("/_internal/record/start");
         _logger.LogInformation(
-            "D1 handoff: POST {BridgeUri} outputPath={OutputPath}",
-            bridgeUri, outputPath);
+            "D1 handoff: POST {BridgeUri} outputPath={OutputPath} streamSessionId={StreamSessionId}",
+            bridgeUri, outputPath, streamSessionId);
 
         using var response = await _http.PostAsJsonAsync(
             bridgeUri,
-            new { outputPath },
+            new { outputPath, streamSessionId = streamSessionId?.ToString() },
             ct);
         response.EnsureSuccessStatusCode();
         var body = await response.Content.ReadFromJsonAsync<StartResponse>(ct)
