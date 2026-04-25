@@ -260,7 +260,7 @@ type MutationType {
   exportNote(id: UUID!): NotePayload! @cost(weight: "10")
   enqueueJob(input: EnqueueJobInput!): JobPayload! @cost(weight: "10")
   cancelJob(id: UUID!): CancelJobPayload! @cost(weight: "10")
-  dictationStart(source: String): DictationStartPayload! @cost(weight: "10")
+  dictationStart(source: String recordingId: UUID): DictationStartPayload! @cost(weight: "10")
   dictationStop(sessionId: UUID! bundleId: String): DictationStopPayload! @cost(weight: "10")
   dictationCancel(sessionId: UUID!): DictationCancelPayload! @cost(weight: "10")
   setupObsidian(vaultPath: String): SetupObsidianPayload! @cost(weight: "10")
@@ -468,6 +468,16 @@ type Recording implements Node {
   notes: [ProcessedNote!]! @cost(weight: "10")
 }
 
+type RecordingPartialPayload {
+  recordingId: UUID!
+  sessionId: UUID!
+  text: String!
+  startSeconds: Float!
+  endSeconds: Float!
+  isFinal: Boolean!
+  observedAt: DateTime!
+}
+
 type RecordingPayload {
   recording: Recording
   errors: [IUserError!]!
@@ -516,6 +526,7 @@ type SubscriptionType {
   dictationEvents(sessionId: UUID!): DictationPartialEvent!
   audioDeviceChanged: AudioDeviceChangedEvent!
   hotkeyEvents: HotkeyEventMessage!
+  recordingPartials(recordingId: UUID!): RecordingPartialPayload!
   syncEvents: SyncEventMessage!
 }
 

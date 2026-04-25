@@ -59,4 +59,16 @@ mutation {
 
         result["data"]!["dictationCancel"]!["errors"]!.AsArray().Should().BeEmpty();
     }
+
+    [TestMethod]
+    public async Task DictationStart_WithRecordingId_ReturnsSessionIdAndNoErrors()
+    {
+        var recordingId = "a1b2c3d4-0000-0000-0000-000000000001";
+
+        var result = await ExecuteAsync(
+            "mutation { dictationStart(recordingId: \"" + recordingId + "\") { sessionId errors { code message } } }");
+
+        result["data"]!["dictationStart"]!["errors"]!.AsArray().Should().BeEmpty();
+        result["data"]!["dictationStart"]!["sessionId"].Should().NotBeNull();
+    }
 }

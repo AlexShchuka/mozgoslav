@@ -4,13 +4,14 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Mozgoslav.Domain.Entities;
+using Mozgoslav.Domain.Enums;
 using Mozgoslav.Domain.ValueObjects;
 
 namespace Mozgoslav.Application.Interfaces;
 
 public interface IDictationSessionManager
 {
-    DictationSession Start(string? source = null);
+    DictationSession Start(string? source = null, DictationSessionKind kind = DictationSessionKind.Dictation, Guid? recordingId = null);
 
     ValueTask PushAudioAsync(Guid sessionId, AudioChunk chunk, CancellationToken ct);
 

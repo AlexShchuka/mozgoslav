@@ -1,0 +1,11 @@
+subscription SubscriptionRecordingPartials($recordingId: UUID!) {
+  recordingPartials(recordingId: $recordingId) {
+    recordingId
+    sessionId
+    text
+    startSeconds
+    endSeconds
+    isFinal
+    observedAt
+  }
+}

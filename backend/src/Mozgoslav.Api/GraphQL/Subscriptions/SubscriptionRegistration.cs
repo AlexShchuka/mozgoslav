@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Mozgoslav.Api.GraphQL.Dictation;
 using Mozgoslav.Api.GraphQL.Jobs;
 using Mozgoslav.Api.GraphQL.Models;
+using Mozgoslav.Api.GraphQL.Recordings;
 using Mozgoslav.Api.GraphQL.Sync;
 
 namespace Mozgoslav.Api.GraphQL.Subscriptions;
@@ -19,6 +20,7 @@ internal static class SubscriptionRegistration
             .AddTypeExtension<ModelSubscriptionType>()
             .AddTypeExtension<JobSubscriptionType>()
             .AddTypeExtension<DictationSubscriptionType>()
+            .AddTypeExtension<RecordingPartialsSubscriptionType>()
             .AddTypeExtension<SyncSubscriptionType>();
     }
 }

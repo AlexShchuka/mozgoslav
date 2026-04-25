@@ -15,6 +15,8 @@ using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.Enums;
 using Mozgoslav.Domain.ValueObjects;
 
+using DictationKind = Mozgoslav.Domain.Enums.DictationSessionKind;
+
 using DomainProfile = Mozgoslav.Domain.Entities.Profile;
 
 namespace Mozgoslav.Application.Services;
@@ -29,6 +31,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
     private readonly IAppSettings _settings;
     private readonly IPerAppCorrectionProfiles _perAppProfiles;
     private readonly IDictationPcmStream _pcmStream;
+    private readonly IRecordingPartialsNotifier _recordingPartials;
     private readonly ILogger<DictationSessionManager> _logger;
 
     private readonly ConcurrentDictionary<Guid, SessionRuntime> _sessions = new();
@@ -42,6 +45,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
         IAppSettings settings,
         IPerAppCorrectionProfiles perAppProfiles,
         IDictationPcmStream pcmStream,
+        IRecordingPartialsNotifier recordingPartials,
         ILogger<DictationSessionManager> logger)
     {
         _streaming = streaming;
@@ -49,10 +53,11 @@ public sealed class DictationSessionManager : IDictationSessionManager
         _settings = settings;
         _perAppProfiles = perAppProfiles;
         _pcmStream = pcmStream;
+        _recordingPartials = recordingPartials;
         _logger = logger;
     }
 
-    public DictationSession Start(string? source = null)
+    public DictationSession Start(string? source = null, DictationKind kind = DictationKind.Dictation, Guid? recordingId = null)
     {
         ScanForOrphanedAudioFilesOnce();
 
@@ -68,7 +73,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
             var session = new DictationSession { Source = source };
             var audioBufferPath = TryPrepareAudioBufferPath(session.Id);
 #pragma warning disable IDISP001
-            var runtime = new SessionRuntime(session, audioBufferPath);
+            var runtime = new SessionRuntime(session, audioBufferPath, kind, recordingId);
 #pragma warning restore IDISP001
             if (!_sessions.TryAdd(session.Id, runtime))
             {
@@ -240,6 +245,25 @@ public sealed class DictationSessionManager : IDictationSessionManager
         }
 
         var duration = DateTime.UtcNow - runtime.Session.StartedAt;
+
+        if (runtime.Kind == DictationKind.Longform)
+        {
+            runtime.Session.State = DictationState.Injecting;
+            runtime.Session.FinishedAt = DateTime.UtcNow;
+            runtime.Partials.Writer.TryComplete();
+
+            ClearActive(sessionId);
+            _sessions.TryRemove(sessionId, out _);
+            DeleteAudioBuffer(runtime);
+            runtime.Dispose();
+
+            _logger.LogInformation(
+                "Longform session {SessionId} stopped in {Duration} ms (stream discarded; canonical transcript deferred)",
+                sessionId, duration.TotalMilliseconds);
+
+            return new FinalTranscript(string.Empty, string.Empty, duration);
+        }
+
         var accumulated = FlattenChunks(runtime.AccumulatedChunks);
 
         string rawText;
@@ -374,7 +398,22 @@ public sealed class DictationSessionManager : IDictationSessionManager
                 runtime.Cts.Token))
             {
                 runtime.LastPartialText = partial.Text;
-                await runtime.Partials.Writer.WriteAsync(partial, runtime.Cts.Token);
+                if (runtime.Kind == DictationKind.Longform && runtime.RecordingId is not null)
+                {
+                    var payload = new RecordingPartialPayload(
+                        RecordingId: runtime.RecordingId.Value,
+                        SessionId: runtime.Session.Id,
+                        Text: partial.Text,
+                        StartSeconds: partial.Timestamp.TotalSeconds,
+                        EndSeconds: partial.Timestamp.TotalSeconds,
+                        IsFinal: false,
+                        ObservedAt: DateTimeOffset.UtcNow);
+                    _recordingPartials.Publish(payload);
+                }
+                else
+                {
+                    await runtime.Partials.Writer.WriteAsync(partial, runtime.Cts.Token);
+                }
             }
         }
         catch (OperationCanceledException)
@@ -560,9 +599,11 @@ public sealed class DictationSessionManager : IDictationSessionManager
 
     private sealed class SessionRuntime : IDisposable
     {
-        public SessionRuntime(DictationSession session, string? audioBufferPath)
+        public SessionRuntime(DictationSession session, string? audioBufferPath, DictationKind kind, Guid? recordingId)
         {
             Session = session;
+            Kind = kind;
+            RecordingId = recordingId;
             var audioChannel = Channel.CreateUnbounded<AudioChunk>(new UnboundedChannelOptions
             {
                 SingleReader = true,
@@ -594,6 +635,8 @@ public sealed class DictationSessionManager : IDictationSessionManager
         }
 
         public DictationSession Session { get; }
+        public DictationKind Kind { get; }
+        public Guid? RecordingId { get; }
         public ChannelReader<AudioChunk> AudioReader { get; }
         public ChannelWriter<AudioChunk> AudioWriter { get; }
         public Channel<PartialTranscript> Partials { get; }

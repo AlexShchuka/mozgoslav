@@ -397,20 +397,6 @@ export type LlmHealthStatus = {
   available: Scalars["Boolean"]["output"];
 };
 
-export type LogFileEntry = {
-  __typename?: "LogFileEntry";
-  fileName: Scalars["String"]["output"];
-  lastModifiedUtc: Scalars["DateTime"]["output"];
-  sizeBytes: Scalars["Long"]["output"];
-};
-
-export type LogTailResult = {
-  __typename?: "LogTailResult";
-  file: Scalars["String"]["output"];
-  lines: Array<Scalars["String"]["output"]>;
-  totalLines: Scalars["Int"]["output"];
-};
-
 export type MeetilyImportPayload = {
   __typename?: "MeetilyImportPayload";
   errors: Array<IUserError>;
@@ -528,6 +514,7 @@ export type MutationTypeDictationCancelArgs = {
 };
 
 export type MutationTypeDictationStartArgs = {
+  recordingId?: InputMaybe<Scalars["UUID"]["input"]>;
   source?: InputMaybe<Scalars["String"]["input"]>;
 };
 
@@ -837,8 +824,7 @@ export type QueryType = {
   job?: Maybe<ProcessingJob>;
   jobs?: Maybe<JobsConnection>;
   llmHealth: LlmHealthStatus;
-  logTail?: Maybe<LogTailResult>;
-  logs: Array<LogFileEntry>;
+  llmModels: Array<Scalars["String"]["output"]>;
   meta: MetaInfo;
   models: Array<ModelEntry>;
   /** Fetches an object given its ID. */
@@ -875,11 +861,6 @@ export type QueryTypeJobsArgs = {
   last?: InputMaybe<Scalars["Int"]["input"]>;
   order?: InputMaybe<Array<ProcessingJobSortInput>>;
   where?: InputMaybe<ProcessingJobFilterInput>;
-};
-
-export type QueryTypeLogTailArgs = {
-  file?: InputMaybe<Scalars["String"]["input"]>;
-  lines: Scalars["Int"]["input"];
 };
 
 export type QueryTypeNodeArgs = {
@@ -979,6 +960,17 @@ export type RecordingFilterInput = {
   sha256?: InputMaybe<StringOperationFilterInput>;
   sourceType?: InputMaybe<SourceTypeOperationFilterInput>;
   status?: InputMaybe<RecordingStatusOperationFilterInput>;
+};
+
+export type RecordingPartialPayload = {
+  __typename?: "RecordingPartialPayload";
+  endSeconds: Scalars["Float"]["output"];
+  isFinal: Scalars["Boolean"]["output"];
+  observedAt: Scalars["DateTime"]["output"];
+  recordingId: Scalars["UUID"]["output"];
+  sessionId: Scalars["UUID"]["output"];
+  startSeconds: Scalars["Float"]["output"];
+  text: Scalars["String"]["output"];
 };
 
 export type RecordingPayload = {
@@ -1094,6 +1086,7 @@ export type SubscriptionType = {
   hotkeyEvents: HotkeyEventMessage;
   jobProgress: ProcessingJob;
   modelDownloadProgress: ModelDownloadProgressEvent;
+  recordingPartials: RecordingPartialPayload;
   syncEvents: SyncEventMessage;
 };
 
@@ -1103,6 +1096,10 @@ export type SubscriptionTypeDictationEventsArgs = {
 
 export type SubscriptionTypeModelDownloadProgressArgs = {
   downloadId: Scalars["String"]["input"];
+};
+
+export type SubscriptionTypeRecordingPartialsArgs = {
+  recordingId: Scalars["UUID"]["input"];
 };
 
 export type SyncDeviceEntry = {
@@ -1300,6 +1297,7 @@ export type QueryDictationStatusQuery = {
 
 export type MutationDictationStartMutationVariables = Exact<{
   source?: InputMaybe<Scalars["String"]["input"]>;
+  recordingId?: InputMaybe<Scalars["UUID"]["input"]>;
 }>;
 
 export type MutationDictationStartMutation = {
@@ -1532,6 +1530,10 @@ export type SubscriptionJobProgressSubscription = {
     finishedAt?: string | null;
   };
 };
+
+export type QueryLlmModelsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QueryLlmModelsQuery = { __typename?: "QueryType"; llmModels: Array<string> };
 
 export type MutationImportFromMeetilyMutationVariables = Exact<{
   meetilyDatabasePath: Scalars["String"]["input"];
@@ -1981,6 +1983,24 @@ export type MutationRagReindexMutation = {
       | { __typename?: "UnavailableError"; code: string; message: string }
       | { __typename?: "ValidationError"; code: string; message: string }
     >;
+  };
+};
+
+export type SubscriptionRecordingPartialsSubscriptionVariables = Exact<{
+  recordingId: Scalars["UUID"]["input"];
+}>;
+
+export type SubscriptionRecordingPartialsSubscription = {
+  __typename?: "SubscriptionType";
+  recordingPartials: {
+    __typename?: "RecordingPartialPayload";
+    recordingId: string;
+    sessionId: string;
+    text: string;
+    startSeconds: number;
+    endSeconds: number;
+    isFinal: boolean;
+    observedAt: string;
   };
 };
 
@@ -2560,6 +2580,11 @@ export const MutationDictationStartDocument = {
           variable: { kind: "Variable", name: { kind: "Name", value: "source" } },
           type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
         },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "recordingId" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+        },
       ],
       selectionSet: {
         kind: "SelectionSet",
@@ -2572,6 +2597,11 @@ export const MutationDictationStartDocument = {
                 kind: "Argument",
                 name: { kind: "Name", value: "source" },
                 value: { kind: "Variable", name: { kind: "Name", value: "source" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "recordingId" },
+                value: { kind: "Variable", name: { kind: "Name", value: "recordingId" } },
               },
             ],
             selectionSet: {
@@ -3185,6 +3215,20 @@ export const SubscriptionJobProgressDocument = {
   SubscriptionJobProgressSubscription,
   SubscriptionJobProgressSubscriptionVariables
 >;
+export const QueryLlmModelsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryLlmModels" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [{ kind: "Field", name: { kind: "Name", value: "llmModels" } }],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryLlmModelsQuery, QueryLlmModelsQueryVariables>;
 export const MutationImportFromMeetilyDocument = {
   kind: "Document",
   definitions: [
@@ -4340,6 +4384,57 @@ export const MutationRagReindexDocument = {
     },
   ],
 } as unknown as DocumentNode<MutationRagReindexMutation, MutationRagReindexMutationVariables>;
+export const SubscriptionRecordingPartialsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "subscription",
+      name: { kind: "Name", value: "SubscriptionRecordingPartials" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "recordingId" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "recordingPartials" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "recordingId" },
+                value: { kind: "Variable", name: { kind: "Name", value: "recordingId" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "recordingId" } },
+                { kind: "Field", name: { kind: "Name", value: "sessionId" } },
+                { kind: "Field", name: { kind: "Name", value: "text" } },
+                { kind: "Field", name: { kind: "Name", value: "startSeconds" } },
+                { kind: "Field", name: { kind: "Name", value: "endSeconds" } },
+                { kind: "Field", name: { kind: "Name", value: "isFinal" } },
+                { kind: "Field", name: { kind: "Name", value: "observedAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  SubscriptionRecordingPartialsSubscription,
+  SubscriptionRecordingPartialsSubscriptionVariables
+>;
 export const QueryRecordingsDocument = {
   kind: "Document",
   definitions: [

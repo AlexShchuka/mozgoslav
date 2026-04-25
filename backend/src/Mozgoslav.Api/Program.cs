@@ -170,6 +170,7 @@ try
             options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
         });
     builder.Services.AddSingleton<IJobProgressNotifier, ChannelJobProgressNotifier>();
+    builder.Services.AddSingleton<IRecordingPartialsNotifier, ChannelRecordingPartialsNotifier>();
     builder.Services.AddSingleton<IAudioDeviceChangeNotifier, ChannelAudioDeviceChangeNotifier>();
     builder.Services.AddSingleton<IHotkeyEventNotifier, ChannelHotkeyEventNotifier>();
     builder.Services.AddSingleton<IAudioConverter, FfmpegAudioConverter>();
