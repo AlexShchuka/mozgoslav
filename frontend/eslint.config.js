@@ -4,11 +4,39 @@ const tsPlugin = require("@typescript-eslint/eslint-plugin");
 const reactPlugin = require("eslint-plugin-react");
 const reactHooksPlugin = require("eslint-plugin-react-hooks");
 
+const nodeGlobals = {
+    require: "readonly",
+    module: "readonly",
+    exports: "readonly",
+    process: "readonly",
+    console: "readonly",
+    Buffer: "readonly",
+    __dirname: "readonly",
+    __filename: "readonly",
+    global: "readonly",
+};
+
 module.exports = [
     {
         ignores: ["dist/**", "dist-electron/**", "release/**", "node_modules/**", "**/*.d.ts"],
     },
     js.configs.recommended,
+    {
+        files: ["**/*.{js,cjs}"],
+        languageOptions: {
+            ecmaVersion: 2022,
+            sourceType: "commonjs",
+            globals: nodeGlobals,
+        },
+    },
+    {
+        files: ["**/*.mjs"],
+        languageOptions: {
+            ecmaVersion: 2022,
+            sourceType: "module",
+            globals: nodeGlobals,
+        },
+    },
     {
         files: ["**/*.{ts,tsx}"],
         languageOptions: {
@@ -80,11 +108,17 @@ module.exports = [
             "react/react-in-jsx-scope": "off",
             "react/prop-types": "off",
             "@typescript-eslint/no-explicit-any": "warn",
-            "@typescript-eslint/no-unused-vars": ["warn", {argsIgnorePattern: "^_"}],
+            "@typescript-eslint/no-unused-vars": ["warn", {argsIgnorePattern: "^_", varsIgnorePattern: "^_", destructuredArrayIgnorePattern: "^_"}],
             "@typescript-eslint/no-empty-object-type": ["error", {allowInterfaces: "with-single-extends"}],
             "no-empty": ["error", {allowEmptyCatch: true}],
             "no-unused-vars": "off",
             "no-undef": "off",
+        },
+    },
+    {
+        files: ["**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
+        rules: {
+            "@typescript-eslint/no-require-imports": "off",
         },
     },
 ];
