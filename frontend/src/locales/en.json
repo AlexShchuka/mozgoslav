@@ -216,10 +216,15 @@
       "whisperThreads": "Whisper threads (0 = auto)",
       "dictationKeyboardHotkey": "Global dictation hotkey",
       "dictationPushToTalk": "Hold to record (release to stop)",
+      "dictationDumpEnabled": "Voice dump-mode (record into _inbox/ via global hotkey)",
+      "dictationDumpHotkeyToggle": "Dump-mode: tap-toggle hotkey",
+      "dictationDumpHotkeyHold": "Dump-mode: hold-to-record hotkey",
       "obsidianApiHost": "Obsidian Local REST API host",
       "obsidianApiToken": "Obsidian Local REST API token"
     },
     "hotkeyHint": "Click the field and hold the combination you want. Requires an app restart to take effect (hot-reload is tracked as H1).",
+    "dumpHotkeyToggleHint": "Press — recording starts under the default profile. Press again — stop; the file goes through the pipeline and exports into _inbox/.",
+    "dumpHotkeyHoldHint": "Hold to record, release to stop. Same path: default profile → pipeline → _inbox/.",
     "theme": {
       "system": "System",
       "light": "Light",

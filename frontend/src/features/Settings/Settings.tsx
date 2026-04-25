@@ -241,6 +241,33 @@ const Settings: FC<SettingsProps> = ({
               />
               <span>{t("settings.fields.dictationPushToTalk")}</span>
             </CheckboxRow>
+            <CheckboxRow>
+              <input
+                type="checkbox"
+                data-testid="settings-dictation-dump-enabled"
+                checked={draft.dictationDumpEnabled}
+                onChange={(e) => update("dictationDumpEnabled", e.target.checked)}
+              />
+              <span>{t("settings.fields.dictationDumpEnabled")}</span>
+            </CheckboxRow>
+            <div>
+              <label>{t("settings.fields.dictationDumpHotkeyToggle")}</label>
+              <HotkeyRecorder
+                value={draft.dictationDumpHotkeyToggle}
+                onChange={(accelerator) => update("dictationDumpHotkeyToggle", accelerator)}
+                hint={t("settings.dumpHotkeyToggleHint")}
+                testId="dictation-dump-toggle"
+              />
+            </div>
+            <div>
+              <label>{t("settings.fields.dictationDumpHotkeyHold")}</label>
+              <HotkeyRecorder
+                value={draft.dictationDumpHotkeyHold}
+                onChange={(accelerator) => update("dictationDumpHotkeyHold", accelerator)}
+                hint={t("settings.dumpHotkeyHoldHint")}
+                testId="dictation-dump-hold"
+              />
+            </div>
           </FormGrid>
         </Card>
       )}

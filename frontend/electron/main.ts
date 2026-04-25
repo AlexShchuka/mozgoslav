@@ -4,6 +4,7 @@ import { existsSync, promises as fs } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { DictationOrchestrator } from "./dictation/DictationOrchestrator";
+import { DumpModeOrchestrator } from "./dictation/DumpModeOrchestrator";
 import { NativeHelperClient } from "./dictation/NativeHelperClient";
 import {
   registerGlobalDictationHotkey,
@@ -74,6 +75,7 @@ const resolveDictationHelperPath = (): string => {
 
 let mainWindow: BrowserWindow | null = null;
 let dictationOrchestrator: DictationOrchestrator | null = null;
+let dumpModeOrchestrator: DumpModeOrchestrator | null = null;
 let recordingBridge: RecordingBridge | null = null;
 let recordingHelper: NativeHelperClient | null = null;
 
@@ -316,8 +318,10 @@ app.whenReady().then(async () => {
 
   if (process.platform === "darwin") {
     await initializeDictation();
+    await initializeDumpMode();
   }
   void applyCustomHotkeyFromSettings();
+  void applyDumpModeFromSettings();
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -403,6 +407,72 @@ const ensureParentAccessibility = (): boolean => {
   return trusted;
 };
 
+const initializeDumpMode = async (): Promise<void> => {
+  if (!recordingHelper) {
+    console.warn("[dump-mode] recordingHelper not ready, skipping dump-mode init");
+    return;
+  }
+  try {
+    const tempDir = path.join(app.getPath("temp"), "mozgoslav-dump");
+    await fs.mkdir(tempDir, { recursive: true });
+    dumpModeOrchestrator = new DumpModeOrchestrator({
+      helper: recordingHelper,
+      backendOrigin: BACKEND_ORIGIN,
+      tempDir,
+      overlayEnabled: true,
+    });
+  } catch (error) {
+    console.error("[dump-mode] initialization failed:", error);
+    dumpModeOrchestrator = null;
+  }
+};
+
+const applyDumpModeFromSettings = async (): Promise<void> => {
+  const maxAttempts = 8;
+  const delayMs = 750;
+  const query = `query { settings { dictationDumpEnabled dictationDumpHotkeyToggle dictationDumpHotkeyHold } }`;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const response = await fetch(`${BACKEND_ORIGIN}/graphql`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+      if (!response.ok) throw new Error(`status ${response.status}`);
+      const payload = (await response.json()) as {
+        data?: {
+          settings?: {
+            dictationDumpEnabled?: boolean;
+            dictationDumpHotkeyToggle?: string;
+            dictationDumpHotkeyHold?: string;
+          };
+        };
+      };
+      const settings = payload.data?.settings ?? {};
+      if (!dumpModeOrchestrator) {
+        console.info("[dump-mode] orchestrator not initialized, skipping settings apply");
+        return;
+      }
+      if (settings.dictationDumpEnabled !== true) {
+        console.info("[dump-mode] disabled in settings — unbinding all dump hotkeys");
+        await dumpModeOrchestrator.unbindAll();
+        return;
+      }
+      const toggle = settings.dictationDumpHotkeyToggle?.trim() ?? "";
+      const hold = settings.dictationDumpHotkeyHold?.trim() ?? "";
+      console.info(`[dump-mode] applying settings toggle='${toggle}' hold='${hold}'`);
+      await dumpModeOrchestrator.bindToggle(toggle.length > 0 ? toggle : null);
+      await dumpModeOrchestrator.bindHold(hold.length > 0 ? hold : null);
+      return;
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  console.warn(
+    "[dump-mode] backend unreachable after 8 attempts — dump-mode disabled this session."
+  );
+};
+
 const initializeDictation = async (): Promise<void> => {
   try {
     const helperBinaryPath = resolveDictationHelperPath();
@@ -462,6 +532,8 @@ app.on("before-quit", (event) => {
     try {
       dictationOrchestrator?.destroy();
       dictationOrchestrator = null;
+      dumpModeOrchestrator?.destroy();
+      dumpModeOrchestrator = null;
       recordingBridge?.stop();
       recordingBridge = null;
       recordingHelper?.stop();

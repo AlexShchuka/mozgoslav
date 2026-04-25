@@ -1,4 +1,3 @@
-/* eslint-env node */
 module.exports = function plopConfig(plop) {
     const srcRoot = "src";
     const templatesDir = "plop-templates";

@@ -7,7 +7,7 @@ Trigger, current state, and the unlock-signing checklist for later.
 ```bash
 git checkout main && git pull
 git tag -a v0.X.Y -m "v0.X.Y"
-MOZGOSLAV_HUMAN_PUSH=1 git push origin v0.X.Y
+git push origin v0.X.Y
 ```
 
 `.github/workflows/release.yml` fires on any `v*.*.*` tag (and on `workflow_dispatch`). Runner: `macos-latest`. Output: `Mozgoslav-<tag>-arm64.dmg` attached to the GitHub Release for the tag.

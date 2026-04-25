@@ -40,6 +40,9 @@ public interface IAppSettings
     string SyncthingApiKey { get; }
     string SyncthingBaseUrl { get; }
     bool ObsidianFeatureEnabled { get; }
+    bool DictationDumpEnabled { get; }
+    string DictationDumpHotkeyToggle { get; }
+    string DictationDumpHotkeyHold { get; }
 
     AppSettingsDto Snapshot { get; }
 

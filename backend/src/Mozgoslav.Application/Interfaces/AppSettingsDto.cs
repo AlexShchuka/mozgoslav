@@ -36,7 +36,10 @@ public sealed record AppSettingsDto(
     string SyncthingApiKey,
     string SyncthingBaseUrl,
     bool DictationPushToTalk = true,
-    bool ObsidianFeatureEnabled = false)
+    bool ObsidianFeatureEnabled = false,
+    bool DictationDumpEnabled = false,
+    string DictationDumpHotkeyToggle = "",
+    string DictationDumpHotkeyHold = "")
 {
     public static AppSettingsDto Defaults { get; } = new(
         VaultPath: string.Empty,
@@ -75,5 +78,8 @@ public sealed record AppSettingsDto(
         SyncthingEnabled: true,
         SyncthingObsidianVaultPath: string.Empty,
         SyncthingApiKey: string.Empty,
-        SyncthingBaseUrl: string.Empty);
+        SyncthingBaseUrl: string.Empty,
+        DictationDumpEnabled: false,
+        DictationDumpHotkeyToggle: string.Empty,
+        DictationDumpHotkeyHold: string.Empty);
 }

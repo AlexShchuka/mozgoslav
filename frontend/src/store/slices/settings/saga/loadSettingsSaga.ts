@@ -43,6 +43,9 @@ function mapDtoToSettings(dto: QuerySettingsQuery["settings"]): AppSettings {
     ),
     syncthingEnabled: dto.syncthingEnabled,
     syncthingObsidianVaultPath: dto.syncthingObsidianVaultPath,
+    dictationDumpEnabled: dto.dictationDumpEnabled,
+    dictationDumpHotkeyToggle: dto.dictationDumpHotkeyToggle,
+    dictationDumpHotkeyHold: dto.dictationDumpHotkeyHold,
   };
 }
 

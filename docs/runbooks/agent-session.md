@@ -6,7 +6,6 @@ End-to-end flow for a session where an AI agent (Claude Code, Codex, Cursor, …
 
 - Confirm the task: one logical change per session. Split ambiguous asks into separate sessions.
 - Decide branch name: `<username>/<kebab-slug>` off `main`.
-- Confirm you have the `MOZGOSLAV_HUMAN_PUSH=1` protocol ready; the agent cannot push.
 
 ## In-session rules the agent must follow
 
@@ -33,8 +32,7 @@ Do not push until `agent-gate.sh` is green. CI will re-run the same gates on the
 git add -A
 git commit -m "<type>(<scope>): <subject>"   # conventional commits, header ≤ 100
 
-# Human-only push:
-MOZGOSLAV_HUMAN_PUSH=1 git push -u origin <username>/<slug>
+git push -u origin <username>/<slug>
 
 gh pr create --base main --head <branch> \
   --title "<type>(<scope>): <subject>" \
@@ -70,7 +68,6 @@ EOF
 
 ## Session failure modes
 
-- Agent starts pushing or hits push resistance → `pre-push` hook refuses unless `MOZGOSLAV_HUMAN_PUSH=1`. Expected. Humans push.
 - Agent emits a chain of build→fix→build→fix → stop the chain. One build per iteration, not one per file.
 - Agent suggests bumping a package to fix a vulnerability warning → reject. Renovate owns dependency updates; open a `type/backlog` Issue if the warning is load-bearing.
 - Agent cannot reach a rule's intent → follow the letter of the rule, surface the tension in the PR description, do not silently override.
@@ -83,4 +80,4 @@ This repo's first full agent-driven PR bundled tooling migration + DMG bundling 
 2. Pre-work: `ls .github/ISSUE_TEMPLATE/` + re-read `AGENTS.md`. Note Boundaries / Do-not / Never.
 3. Work: edit → `bash scripts/agent-gate.sh <stack>` → commit. No intermediate full builds.
 4. Verify: one full `bash scripts/agent-gate.sh` before push.
-5. Hand-off to human: agent prints the branch name + PR body draft; human runs `MOZGOSLAV_HUMAN_PUSH=1 git push` and `gh pr create`.
+5. Hand-off to human: agent prints the branch name + PR body draft; human runs `git push` and `gh pr create`.

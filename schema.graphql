@@ -60,6 +60,9 @@ type AppSettingsDto {
   syncthingBaseUrl: String!
   dictationPushToTalk: Boolean!
   obsidianFeatureEnabled: Boolean!
+  dictationDumpEnabled: Boolean!
+  dictationDumpHotkeyToggle: String!
+  dictationDumpHotkeyHold: String!
 }
 
 type AudioDeviceChangedEvent {
@@ -881,6 +884,9 @@ input UpdateSettingsInput {
   syncthingBaseUrl: String!
   dictationPushToTalk: Boolean! = true
   obsidianFeatureEnabled: Boolean! = false
+  dictationDumpEnabled: Boolean! = false
+  dictationDumpHotkeyToggle: String! = ""
+  dictationDumpHotkeyHold: String! = ""
 }
 
 input UploadRecordingsInput {
