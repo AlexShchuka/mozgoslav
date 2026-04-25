@@ -510,6 +510,8 @@ type SetupObsidianPayload {
 
 type StartRecordingPayload {
   sessionId: String
+  recordingId: UUID
+  dictationSessionId: UUID
   outputPath: String
   errors: [IUserError!]!
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +9,9 @@ using Mozgoslav.Api.GraphQL.Mutations;
 using Mozgoslav.Api.Services;
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.UseCases;
+using Mozgoslav.Domain.Entities;
+using Mozgoslav.Domain.Enums;
+using Mozgoslav.Domain.Services;
 using Mozgoslav.Infrastructure.Platform;
 using IOPath = System.IO.Path;
 
@@ -106,11 +108,14 @@ public sealed class RecordingMutationType
         string? outputPath,
         [Service] IAudioRecorder recorder,
         [Service] RecordingSessionRegistry sessions,
+        [Service] IRecordingRepository recordings,
+        [Service] IDictationSessionManager dictationManager,
         CancellationToken ct)
     {
         if (!recorder.IsSupported)
         {
-            return new StartRecordingPayload(null, null, [new UnavailableError("UNAVAILABLE", "Audio recording is not supported on this platform")]);
+            return new StartRecordingPayload(null, null, null, null,
+                [new UnavailableError("UNAVAILABLE", "Audio recording is not supported on this platform")]);
         }
 
         Directory.CreateDirectory(AppPaths.Recordings);
@@ -118,20 +123,40 @@ public sealed class RecordingMutationType
             ? IOPath.Combine(AppPaths.Recordings, $"recording-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}.wav")
             : outputPath;
 
-        if (!sessions.TryStart(resolvedPath, out var session))
+        var recording = new Recording
         {
-            return new StartRecordingPayload(null, null, [new ConflictError("CONFLICT", $"A recording session is already active: {session.SessionId}")]);
+            FileName = IOPath.GetFileName(resolvedPath),
+            FilePath = resolvedPath,
+            Sha256 = string.Empty,
+            Format = AudioFormat.Wav,
+            SourceType = SourceType.Recorded,
+            Status = RecordingStatus.New,
+            Duration = TimeSpan.Zero
+        };
+        await recordings.AddAsync(recording, ct);
+
+        var dictationSession = dictationManager.Start(
+            source: $"recording-{recording.Id:N}",
+            kind: DictationSessionKind.Longform,
+            recordingId: recording.Id);
+
+        if (!sessions.TryStart(recording.Id, dictationSession.Id, resolvedPath, out var session))
+        {
+            await dictationManager.CancelAsync(dictationSession.Id, ct);
+            return new StartRecordingPayload(null, null, null, null,
+                [new ConflictError("CONFLICT", $"A recording session is already active: {session.SessionId}")]);
         }
 
         try
         {
-            await recorder.StartAsync(session.OutputPath, ct);
-            return new StartRecordingPayload(session.SessionId, session.OutputPath, []);
+            await recorder.StartAsync(session.OutputPath, dictationSession.Id, ct);
+            return new StartRecordingPayload(session.SessionId, recording.Id, dictationSession.Id, session.OutputPath, []);
         }
         catch (Exception ex)
         {
             sessions.TryStop(session.SessionId, out _);
-            return new StartRecordingPayload(null, null, [new UnavailableError("UNAVAILABLE", ex.Message)]);
+            await dictationManager.CancelAsync(dictationSession.Id, ct);
+            return new StartRecordingPayload(null, null, null, null, [new UnavailableError("UNAVAILABLE", ex.Message)]);
         }
     }
 
@@ -139,25 +164,80 @@ public sealed class RecordingMutationType
         string sessionId,
         [Service] IAudioRecorder recorder,
         [Service] RecordingSessionRegistry sessions,
-        [Service] ImportRecordingUseCase importUseCase,
+        [Service] IRecordingRepository recordings,
+        [Service] IProcessingJobRepository jobs,
+        [Service] IProcessingJobScheduler scheduler,
+        [Service] IProfileRepository profiles,
+        [Service] IDictationSessionManager dictationManager,
+        [Service] IAudioMetadataProbe? metadataProbe,
         CancellationToken ct)
     {
-        if (!sessions.TryStop(sessionId, out _))
+        if (!sessions.TryStop(sessionId, out var session))
         {
             return new StopRecordingPayload(null, [], [new NotFoundError("NOT_FOUND", "No active session with that id.", "RecordingSession", sessionId)]);
         }
 
         var path = await recorder.StopAsync(ct);
-        IReadOnlyList<Domain.Entities.Recording> imported = [];
 
-        try
+        if (session is not null)
         {
-            imported = await importUseCase.ExecuteAsync([path], null, ct);
-        }
-        catch
-        {
+            try
+            {
+                await dictationManager.CancelAsync(session.DictationSessionId, ct);
+            }
+            catch (Exception)
+            {
+            }
         }
 
-        return new StopRecordingPayload(sessionId, imported, []);
+        var recording = session is null
+            ? null
+            : await recordings.GetByIdAsync(session.RecordingId, ct);
+
+        if (recording is null)
+        {
+            return new StopRecordingPayload(sessionId, [], []);
+        }
+
+        if (!File.Exists(path))
+        {
+            recording.Status = RecordingStatus.Failed;
+            await recordings.UpdateAsync(recording, ct);
+            return new StopRecordingPayload(sessionId, [recording],
+                [new UnavailableError("UNAVAILABLE", $"Recorder produced no file at {path}.")]);
+        }
+
+        var sha256 = await HashCalculator.Sha256Async(path, ct);
+        var duration = metadataProbe is not null
+            ? await metadataProbe.GetDurationAsync(path, ct)
+            : TimeSpan.Zero;
+
+        var updated = new Recording
+        {
+            Id = recording.Id,
+            FileName = IOPath.GetFileName(path),
+            FilePath = path,
+            Sha256 = sha256,
+            Duration = duration,
+            Format = AudioFormat.Wav,
+            SourceType = SourceType.Recorded,
+            Status = RecordingStatus.Transcribing,
+            CreatedAt = recording.CreatedAt
+        };
+        await recordings.UpdateAsync(updated, ct);
+
+        var profile = await profiles.TryGetDefaultAsync(ct)
+            ?? throw new InvalidOperationException("No default profile configured");
+
+        var job = await jobs.EnqueueAsync(
+            new ProcessingJob
+            {
+                RecordingId = updated.Id,
+                ProfileId = profile.Id
+            },
+            ct);
+        await scheduler.ScheduleAsync(job.Id, ct);
+
+        return new StopRecordingPayload(sessionId, [updated], []);
     }
 }

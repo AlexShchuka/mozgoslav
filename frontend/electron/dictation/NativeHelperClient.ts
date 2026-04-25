@@ -69,14 +69,21 @@ export class NativeHelperClient extends EventEmitter {
     await this.send<object>("capture.stop", undefined);
   }
 
-  async startFileCapture(outputPath: string, sessionId: string): Promise<void> {
-    await this.send<object>("capture.startFile", {
+  async startFileCapture(
+    outputPath: string,
+    sessionId: string,
+    options?: { streamSessionId?: string; backendBaseUrl?: string }
+  ): Promise<void> {
+    const params: Record<string, unknown> = {
       outputPath,
       sessionId,
       sampleRate: 16000,
       channels: 1,
       format: "wav",
-    });
+    };
+    if (options?.streamSessionId) params.streamSessionId = options.streamSessionId;
+    if (options?.backendBaseUrl) params.backendBaseUrl = options.backendBaseUrl;
+    await this.send<object>("capture.startFile", params);
   }
 
   async stopFileCapture(sessionId: string): Promise<{ path: string; durationMs: number }> {

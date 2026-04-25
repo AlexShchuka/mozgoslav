@@ -14,8 +14,14 @@ export class RecordingBridge {
   private server: http.Server | null = null;
   private port = 0;
   private readonly sessions = new Map<string, RecordingSession>();
+  private readonly backendBaseUrl: string;
 
-  constructor(private readonly helper: NativeHelperClient) {}
+  constructor(
+    private readonly helper: NativeHelperClient,
+    backendBaseUrl: string = "http://127.0.0.1:5050"
+  ) {
+    this.backendBaseUrl = backendBaseUrl;
+  }
 
   get activePort(): number {
     return this.port;
@@ -70,13 +76,18 @@ export class RecordingBridge {
         res.end(JSON.stringify({ error: "outputPath is required" }));
         return;
       }
+      const streamSessionId =
+        typeof body?.streamSessionId === "string" ? body.streamSessionId : undefined;
       const session: RecordingSession = {
         id: randomUUID(),
         outputPath,
         startedAt: Date.now(),
       };
       this.sessions.set(session.id, session);
-      await this.helper.startFileCapture(outputPath, session.id);
+      await this.helper.startFileCapture(outputPath, session.id, {
+        streamSessionId,
+        backendBaseUrl: this.backendBaseUrl,
+      });
       res.statusCode = 200;
       res.setHeader("Content-Type", "application/json");
       res.end(JSON.stringify({ sessionId: session.id }));
