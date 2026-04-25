@@ -2,21 +2,6 @@
 
 Contract between this repo and any coding agent. Only things you cannot infer from a `ls` / `grep` / `package.json` read. Architecture, file tree, and generic conventions live in the code.
 
-## Vision
-
-`docs/product-vision-2026-04.md` — actual vision and architecture (supersedes `docs/product-vision.md` / ADR-001, kept as historical "original idea"). Read first before any non-trivial change.
-
-## Six principles (from vision)
-
-Every change should pass these. Details + cross-refs in `docs/product-vision-2026-04.md`.
-
-1. **Voice-first.** Voice — primary input across capture, dictation, querying, system actions.
-2. **Reuse-not-rewrite.** OSS first; own only the glue + UX. No custom whisper / vector store / agent loop.
-3. **Чистая архитектура без жёсткого coupling.** Port-adapter for every external dependency. Domain ничего не знает про конкретные движки.
-4. **Pet, не corp.** No OKR / sprint planning / coverage-as-goal. Owner-driven, single-command gate, минимум процессного жира.
-5. **AI-realization friendly.** AGENTS.md per layer, schema-first tests, маленькие модули с явными контрактами, owner pишет AGENTS.md (LLM-сгенерённые хуже).
-6. **Прозрачность процессов.** Каждая LLM- / long-running-операция показывает explicit state — стадия, прогресс, время, ошибка. Never a black box on a local model.
-
 ## Boundaries
 
 **Never do:**
