@@ -1,9 +1,5 @@
 # Mozgoslav — vision and architecture (2026-04)
 
-**Status:** Draft. Supersedes ADR-001 (`docs/product-vision.md`, "second brain for conversations").
-**Date:** 2026-04-25
-**Type:** living vision + architecture decision. Updated when shape changes, not chronicled.
-
 ---
 
 ## 1. Vision
@@ -12,21 +8,20 @@ Mozgoslav — **личный голосо-первый harness вокруг лю
 
 Слоган: **the Aristotle harness — voice-in, knowledge-and-actions-out, all local, all OSS.**
 
-Mozgoslav — не диктофон, не транскрибатор, не ещё-один-meeting-AI. Это персональный control panel для оркестрации внимания и LLM-стека одного владельца.
+Mozgoslav — не диктофон, не транскрибатор, не ещё-один-meeting-AI. Это персональный control panel для оркестрации внимания и LLM-стека.
 
 ---
 
 ## 2. Scope and audience
 
 - **Контрибьюторы**: open per `CONTRIBUTING.md` — любой может форкнуть, прислать PR через стандартный OSS-flow (branch off main, squash-merge, conventional commits). Decision authority по архитектуре — у lead developer'а репозитория.
-- **Целевой пользователь**: программист за компом 8+ часов в день, частые митинги, личные заметки, желание автоматизировать рутину. Mozgoslav — для тех, кто живёт в этом ритме.
-- **Не цель**: продажа, monetization, growth-механики.
-- **Платформы**: macOS-only сегодня. Расширение на Linux/Windows — non-goal в этом цикле.
+- **Целевой пользователь**: человек, у которого частые митинги, личные заметки, желание автоматизировать рутину.
+- **Платформы**: macOS-only сегодня. Расширение на Linux/Windows.
 - **Privacy posture**: local-first. Внешние outbound только в эндпоинты, явно сконфигурированные пользователем (LLM endpoint, Obsidian, локальные sidecar'ы, web-search upstream'ы — последние через локальный SearXNG-агрегатор).
 
 ---
 
-## 3. Принципы (шесть)
+## 3. Принципы
 
 Каждый принцип имеет операционный «отпечаток» в репозитории. Если принцип нельзя проверить тестом / lint'ом / артефактом — он эссе, а не принцип.
 
