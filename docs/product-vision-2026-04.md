@@ -288,7 +288,7 @@ deny by default:
 - **Roadmap = GitHub Projects** ([project board](https://github.com/users/AlexShchuka/projects/1)). Columns waves: Now / Next / Later. Не отдельный markdown-файл.
 - **Зависимости между issue'ями** — GitHub native Issue Dependencies (`Blocked by` / `Blocks`), задаются через UI или API. Прозы `Depends on: #N` в body избегаем — есть native механизм с graph-view'ем.
 - **Renovate** управляет dependency-обновлениями. Pinning у всех пакетов.
-- **Lefthook**: pre-commit (format), pre-push (gitleaks + `MOZGOSLAV_HUMAN_PUSH=1` гейт — агенты не пушат сами).
+- **Lefthook**: pre-commit (format), pre-push (gitleaks).
 - **Conventional commits** через commitlint. PR-title = squash-merge сообщение, ≤100 chars.
 - **Migration-style**: fast-cut, без двухфазной co-existence; CI всегда зелёный после rewrite.
 
