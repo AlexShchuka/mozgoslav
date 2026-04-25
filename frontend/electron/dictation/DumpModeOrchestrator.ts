@@ -54,12 +54,23 @@ export class DumpModeOrchestrator {
     }
     if (!accelerator) return;
 
+    if (globalShortcut.isRegistered(accelerator)) {
+      console.info(
+        `[dump-mode] accelerator '${accelerator}' was claimed elsewhere in this process — taking ownership`
+      );
+      try {
+        globalShortcut.unregister(accelerator);
+      } catch (err) {
+        console.warn("[dump-mode] unregister conflicting accelerator failed:", err);
+      }
+    }
+
     const ok = globalShortcut.register(accelerator, () => {
       void this.handleToggle();
     });
     if (!ok) {
       console.warn(
-        `[dump-mode] failed to register toggle accelerator '${accelerator}' (already taken)`
+        `[dump-mode] failed to register toggle accelerator '${accelerator}' (already taken by another process / OS)`
       );
       return;
     }

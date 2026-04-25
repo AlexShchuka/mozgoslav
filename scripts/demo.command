@@ -98,6 +98,20 @@ if command -v lefthook >/dev/null 2>&1; then
   (cd "$REPO_ROOT" && lefthook install >/dev/null 2>&1 || true)
 fi
 
+# --- Build Swift native helper on macOS (incremental; rebuilds only changed sources) ---
+if [ "$(uname)" = "Darwin" ] && command -v swift >/dev/null 2>&1; then
+  HELPER_PKG="$REPO_ROOT/native/MozgoslavDictationHelper"
+  if [ -d "$HELPER_PKG" ]; then
+    echo "→ building Swift dictation helper..."
+    swift build -c release --package-path "$HELPER_PKG"
+    HELPER_BIN_ARM="$HELPER_PKG/.build/arm64-apple-macosx/release/mozgoslav-dictation-helper"
+    HELPER_BIN_X86="$HELPER_PKG/.build/x86_64-apple-macosx/release/mozgoslav-dictation-helper"
+    [ -f "$HELPER_BIN_ARM" ] && chmod +x "$HELPER_BIN_ARM" || true
+    [ -f "$HELPER_BIN_X86" ] && chmod +x "$HELPER_BIN_X86" || true
+    echo "  ✓ helper built"
+  fi
+fi
+
 echo ""
 
 # Backend
