@@ -10,21 +10,24 @@ body:
       label: Feature area
       description: Scope label (the label `feature/<value>` will be applied automatically).
       options:
+        - agents
         - api
         - dictation
         - distribution
-        - meetings
+        - mcp
         - observability
         - obsidian
-        - opencode
         - persistence
         - profiles
+        - prompt-builder
         - rag
         - recording
         - sync
+        - system-action
         - testing
         - tooling
         - ui
+        - web-search
     validations:
       required: true
 
