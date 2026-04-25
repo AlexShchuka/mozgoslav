@@ -34,6 +34,9 @@ export interface AppSettings {
   dictationAppProfiles: Record<string, string>;
   syncthingEnabled: boolean;
   syncthingObsidianVaultPath: string;
+  dictationDumpEnabled: boolean;
+  dictationDumpHotkeyToggle: string;
+  dictationDumpHotkeyHold: string;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -67,4 +70,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   dictationAppProfiles: {},
   syncthingEnabled: false,
   syncthingObsidianVaultPath: "",
+  dictationDumpEnabled: false,
+  dictationDumpHotkeyToggle: "",
+  dictationDumpHotkeyHold: "",
 };

@@ -46,6 +46,9 @@ const fakeSettings: AppSettings = {
   dictationAppProfiles: {},
   syncthingEnabled: false,
   syncthingObsidianVaultPath: "",
+  dictationDumpEnabled: false,
+  dictationDumpHotkeyToggle: "",
+  dictationDumpHotkeyHold: "",
 };
 
 const fakeSavedDto = {
@@ -83,6 +86,9 @@ const fakeSavedDto = {
   syncthingApiKey: "",
   syncthingBaseUrl: "",
   obsidianFeatureEnabled: false,
+  dictationDumpEnabled: false,
+  dictationDumpHotkeyToggle: "",
+  dictationDumpHotkeyHold: "",
 };
 
 describe("saveSettingsSaga", () => {

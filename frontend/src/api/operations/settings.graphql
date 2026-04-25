@@ -37,6 +37,9 @@ query QuerySettings {
     syncthingApiKey
     syncthingBaseUrl
     obsidianFeatureEnabled
+    dictationDumpEnabled
+    dictationDumpHotkeyToggle
+    dictationDumpHotkeyHold
   }
 }
 
@@ -80,6 +83,9 @@ mutation MutationUpdateSettings($input: UpdateSettingsInput!) {
       syncthingApiKey
       syncthingBaseUrl
       obsidianFeatureEnabled
+      dictationDumpEnabled
+      dictationDumpHotkeyToggle
+      dictationDumpHotkeyHold
     }
     errors {
       code
