@@ -29,6 +29,7 @@ public sealed class QuartzProcessingJobSchedulerTests
         services.AddLogging();
         services.AddQuartz(q =>
         {
+            q.SchedulerName = $"test-{Guid.NewGuid():N}";
             q.AddJob<ProcessRecordingQuartzJob>(jobConfig => jobConfig
                 .StoreDurably()
                 .WithIdentity("process-recording-template", ProcessRecordingQuartzJob.JobGroup));
@@ -64,6 +65,7 @@ public sealed class QuartzProcessingJobSchedulerTests
         services.AddLogging();
         services.AddQuartz(q =>
         {
+            q.SchedulerName = $"test-{Guid.NewGuid():N}";
             q.AddJob<ProcessRecordingQuartzJob>(jobConfig => jobConfig
                 .StoreDurably()
                 .WithIdentity("process-recording-template", ProcessRecordingQuartzJob.JobGroup));
