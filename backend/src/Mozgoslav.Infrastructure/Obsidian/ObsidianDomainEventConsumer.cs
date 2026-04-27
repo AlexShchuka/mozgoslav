@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Obsidian;
+using Mozgoslav.Infrastructure.Observability;
 
 namespace Mozgoslav.Infrastructure.Obsidian;
 
@@ -19,6 +20,7 @@ public sealed class ObsidianDomainEventConsumer : BackgroundService
     private readonly IDomainEventBus _bus;
     private readonly IServiceScopeFactory _scopes;
     private readonly ILogger<ObsidianDomainEventConsumer> _logger;
+    private readonly MozgoslavMetrics _metrics;
     private readonly Channel<PendingExport> _queue = Channel.CreateBounded<PendingExport>(
         new BoundedChannelOptions(QueueCapacity)
         {
@@ -30,11 +32,13 @@ public sealed class ObsidianDomainEventConsumer : BackgroundService
     public ObsidianDomainEventConsumer(
         IDomainEventBus bus,
         IServiceScopeFactory scopes,
-        ILogger<ObsidianDomainEventConsumer> logger)
+        ILogger<ObsidianDomainEventConsumer> logger,
+        MozgoslavMetrics metrics)
     {
         _bus = bus;
         _scopes = scopes;
         _logger = logger;
+        _metrics = metrics;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -121,13 +125,28 @@ public sealed class ObsidianDomainEventConsumer : BackgroundService
 
     private async Task WriteAndUpdateAsync(PendingExport pending, CancellationToken ct)
     {
+        _metrics.ObsidianExportAttempted.Add(1);
         try
         {
             using var scope = _scopes.CreateScope();
             var driver = scope.ServiceProvider.GetRequiredService<IVaultDriver>();
             var notes = scope.ServiceProvider.GetRequiredService<IProcessedNoteRepository>();
 
-            var receipt = await driver.WriteNoteAsync(pending.Write, ct);
+            VaultWriteReceipt receipt;
+            try
+            {
+                receipt = await driver.WriteNoteAsync(pending.Write, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _metrics.ObsidianExportFailure.Add(1);
+                _logger.LogWarning(ex, "Obsidian vault write failed for note {NoteId} — dropping", pending.NoteId);
+                return;
+            }
 
             var note = await notes.GetByIdAsync(pending.NoteId, ct);
             if (note is null)
@@ -145,7 +164,7 @@ public sealed class ObsidianDomainEventConsumer : BackgroundService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Obsidian vault write failed for note {NoteId} — dropping", pending.NoteId);
+            _logger.LogWarning(ex, "Obsidian vault write follow-up failed for note {NoteId} — dropping", pending.NoteId);
         }
     }
 

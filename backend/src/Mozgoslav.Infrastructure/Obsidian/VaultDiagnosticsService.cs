@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Obsidian;
+using Mozgoslav.Infrastructure.Observability;
 
 namespace Mozgoslav.Infrastructure.Obsidian;
 
@@ -27,19 +28,22 @@ public sealed class VaultDiagnosticsService : IVaultDiagnostics
     private readonly IObsidianRestClient _rest;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IReadOnlyList<PluginInstallSpec> _pinnedPlugins;
+    private readonly MozgoslavMetrics _metrics;
 
     public VaultDiagnosticsService(
         IAppSettings settings,
         IVaultBootstrapProvider bootstrap,
         IObsidianRestClient rest,
         IHttpClientFactory httpClientFactory,
-        IReadOnlyList<PluginInstallSpec> pinnedPlugins)
+        IReadOnlyList<PluginInstallSpec> pinnedPlugins,
+        MozgoslavMetrics metrics)
     {
         _settings = settings;
         _bootstrap = bootstrap;
         _rest = rest;
         _httpClientFactory = httpClientFactory;
         _pinnedPlugins = pinnedPlugins;
+        _metrics = metrics;
     }
 
     public async Task<VaultDiagnosticsReport> RunAsync(CancellationToken ct)
@@ -50,6 +54,17 @@ public sealed class VaultDiagnosticsService : IVaultDiagnostics
         var bootstrap = vault.Ok ? await CheckBootstrapAsync(vault.VaultPath, ct) : BootstrapCheckForMissingVault();
         var rest = await CheckRestAsync(ct);
         var lmStudio = await CheckLmStudioAsync(ct);
+
+        EmitCheckMetric("vault", vault.Ok);
+        foreach (var plugin in plugins)
+        {
+            EmitCheckMetric(plugin.PluginId, plugin.Ok);
+        }
+        EmitCheckMetric("templater", templater.Ok);
+        EmitCheckMetric("bootstrap", bootstrap.Ok);
+        EmitCheckMetric("rest-api", rest.Ok);
+        EmitCheckMetric("lm-studio", lmStudio.Ok);
+
         return new VaultDiagnosticsReport(
             SnapshotId: Guid.NewGuid(),
             Vault: vault,
@@ -59,6 +74,13 @@ public sealed class VaultDiagnosticsService : IVaultDiagnostics
             RestApi: rest,
             LmStudio: lmStudio,
             GeneratedAt: DateTimeOffset.UtcNow);
+    }
+
+    private void EmitCheckMetric(string checkName, bool ok)
+    {
+        _metrics.ObsidianDiagnosticsCheck.Add(1,
+            new KeyValuePair<string, object?>("check", checkName),
+            new KeyValuePair<string, object?>("ok", ok));
     }
 
     private VaultPathCheck CheckVault()

@@ -89,4 +89,21 @@ public sealed class EfAppSettingsTests
 
         loaded.DictationVocabulary.Should().BeEmpty();
     }
+
+    [TestMethod]
+    public async Task ObsidianBootstrapPins_AlwaysReturnsEmbeddedResourcePath()
+    {
+        await using var db = new TestDatabase();
+        using var settings = new EfAppSettings(db.CreateFactory());
+
+        const string expected = "Mozgoslav.Infrastructure.Resources.ObsidianBootstrap.pinned-plugins.json";
+        settings.ObsidianBootstrapPins.Should().Be(expected);
+
+        var loaded = await settings.LoadAsync(CancellationToken.None);
+        loaded.ObsidianBootstrapPins.Should().Be(expected);
+
+        await settings.SaveAsync(loaded with { Language = "de" }, CancellationToken.None);
+        settings.ObsidianBootstrapPins.Should().Be(expected);
+        settings.Snapshot.ObsidianBootstrapPins.Should().Be(expected);
+    }
 }

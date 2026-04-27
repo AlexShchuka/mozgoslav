@@ -16,6 +16,10 @@ public sealed class MozgoslavMetrics : IDisposable
     public Histogram<double> LlmDurationMs { get; }
     public Histogram<double> PipelineDurationMs { get; }
     public Histogram<double> ExportDurationMs { get; }
+    public Counter<long> ObsidianExportAttempted { get; }
+    public Counter<long> ObsidianExportFailure { get; }
+    public Counter<long> ObsidianDiagnosticsCheck { get; }
+    public Counter<long> ObsidianWizardStep { get; }
 
     public MozgoslavMetrics()
     {
@@ -29,6 +33,11 @@ public sealed class MozgoslavMetrics : IDisposable
         LlmDurationMs = _meter.CreateHistogram<double>("mozgoslav.pipeline.llm.duration", "ms");
         PipelineDurationMs = _meter.CreateHistogram<double>("mozgoslav.pipeline.total.duration", "ms");
         ExportDurationMs = _meter.CreateHistogram<double>("mozgoslav.pipeline.export.duration", "ms");
+
+        ObsidianExportAttempted = _meter.CreateCounter<long>("mozgoslav.obsidian.export.attempted", "events");
+        ObsidianExportFailure = _meter.CreateCounter<long>("mozgoslav.obsidian.export.failure", "events");
+        ObsidianDiagnosticsCheck = _meter.CreateCounter<long>("mozgoslav.obsidian.diagnostics.check", "checks");
+        ObsidianWizardStep = _meter.CreateCounter<long>("mozgoslav.obsidian.wizard.step", "steps");
     }
 
     public void Dispose() => _meter.Dispose();
