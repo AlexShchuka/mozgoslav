@@ -54,16 +54,6 @@ public sealed class ObsidianRestApiClient : IObsidianRestClient
         }
     }
 
-    public async Task OpenNoteAsync(string vaultRelativePath, CancellationToken ct)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(vaultRelativePath);
-        var (host, token) = RequireCredentials();
-        using var client = BuildClient(host, token, timeout: null);
-        var uri = new Uri(host.TrimEnd('/') + "/open/" + Uri.EscapeDataString(vaultRelativePath));
-        using var response = await client.PostAsync(uri, content: null, ct);
-        response.EnsureSuccessStatusCode();
-    }
-
     public async Task<ObsidianVaultInfo> GetVaultInfoAsync(CancellationToken ct)
     {
         var (host, token) = RequireCredentials();

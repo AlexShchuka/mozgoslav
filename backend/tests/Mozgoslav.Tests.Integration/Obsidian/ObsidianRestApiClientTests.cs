@@ -110,17 +110,6 @@ public sealed class ObsidianRestApiClientTests : IDisposable
     }
 
     [TestMethod]
-    public async Task OpenNoteAsync_PostsEscapedPath()
-    {
-        _server.Given(Request.Create().WithPath("/open/inbox/note.md").UsingPost())
-            .RespondWith(Response.Create().WithStatusCode(200));
-        _server.Given(Request.Create().WithPath("/open/inbox%2Fnote.md").UsingPost())
-            .RespondWith(Response.Create().WithStatusCode(200));
-
-        await _client.OpenNoteAsync("inbox/note.md", TestContext.CancellationToken);
-    }
-
-    [TestMethod]
     public async Task EnsureFolderAsync_PutsWithTrailingSlash()
     {
         _server.Given(Request.Create().WithPath("/vault/People/").UsingPut())
