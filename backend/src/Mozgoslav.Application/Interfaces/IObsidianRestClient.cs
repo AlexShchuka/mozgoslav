@@ -7,8 +7,6 @@ public interface IObsidianRestClient
 {
     Task<bool> IsReachableAsync(CancellationToken ct);
 
-    Task OpenNoteAsync(string vaultRelativePath, CancellationToken ct);
-
     Task<ObsidianVaultInfo> GetVaultInfoAsync(CancellationToken ct);
 
     Task EnsureFolderAsync(string vaultRelativePath, CancellationToken ct);

@@ -203,9 +203,6 @@ try
     builder.Services.AddSingleton<IPerAppCorrectionProfiles, InMemoryPerAppCorrectionProfiles>();
     builder.Services.AddSingleton<IDictationSessionManager, DictationSessionManager>();
     builder.Services.AddScoped<MeetilyImporterService>();
-    builder.Services.AddScoped<ObsidianSetupService>();
-    builder.Services.AddScoped<IObsidianExportService, ObsidianBulkExportService>();
-    builder.Services.AddScoped<IObsidianLayoutService, ObsidianLayoutService>();
     builder.Services.AddHttpClient(ObsidianRestApiClient.HttpClientName)
         .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
         {
