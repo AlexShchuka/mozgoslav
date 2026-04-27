@@ -9,7 +9,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Mozgoslav.Api.Endpoints;
 using Mozgoslav.Api.GraphQL;
@@ -18,12 +20,14 @@ using Mozgoslav.Api.GraphQL.SchemaExport;
 using Mozgoslav.Api.Services;
 using Mozgoslav.Application.Agents;
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Application.WebSearch;
 using Mozgoslav.Application.Obsidian;
 using Mozgoslav.Application.Rag;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Application.UseCases;
 using Mozgoslav.Infrastructure.Agents;
 using Mozgoslav.Infrastructure.Configuration;
+using Mozgoslav.Infrastructure.WebSearch;
 using Mozgoslav.Infrastructure.Jobs;
 using Mozgoslav.Infrastructure.Observability;
 using Mozgoslav.Infrastructure.Obsidian;
@@ -232,43 +236,46 @@ try
     builder.Services.AddSingleton<IObsidianMetricsSink, ObsidianMetricsSink>();
     builder.Services.AddSingleton<SyncthingConfigService>();
 
-    builder.Services.AddSingleton(_ => new BagOfWordsEmbeddingService());
     var sidecarBaseUrl = builder.Configuration["Mozgoslav:PythonSidecar:BaseUrl"];
-    if (!string.IsNullOrWhiteSpace(sidecarBaseUrl))
+    if (string.IsNullOrWhiteSpace(sidecarBaseUrl))
     {
-        const string SidecarClientName = "Mozgoslav.PythonSidecar";
-        builder.Services.AddHttpClient(SidecarClientName, client =>
+        Log.Error(
+            "Mozgoslav:PythonSidecar:BaseUrl is not configured. " +
+            "RAG embedding and reranking require the python-sidecar. " +
+            "Start the sidecar and set this configuration value.");
+    }
+
+    const string SidecarClientName = "Mozgoslav.PythonSidecar";
+    builder.Services.AddHttpClient(SidecarClientName, client =>
+    {
+        if (!string.IsNullOrWhiteSpace(sidecarBaseUrl))
         {
             client.BaseAddress = new Uri(sidecarBaseUrl);
-        })
-        .AddStandardResilienceHandler(options =>
-        {
-            options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(2);
-            options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
-            options.Retry.MaxRetryAttempts = 3;
-            options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
-            options.Retry.Delay = TimeSpan.FromSeconds(1);
-            options.Retry.UseJitter = true;
-            options.CircuitBreaker.FailureRatio = 0.5;
-            options.CircuitBreaker.MinimumThroughput = 5;
-            options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(1);
-            options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
-        });
-        builder.Services.AddSingleton<IEmbeddingService>(sp =>
-            new PythonSidecarEmbeddingService(
-                sp.GetRequiredService<IHttpClientFactory>().CreateClient(SidecarClientName),
-                sp.GetRequiredService<BagOfWordsEmbeddingService>(),
-                sp.GetRequiredService<ILogger<PythonSidecarEmbeddingService>>()));
-        builder.Services.AddSingleton<IPythonSidecarClient>(sp =>
-            new PythonSidecarClient(
-                sp.GetRequiredService<IHttpClientFactory>().CreateClient(SidecarClientName),
-                sp.GetRequiredService<ILogger<PythonSidecarClient>>()));
-    }
-    else
+        }
+    })
+    .AddStandardResilienceHandler(options =>
     {
-        builder.Services.AddSingleton<IEmbeddingService>(sp =>
-            sp.GetRequiredService<BagOfWordsEmbeddingService>());
-    }
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(2);
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
+        options.Retry.MaxRetryAttempts = 3;
+        options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+        options.Retry.Delay = TimeSpan.FromSeconds(1);
+        options.Retry.UseJitter = true;
+        options.CircuitBreaker.FailureRatio = 0.5;
+        options.CircuitBreaker.MinimumThroughput = 5;
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(1);
+        options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
+    });
+
+    builder.Services.AddSingleton<IEmbeddingService>(sp =>
+        new PythonSidecarEmbeddingService(
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient(SidecarClientName),
+            sp.GetRequiredService<ILogger<PythonSidecarEmbeddingService>>()));
+    builder.Services.AddSingleton<IPythonSidecarClient>(sp =>
+        new PythonSidecarClient(
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient(SidecarClientName),
+            sp.GetRequiredService<ILogger<PythonSidecarClient>>()));
+
     var persistRag = builder.Configuration.GetValue<bool>("Mozgoslav:Rag:Persist");
     if (persistRag)
     {
@@ -278,7 +285,34 @@ try
     {
         builder.Services.AddSingleton<IVectorIndex, InMemoryVectorIndex>();
     }
-    builder.Services.AddSingleton<IRagService, RagService>();
+
+    builder.Services.Configure<HybridRetrieverOptions>(
+        builder.Configuration.GetSection(HybridRetrieverOptions.SectionName));
+    builder.Services.Configure<RerankerOptions>(
+        builder.Configuration.GetSection(RerankerOptions.SectionName));
+
+    builder.Services.AddSingleton<IRetriever>(sp =>
+        new HybridRetriever(
+            sp.GetRequiredService<IEmbeddingService>(),
+            sp.GetRequiredService<IVectorIndex>(),
+            connectionString,
+            sp.GetRequiredService<IOptions<HybridRetrieverOptions>>(),
+            sp.GetRequiredService<ILogger<HybridRetriever>>()));
+
+    builder.Services.AddSingleton<IReranker>(sp =>
+        new BgeRerankerProvider(
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient(SidecarClientName),
+            sp.GetRequiredService<IOptions<RerankerOptions>>(),
+            sp.GetRequiredService<ILogger<BgeRerankerProvider>>()));
+
+    builder.Services.AddSingleton<IRagService>(sp =>
+        new RagService(
+            sp.GetRequiredService<IEmbeddingService>(),
+            sp.GetRequiredService<IVectorIndex>(),
+            sp.GetRequiredService<IRetriever>(),
+            sp.GetRequiredService<IReranker>(),
+            sp.GetRequiredService<ILlmService>(),
+            sp.GetRequiredService<ILogger<RagService>>()));
 
     var agentsProvider = builder.Configuration["Mozgoslav:Agents:Provider"];
     if (string.Equals(agentsProvider, "NoOp", StringComparison.OrdinalIgnoreCase))
@@ -289,6 +323,54 @@ try
     {
         builder.Services.AddSingleton<IAgentRunner, MafAgentRunner>();
     }
+
+    var webProvider = builder.Configuration["Mozgoslav:Web:Provider"];
+    var searxngEndpoint = builder.Configuration["Mozgoslav:Web:SearXng:Endpoint"] ?? "http://localhost:8888";
+    if (string.Equals(webProvider, "NoOp", StringComparison.OrdinalIgnoreCase))
+    {
+        builder.Services.AddSingleton<IWebSearch, NoOpWebSearch>();
+    }
+    else
+    {
+        const string SearXNGClientName = SearXNGProvider.HttpClientName;
+        builder.Services.AddHttpClient(SearXNGClientName, client =>
+        {
+            client.BaseAddress = new Uri(searxngEndpoint);
+        })
+        .AddStandardResilienceHandler(options =>
+        {
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
+            options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
+            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.UseJitter = true;
+            options.CircuitBreaker.FailureRatio = 0.5;
+            options.CircuitBreaker.MinimumThroughput = 3;
+            options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+            options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(15);
+        });
+        builder.Services.AddSingleton<IWebSearch>(sp =>
+            new SearXNGProvider(
+                sp.GetRequiredService<IHttpClientFactory>().CreateClient(SearXNGClientName),
+                sp.GetRequiredService<ILogger<SearXNGProvider>>()));
+    }
+
+    var cacheTtlHours = builder.Configuration.GetValue<int>("Mozgoslav:Web:Extract:CacheTtlHours", 24);
+    builder.Services.AddSingleton<IWebContentExtractor>(sp =>
+        new TrafilaturaProvider(
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient(TrafilaturaProvider.HttpClientName),
+            sp.GetRequiredService<IMemoryCache>(),
+            TimeSpan.FromHours(cacheTtlHours),
+            sp.GetRequiredService<ILogger<TrafilaturaProvider>>()));
+
+    var searxngBundledSettings = Path.Combine(
+        AppContext.BaseDirectory, "searxng-settings.yml");
+    builder.Services.AddSingleton(sp =>
+        new SearxngConfigService(
+            searxngBundledSettings,
+            builder.Configuration,
+            sp.GetRequiredService<ILogger<SearxngConfigService>>()));
 
     var syncthingBaseUrl = builder.Configuration["Mozgoslav:SyncthingBaseUrl"];
     if (!string.IsNullOrWhiteSpace(syncthingBaseUrl))

@@ -78,6 +78,37 @@ public sealed class PythonSidecarClient : IPythonSidecarClient
             Dates: body.Dates);
     }
 
+    public async Task<SidecarProcessAllResult> ProcessAllAsync(
+        string audioPath,
+        IReadOnlyList<string>? steps,
+        CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(audioPath);
+        var body = await PostAsync<ProcessAllDto>(
+            "/api/process-all",
+            new ProcessAllRequestDto(audioPath, steps),
+            ct);
+
+        return new SidecarProcessAllResult(
+            Diarize: new SidecarDiarizeResult(
+                Segments: body.Diarize.Segments
+                    .Select(s => new SidecarSpeakerSegment(s.Speaker, s.Start, s.End))
+                    .ToList(),
+                NumSpeakers: body.Diarize.NumSpeakers),
+            Gender: new SidecarGenderResult(body.Gender.Gender, body.Gender.Confidence),
+            Emotion: new SidecarEmotionResult(
+                body.Emotion.Emotion,
+                body.Emotion.Valence,
+                body.Emotion.Arousal,
+                body.Emotion.Dominance),
+            Ner: new SidecarNerResult(
+                People: body.Ner.People,
+                Orgs: body.Ner.Orgs,
+                Locations: body.Ner.Locations,
+                Dates: body.Ner.Dates),
+            CleanedText: body.Cleanup.Cleaned,
+            Embedding: body.Embed.Embedding);
+    }
 
     private async Task<TResponse> PostAsync<TResponse>(string path, object payload, CancellationToken ct)
         where TResponse : class
@@ -159,4 +190,23 @@ public sealed class PythonSidecarClient : IPythonSidecarClient
         [property: JsonPropertyName("model_id")] string? ModelId,
         [property: JsonPropertyName("download_url")] string? DownloadUrl,
         [property: JsonPropertyName("hint")] string? Hint);
+
+    private sealed record ProcessAllRequestDto(
+        [property: JsonPropertyName("audio_path")] string AudioPath,
+        [property: JsonPropertyName("steps")] IReadOnlyList<string>? Steps);
+
+    private sealed record ProcessAllDto(
+        [property: JsonPropertyName("diarize")] DiarizeDto Diarize,
+        [property: JsonPropertyName("gender")] GenderDto Gender,
+        [property: JsonPropertyName("emotion")] EmotionDto Emotion,
+        [property: JsonPropertyName("ner")] NerDto Ner,
+        [property: JsonPropertyName("cleanup")] CleanupDto Cleanup,
+        [property: JsonPropertyName("embed")] EmbedDto Embed);
+
+    private sealed record CleanupDto(
+        [property: JsonPropertyName("cleaned")] string Cleaned);
+
+    private sealed record EmbedDto(
+        [property: JsonPropertyName("embedding")] List<float> Embedding,
+        [property: JsonPropertyName("dim")] int Dim);
 }

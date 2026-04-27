@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import Settings, get_settings
 from app.ml.loader import get_model_paths
 from app.models.common import HealthResponse
-from app.routers import cleanup, diarize, embed, emotion, gender, ner
+from app.routers import cleanup, diarize, embed, emotion, gender, ner, processall, rerank, web_extract
 
 _logger = logging.getLogger("mozgoslav.sidecar")
 
@@ -57,6 +57,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(ner.router)
     app.include_router(cleanup.router)
     app.include_router(embed.router)
+    app.include_router(rerank.router)
+    app.include_router(processall.router)
+    app.include_router(web_extract.router)
 
     return app
 
