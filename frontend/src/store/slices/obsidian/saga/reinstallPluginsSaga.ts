@@ -1,25 +1,37 @@
-import { call, put, takeLatest } from "redux-saga/effects";
+import { put, takeLatest } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 
-import { apiFactory } from "../../../../api";
-import type { ObsidianReinstallResult } from "../apiTypes";
+import {
+  MutationObsidianReinstallPluginsDocument,
+  type MutationObsidianReinstallPluginsMutation,
+} from "../../../../api/gql/graphql";
+import { gqlRequest } from "../../../saga/graphql";
 import { notifyError, notifySuccess } from "../../notifications";
-import { REINSTALL_PLUGINS, fetchDiagnosticsDone, reinstallPluginsDone } from "../actions";
+import { REINSTALL_PLUGINS, fetchDiagnostics, reinstallPluginsDone } from "../actions";
 
 export function* reinstallPluginsSaga(): SagaIterator {
-  const obsidianApi = apiFactory.createObsidianApi();
   try {
-    const result: ObsidianReinstallResult = yield call([obsidianApi, obsidianApi.reinstallPlugins]);
-    yield put(fetchDiagnosticsDone(result.report));
-    const installed = result.plugins.filter(
-      (p) => p.status === "Installed" || p.status === "AlreadyInstalled"
-    ).length;
-    yield put(
-      notifySuccess({
-        messageKey: "obsidian.diagnostics.reinstallPluginsSuccess",
-        params: { count: installed },
-      })
-    );
+    const data = (yield* gqlRequest(
+      MutationObsidianReinstallPluginsDocument,
+      {}
+    )) as MutationObsidianReinstallPluginsMutation;
+    const payload = data.obsidianReinstallPlugins;
+    if (payload.errors.length > 0) {
+      yield put(
+        notifyError({
+          messageKey: "errors.genericErrorWithMessage",
+          params: { message: payload.errors[0].message },
+        })
+      );
+    } else {
+      yield put(
+        notifySuccess({
+          messageKey: "obsidian.diagnostics.reinstallPluginsSuccess",
+          params: { count: payload.reinstalled.length },
+        })
+      );
+      yield put(fetchDiagnostics());
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     yield put(notifyError({ messageKey: "errors.genericErrorWithMessage", params: { message } }));

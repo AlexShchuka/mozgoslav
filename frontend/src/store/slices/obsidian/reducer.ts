@@ -1,10 +1,6 @@
 import type { Reducer } from "redux";
 
 import {
-  APPLY_LAYOUT,
-  APPLY_LAYOUT_DONE,
-  BULK_EXPORT,
-  BULK_EXPORT_DONE,
   FETCH_DIAGNOSTICS,
   FETCH_DIAGNOSTICS_DONE,
   FETCH_DIAGNOSTICS_FAILED,
@@ -17,8 +13,6 @@ import {
   SETUP_OBSIDIAN_DONE,
 } from "./actions";
 import {
-  beginApplyLayout,
-  beginBulkExport,
   beginDiagnosticsLoad,
   beginReapplyBootstrap,
   beginReinstallPlugins,
@@ -38,16 +32,6 @@ export const obsidianReducer: Reducer<ObsidianState> = (
       return beginSetup(state);
     case SETUP_OBSIDIAN_DONE:
       return { ...state, isSetupInProgress: false };
-
-    case BULK_EXPORT:
-      return beginBulkExport(state);
-    case BULK_EXPORT_DONE:
-      return { ...state, isBulkExporting: false };
-
-    case APPLY_LAYOUT:
-      return beginApplyLayout(state);
-    case APPLY_LAYOUT_DONE:
-      return { ...state, isApplyingLayout: false };
 
     case FETCH_DIAGNOSTICS:
       return beginDiagnosticsLoad(state);

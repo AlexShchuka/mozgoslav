@@ -120,8 +120,6 @@
     "created": "Note created",
     "deleteConfirm": "Delete note \"{{title}}\"? This cannot be undone.",
     "deleted": "Note deleted",
-    "organize": "Organize by PARA",
-    "organizeHint": "Configure Obsidian vault path first",
     "ungrouped": "No folder",
     "back": "Back to list"
   },
@@ -290,33 +288,28 @@
   "obsidian": {
     "title": "Obsidian vault",
     "setupTitle": "Prepare vault",
-    "setupHint": "Pick which folders to create in your vault. Content stays yours.",
-    "folders": {
-      "_inbox": "_inbox — new notes land here",
-      "People": "People — links per person",
-      "Projects": "Projects — by project",
-      "Topics": "Topics — by topic",
-      "Archive": "Archive",
-      "Templates": "Templates — Templater scripts"
-    },
-    "templateHint": "We drop a Mozgoslav Templater template if Templates is on.",
+    "setupHint": "Wire up Obsidian — vault, plugins, templates.",
     "applyButton": "Create structure",
     "setupSuccess": "Done — {{created}} new folders",
-    "tagsTitle": "Auto tags",
-    "tagsHint": "Tags appended to every new note's frontmatter.",
-    "bulkExportTitle": "Sync and layout",
-    "bulkExportHint": "Push any un-exported notes into your vault and lay them out using PARA.",
-    "syncAll": "Sync all un-exported notes",
-    "syncAllSuccess": "Exported notes: {{count}}",
-    "syncAllUpToDate": "Already in sync ({{count}} notes skipped)",
-    "applyLayout": "Apply PARA layout",
-    "applyLayoutSuccess": "Folders created: {{folders}}, notes moved: {{notes}}",
     "emptyState": {
       "vault-not-configured": "Vault not configured",
       "plugins-missing": "Obsidian plugins are not installed",
       "obsidian-feature-disabled": "Obsidian integration is disabled in Settings",
-      "export-failed": "Export failed: {{hint}}",
-      "vaultHint": "Point Mozgoslav at your Obsidian vault to start syncing."
+      "vaultHint": "Point Mozgoslav at your Obsidian vault to start."
+    },
+    "wizard": {
+      "title": "Setup wizard",
+      "subtitle": "Five steps — detect the vault, install plugins, sync templates.",
+      "hint": "Diagnostics validate each step. If something fails, hit Run again.",
+      "runStep": "Run step {{step}}",
+      "complete": "Done",
+      "step": {
+        "1": "Detect vault",
+        "2": "Install plugins",
+        "3": "Sync templates",
+        "4": "Verify REST API",
+        "5": "Verify LM Studio"
+      }
     },
     "diagnostics": {
       "title": "Integration diagnostics",
@@ -330,7 +323,9 @@
       "templater": "Templater",
       "bootstrap": "Templates / scripts",
       "restApi": "Local REST API",
-      "lmStudio": "LM Studio"
+      "lmStudio": "LM Studio",
+      "plugins": "Plugins",
+      "pluginsCount": "Installed {{installed}} of {{total}}"
     }
   },
   "onboarding": {

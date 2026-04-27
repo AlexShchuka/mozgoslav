@@ -1,8 +1,15 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { BACKEND_URL, HEALTH_POLL_INTERVAL_MS } from "../constants/api";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import type { Action, Dispatch } from "redux";
 
-export type BackendHealthStatus = "unknown" | "ok" | "down";
+import { HEALTH_POLL_INTERVAL_MS } from "../constants/api";
+import {
+  type BackendHealthStatus,
+  healthProbeRequested,
+  selectBackendHealth,
+} from "../store/slices/health";
+
+export type { BackendHealthStatus };
 
 export interface BackendHealth {
   status: BackendHealthStatus;
@@ -10,44 +17,18 @@ export interface BackendHealth {
 }
 
 export const useBackendHealth = (intervalMs: number = HEALTH_POLL_INTERVAL_MS): BackendHealth => {
-  const [health, setHealth] = useState<BackendHealth>({
-    status: "unknown",
-    lastCheckedAt: null,
-  });
+  const dispatch = useDispatch<Dispatch<Action>>();
+  const slice = useSelector(selectBackendHealth);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const check = async (): Promise<void> => {
-      try {
-        const response = await axios.get(`${BACKEND_URL}/api/health`, {
-          timeout: 2000,
-        });
-        if (cancelled) {
-          return;
-        }
-        setHealth({
-          status: response.status >= 200 && response.status < 300 ? "ok" : "down",
-          lastCheckedAt: new Date(),
-        });
-      } catch {
-        if (cancelled) {
-          return;
-        }
-        setHealth({ status: "down", lastCheckedAt: new Date() });
-      }
-    };
-
-    void check();
     const timer = setInterval(() => {
-      void check();
+      dispatch(healthProbeRequested());
     }, intervalMs);
+    return () => clearInterval(timer);
+  }, [dispatch, intervalMs]);
 
-    return () => {
-      cancelled = true;
-      clearInterval(timer);
-    };
-  }, [intervalMs]);
-
-  return health;
+  return {
+    status: slice.status,
+    lastCheckedAt: slice.lastCheckedAt ? new Date(slice.lastCheckedAt) : null,
+  };
 };

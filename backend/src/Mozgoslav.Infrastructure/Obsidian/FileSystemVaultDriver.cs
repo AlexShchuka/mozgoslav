@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -31,7 +32,7 @@ public sealed class FileSystemVaultDriver : IVaultDriver
         _logger = logger;
     }
 
-    public async Task EnsureVaultPreparedAsync(VaultProvisioningSpec spec, CancellationToken ct)
+    public async Task<VaultProvisioningReceipt> EnsureVaultPreparedAsync(VaultProvisioningSpec spec, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(spec);
         ArgumentException.ThrowIfNullOrWhiteSpace(spec.VaultRoot);
@@ -39,6 +40,8 @@ public sealed class FileSystemVaultDriver : IVaultDriver
         Directory.CreateDirectory(spec.VaultRoot);
         var backupStamp = DateTimeOffset.UtcNow.ToString("yyyyMMddTHHmmssfffZ");
         string? backupRoot = null;
+        var overwritten = new List<string>();
+        var skipped = new List<string>();
 
         foreach (var file in spec.Files)
         {
@@ -50,10 +53,12 @@ public sealed class FileSystemVaultDriver : IVaultDriver
             {
                 case WritePolicy.UserOwned when exists:
                 case WritePolicy.CreateIfMissing when exists:
+                    skipped.Add(file.VaultRelativePath);
                     continue;
                 case WritePolicy.UserOwned:
                 case WritePolicy.CreateIfMissing:
                     await WriteFromEmbeddedAsync(file, absolute, ct);
+                    overwritten.Add(file.VaultRelativePath);
                     continue;
                 case WritePolicy.Overwrite:
                     break;
@@ -66,6 +71,7 @@ public sealed class FileSystemVaultDriver : IVaultDriver
                 var onDiskSha = await ComputeSha256Async(absolute, ct);
                 if (string.Equals(onDiskSha, file.Sha256, StringComparison.OrdinalIgnoreCase))
                 {
+                    skipped.Add(file.VaultRelativePath);
                     continue;
                 }
                 backupRoot ??= Path.Combine(spec.VaultRoot, BackupFolder, BackupSubdir, backupStamp);
@@ -73,9 +79,11 @@ public sealed class FileSystemVaultDriver : IVaultDriver
             }
 
             await WriteFromEmbeddedAsync(file, absolute, ct);
+            overwritten.Add(file.VaultRelativePath);
         }
 
         _logger.LogInformation("Vault prepared at {Vault}: {Count} files processed", spec.VaultRoot, spec.Files.Count);
+        return new VaultProvisioningReceipt(backupRoot, overwritten, skipped);
     }
 
     public async Task<VaultWriteReceipt> WriteNoteAsync(VaultNoteWrite write, CancellationToken ct)

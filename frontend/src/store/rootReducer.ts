@@ -11,6 +11,8 @@ import type { SettingsState } from "./slices/settings";
 import { settingsReducer } from "./slices/settings";
 import type { ObsidianState } from "./slices/obsidian";
 import { obsidianReducer } from "./slices/obsidian";
+import type { ObsidianWizardState } from "./slices/obsidianWizard";
+import { obsidianWizardReducer } from "./slices/obsidianWizard";
 import type { OnboardingState } from "./slices/onboarding";
 import { onboardingReducer } from "./slices/onboarding";
 import type { UiState } from "./slices/ui";
@@ -29,6 +31,8 @@ import type { BackupsState } from "./slices/backups";
 import { backupsReducer } from "./slices/backups";
 import type { HotkeysState } from "./slices/hotkeys";
 import { hotkeysReducer } from "./slices/hotkeys";
+import type { HealthState } from "./slices/health";
+import { healthReducer } from "./slices/health";
 
 export const rootReducer = combineReducers({
   recording: recordingReducer,
@@ -37,6 +41,7 @@ export const rootReducer = combineReducers({
   profiles: profilesReducer,
   settings: settingsReducer,
   obsidian: obsidianReducer,
+  obsidianWizard: obsidianWizardReducer,
   onboarding: onboardingReducer,
   ui: uiReducer,
   jobs: jobsReducer,
@@ -46,6 +51,7 @@ export const rootReducer = combineReducers({
   models: modelsReducer,
   backups: backupsReducer,
   hotkeys: hotkeysReducer,
+  health: healthReducer,
 });
 
 export interface GlobalState {
@@ -55,6 +61,7 @@ export interface GlobalState {
   profiles: ProfilesState;
   settings: SettingsState;
   obsidian: ObsidianState;
+  obsidianWizard: ObsidianWizardState;
   onboarding: OnboardingState;
   ui: UiState;
   jobs: JobsState;
@@ -64,4 +71,5 @@ export interface GlobalState {
   models: ModelsState;
   backups: BackupsState;
   hotkeys: HotkeysState;
+  health: HealthState;
 }

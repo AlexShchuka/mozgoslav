@@ -120,8 +120,6 @@
     "created": "Заметка создана",
     "deleteConfirm": "Удалить заметку «{{title}}»? Отменить нельзя.",
     "deleted": "Заметка удалена",
-    "organize": "Разложить по PARA",
-    "organizeHint": "Сначала настрой путь к Obsidian vault",
     "ungrouped": "Без папки",
     "back": "К списку"
   },
@@ -290,33 +288,28 @@
   "obsidian": {
     "title": "Obsidian vault",
     "setupTitle": "Подготовить vault",
-    "setupHint": "Выбери, какие папки создать в твоём vault. Это просто структура — содержимое ты заполняешь сам.",
-    "folders": {
-      "_inbox": "_inbox — сюда падают новые заметки",
-      "People": "People — связки по людям",
-      "Projects": "Projects — по проектам",
-      "Topics": "Topics — по темам",
-      "Archive": "Archive — архив",
-      "Templates": "Templates — шаблоны Templater"
-    },
-    "templateHint": "Добавим шаблон Mozgoslav для Templater, если включить Templates.",
+    "setupHint": "Подключим Obsidian — vault, плагины и шаблоны.",
     "applyButton": "Создать структуру",
     "setupSuccess": "Готово — {{created}} новых папок",
-    "tagsTitle": "Авто-теги",
-    "tagsHint": "Теги, которые будут добавляться во frontmatter новых заметок.",
-    "bulkExportTitle": "Синхронизация и раскладка",
-    "bulkExportHint": "Прогнать все не-экспортированные заметки и разложить их по PARA.",
-    "syncAll": "Выгрузить все новые заметки",
-    "syncAllSuccess": "Экспортировано заметок: {{count}}",
-    "syncAllUpToDate": "Всё уже в vault'е ({{count}} заметок пропущено)",
-    "applyLayout": "Разложить по PARA",
-    "applyLayoutSuccess": "Создано папок: {{folders}}, перемещено заметок: {{notes}}",
     "emptyState": {
       "vault-not-configured": "Vault не настроен",
       "plugins-missing": "Плагины Obsidian не установлены",
       "obsidian-feature-disabled": "Интеграция с Obsidian выключена в настройках",
-      "export-failed": "Экспорт не удался: {{hint}}",
-      "vaultHint": "Укажи путь к Obsidian vault в настройках, чтобы начать синхронизацию."
+      "vaultHint": "Укажи путь к Obsidian vault в настройках, чтобы начать."
+    },
+    "wizard": {
+      "title": "Мастер настройки",
+      "subtitle": "Пять шагов — обнаружим vault, поставим плагины, синхронизируем шаблоны.",
+      "hint": "На каждом шаге диагностика проверит результат. Если что-то пошло не так — нажми «Запустить» снова.",
+      "runStep": "Запустить шаг {{step}}",
+      "complete": "Готово",
+      "step": {
+        "1": "Обнаружить vault",
+        "2": "Установить плагины",
+        "3": "Синхронизировать шаблоны",
+        "4": "Проверить REST API",
+        "5": "Проверить LM Studio"
+      }
     },
     "diagnostics": {
       "title": "Диагностика интеграции",
@@ -330,7 +323,9 @@
       "templater": "Templater",
       "bootstrap": "Шаблоны / скрипты",
       "restApi": "Local REST API",
-      "lmStudio": "LM Studio"
+      "lmStudio": "LM Studio",
+      "plugins": "Плагины",
+      "pluginsCount": "Установлено {{installed}} из {{total}}"
     }
   },
   "onboarding": {

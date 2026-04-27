@@ -1,35 +1,31 @@
 import { expectSaga } from "redux-saga-test-plan";
-import * as matchers from "redux-saga-test-plan/matchers";
-import { throwError } from "redux-saga-test-plan/providers";
 
 import { fetchDiagnostics, fetchDiagnosticsDone, fetchDiagnosticsFailed } from "../actions";
 import { obsidianReducer } from "../reducer";
 import { diagnosticsSaga } from "../saga/diagnosticsSaga";
-import type { VaultDiagnosticsReport } from "../apiTypes";
+import type { CheckSeverity, VaultDiagnosticsReport } from "../apiTypes";
 
-jest.mock("../../../../api", () => {
-  const obsidianStub = {
-    diagnostics: jest.fn(),
-    reapplyBootstrap: jest.fn(),
-    reinstallPlugins: jest.fn(),
-  };
-  return {
-    apiFactory: { createObsidianApi: () => obsidianStub },
-    __obsidianStub: obsidianStub,
-  };
-});
+const SEV_OK: CheckSeverity = "OK";
 
-const obsidianStub = (
-  jest.requireMock("../../../../api") as {
-    __obsidianStub: { diagnostics: jest.Mock };
-  }
-).__obsidianStub;
+jest.mock("../../../../api/graphqlClient", () => ({
+  graphqlClient: { request: jest.fn() },
+  getGraphqlWsClient: jest.fn(() => ({
+    subscribe: jest.fn(() => () => {}),
+    dispose: jest.fn(),
+  })),
+}));
 
-const stubReport: VaultDiagnosticsReport = {
+import { graphqlClient } from "../../../../api/graphqlClient";
+
+const mockedRequest = graphqlClient.request as jest.Mock;
+
+const stubGqlReport = {
   snapshotId: "snap-1",
+  generatedAt: "2024-01-01T00:00:00Z",
+  isHealthy: true,
   vault: {
     ok: true,
-    severity: "Ok",
+    severity: SEV_OK,
     code: "VAULT_OK",
     message: "",
     actions: [],
@@ -38,7 +34,7 @@ const stubReport: VaultDiagnosticsReport = {
   plugins: [],
   templater: {
     ok: true,
-    severity: "Ok",
+    severity: SEV_OK,
     code: "TEMPLATER_OK",
     message: "",
     actions: [],
@@ -47,7 +43,7 @@ const stubReport: VaultDiagnosticsReport = {
   },
   bootstrap: {
     ok: true,
-    severity: "Ok",
+    severity: SEV_OK,
     code: "BOOTSTRAP_OK",
     message: "",
     actions: [],
@@ -56,16 +52,33 @@ const stubReport: VaultDiagnosticsReport = {
   restApi: {
     ok: true,
     required: false,
-    severity: "Ok",
+    severity: SEV_OK,
     code: "REST_OK",
     message: "",
     actions: [],
     host: null,
     version: null,
   },
-  lmStudio: { ok: true, severity: "Ok", code: "LM_OK", message: "", actions: [], endpoint: null },
+  lmStudio: {
+    ok: true,
+    severity: SEV_OK,
+    code: "LM_OK",
+    message: "",
+    actions: [],
+    endpoint: null,
+  },
+};
+
+const mappedReport: VaultDiagnosticsReport = {
+  snapshotId: "snap-1",
   generatedAt: "2024-01-01T00:00:00Z",
   isHealthy: true,
+  vault: { ...stubGqlReport.vault },
+  plugins: [],
+  templater: { ...stubGqlReport.templater },
+  bootstrap: { ...stubGqlReport.bootstrap, files: [] },
+  restApi: { ...stubGqlReport.restApi },
+  lmStudio: { ...stubGqlReport.lmStudio },
 };
 
 const dispatch = (action: unknown) => action as Parameters<typeof obsidianReducer>[1];
@@ -74,19 +87,39 @@ describe("diagnosticsSaga", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("emits FETCH_DIAGNOSTICS_DONE on happy path", async () => {
+    mockedRequest.mockResolvedValueOnce({
+      obsidianRunDiagnostics: { report: stubGqlReport, errors: [] },
+    });
+
     const result = await expectSaga(diagnosticsSaga)
       .withReducer(obsidianReducer)
-      .provide([[matchers.call.fn(obsidianStub.diagnostics), stubReport]])
-      .put(fetchDiagnosticsDone(stubReport))
+      .put(fetchDiagnosticsDone(mappedReport))
+      .run();
+
+    expect(result.storeState.isDiagnosticsLoading).toBe(false);
+  });
+
+  it("emits FETCH_DIAGNOSTICS_FAILED when payload contains errors", async () => {
+    mockedRequest.mockResolvedValueOnce({
+      obsidianRunDiagnostics: {
+        report: null,
+        errors: [{ code: "X", message: "snapshot stale" }],
+      },
+    });
+
+    const result = await expectSaga(diagnosticsSaga)
+      .withReducer(obsidianReducer)
+      .put(fetchDiagnosticsFailed("snapshot stale"))
       .run();
 
     expect(result.storeState.isDiagnosticsLoading).toBe(false);
   });
 
   it("emits FETCH_DIAGNOSTICS_FAILED on throw", async () => {
+    mockedRequest.mockRejectedValueOnce(new Error("timeout"));
+
     const result = await expectSaga(diagnosticsSaga)
       .withReducer(obsidianReducer)
-      .provide([[matchers.call.fn(obsidianStub.diagnostics), throwError(new Error("timeout"))]])
       .put(fetchDiagnosticsFailed("timeout"))
       .run();
 
@@ -99,8 +132,8 @@ describe("diagnosticsSaga", () => {
   });
 
   it("reducer — FETCH_DIAGNOSTICS_DONE stores report", () => {
-    const state = obsidianReducer(undefined, dispatch(fetchDiagnosticsDone(stubReport)));
-    expect(state.diagnostics).toEqual(stubReport);
+    const state = obsidianReducer(undefined, dispatch(fetchDiagnosticsDone(mappedReport)));
+    expect(state.diagnostics).toEqual(mappedReport);
     expect(state.isDiagnosticsLoading).toBe(false);
   });
 });

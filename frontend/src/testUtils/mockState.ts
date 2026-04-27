@@ -16,6 +16,12 @@ import { initialBackupsState, type BackupsState } from "../store/slices/backups"
 import { initialOnboardingState, type OnboardingState } from "../store/slices/onboarding";
 import { initialRagState, type RagState } from "../store/slices/rag";
 import { initialHotkeysState, type HotkeysState } from "../store/slices/hotkeys";
+import { initialObsidianState, type ObsidianState } from "../store/slices/obsidian";
+import {
+  initialObsidianWizardState,
+  type ObsidianWizardState,
+} from "../store/slices/obsidianWizard";
+import { initialHealthState, type HealthState } from "../store/slices/health";
 
 export const jobsById = (jobs: readonly ProcessingJob[]): Record<string, ProcessingJob> =>
   Object.fromEntries(jobs.map((job) => [job.id, job]));
@@ -95,6 +101,22 @@ export const mockHotkeysState = (
   patch: Partial<HotkeysState> = {}
 ): Pick<GlobalState, "hotkeys"> => ({
   hotkeys: { ...initialHotkeysState, ...patch },
+});
+
+export const mockObsidianState = (
+  patch: Partial<ObsidianState> = {}
+): Pick<GlobalState, "obsidian"> => ({
+  obsidian: { ...initialObsidianState, ...patch },
+});
+
+export const mockObsidianWizardState = (
+  patch: Partial<ObsidianWizardState> = {}
+): Pick<GlobalState, "obsidianWizard"> => ({
+  obsidianWizard: { ...initialObsidianWizardState, ...patch },
+});
+
+export const mockHealthState = (patch: Partial<HealthState> = {}): Pick<GlobalState, "health"> => ({
+  health: { ...initialHealthState, ...patch },
 });
 
 export const mergeMockState = (...parts: Partial<GlobalState>[]): Partial<GlobalState> =>

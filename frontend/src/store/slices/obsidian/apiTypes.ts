@@ -1,12 +1,14 @@
-export type CheckSeverity = "Ok" | "Advisory" | "Warning" | "Error";
+export type CheckSeverity = "OK" | "ADVISORY" | "WARNING" | "ERROR";
 
 export type DiagnosticAction =
-  | "OpenOnboarding"
-  | "ReinstallPlugins"
-  | "ReapplyBootstrap"
-  | "RefreshRestToken"
-  | "OpenLmStudioHelp"
-  | "OpenSettings";
+  | "OPEN_ONBOARDING"
+  | "REINSTALL_PLUGINS"
+  | "REAPPLY_BOOTSTRAP"
+  | "REFRESH_REST_TOKEN"
+  | "OPEN_LM_STUDIO_HELP"
+  | "OPEN_SETTINGS";
+
+export type BootstrapDriftStatus = "OK" | "MISSING" | "OUTDATED" | "USER_MODIFIED" | "EXTRA";
 
 export interface VaultPathCheck {
   readonly ok: boolean;
@@ -44,7 +46,7 @@ export interface TemplaterSettingsCheck {
 
 export interface BootstrapFileDrift {
   readonly vaultRelativePath: string;
-  readonly status: "Ok" | "Missing" | "Outdated" | "UserModified" | "Extra";
+  readonly status: BootstrapDriftStatus;
   readonly expectedSha256: string;
   readonly actualSha256: string | null;
 }
@@ -90,22 +92,12 @@ export interface VaultDiagnosticsReport {
   readonly isHealthy: boolean;
 }
 
-export interface ObsidianReinstallResult {
-  readonly plugins: ReadonlyArray<{
-    readonly pluginId: string;
-    readonly status: string;
-    readonly message: string | null;
-    readonly writtenFiles: readonly string[];
-  }>;
-  readonly report: VaultDiagnosticsReport;
+export interface ReapplyBootstrapResult {
+  readonly overwritten: readonly string[];
+  readonly skipped: readonly string[];
+  readonly backedUpTo: string | null;
 }
 
-export interface ObsidianReapplyResult {
-  readonly report: VaultDiagnosticsReport;
-}
-
-export interface ObsidianBulkExportError {
-  readonly error: string;
-  readonly hint: string;
-  readonly actions: readonly DiagnosticAction[];
+export interface ReinstallPluginsResult {
+  readonly reinstalled: readonly string[];
 }

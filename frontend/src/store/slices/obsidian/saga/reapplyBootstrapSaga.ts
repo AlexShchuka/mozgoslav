@@ -1,17 +1,32 @@
-import { call, put, takeLatest } from "redux-saga/effects";
+import { put, takeLatest } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 
-import { apiFactory } from "../../../../api";
-import type { ObsidianReapplyResult } from "../apiTypes";
+import {
+  MutationObsidianReapplyBootstrapDocument,
+  type MutationObsidianReapplyBootstrapMutation,
+} from "../../../../api/gql/graphql";
+import { gqlRequest } from "../../../saga/graphql";
 import { notifyError, notifySuccess } from "../../notifications";
-import { REAPPLY_BOOTSTRAP, fetchDiagnosticsDone, reapplyBootstrapDone } from "../actions";
+import { REAPPLY_BOOTSTRAP, fetchDiagnostics, reapplyBootstrapDone } from "../actions";
 
 export function* reapplyBootstrapSaga(): SagaIterator {
-  const obsidianApi = apiFactory.createObsidianApi();
   try {
-    const result: ObsidianReapplyResult = yield call([obsidianApi, obsidianApi.reapplyBootstrap]);
-    yield put(fetchDiagnosticsDone(result.report));
-    yield put(notifySuccess({ messageKey: "obsidian.diagnostics.reapplyBootstrapSuccess" }));
+    const data = (yield* gqlRequest(
+      MutationObsidianReapplyBootstrapDocument,
+      {}
+    )) as MutationObsidianReapplyBootstrapMutation;
+    const payload = data.obsidianReapplyBootstrap;
+    if (payload.errors.length > 0) {
+      yield put(
+        notifyError({
+          messageKey: "errors.genericErrorWithMessage",
+          params: { message: payload.errors[0].message },
+        })
+      );
+    } else {
+      yield put(notifySuccess({ messageKey: "obsidian.diagnostics.reapplyBootstrapSuccess" }));
+      yield put(fetchDiagnostics());
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     yield put(notifyError({ messageKey: "errors.genericErrorWithMessage", params: { message } }));
