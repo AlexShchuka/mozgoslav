@@ -20,6 +20,9 @@ public sealed class VaultSidecarOrchestrator
     private const string LocalRestApiPluginId = "obsidian-local-rest-api";
     private const string TemplaterTemplatesFolder = "_system/templates";
     private const string TemplaterScriptsFolder = "_system/scripts";
+    private const string WizardResultOk = "ok";
+    private const string WizardResultError = "error";
+    private const string WizardResultSkipped = "skipped";
 
     private static readonly JsonSerializerOptions WizardJson = new(JsonSerializerDefaults.Web)
     {
@@ -32,6 +35,7 @@ public sealed class VaultSidecarOrchestrator
     private readonly IVaultBootstrapProvider _bootstrap;
     private readonly IAppSettings _settings;
     private readonly IReadOnlyList<PluginInstallSpec> _pinnedPlugins;
+    private readonly IObsidianMetricsSink _metrics;
     private readonly ILogger<VaultSidecarOrchestrator> _logger;
 
     public VaultSidecarOrchestrator(
@@ -41,6 +45,7 @@ public sealed class VaultSidecarOrchestrator
         IVaultBootstrapProvider bootstrap,
         IAppSettings settings,
         IReadOnlyList<PluginInstallSpec> pinnedPlugins,
+        IObsidianMetricsSink metrics,
         ILogger<VaultSidecarOrchestrator> logger)
     {
         _driver = driver;
@@ -49,6 +54,7 @@ public sealed class VaultSidecarOrchestrator
         _bootstrap = bootstrap;
         _settings = settings;
         _pinnedPlugins = pinnedPlugins;
+        _metrics = metrics;
         _logger = logger;
     }
 
@@ -81,36 +87,51 @@ public sealed class VaultSidecarOrchestrator
         }
 
         var vaultRoot = _settings.VaultPath;
-        switch (step)
+        var stepOutcome = WizardResultOk;
+        try
         {
-            case 1:
-                EnsureVaultLooksLikeObsidian(vaultRoot);
-                break;
-            case 2:
-                RequireVaultRoot(vaultRoot);
-                foreach (var plugin in _pinnedPlugins)
-                {
-                    ct.ThrowIfCancellationRequested();
-                    await _plugins.InstallAsync(plugin, vaultRoot, ct);
-                }
-                break;
-            case 3:
-                RequireVaultRoot(vaultRoot);
-                break;
-            case 4:
-                RequireVaultRoot(vaultRoot);
-                await CaptureRestTokenAsync(vaultRoot, ct);
-                break;
-            case 5:
-                RequireVaultRoot(vaultRoot);
-                var spec = BuildSpec(vaultRoot);
-                await _driver.EnsureVaultPreparedAsync(spec, ct);
-                await PreSeedTemplaterDataAsync(vaultRoot, ct);
-                break;
+            switch (step)
+            {
+                case 1:
+                    EnsureVaultLooksLikeObsidian(vaultRoot);
+                    break;
+                case 2:
+                    RequireVaultRoot(vaultRoot);
+                    foreach (var plugin in _pinnedPlugins)
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        await _plugins.InstallAsync(plugin, vaultRoot, ct);
+                    }
+                    break;
+                case 3:
+                    RequireVaultRoot(vaultRoot);
+                    break;
+                case 4:
+                    RequireVaultRoot(vaultRoot);
+                    var captured = await CaptureRestTokenAsync(vaultRoot, ct);
+                    stepOutcome = captured ? WizardResultOk : WizardResultSkipped;
+                    break;
+                case 5:
+                    RequireVaultRoot(vaultRoot);
+                    var spec = BuildSpec(vaultRoot);
+                    await _driver.EnsureVaultPreparedAsync(spec, ct);
+                    await PreSeedTemplaterDataAsync(vaultRoot, ct);
+                    break;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            _metrics.RecordWizardStep(step, WizardResultError);
+            throw;
         }
 
         var diagnostics = await _diagnostics.RunAsync(ct);
         var nextStep = ComputeNextStep(step, diagnostics);
+        _metrics.RecordWizardStep(step, stepOutcome);
         return new WizardStepResult(step, nextStep, diagnostics);
     }
 
@@ -170,33 +191,34 @@ public sealed class VaultSidecarOrchestrator
         return vaultRoot;
     }
 
-    private async Task CaptureRestTokenAsync(string vaultRoot, CancellationToken ct)
+    private async Task<bool> CaptureRestTokenAsync(string vaultRoot, CancellationToken ct)
     {
         var dataPath = Path.Combine(vaultRoot, ".obsidian", "plugins", LocalRestApiPluginId, "data.json");
         if (!File.Exists(dataPath))
         {
             _logger.LogInformation("Obsidian wizard: REST API data.json not found at {Path}", dataPath);
-            return;
+            return false;
         }
         var text = await File.ReadAllTextAsync(dataPath, ct);
         using var document = JsonDocument.Parse(text);
         if (!document.RootElement.TryGetProperty("apiKey", out var apiKeyElement))
         {
             _logger.LogInformation("Obsidian wizard: REST API data.json has no apiKey field");
-            return;
+            return false;
         }
         var token = apiKeyElement.GetString();
         if (string.IsNullOrWhiteSpace(token))
         {
             _logger.LogInformation("Obsidian wizard: REST API token is empty");
-            return;
+            return false;
         }
         var snapshot = _settings.Snapshot;
         if (string.Equals(snapshot.ObsidianApiToken, token, StringComparison.Ordinal))
         {
-            return;
+            return true;
         }
         await _settings.SaveAsync(snapshot with { ObsidianApiToken = token }, ct);
+        return true;
     }
 
     private static async Task PreSeedTemplaterDataAsync(string vaultRoot, CancellationToken ct)

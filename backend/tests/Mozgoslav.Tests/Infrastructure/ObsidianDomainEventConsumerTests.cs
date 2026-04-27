@@ -3,17 +3,14 @@ using System.Collections;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-
 using FluentAssertions;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Obsidian;
 using Mozgoslav.Domain.Entities;
+using Mozgoslav.Infrastructure.Observability;
 using Mozgoslav.Infrastructure.Obsidian;
-
 using NSubstitute;
 
 namespace Mozgoslav.Tests.Infrastructure;
@@ -197,11 +194,13 @@ public sealed class ObsidianDomainEventConsumerTests
             services.AddSingleton(fixture.Notes);
             services.AddSingleton(fixture.Profiles);
             services.AddSingleton(fixture.Driver);
+            services.AddSingleton<MozgoslavMetrics>();
             var provider = services.BuildServiceProvider();
             var handler = new ObsidianDomainEventConsumer(
                 fixture.Bus,
                 provider.GetRequiredService<IServiceScopeFactory>(),
-                NullLogger<ObsidianDomainEventConsumer>.Instance);
+                NullLogger<ObsidianDomainEventConsumer>.Instance,
+                provider.GetRequiredService<MozgoslavMetrics>());
             var harness = new HandlerHarness(provider, handler);
             await handler.StartAsync(harness._cts.Token);
             await WaitUntilSubscribedAsync(fixture.Bus, TimeSpan.FromSeconds(5));

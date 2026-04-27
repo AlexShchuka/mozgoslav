@@ -43,6 +43,7 @@ public interface IAppSettings
     bool DictationDumpEnabled { get; }
     string DictationDumpHotkeyToggle { get; }
     string DictationDumpHotkeyHold { get; }
+    string ObsidianBootstrapPins { get; }
 
     AppSettingsDto Snapshot { get; }
 

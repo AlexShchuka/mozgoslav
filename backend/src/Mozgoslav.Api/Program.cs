@@ -227,6 +227,7 @@ try
     builder.Services.AddSingleton<BackupService>();
     builder.Services.AddSingleton<RecordingSessionRegistry>();
     builder.Services.AddSingleton<MozgoslavMetrics>();
+    builder.Services.AddSingleton<IObsidianMetricsSink, ObsidianMetricsSink>();
     builder.Services.AddSingleton<SyncthingConfigService>();
 
     builder.Services.AddSingleton(_ => new BagOfWordsEmbeddingService());

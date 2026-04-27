@@ -63,6 +63,7 @@ type AppSettingsDto {
   dictationDumpEnabled: Boolean!
   dictationDumpHotkeyToggle: String!
   dictationDumpHotkeyHold: String!
+  obsidianBootstrapPins: String!
 }
 
 type AudioDeviceChangedEvent {

@@ -61,6 +61,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     public bool DictationDumpEnabled => Snapshot.DictationDumpEnabled;
     public string DictationDumpHotkeyToggle => Snapshot.DictationDumpHotkeyToggle;
     public string DictationDumpHotkeyHold => Snapshot.DictationDumpHotkeyHold;
+    public string ObsidianBootstrapPins => AppSettingsDto.ObsidianBootstrapPinsResource;
     public AppSettingsDto Snapshot { get; private set; } = AppSettingsDto.Defaults;
 
     public async Task<AppSettingsDto> LoadAsync(CancellationToken ct)

@@ -41,6 +41,10 @@ public sealed record AppSettingsDto(
     string DictationDumpHotkeyToggle = "",
     string DictationDumpHotkeyHold = "")
 {
+    public const string ObsidianBootstrapPinsResource = "Mozgoslav.Infrastructure.Resources.ObsidianBootstrap.pinned-plugins.json";
+
+    public string ObsidianBootstrapPins => ObsidianBootstrapPinsResource;
+
     public static AppSettingsDto Defaults { get; } = new(
         VaultPath: string.Empty,
         LlmProvider: "openai_compatible",
