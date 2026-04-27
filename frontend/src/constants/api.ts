@@ -37,13 +37,6 @@ export const API_ENDPOINTS = {
 
   meetilyImport: "/api/meetily/import",
 
-  obsidianSetup: "/api/obsidian/setup",
-  obsidianExportAll: "/api/obsidian/export-all",
-  obsidianApplyLayout: "/api/obsidian/apply-layout",
-  obsidianDiagnostics: "/api/obsidian/diagnostics",
-  obsidianReapplyBootstrap: "/api/obsidian/reapply-bootstrap",
-  obsidianReinstallPlugins: "/api/obsidian/reinstall-plugins",
-
   logs: "/api/logs",
   logsTail: "/api/logs/tail",
 

@@ -1,15 +1,14 @@
-import { FC, useEffect, useMemo, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import {
   AlertTriangle,
   CheckCircle2,
-  Circle,
+  ChevronRight,
   FolderTree,
   LayoutTemplate,
   RefreshCw,
   ShieldCheck,
-  UploadCloud,
 } from "lucide-react";
 
 import Button from "../../components/Button";
@@ -18,54 +17,48 @@ import { AppSettings, DEFAULT_SETTINGS } from "../../domain/Settings";
 import type { CheckSeverity } from "../../store/slices/obsidian/apiTypes";
 import type { ObsidianProps } from "./types";
 import {
-  BulkButtonRow,
+  ButtonRow,
   DiagnosticsChip,
   DiagnosticsChipMessage,
   DiagnosticsChipTitle,
   DiagnosticsGrid,
   EmptyStateBanner,
-  FolderGrid,
+  ErrorMessage,
   FolderHint,
-  FolderItem,
   PageRoot,
   PageTitle,
+  StepBadge,
+  StepItem,
+  Stepper,
   Subtitle,
   VaultRow,
 } from "./Obsidian.style";
 
-const PRESET_FOLDERS = [
-  { key: "_inbox", required: true },
-  { key: "People", required: false },
-  { key: "Projects", required: false },
-  { key: "Topics", required: false },
-  { key: "Archive", required: false },
-  { key: "Templates", required: false },
-] as const;
+const WIZARD_STEPS = [1, 2, 3, 4, 5] as const;
 
 const Obsidian: FC<ObsidianProps> = ({
   settings: loadedSettings,
-  isBulkExporting,
-  isApplyingLayout,
   isSetupInProgress,
   diagnostics,
   isDiagnosticsLoading,
   diagnosticsError,
   isReapplyingBootstrap,
   isReinstallingPlugins,
+  wizardCurrentStep,
+  wizardNextStep,
+  wizardIsStepRunning,
+  wizardIsComplete,
+  wizardError,
   onLoadSettings,
   onSaveSettings,
   onSetup,
-  onBulkExport,
-  onApplyLayout,
   onFetchDiagnostics,
   onReapplyBootstrap,
   onReinstallPlugins,
+  onRunWizardStep,
 }) => {
   const { t } = useTranslation();
   const [settings, setSettings] = useState<AppSettings>(loadedSettings ?? DEFAULT_SETTINGS);
-  const [selected, setSelected] = useState<Set<string>>(
-    () => new Set(PRESET_FOLDERS.filter((f) => f.required).map((f) => f.key))
-  );
 
   useEffect(() => {
     onLoadSettings();
@@ -78,16 +71,6 @@ const Obsidian: FC<ObsidianProps> = ({
   useEffect(() => {
     if (loadedSettings) setSettings(loadedSettings);
   }, [loadedSettings]);
-
-  const toggle = (key: string, required: boolean) => {
-    if (required) return;
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
 
   const pickVault = async () => {
     if (!window.mozgoslav) return;
@@ -107,9 +90,9 @@ const Obsidian: FC<ObsidianProps> = ({
     onSetup(settings.vaultPath);
   };
 
-  const selectedArray = useMemo(() => Array.from(selected), [selected]);
-
   const vaultMissing = !settings.vaultPath;
+  const vaultOk = diagnostics?.vault.ok ?? false;
+  const showWizard = !vaultOk;
 
   return (
     <PageRoot>
@@ -137,139 +120,133 @@ const Obsidian: FC<ObsidianProps> = ({
         </VaultRow>
       </Card>
 
-      <Card title={t("obsidian.bulkExportTitle")} subtitle={t("obsidian.bulkExportHint")}>
-        <BulkButtonRow>
-          <Button
-            variant="primary"
-            leftIcon={<UploadCloud size={16} />}
-            data-testid="obsidian-sync-all"
-            isLoading={isBulkExporting}
-            disabled={isBulkExporting}
-            onClick={onBulkExport}
-          >
-            {t("obsidian.syncAll")}
-          </Button>
-          <Button
-            variant="secondary"
-            leftIcon={<LayoutTemplate size={16} />}
-            data-testid="obsidian-apply-layout"
-            isLoading={isApplyingLayout}
-            disabled={isApplyingLayout}
-            onClick={onApplyLayout}
-          >
-            {t("obsidian.applyLayout")}
-          </Button>
-        </BulkButtonRow>
-      </Card>
-
-      <Card title={t("obsidian.setupTitle")} subtitle={t("obsidian.setupHint")}>
-        <FolderGrid>
-          {PRESET_FOLDERS.map(({ key, required }) => {
-            const active = selected.has(key);
-            return (
-              <FolderItem
-                key={key}
-                type="button"
-                $active={active}
-                $required={required}
-                onClick={() => toggle(key, required)}
-              >
-                {active ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-                <div>
-                  <strong>{t(`obsidian.folders.${key}` as const)}</strong>
-                  {required && <FolderHint>{t("common.yes")} · обязательно</FolderHint>}
-                </div>
-              </FolderItem>
-            );
-          })}
-        </FolderGrid>
-        <FolderHint>{t("obsidian.templateHint")}</FolderHint>
-        <div style={{ marginTop: 16 }}>
-          <Button
-            variant="primary"
-            leftIcon={<FolderTree size={16} />}
-            isLoading={isSetupInProgress}
-            onClick={applySetup}
-            disabled={!settings.vaultPath || selectedArray.length === 0}
-          >
-            {t("obsidian.applyButton")}
-          </Button>
-        </div>
-      </Card>
-
-      <Card title={t("obsidian.diagnostics.title")} subtitle={t("obsidian.diagnostics.subtitle")}>
-        <BulkButtonRow>
-          <Button
-            variant="secondary"
-            leftIcon={<RefreshCw size={16} />}
-            isLoading={isDiagnosticsLoading}
-            onClick={onFetchDiagnostics}
-            data-testid="obsidian-refresh-diagnostics"
-          >
-            {t("obsidian.diagnostics.refresh")}
-          </Button>
-          <Button
-            variant="secondary"
-            leftIcon={<ShieldCheck size={16} />}
-            isLoading={isReapplyingBootstrap}
-            disabled={!settings.vaultPath}
-            onClick={onReapplyBootstrap}
-            data-testid="obsidian-reapply-bootstrap"
-          >
-            {t("obsidian.diagnostics.reapplyBootstrap")}
-          </Button>
-          <Button
-            variant="secondary"
-            leftIcon={<LayoutTemplate size={16} />}
-            isLoading={isReinstallingPlugins}
-            disabled={!settings.vaultPath}
-            onClick={onReinstallPlugins}
-            data-testid="obsidian-reinstall-plugins"
-          >
-            {t("obsidian.diagnostics.reinstallPlugins")}
-          </Button>
-        </BulkButtonRow>
-        {diagnosticsError && (
-          <FolderHint data-testid="obsidian-diagnostics-error">{diagnosticsError}</FolderHint>
-        )}
-        {diagnostics && (
-          <DiagnosticsGrid data-testid="obsidian-diagnostics-grid">
-            <Chip
-              label={t("obsidian.diagnostics.vault")}
-              severity={diagnostics.vault.severity}
-              message={diagnostics.vault.message}
-            />
-            {diagnostics.plugins.map((plugin) => (
+      {showWizard ? (
+        <Card title={t("obsidian.wizard.title")} subtitle={t("obsidian.wizard.subtitle")}>
+          <Stepper data-testid="obsidian-wizard-stepper">
+            {WIZARD_STEPS.map((step) => {
+              const state =
+                step < wizardCurrentStep
+                  ? "done"
+                  : step === wizardCurrentStep
+                    ? "active"
+                    : "pending";
+              return (
+                <StepItem
+                  key={step}
+                  $state={state}
+                  data-testid={`obsidian-wizard-step-${step}`}
+                  data-state={state}
+                >
+                  <StepBadge>{state === "done" ? <CheckCircle2 size={14} /> : step}</StepBadge>
+                  <span>{t(`obsidian.wizard.step.${step}` as const)}</span>
+                </StepItem>
+              );
+            })}
+          </Stepper>
+          {wizardError && (
+            <ErrorMessage data-testid="obsidian-wizard-error">{wizardError}</ErrorMessage>
+          )}
+          <ButtonRow>
+            <Button
+              variant="primary"
+              leftIcon={<ChevronRight size={16} />}
+              isLoading={wizardIsStepRunning}
+              disabled={wizardIsStepRunning || wizardIsComplete || !settings.vaultPath}
+              onClick={() => onRunWizardStep(wizardNextStep ?? wizardCurrentStep)}
+              data-testid="obsidian-wizard-run"
+            >
+              {wizardIsComplete
+                ? t("obsidian.wizard.complete")
+                : t("obsidian.wizard.runStep", { step: wizardNextStep ?? wizardCurrentStep })}
+            </Button>
+            <Button
+              variant="secondary"
+              leftIcon={<FolderTree size={16} />}
+              isLoading={isSetupInProgress}
+              onClick={applySetup}
+              disabled={!settings.vaultPath || isSetupInProgress}
+              data-testid="obsidian-setup"
+            >
+              {t("obsidian.applyButton")}
+            </Button>
+          </ButtonRow>
+          <FolderHint>{t("obsidian.wizard.hint")}</FolderHint>
+        </Card>
+      ) : (
+        <Card title={t("obsidian.diagnostics.title")} subtitle={t("obsidian.diagnostics.subtitle")}>
+          <ButtonRow>
+            <Button
+              variant="secondary"
+              leftIcon={<RefreshCw size={16} />}
+              isLoading={isDiagnosticsLoading}
+              onClick={onFetchDiagnostics}
+              data-testid="obsidian-refresh-diagnostics"
+            >
+              {t("obsidian.diagnostics.refresh")}
+            </Button>
+            <Button
+              variant="secondary"
+              leftIcon={<ShieldCheck size={16} />}
+              isLoading={isReapplyingBootstrap}
+              disabled={!settings.vaultPath || isReapplyingBootstrap}
+              onClick={onReapplyBootstrap}
+              data-testid="obsidian-reapply-bootstrap"
+            >
+              {t("obsidian.diagnostics.reapplyBootstrap")}
+            </Button>
+            <Button
+              variant="secondary"
+              leftIcon={<LayoutTemplate size={16} />}
+              isLoading={isReinstallingPlugins}
+              disabled={!settings.vaultPath || isReinstallingPlugins}
+              onClick={onReinstallPlugins}
+              data-testid="obsidian-reinstall-plugins"
+            >
+              {t("obsidian.diagnostics.reinstallPlugins")}
+            </Button>
+          </ButtonRow>
+          {diagnosticsError && (
+            <ErrorMessage data-testid="obsidian-diagnostics-error">{diagnosticsError}</ErrorMessage>
+          )}
+          {diagnostics && (
+            <DiagnosticsGrid data-testid="obsidian-diagnostics-grid">
               <Chip
-                key={plugin.pluginId}
-                label={plugin.pluginId}
-                severity={plugin.severity}
-                message={plugin.message}
+                label={t("obsidian.diagnostics.vault")}
+                severity={diagnostics.vault.severity}
+                message={diagnostics.vault.message}
               />
-            ))}
-            <Chip
-              label={t("obsidian.diagnostics.templater")}
-              severity={diagnostics.templater.severity}
-              message={diagnostics.templater.message}
-            />
-            <Chip
-              label={t("obsidian.diagnostics.bootstrap")}
-              severity={diagnostics.bootstrap.severity}
-              message={diagnostics.bootstrap.message}
-            />
-            <Chip
-              label={t("obsidian.diagnostics.restApi")}
-              severity={diagnostics.restApi.severity}
-              message={diagnostics.restApi.message}
-            />
-            <Chip
-              label={t("obsidian.diagnostics.lmStudio")}
-              severity={diagnostics.lmStudio.severity}
-              message={diagnostics.lmStudio.message}
-            />
-          </DiagnosticsGrid>
-        )}
-      </Card>
+              <Chip
+                label={t("obsidian.diagnostics.templater")}
+                severity={diagnostics.templater.severity}
+                message={diagnostics.templater.message}
+              />
+              <Chip
+                label={t("obsidian.diagnostics.bootstrap")}
+                severity={diagnostics.bootstrap.severity}
+                message={diagnostics.bootstrap.message}
+              />
+              <Chip
+                label={t("obsidian.diagnostics.restApi")}
+                severity={diagnostics.restApi.severity}
+                message={diagnostics.restApi.message}
+              />
+              <Chip
+                label={t("obsidian.diagnostics.lmStudio")}
+                severity={diagnostics.lmStudio.severity}
+                message={diagnostics.lmStudio.message}
+              />
+              <Chip
+                label={t("obsidian.diagnostics.plugins")}
+                severity={mergePluginSeverity(diagnostics.plugins.map((p) => p.severity))}
+                message={t("obsidian.diagnostics.pluginsCount", {
+                  total: diagnostics.plugins.length,
+                  installed: diagnostics.plugins.filter((p) => p.installed).length,
+                })}
+              />
+            </DiagnosticsGrid>
+          )}
+        </Card>
+      )}
     </PageRoot>
   );
 };
@@ -281,11 +258,18 @@ const Chip: FC<{ label: string; severity: CheckSeverity; message: string }> = ({
 }) => (
   <DiagnosticsChip $severity={severity} data-testid={`obsidian-chip-${severity}`}>
     <DiagnosticsChipTitle>
-      {severity === "Ok" ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+      {severity === "OK" ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
       {label}
     </DiagnosticsChipTitle>
     <DiagnosticsChipMessage>{message}</DiagnosticsChipMessage>
   </DiagnosticsChip>
 );
+
+const mergePluginSeverity = (severities: readonly CheckSeverity[]): CheckSeverity => {
+  if (severities.includes("ERROR")) return "ERROR";
+  if (severities.includes("WARNING")) return "WARNING";
+  if (severities.includes("ADVISORY")) return "ADVISORY";
+  return "OK";
+};
 
 export default Obsidian;

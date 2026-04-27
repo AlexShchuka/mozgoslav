@@ -35,44 +35,6 @@ export const VaultRow = styled.div`
   }
 `;
 
-export const FolderGrid = styled.div`
-  display: grid;
-  gap: ${({ theme }) => theme.space(2)};
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-`;
-
-export const FolderItem = styled.button<{ $active: boolean; $required: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: ${({ theme }) => theme.space(2.5)};
-  padding: ${({ theme }) => theme.space(3)};
-  background: ${({ theme, $active }) =>
-    $active ? theme.colors.accent.soft : theme.colors.bg.elevated2};
-  border: 1px solid
-    ${({ theme, $active }) => ($active ? theme.colors.accent.primary : theme.colors.border.subtle)};
-  border-radius: ${({ theme }) => theme.radii.md};
-  color: ${({ theme, $active }) =>
-    $active ? theme.colors.accent.primary : theme.colors.text.primary};
-  font-family: inherit;
-  font-size: ${({ theme }) => theme.font.size.sm};
-  text-align: left;
-  cursor: ${({ $required }) => ($required ? "not-allowed" : "pointer")};
-  opacity: ${({ $required, $active }) => ($required && $active ? 0.85 : 1)};
-  transition:
-    background ${({ theme }) => theme.motion.duration.fast},
-    border-color ${({ theme }) => theme.motion.duration.fast};
-
-  &:hover:not(:disabled) {
-    border-color: ${({ theme }) => theme.colors.accent.primary};
-  }
-
-  div {
-    display: flex;
-    flex-direction: column;
-    gap: ${({ theme }) => theme.space(0.5)};
-  }
-`;
-
 export const FolderHint = styled.span`
   display: block;
   margin-top: ${({ theme }) => theme.space(2)};
@@ -80,7 +42,7 @@ export const FolderHint = styled.span`
   color: ${({ theme }) => theme.colors.text.secondary};
 `;
 
-export const BulkButtonRow = styled.div`
+export const ButtonRow = styled.div`
   display: flex;
   gap: ${({ theme }) => theme.space(2)};
   flex-wrap: wrap;
@@ -92,7 +54,7 @@ export const DiagnosticsGrid = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 `;
 
-export const DiagnosticsChip = styled.div<{ $severity: "Ok" | "Advisory" | "Warning" | "Error" }>`
+export const DiagnosticsChip = styled.div<{ $severity: "OK" | "ADVISORY" | "WARNING" | "ERROR" }>`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.space(1)};
@@ -101,13 +63,13 @@ export const DiagnosticsChip = styled.div<{ $severity: "Ok" | "Advisory" | "Warn
   border: 1px solid
     ${({ theme, $severity }) => {
       switch ($severity) {
-        case "Ok":
+        case "OK":
           return theme.colors.accent.primary;
-        case "Advisory":
+        case "ADVISORY":
           return theme.colors.border.subtle;
-        case "Warning":
+        case "WARNING":
           return theme.colors.warning;
-        case "Error":
+        case "ERROR":
           return theme.colors.error;
         default:
           return theme.colors.border.subtle;
@@ -141,4 +103,57 @@ export const EmptyStateBanner = styled.div`
   border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   border-radius: ${({ theme }) => theme.radii.md};
   color: ${({ theme }) => theme.colors.text.primary};
+`;
+
+export const Stepper = styled.ol`
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: ${({ theme }) => theme.space(2)};
+`;
+
+export const StepItem = styled.li<{ $state: "pending" | "active" | "done" }>`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.space(2)};
+  padding: ${({ theme }) => theme.space(2)} ${({ theme }) => theme.space(3)};
+  border-radius: ${({ theme }) => theme.radii.md};
+  border: 1px solid
+    ${({ theme, $state }) => {
+      switch ($state) {
+        case "active":
+          return theme.colors.accent.primary;
+        case "done":
+          return theme.colors.accent.primary;
+        case "pending":
+        default:
+          return theme.colors.border.subtle;
+      }
+    }};
+  background: ${({ theme, $state }) =>
+    $state === "active" ? theme.colors.accent.soft : theme.colors.bg.elevated2};
+  color: ${({ theme, $state }) =>
+    $state === "active" ? theme.colors.accent.primary : theme.colors.text.primary};
+  font-size: ${({ theme }) => theme.font.size.sm};
+`;
+
+export const StepBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: ${({ theme }) => theme.radii.full ?? "999px"};
+  background: ${({ theme }) => theme.colors.bg.elevated1};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: ${({ theme }) => theme.font.size.xs};
+  font-weight: ${({ theme }) => theme.font.weight.semibold};
+`;
+
+export const ErrorMessage = styled.div`
+  color: ${({ theme }) => theme.colors.error};
+  font-size: ${({ theme }) => theme.font.size.sm};
+  padding: ${({ theme }) => theme.space(2)} 0;
 `;

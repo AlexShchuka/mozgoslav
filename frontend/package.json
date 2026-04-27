@@ -22,7 +22,6 @@
     "codegen:watch": "graphql-codegen --config codegen.ts --watch"
   },
   "dependencies": {
-    "axios": "1.15.2",
     "framer-motion": "12.38.0",
     "graphql": "16.13.2",
     "graphql-request": "7.4.0",

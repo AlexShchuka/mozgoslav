@@ -7,6 +7,7 @@ import { watchRagSagas } from "./slices/rag";
 import { watchProfilesSagas } from "./slices/profiles";
 import { watchSettingsSagas } from "./slices/settings";
 import { watchObsidianSagas } from "./slices/obsidian";
+import { watchObsidianWizardSagas } from "./slices/obsidianWizard";
 import { watchOnboardingSagas } from "./slices/onboarding";
 import { subscribeJobs, watchJobsSagas } from "./slices/jobs";
 import { watchDictationSagas } from "./slices/dictation";
@@ -15,6 +16,7 @@ import { watchNotesSagas } from "./slices/notes";
 import { watchModelsSagas } from "./slices/models";
 import { watchBackupsSagas } from "./slices/backups";
 import { subscribeHotkeys, watchHotkeysSagas } from "./slices/hotkeys";
+import { healthProbeRequested, watchHealthSagas } from "./slices/health";
 
 function* bootstrapJobsSubscription(): SagaIterator {
   yield put(subscribeJobs());
@@ -28,6 +30,10 @@ function* bootstrapHotkeysSubscription(): SagaIterator {
   yield put(subscribeHotkeys());
 }
 
+function* bootstrapHealthProbe(): SagaIterator {
+  yield put(healthProbeRequested());
+}
+
 export function* rootSaga(): SagaIterator {
   yield all([
     fork(watchNotificationsSagas),
@@ -37,6 +43,7 @@ export function* rootSaga(): SagaIterator {
     fork(watchProfilesSagas),
     fork(watchSettingsSagas),
     fork(watchObsidianSagas),
+    fork(watchObsidianWizardSagas),
     fork(watchOnboardingSagas),
     fork(watchJobsSagas),
     fork(bootstrapJobsSubscription),
@@ -48,5 +55,7 @@ export function* rootSaga(): SagaIterator {
     fork(watchBackupsSagas),
     fork(watchHotkeysSagas),
     fork(bootstrapHotkeysSubscription),
+    fork(watchHealthSagas),
+    fork(bootstrapHealthProbe),
   ]);
 }

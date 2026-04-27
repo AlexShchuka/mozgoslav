@@ -1,8 +1,8 @@
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Brain, FolderTree, Plus, Trash2 } from "lucide-react";
+import { Brain, Plus, Trash2 } from "lucide-react";
 
 import Badge from "../../components/Badge";
 import Button from "../../components/Button";
@@ -11,7 +11,6 @@ import GroupedList from "../../components/GroupedList";
 import Modal from "../../components/Modal";
 import { ProcessedNote } from "../../domain/ProcessedNote";
 import { noteRoute } from "../../constants/routes";
-import { applyLayout, selectObsidianIsApplyingLayout } from "../../store/slices/obsidian";
 import { loadSettings, selectSettings } from "../../store/slices/settings";
 import {
   createNote as createNoteAction,
@@ -38,8 +37,6 @@ const NotesList: FC = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- matches project-wide useDispatch cast (Layout.tsx, Sync.tsx)
   const dispatch = useDispatch() as (action: any) => void;
   const settings = useSelector(selectSettings);
-  const isApplyingLayout = useSelector(selectObsidianIsApplyingLayout);
-  const prevApplyingRef = useRef(false);
   const notesFromStore = useSelector(selectAllNotes);
   const isSubmitting = useSelector(selectIsSubmittingNote);
 
@@ -59,20 +56,12 @@ const NotesList: FC = () => {
     if (!settings) dispatch(loadSettings());
   }, [dispatch, settings]);
 
-  useEffect(() => {
-    if (prevApplyingRef.current && !isApplyingLayout) {
-      dispatchLoadNotes();
-    }
-    prevApplyingRef.current = isApplyingLayout;
-  }, [isApplyingLayout, dispatchLoadNotes]);
-
   const sortedNotes = useMemo(
     () => [...notesFromStore].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
     [notesFromStore]
   );
 
   const vaultRoot = settings?.vaultPath ?? "";
-  const organizeDisabled = !vaultRoot || isApplyingLayout;
 
   const openAdd = () => {
     setIsAdding(true);
@@ -96,11 +85,6 @@ const NotesList: FC = () => {
     if (!trimmedTitle) return;
     dispatch(createNoteAction({ title: trimmedTitle, body }));
     closeAdd();
-  };
-
-  const organize = () => {
-    if (organizeDisabled) return;
-    dispatch(applyLayout());
   };
 
   const renderPrimary = (note: ProcessedNote) => {
@@ -154,17 +138,6 @@ const NotesList: FC = () => {
       <Toolbar>
         <PageTitle>{t("nav.notes")}</PageTitle>
         <ToolbarActions>
-          <Button
-            variant="secondary"
-            leftIcon={<FolderTree size={16} />}
-            data-testid="notes-organize"
-            isLoading={isApplyingLayout}
-            disabled={organizeDisabled}
-            title={!vaultRoot ? t("notes.organizeHint") : undefined}
-            onClick={organize}
-          >
-            {t("notes.organize")}
-          </Button>
           <Button
             variant="primary"
             leftIcon={<Plus size={16} />}

@@ -21,3 +21,179 @@ mutation MutationSetupObsidian($vaultPath: String) {
     }
   }
 }
+
+mutation MutationObsidianRunDiagnostics {
+  obsidianRunDiagnostics {
+    report {
+      snapshotId
+      generatedAt
+      isHealthy
+      vault {
+        ok
+        severity
+        code
+        message
+        actions
+        vaultPath
+      }
+      plugins {
+        pluginId
+        installed
+        enabled
+        hashMatches
+        optional
+        expectedVersion
+        installedVersion
+        severity
+        code
+        message
+        actions
+        ok
+      }
+      templater {
+        ok
+        severity
+        code
+        message
+        actions
+        templatesFolder
+        userScriptsFolder
+      }
+      bootstrap {
+        ok
+        severity
+        code
+        message
+        actions
+        files {
+          vaultRelativePath
+          status
+          expectedSha256
+          actualSha256
+        }
+      }
+      restApi {
+        ok
+        required
+        severity
+        code
+        message
+        actions
+        host
+        version
+      }
+      lmStudio {
+        ok
+        severity
+        code
+        message
+        actions
+        endpoint
+      }
+    }
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationObsidianRunWizardStep($step: Int!) {
+  obsidianRunWizardStep(step: $step) {
+    currentStep
+    nextStep
+    diagnostics {
+      snapshotId
+      generatedAt
+      isHealthy
+      vault {
+        ok
+        severity
+        code
+        message
+        actions
+        vaultPath
+      }
+      plugins {
+        pluginId
+        installed
+        enabled
+        hashMatches
+        optional
+        expectedVersion
+        installedVersion
+        severity
+        code
+        message
+        actions
+        ok
+      }
+      templater {
+        ok
+        severity
+        code
+        message
+        actions
+        templatesFolder
+        userScriptsFolder
+      }
+      bootstrap {
+        ok
+        severity
+        code
+        message
+        actions
+        files {
+          vaultRelativePath
+          status
+          expectedSha256
+          actualSha256
+        }
+      }
+      restApi {
+        ok
+        required
+        severity
+        code
+        message
+        actions
+        host
+        version
+      }
+      lmStudio {
+        ok
+        severity
+        code
+        message
+        actions
+        endpoint
+      }
+    }
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationObsidianReapplyBootstrap {
+  obsidianReapplyBootstrap {
+    overwritten
+    skipped
+    backedUpTo
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationObsidianReinstallPlugins {
+  obsidianReinstallPlugins {
+    reinstalled
+    errors {
+      code
+      message
+    }
+  }
+}

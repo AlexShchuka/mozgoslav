@@ -221,6 +221,7 @@ try
     builder.Services.AddHttpClient(GitHubPluginInstaller.HttpClientName);
     builder.Services.AddScoped<IPluginInstaller, GitHubPluginInstaller>();
     builder.Services.AddScoped<IVaultDiagnostics, VaultDiagnosticsService>();
+    builder.Services.AddScoped<VaultSidecarOrchestrator>();
     builder.Services.AddSingleton(_ => PinnedPluginsLoader.LoadFromEmbeddedResource());
     builder.Services.AddSingleton<ModelDownloadService>();
     builder.Services.AddSingleton<IModelDownloadCoordinator, ModelDownloadCoordinator>();

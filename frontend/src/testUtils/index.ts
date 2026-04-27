@@ -2,8 +2,8 @@ export { renderWithStore } from "./renderWithStore";
 export type { RenderWithStoreOptions, RenderWithStoreResult, Saga } from "./renderWithStore";
 export { renderWithRouter } from "./renderWithRouter";
 export type { RenderWithRouterOptions } from "./renderWithRouter";
-export { createMockApi } from "./mockApi";
-export type { MockApiBundle } from "./mockApi";
+export { mockGraphqlClient } from "./mockApi";
+export type { MockGraphqlClient } from "./mockApi";
 export {
   mockJobsState,
   jobsById,
@@ -22,5 +22,8 @@ export {
   mockOnboardingState,
   mockRagState,
   mockHotkeysState,
+  mockObsidianState,
+  mockObsidianWizardState,
+  mockHealthState,
   mergeMockState,
 } from "./mockState";

@@ -5,7 +5,7 @@ namespace Mozgoslav.Application.Obsidian;
 
 public interface IVaultDriver
 {
-    Task EnsureVaultPreparedAsync(VaultProvisioningSpec spec, CancellationToken ct);
+    Task<VaultProvisioningReceipt> EnsureVaultPreparedAsync(VaultProvisioningSpec spec, CancellationToken ct);
 
     Task<VaultWriteReceipt> WriteNoteAsync(VaultNoteWrite write, CancellationToken ct);
 

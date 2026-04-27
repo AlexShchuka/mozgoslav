@@ -84,6 +84,22 @@ type BackupEntry {
   createdAt: DateTime!
 }
 
+type BootstrapDriftCheck {
+  ok: Boolean!
+  severity: CheckSeverity!
+  code: String!
+  message: String!
+  actions: [DiagnosticAction!]!
+  files: [BootstrapFileDrift!]!
+}
+
+type BootstrapFileDrift {
+  vaultRelativePath: String!
+  status: BootstrapDriftStatus!
+  expectedSha256: String!
+  actualSha256: String
+}
+
 type CancelJobPayload {
   errors: [IUserError!]!
 }
@@ -209,6 +225,15 @@ type LlmHealthStatus {
   available: Boolean!
 }
 
+type LmStudioCheck {
+  ok: Boolean!
+  severity: CheckSeverity!
+  code: String!
+  message: String!
+  actions: [DiagnosticAction!]!
+  endpoint: String
+}
+
 type MeetilyImportPayload {
   totalMeetings: Int
   importedRecordings: Int
@@ -267,6 +292,10 @@ type MutationType {
   dictationStop(sessionId: UUID! bundleId: String): DictationStopPayload! @cost(weight: "10")
   dictationCancel(sessionId: UUID!): DictationCancelPayload! @cost(weight: "10")
   setupObsidian(vaultPath: String): SetupObsidianPayload! @cost(weight: "10")
+  obsidianRunDiagnostics: ObsidianDiagnosticsPayload! @cost(weight: "10")
+  obsidianRunWizardStep(step: Int!): ObsidianWizardStepPayload! @cost(weight: "10")
+  obsidianReapplyBootstrap: ObsidianReapplyBootstrapPayload! @cost(weight: "10")
+  obsidianReinstallPlugins: ObsidianReinstallPluginsPayload! @cost(weight: "10")
   importFromMeetily(meetilyDatabasePath: String!): MeetilyImportPayload! @cost(weight: "10")
   createBackup: CreateBackupPayload! @cost(weight: "10")
   ragReindex: RagReindexPayload! @cost(weight: "10")
@@ -310,6 +339,23 @@ type ObsidianDetectionResult {
   searched: [String!]!
 }
 
+type ObsidianDiagnosticsPayload {
+  report: VaultDiagnosticsReport
+  errors: [IUserError!]!
+}
+
+type ObsidianReapplyBootstrapPayload {
+  overwritten: [String!]!
+  skipped: [String!]!
+  backedUpTo: String
+  errors: [IUserError!]!
+}
+
+type ObsidianReinstallPluginsPayload {
+  reinstalled: [String!]!
+  errors: [IUserError!]!
+}
+
 type ObsidianSetupReport {
   vaultPath: String!
   createdPaths: [String!]!
@@ -319,6 +365,13 @@ type ObsidianSetupReport {
 type ObsidianVaultEntry {
   path: String!
   name: String!
+}
+
+type ObsidianWizardStepPayload {
+  currentStep: Int!
+  nextStep: Int
+  diagnostics: VaultDiagnosticsReport
+  errors: [IUserError!]!
 }
 
 "Information about pagination in a connection."
@@ -342,6 +395,21 @@ type PendingDeviceEntry {
 type PendingDevicesPayload {
   added: [PendingDeviceEntry!]!
   removed: [String!]!
+}
+
+type PluginCheck {
+  pluginId: String!
+  installed: Boolean!
+  enabled: Boolean!
+  hashMatches: Boolean!
+  optional: Boolean!
+  expectedVersion: String!
+  installedVersion: String
+  severity: CheckSeverity!
+  code: String!
+  message: String!
+  actions: [DiagnosticAction!]!
+  ok: Boolean!
 }
 
 type ProcessedNote implements Node {
@@ -506,6 +574,17 @@ type RecordingsEdge {
   node: Recording!
 }
 
+type RestApiCheck {
+  ok: Boolean!
+  required: Boolean!
+  severity: CheckSeverity!
+  code: String!
+  message: String!
+  actions: [DiagnosticAction!]!
+  host: String
+  version: String
+}
+
 type SetupObsidianPayload {
   report: ObsidianSetupReport
   errors: [IUserError!]!
@@ -570,6 +649,16 @@ type SyncStatusResult {
   devices: [SyncDeviceEntry!]!
 }
 
+type TemplaterSettingsCheck {
+  ok: Boolean!
+  severity: CheckSeverity!
+  code: String!
+  message: String!
+  actions: [DiagnosticAction!]!
+  templatesFolder: String
+  userScriptsFolder: String
+}
+
 type UnavailableError implements IUserError {
   code: String!
   message: String!
@@ -584,6 +673,27 @@ type ValidationError implements IUserError {
   code: String!
   message: String!
   field: String!
+}
+
+type VaultDiagnosticsReport {
+  snapshotId: UUID!
+  vault: VaultPathCheck!
+  plugins: [PluginCheck!]!
+  templater: TemplaterSettingsCheck!
+  bootstrap: BootstrapDriftCheck!
+  restApi: RestApiCheck!
+  lmStudio: LmStudioCheck!
+  generatedAt: DateTime!
+  isHealthy: Boolean!
+}
+
+type VaultPathCheck {
+  ok: Boolean!
+  severity: CheckSeverity!
+  code: String!
+  message: String!
+  actions: [DiagnosticAction!]!
+  vaultPath: String!
 }
 
 input ActionItemFilterInput {
@@ -920,6 +1030,21 @@ enum AudioFormat {
   AAC
 }
 
+enum BootstrapDriftStatus {
+  OK
+  MISSING
+  OUTDATED
+  USER_MODIFIED
+  EXTRA
+}
+
+enum CheckSeverity {
+  OK
+  ADVISORY
+  WARNING
+  ERROR
+}
+
 enum CleanupLevel {
   NONE
   LIGHT
@@ -932,6 +1057,15 @@ enum ConversationType {
   IDEA
   PERSONAL
   OTHER
+}
+
+enum DiagnosticAction {
+  OPEN_ONBOARDING
+  REINSTALL_PLUGINS
+  REAPPLY_BOOTSTRAP
+  REFRESH_REST_TOKEN
+  OPEN_LM_STUDIO_HELP
+  OPEN_SETTINGS
 }
 
 enum JobStatus {

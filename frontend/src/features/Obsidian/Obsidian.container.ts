@@ -3,35 +3,43 @@ import { bindActionCreators, type Dispatch } from "redux";
 
 import type { GlobalState } from "../../store";
 import {
-  applyLayout,
-  bulkExport,
   fetchDiagnostics,
   reapplyBootstrap,
   reinstallPlugins,
   selectObsidianDiagnostics,
   selectObsidianDiagnosticsError,
   selectObsidianDiagnosticsLoading,
-  selectObsidianIsApplyingLayout,
-  selectObsidianIsBulkExporting,
   selectObsidianIsReapplyingBootstrap,
   selectObsidianIsReinstallingPlugins,
   selectObsidianIsSetupInProgress,
   setupObsidian,
 } from "../../store/slices/obsidian";
+import {
+  resetWizard,
+  runWizardStep,
+  selectWizardCurrentStep,
+  selectWizardError,
+  selectWizardIsComplete,
+  selectWizardIsStepRunning,
+  selectWizardNextStep,
+} from "../../store/slices/obsidianWizard";
 import { loadSettings, saveSettings, selectSettings } from "../../store/slices/settings";
 import Obsidian from "./Obsidian";
 import type { ObsidianDispatchProps, ObsidianStateProps } from "./types";
 
 const mapStateToProps = (state: GlobalState): ObsidianStateProps => ({
   settings: selectSettings(state),
-  isBulkExporting: selectObsidianIsBulkExporting(state),
-  isApplyingLayout: selectObsidianIsApplyingLayout(state),
   isSetupInProgress: selectObsidianIsSetupInProgress(state),
   diagnostics: selectObsidianDiagnostics(state),
   isDiagnosticsLoading: selectObsidianDiagnosticsLoading(state),
   diagnosticsError: selectObsidianDiagnosticsError(state),
   isReapplyingBootstrap: selectObsidianIsReapplyingBootstrap(state),
   isReinstallingPlugins: selectObsidianIsReinstallingPlugins(state),
+  wizardCurrentStep: selectWizardCurrentStep(state),
+  wizardNextStep: selectWizardNextStep(state),
+  wizardIsStepRunning: selectWizardIsStepRunning(state),
+  wizardIsComplete: selectWizardIsComplete(state),
+  wizardError: selectWizardError(state),
 });
 
 const mapDispatchToProps = (dispatch: Dispatch): ObsidianDispatchProps =>
@@ -40,11 +48,11 @@ const mapDispatchToProps = (dispatch: Dispatch): ObsidianDispatchProps =>
       onLoadSettings: loadSettings,
       onSaveSettings: saveSettings,
       onSetup: setupObsidian,
-      onBulkExport: bulkExport,
-      onApplyLayout: applyLayout,
       onFetchDiagnostics: fetchDiagnostics,
       onReapplyBootstrap: reapplyBootstrap,
       onReinstallPlugins: reinstallPlugins,
+      onRunWizardStep: runWizardStep,
+      onResetWizard: resetWizard,
     },
     dispatch
   );

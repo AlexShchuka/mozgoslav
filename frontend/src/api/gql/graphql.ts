@@ -134,10 +134,43 @@ export type BooleanOperationFilterInput = {
   neq?: InputMaybe<Scalars["Boolean"]["input"]>;
 };
 
+export type BootstrapDriftCheck = {
+  __typename?: "BootstrapDriftCheck";
+  actions: Array<DiagnosticAction>;
+  code: Scalars["String"]["output"];
+  files: Array<BootstrapFileDrift>;
+  message: Scalars["String"]["output"];
+  ok: Scalars["Boolean"]["output"];
+  severity: CheckSeverity;
+};
+
+export enum BootstrapDriftStatus {
+  Extra = "EXTRA",
+  Missing = "MISSING",
+  Ok = "OK",
+  Outdated = "OUTDATED",
+  UserModified = "USER_MODIFIED",
+}
+
+export type BootstrapFileDrift = {
+  __typename?: "BootstrapFileDrift";
+  actualSha256?: Maybe<Scalars["String"]["output"]>;
+  expectedSha256: Scalars["String"]["output"];
+  status: BootstrapDriftStatus;
+  vaultRelativePath: Scalars["String"]["output"];
+};
+
 export type CancelJobPayload = {
   __typename?: "CancelJobPayload";
   errors: Array<IUserError>;
 };
+
+export enum CheckSeverity {
+  Advisory = "ADVISORY",
+  Error = "ERROR",
+  Ok = "OK",
+  Warning = "WARNING",
+}
 
 export enum CleanupLevel {
   Aggressive = "AGGRESSIVE",
@@ -211,6 +244,15 @@ export type DeviceConnectionPayload = {
   deviceId: Scalars["String"]["output"];
   error?: Maybe<Scalars["String"]["output"]>;
 };
+
+export enum DiagnosticAction {
+  OpenLmStudioHelp = "OPEN_LM_STUDIO_HELP",
+  OpenOnboarding = "OPEN_ONBOARDING",
+  OpenSettings = "OPEN_SETTINGS",
+  ReapplyBootstrap = "REAPPLY_BOOTSTRAP",
+  RefreshRestToken = "REFRESH_REST_TOKEN",
+  ReinstallPlugins = "REINSTALL_PLUGINS",
+}
 
 export type DictationAudioCapabilities = {
   __typename?: "DictationAudioCapabilities";
@@ -400,6 +442,16 @@ export type LlmHealthStatus = {
   available: Scalars["Boolean"]["output"];
 };
 
+export type LmStudioCheck = {
+  __typename?: "LmStudioCheck";
+  actions: Array<DiagnosticAction>;
+  code: Scalars["String"]["output"];
+  endpoint?: Maybe<Scalars["String"]["output"]>;
+  message: Scalars["String"]["output"];
+  ok: Scalars["Boolean"]["output"];
+  severity: CheckSeverity;
+};
+
 export type MeetilyImportPayload = {
   __typename?: "MeetilyImportPayload";
   errors: Array<IUserError>;
@@ -472,6 +524,10 @@ export type MutationType = {
   exportNote: NotePayload;
   importFromMeetily: MeetilyImportPayload;
   importRecordings: ImportRecordingsPayload;
+  obsidianReapplyBootstrap: ObsidianReapplyBootstrapPayload;
+  obsidianReinstallPlugins: ObsidianReinstallPluginsPayload;
+  obsidianRunDiagnostics: ObsidianDiagnosticsPayload;
+  obsidianRunWizardStep: ObsidianWizardStepPayload;
   ragReindex: RagReindexPayload;
   reprocessRecording: RecordingPayload;
   setupObsidian: SetupObsidianPayload;
@@ -548,6 +604,10 @@ export type MutationTypeImportFromMeetilyArgs = {
 
 export type MutationTypeImportRecordingsArgs = {
   input: ImportRecordingsInput;
+};
+
+export type MutationTypeObsidianRunWizardStepArgs = {
+  step: Scalars["Int"]["input"];
 };
 
 export type MutationTypeReprocessRecordingArgs = {
@@ -639,6 +699,26 @@ export type ObsidianDetectionResult = {
   searched: Array<Scalars["String"]["output"]>;
 };
 
+export type ObsidianDiagnosticsPayload = {
+  __typename?: "ObsidianDiagnosticsPayload";
+  errors: Array<IUserError>;
+  report?: Maybe<VaultDiagnosticsReport>;
+};
+
+export type ObsidianReapplyBootstrapPayload = {
+  __typename?: "ObsidianReapplyBootstrapPayload";
+  backedUpTo?: Maybe<Scalars["String"]["output"]>;
+  errors: Array<IUserError>;
+  overwritten: Array<Scalars["String"]["output"]>;
+  skipped: Array<Scalars["String"]["output"]>;
+};
+
+export type ObsidianReinstallPluginsPayload = {
+  __typename?: "ObsidianReinstallPluginsPayload";
+  errors: Array<IUserError>;
+  reinstalled: Array<Scalars["String"]["output"]>;
+};
+
 export type ObsidianSetupReport = {
   __typename?: "ObsidianSetupReport";
   createdPaths: Array<Scalars["String"]["output"]>;
@@ -650,6 +730,14 @@ export type ObsidianVaultEntry = {
   __typename?: "ObsidianVaultEntry";
   name: Scalars["String"]["output"];
   path: Scalars["String"]["output"];
+};
+
+export type ObsidianWizardStepPayload = {
+  __typename?: "ObsidianWizardStepPayload";
+  currentStep: Scalars["Int"]["output"];
+  diagnostics?: Maybe<VaultDiagnosticsReport>;
+  errors: Array<IUserError>;
+  nextStep?: Maybe<Scalars["Int"]["output"]>;
 };
 
 /** Information about pagination in a connection. */
@@ -676,6 +764,22 @@ export type PendingDevicesPayload = {
   __typename?: "PendingDevicesPayload";
   added: Array<PendingDeviceEntry>;
   removed: Array<Scalars["String"]["output"]>;
+};
+
+export type PluginCheck = {
+  __typename?: "PluginCheck";
+  actions: Array<DiagnosticAction>;
+  code: Scalars["String"]["output"];
+  enabled: Scalars["Boolean"]["output"];
+  expectedVersion: Scalars["String"]["output"];
+  hashMatches: Scalars["Boolean"]["output"];
+  installed: Scalars["Boolean"]["output"];
+  installedVersion?: Maybe<Scalars["String"]["output"]>;
+  message: Scalars["String"]["output"];
+  ok: Scalars["Boolean"]["output"];
+  optional: Scalars["Boolean"]["output"];
+  pluginId: Scalars["String"]["output"];
+  severity: CheckSeverity;
 };
 
 export type ProcessedNote = Node & {
@@ -1030,6 +1134,18 @@ export type RecordingsEdge = {
   node: Recording;
 };
 
+export type RestApiCheck = {
+  __typename?: "RestApiCheck";
+  actions: Array<DiagnosticAction>;
+  code: Scalars["String"]["output"];
+  host?: Maybe<Scalars["String"]["output"]>;
+  message: Scalars["String"]["output"];
+  ok: Scalars["Boolean"]["output"];
+  required: Scalars["Boolean"]["output"];
+  severity: CheckSeverity;
+  version?: Maybe<Scalars["String"]["output"]>;
+};
+
 export type SetupObsidianPayload = {
   __typename?: "SetupObsidianPayload";
   errors: Array<IUserError>;
@@ -1147,6 +1263,17 @@ export type SyncStatusResult = {
   folders: Array<SyncFolderEntry>;
 };
 
+export type TemplaterSettingsCheck = {
+  __typename?: "TemplaterSettingsCheck";
+  actions: Array<DiagnosticAction>;
+  code: Scalars["String"]["output"];
+  message: Scalars["String"]["output"];
+  ok: Scalars["Boolean"]["output"];
+  severity: CheckSeverity;
+  templatesFolder?: Maybe<Scalars["String"]["output"]>;
+  userScriptsFolder?: Maybe<Scalars["String"]["output"]>;
+};
+
 export type TimeSpanOperationFilterInput = {
   eq?: InputMaybe<Scalars["TimeSpan"]["input"]>;
   gt?: InputMaybe<Scalars["TimeSpan"]["input"]>;
@@ -1239,6 +1366,29 @@ export type ValidationError = IUserError & {
   code: Scalars["String"]["output"];
   field: Scalars["String"]["output"];
   message: Scalars["String"]["output"];
+};
+
+export type VaultDiagnosticsReport = {
+  __typename?: "VaultDiagnosticsReport";
+  bootstrap: BootstrapDriftCheck;
+  generatedAt: Scalars["DateTime"]["output"];
+  isHealthy: Scalars["Boolean"]["output"];
+  lmStudio: LmStudioCheck;
+  plugins: Array<PluginCheck>;
+  restApi: RestApiCheck;
+  snapshotId: Scalars["UUID"]["output"];
+  templater: TemplaterSettingsCheck;
+  vault: VaultPathCheck;
+};
+
+export type VaultPathCheck = {
+  __typename?: "VaultPathCheck";
+  actions: Array<DiagnosticAction>;
+  code: Scalars["String"]["output"];
+  message: Scalars["String"]["output"];
+  ok: Scalars["Boolean"]["output"];
+  severity: CheckSeverity;
+  vaultPath: Scalars["String"]["output"];
 };
 
 export type QueryBackupsQueryVariables = Exact<{ [key: string]: never }>;
@@ -1804,6 +1954,224 @@ export type MutationSetupObsidianMutation = {
       createdPaths: Array<string>;
       skippedPaths: Array<string>;
     } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationObsidianRunDiagnosticsMutationVariables = Exact<{ [key: string]: never }>;
+
+export type MutationObsidianRunDiagnosticsMutation = {
+  __typename?: "MutationType";
+  obsidianRunDiagnostics: {
+    __typename?: "ObsidianDiagnosticsPayload";
+    report?: {
+      __typename?: "VaultDiagnosticsReport";
+      snapshotId: string;
+      generatedAt: string;
+      isHealthy: boolean;
+      vault: {
+        __typename?: "VaultPathCheck";
+        ok: boolean;
+        severity: CheckSeverity;
+        code: string;
+        message: string;
+        actions: Array<DiagnosticAction>;
+        vaultPath: string;
+      };
+      plugins: Array<{
+        __typename?: "PluginCheck";
+        pluginId: string;
+        installed: boolean;
+        enabled: boolean;
+        hashMatches: boolean;
+        optional: boolean;
+        expectedVersion: string;
+        installedVersion?: string | null;
+        severity: CheckSeverity;
+        code: string;
+        message: string;
+        actions: Array<DiagnosticAction>;
+        ok: boolean;
+      }>;
+      templater: {
+        __typename?: "TemplaterSettingsCheck";
+        ok: boolean;
+        severity: CheckSeverity;
+        code: string;
+        message: string;
+        actions: Array<DiagnosticAction>;
+        templatesFolder?: string | null;
+        userScriptsFolder?: string | null;
+      };
+      bootstrap: {
+        __typename?: "BootstrapDriftCheck";
+        ok: boolean;
+        severity: CheckSeverity;
+        code: string;
+        message: string;
+        actions: Array<DiagnosticAction>;
+        files: Array<{
+          __typename?: "BootstrapFileDrift";
+          vaultRelativePath: string;
+          status: BootstrapDriftStatus;
+          expectedSha256: string;
+          actualSha256?: string | null;
+        }>;
+      };
+      restApi: {
+        __typename?: "RestApiCheck";
+        ok: boolean;
+        required: boolean;
+        severity: CheckSeverity;
+        code: string;
+        message: string;
+        actions: Array<DiagnosticAction>;
+        host?: string | null;
+        version?: string | null;
+      };
+      lmStudio: {
+        __typename?: "LmStudioCheck";
+        ok: boolean;
+        severity: CheckSeverity;
+        code: string;
+        message: string;
+        actions: Array<DiagnosticAction>;
+        endpoint?: string | null;
+      };
+    } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationObsidianRunWizardStepMutationVariables = Exact<{
+  step: Scalars["Int"]["input"];
+}>;
+
+export type MutationObsidianRunWizardStepMutation = {
+  __typename?: "MutationType";
+  obsidianRunWizardStep: {
+    __typename?: "ObsidianWizardStepPayload";
+    currentStep: number;
+    nextStep?: number | null;
+    diagnostics?: {
+      __typename?: "VaultDiagnosticsReport";
+      snapshotId: string;
+      generatedAt: string;
+      isHealthy: boolean;
+      vault: {
+        __typename?: "VaultPathCheck";
+        ok: boolean;
+        severity: CheckSeverity;
+        code: string;
+        message: string;
+        actions: Array<DiagnosticAction>;
+        vaultPath: string;
+      };
+      plugins: Array<{
+        __typename?: "PluginCheck";
+        pluginId: string;
+        installed: boolean;
+        enabled: boolean;
+        hashMatches: boolean;
+        optional: boolean;
+        expectedVersion: string;
+        installedVersion?: string | null;
+        severity: CheckSeverity;
+        code: string;
+        message: string;
+        actions: Array<DiagnosticAction>;
+        ok: boolean;
+      }>;
+      templater: {
+        __typename?: "TemplaterSettingsCheck";
+        ok: boolean;
+        severity: CheckSeverity;
+        code: string;
+        message: string;
+        actions: Array<DiagnosticAction>;
+        templatesFolder?: string | null;
+        userScriptsFolder?: string | null;
+      };
+      bootstrap: {
+        __typename?: "BootstrapDriftCheck";
+        ok: boolean;
+        severity: CheckSeverity;
+        code: string;
+        message: string;
+        actions: Array<DiagnosticAction>;
+        files: Array<{
+          __typename?: "BootstrapFileDrift";
+          vaultRelativePath: string;
+          status: BootstrapDriftStatus;
+          expectedSha256: string;
+          actualSha256?: string | null;
+        }>;
+      };
+      restApi: {
+        __typename?: "RestApiCheck";
+        ok: boolean;
+        required: boolean;
+        severity: CheckSeverity;
+        code: string;
+        message: string;
+        actions: Array<DiagnosticAction>;
+        host?: string | null;
+        version?: string | null;
+      };
+      lmStudio: {
+        __typename?: "LmStudioCheck";
+        ok: boolean;
+        severity: CheckSeverity;
+        code: string;
+        message: string;
+        actions: Array<DiagnosticAction>;
+        endpoint?: string | null;
+      };
+    } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationObsidianReapplyBootstrapMutationVariables = Exact<{ [key: string]: never }>;
+
+export type MutationObsidianReapplyBootstrapMutation = {
+  __typename?: "MutationType";
+  obsidianReapplyBootstrap: {
+    __typename?: "ObsidianReapplyBootstrapPayload";
+    overwritten: Array<string>;
+    skipped: Array<string>;
+    backedUpTo?: string | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationObsidianReinstallPluginsMutationVariables = Exact<{ [key: string]: never }>;
+
+export type MutationObsidianReinstallPluginsMutation = {
+  __typename?: "MutationType";
+  obsidianReinstallPlugins: {
+    __typename?: "ObsidianReinstallPluginsPayload";
+    reinstalled: Array<string>;
     errors: Array<
       | { __typename?: "ConflictError"; code: string; message: string }
       | { __typename?: "NotFoundError"; code: string; message: string }
@@ -3931,6 +4299,439 @@ export const MutationSetupObsidianDocument = {
     },
   ],
 } as unknown as DocumentNode<MutationSetupObsidianMutation, MutationSetupObsidianMutationVariables>;
+export const MutationObsidianRunDiagnosticsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationObsidianRunDiagnostics" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "obsidianRunDiagnostics" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "report" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "snapshotId" } },
+                      { kind: "Field", name: { kind: "Name", value: "generatedAt" } },
+                      { kind: "Field", name: { kind: "Name", value: "isHealthy" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "vault" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "ok" } },
+                            { kind: "Field", name: { kind: "Name", value: "severity" } },
+                            { kind: "Field", name: { kind: "Name", value: "code" } },
+                            { kind: "Field", name: { kind: "Name", value: "message" } },
+                            { kind: "Field", name: { kind: "Name", value: "actions" } },
+                            { kind: "Field", name: { kind: "Name", value: "vaultPath" } },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "plugins" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "pluginId" } },
+                            { kind: "Field", name: { kind: "Name", value: "installed" } },
+                            { kind: "Field", name: { kind: "Name", value: "enabled" } },
+                            { kind: "Field", name: { kind: "Name", value: "hashMatches" } },
+                            { kind: "Field", name: { kind: "Name", value: "optional" } },
+                            { kind: "Field", name: { kind: "Name", value: "expectedVersion" } },
+                            { kind: "Field", name: { kind: "Name", value: "installedVersion" } },
+                            { kind: "Field", name: { kind: "Name", value: "severity" } },
+                            { kind: "Field", name: { kind: "Name", value: "code" } },
+                            { kind: "Field", name: { kind: "Name", value: "message" } },
+                            { kind: "Field", name: { kind: "Name", value: "actions" } },
+                            { kind: "Field", name: { kind: "Name", value: "ok" } },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "templater" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "ok" } },
+                            { kind: "Field", name: { kind: "Name", value: "severity" } },
+                            { kind: "Field", name: { kind: "Name", value: "code" } },
+                            { kind: "Field", name: { kind: "Name", value: "message" } },
+                            { kind: "Field", name: { kind: "Name", value: "actions" } },
+                            { kind: "Field", name: { kind: "Name", value: "templatesFolder" } },
+                            { kind: "Field", name: { kind: "Name", value: "userScriptsFolder" } },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "bootstrap" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "ok" } },
+                            { kind: "Field", name: { kind: "Name", value: "severity" } },
+                            { kind: "Field", name: { kind: "Name", value: "code" } },
+                            { kind: "Field", name: { kind: "Name", value: "message" } },
+                            { kind: "Field", name: { kind: "Name", value: "actions" } },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "files" },
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "vaultRelativePath" },
+                                  },
+                                  { kind: "Field", name: { kind: "Name", value: "status" } },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "expectedSha256" },
+                                  },
+                                  { kind: "Field", name: { kind: "Name", value: "actualSha256" } },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "restApi" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "ok" } },
+                            { kind: "Field", name: { kind: "Name", value: "required" } },
+                            { kind: "Field", name: { kind: "Name", value: "severity" } },
+                            { kind: "Field", name: { kind: "Name", value: "code" } },
+                            { kind: "Field", name: { kind: "Name", value: "message" } },
+                            { kind: "Field", name: { kind: "Name", value: "actions" } },
+                            { kind: "Field", name: { kind: "Name", value: "host" } },
+                            { kind: "Field", name: { kind: "Name", value: "version" } },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "lmStudio" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "ok" } },
+                            { kind: "Field", name: { kind: "Name", value: "severity" } },
+                            { kind: "Field", name: { kind: "Name", value: "code" } },
+                            { kind: "Field", name: { kind: "Name", value: "message" } },
+                            { kind: "Field", name: { kind: "Name", value: "actions" } },
+                            { kind: "Field", name: { kind: "Name", value: "endpoint" } },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationObsidianRunDiagnosticsMutation,
+  MutationObsidianRunDiagnosticsMutationVariables
+>;
+export const MutationObsidianRunWizardStepDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationObsidianRunWizardStep" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "step" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "Int" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "obsidianRunWizardStep" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "step" },
+                value: { kind: "Variable", name: { kind: "Name", value: "step" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "currentStep" } },
+                { kind: "Field", name: { kind: "Name", value: "nextStep" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "diagnostics" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "snapshotId" } },
+                      { kind: "Field", name: { kind: "Name", value: "generatedAt" } },
+                      { kind: "Field", name: { kind: "Name", value: "isHealthy" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "vault" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "ok" } },
+                            { kind: "Field", name: { kind: "Name", value: "severity" } },
+                            { kind: "Field", name: { kind: "Name", value: "code" } },
+                            { kind: "Field", name: { kind: "Name", value: "message" } },
+                            { kind: "Field", name: { kind: "Name", value: "actions" } },
+                            { kind: "Field", name: { kind: "Name", value: "vaultPath" } },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "plugins" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "pluginId" } },
+                            { kind: "Field", name: { kind: "Name", value: "installed" } },
+                            { kind: "Field", name: { kind: "Name", value: "enabled" } },
+                            { kind: "Field", name: { kind: "Name", value: "hashMatches" } },
+                            { kind: "Field", name: { kind: "Name", value: "optional" } },
+                            { kind: "Field", name: { kind: "Name", value: "expectedVersion" } },
+                            { kind: "Field", name: { kind: "Name", value: "installedVersion" } },
+                            { kind: "Field", name: { kind: "Name", value: "severity" } },
+                            { kind: "Field", name: { kind: "Name", value: "code" } },
+                            { kind: "Field", name: { kind: "Name", value: "message" } },
+                            { kind: "Field", name: { kind: "Name", value: "actions" } },
+                            { kind: "Field", name: { kind: "Name", value: "ok" } },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "templater" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "ok" } },
+                            { kind: "Field", name: { kind: "Name", value: "severity" } },
+                            { kind: "Field", name: { kind: "Name", value: "code" } },
+                            { kind: "Field", name: { kind: "Name", value: "message" } },
+                            { kind: "Field", name: { kind: "Name", value: "actions" } },
+                            { kind: "Field", name: { kind: "Name", value: "templatesFolder" } },
+                            { kind: "Field", name: { kind: "Name", value: "userScriptsFolder" } },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "bootstrap" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "ok" } },
+                            { kind: "Field", name: { kind: "Name", value: "severity" } },
+                            { kind: "Field", name: { kind: "Name", value: "code" } },
+                            { kind: "Field", name: { kind: "Name", value: "message" } },
+                            { kind: "Field", name: { kind: "Name", value: "actions" } },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "files" },
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "vaultRelativePath" },
+                                  },
+                                  { kind: "Field", name: { kind: "Name", value: "status" } },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "expectedSha256" },
+                                  },
+                                  { kind: "Field", name: { kind: "Name", value: "actualSha256" } },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "restApi" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "ok" } },
+                            { kind: "Field", name: { kind: "Name", value: "required" } },
+                            { kind: "Field", name: { kind: "Name", value: "severity" } },
+                            { kind: "Field", name: { kind: "Name", value: "code" } },
+                            { kind: "Field", name: { kind: "Name", value: "message" } },
+                            { kind: "Field", name: { kind: "Name", value: "actions" } },
+                            { kind: "Field", name: { kind: "Name", value: "host" } },
+                            { kind: "Field", name: { kind: "Name", value: "version" } },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "lmStudio" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "ok" } },
+                            { kind: "Field", name: { kind: "Name", value: "severity" } },
+                            { kind: "Field", name: { kind: "Name", value: "code" } },
+                            { kind: "Field", name: { kind: "Name", value: "message" } },
+                            { kind: "Field", name: { kind: "Name", value: "actions" } },
+                            { kind: "Field", name: { kind: "Name", value: "endpoint" } },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationObsidianRunWizardStepMutation,
+  MutationObsidianRunWizardStepMutationVariables
+>;
+export const MutationObsidianReapplyBootstrapDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationObsidianReapplyBootstrap" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "obsidianReapplyBootstrap" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "overwritten" } },
+                { kind: "Field", name: { kind: "Name", value: "skipped" } },
+                { kind: "Field", name: { kind: "Name", value: "backedUpTo" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationObsidianReapplyBootstrapMutation,
+  MutationObsidianReapplyBootstrapMutationVariables
+>;
+export const MutationObsidianReinstallPluginsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationObsidianReinstallPlugins" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "obsidianReinstallPlugins" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "reinstalled" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationObsidianReinstallPluginsMutation,
+  MutationObsidianReinstallPluginsMutationVariables
+>;
 export const QueryProfilesDocument = {
   kind: "Document",
   definitions: [

@@ -4,14 +4,6 @@ import type { ObsidianState } from "./types";
 
 const selectObsidianState = (state: GlobalState): ObsidianState => state.obsidian;
 
-export const selectObsidianIsBulkExporting = createSelector(
-  selectObsidianState,
-  (slice) => slice.isBulkExporting
-);
-export const selectObsidianIsApplyingLayout = createSelector(
-  selectObsidianState,
-  (slice) => slice.isApplyingLayout
-);
 export const selectObsidianIsSetupInProgress = createSelector(
   selectObsidianState,
   (slice) => slice.isSetupInProgress
