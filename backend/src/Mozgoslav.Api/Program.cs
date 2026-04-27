@@ -16,11 +16,13 @@ using Mozgoslav.Api.GraphQL;
 using Mozgoslav.Api.GraphQL.Jobs;
 using Mozgoslav.Api.GraphQL.SchemaExport;
 using Mozgoslav.Api.Services;
+using Mozgoslav.Application.Agents;
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Obsidian;
 using Mozgoslav.Application.Rag;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Application.UseCases;
+using Mozgoslav.Infrastructure.Agents;
 using Mozgoslav.Infrastructure.Configuration;
 using Mozgoslav.Infrastructure.Jobs;
 using Mozgoslav.Infrastructure.Observability;
@@ -277,6 +279,16 @@ try
         builder.Services.AddSingleton<IVectorIndex, InMemoryVectorIndex>();
     }
     builder.Services.AddSingleton<IRagService, RagService>();
+
+    var agentsProvider = builder.Configuration["Mozgoslav:Agents:Provider"];
+    if (string.Equals(agentsProvider, "NoOp", StringComparison.OrdinalIgnoreCase))
+    {
+        builder.Services.AddSingleton<IAgentRunner, NoOpAgentRunner>();
+    }
+    else
+    {
+        builder.Services.AddSingleton<IAgentRunner, MafAgentRunner>();
+    }
 
     var syncthingBaseUrl = builder.Configuration["Mozgoslav:SyncthingBaseUrl"];
     if (!string.IsNullOrWhiteSpace(syncthingBaseUrl))
