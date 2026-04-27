@@ -335,6 +335,10 @@ try
     builder.Services.AddScoped<ObsidianReadTool>();
     builder.Services.AddScoped<IUnifiedSearch, MafUnifiedSearch>();
     builder.Services.AddScoped<AskFromVoiceUseCase>();
+    builder.Services.AddScoped<AggregateSummaryUseCase>();
+
+    builder.Services.Configure<SummaryOptions>(
+        builder.Configuration.GetSection(SummaryOptions.SectionName));
 
     var webProvider = builder.Configuration["Mozgoslav:Web:Provider"];
     var searxngEndpoint = builder.Configuration["Mozgoslav:Web:SearXng:Endpoint"] ?? "http://localhost:8888";
@@ -409,12 +413,38 @@ try
         .AddPrometheusExporter());
 
     builder.Services.AddHostedService<DatabaseInitializer>();
+    var summaryOptions = builder.Configuration
+        .GetSection(SummaryOptions.SectionName)
+        .Get<SummaryOptions>() ?? new SummaryOptions();
+
     builder.Services.AddQuartz(q =>
     {
         q.AddJob<ProcessRecordingQuartzJob>(jobConfig => jobConfig
             .StoreDurably()
             .RequestRecovery()
             .WithIdentity("process-recording-template", ProcessRecordingQuartzJob.JobGroup));
+
+        if (summaryOptions.Weekly.Enabled)
+        {
+            q.AddJob<WeeklyAggregatedSummaryJob>(jobConfig => jobConfig
+                .StoreDurably()
+                .WithIdentity("weekly-summary", WeeklyAggregatedSummaryJob.JobGroup));
+            q.AddTrigger(t => t
+                .ForJob("weekly-summary", WeeklyAggregatedSummaryJob.JobGroup)
+                .WithIdentity("weekly-summary-trigger", WeeklyAggregatedSummaryJob.JobGroup)
+                .WithCronSchedule(summaryOptions.Weekly.Cron));
+        }
+
+        if (summaryOptions.Monthly.Enabled)
+        {
+            q.AddJob<MonthlyAggregatedSummaryJob>(jobConfig => jobConfig
+                .StoreDurably()
+                .WithIdentity("monthly-summary", MonthlyAggregatedSummaryJob.JobGroup));
+            q.AddTrigger(t => t
+                .ForJob("monthly-summary", MonthlyAggregatedSummaryJob.JobGroup)
+                .WithIdentity("monthly-summary-trigger", MonthlyAggregatedSummaryJob.JobGroup)
+                .WithCronSchedule(summaryOptions.Monthly.Cron));
+        }
     });
     builder.Services.AddQuartzHostedService(options =>
     {
