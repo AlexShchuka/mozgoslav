@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,6 +9,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Application.Obsidian;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Application.UseCases;
 using Mozgoslav.Domain.Entities;
@@ -61,8 +61,8 @@ public sealed class ProcessQueueWorkerTests
 
         await fixture.Transcripts.Received(1).AddAsync(Arg.Any<Transcript>(), Arg.Any<CancellationToken>());
         await fixture.Notes.Received(1).AddAsync(Arg.Any<ProcessedNote>(), Arg.Any<CancellationToken>());
-        await fixture.Exporter.Received(1).ExportAsync(
-            Arg.Any<ProcessedNote>(), Arg.Any<Profile>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await fixture.EventBus.Received(1).PublishAsync(
+            Arg.Any<ProcessedNoteSaved>(), Arg.Any<CancellationToken>());
         await fixture.ProgressNotifier.Received().PublishAsync(
             Arg.Any<ProcessingJob>(), Arg.Any<CancellationToken>());
     }
@@ -132,14 +132,11 @@ public sealed class ProcessQueueWorkerTests
     }
 
     [TestMethod]
-    public async Task ProcessJobAsync_ExportFailure_StillSavesNoteWithoutVaultPath()
+    public async Task ProcessJobAsync_HappyPath_PersistsNoteWithExportFlagFalse()
     {
         var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
-        fixture.Exporter.ExportAsync(
-                Arg.Any<ProcessedNote>(), Arg.Any<Profile>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns<string>(_ => throw new IOException("disk full"));
 
         ProcessedNote? captured = null;
         await fixture.Notes.AddAsync(
@@ -155,15 +152,26 @@ public sealed class ProcessQueueWorkerTests
     }
 
     [TestMethod]
-    public async Task ProcessJobAsync_VaultPathEmpty_DoesNotCallExporter()
+    public async Task ProcessJobAsync_HappyPath_PublishesProcessedNoteSavedAfterAdd()
     {
-        var fixture = new Fixture { VaultPath = string.Empty };
+        var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
 
+        var addedAt = -1;
+        var publishedAt = -1;
+        var sequence = 0;
+        await fixture.Notes.AddAsync(
+            Arg.Do<ProcessedNote>(_ => addedAt = ++sequence),
+            Arg.Any<CancellationToken>());
+        await fixture.EventBus.PublishAsync(
+            Arg.Do<ProcessedNoteSaved>(_ => publishedAt = ++sequence),
+            Arg.Any<CancellationToken>());
+
         await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
 
-        await fixture.Exporter.DidNotReceiveWithAnyArgs().ExportAsync(null!, null!, null!, CancellationToken.None);
+        addedAt.Should().BeGreaterThan(0);
+        publishedAt.Should().BeGreaterThan(addedAt);
     }
 
     [TestMethod]
@@ -272,16 +280,16 @@ public sealed class ProcessQueueWorkerTests
         public IAudioConverter AudioConverter { get; } = Substitute.For<IAudioConverter>();
         public ITranscriptionService Transcription { get; } = Substitute.For<ITranscriptionService>();
         public ILlmService Llm { get; } = Substitute.For<ILlmService>();
-        public IMarkdownExporter Exporter { get; } = Substitute.For<IMarkdownExporter>();
         public IAppSettings Settings { get; } = Substitute.For<IAppSettings>();
         public IJobProgressNotifier ProgressNotifier { get; } = Substitute.For<IJobProgressNotifier>();
+        public IDomainEventBus EventBus { get; } = Substitute.For<IDomainEventBus>();
         public TestJobCancellationRegistry CancellationRegistry { get; } = new();
 
         public string VaultPath { get; init; } = "/tmp/vault";
 
         public ProcessQueueWorker Worker => new(
             Jobs, Recordings, Transcripts, Notes, Profiles,
-            AudioConverter, Transcription, Llm, Exporter,
+            AudioConverter, Transcription, Llm,
             new CorrectionService(),
             new GlossaryApplicator(),
             new LlmCorrectionService(
@@ -290,6 +298,7 @@ public sealed class ProcessQueueWorkerTests
                 NullLogger<LlmCorrectionService>.Instance),
             Settings, ProgressNotifier,
             CancellationRegistry,
+            EventBus,
             NullLogger<ProcessQueueWorker>.Instance);
 
         public ProcessingJob SeedJob(JobStatus status = JobStatus.Queued)
@@ -356,10 +365,6 @@ public sealed class ProcessQueueWorkerTests
                         Tags: ["test"]));
             }
 
-            Exporter.ExportAsync(
-                    Arg.Any<ProcessedNote>(), Arg.Any<Profile>(),
-                    Arg.Any<string>(), Arg.Any<CancellationToken>())
-                .Returns("/tmp/vault/test.md");
         }
     }
 

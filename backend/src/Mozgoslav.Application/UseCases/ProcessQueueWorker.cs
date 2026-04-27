@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Application.Obsidian;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.Enums;
@@ -29,13 +30,13 @@ public sealed class ProcessQueueWorker
     private readonly IAudioConverter _audioConverter;
     private readonly ITranscriptionService _transcriptionService;
     private readonly ILlmService _llmService;
-    private readonly IMarkdownExporter _exporter;
     private readonly CorrectionService _correctionService;
     private readonly GlossaryApplicator _glossary;
     private readonly LlmCorrectionService _llmCorrection;
     private readonly IAppSettings _settings;
     private readonly IJobProgressNotifier _progressNotifier;
     private readonly IJobCancellationRegistry _cancellationRegistry;
+    private readonly IDomainEventBus _eventBus;
     private readonly ILogger<ProcessQueueWorker> _logger;
 
     public ProcessQueueWorker(
@@ -47,13 +48,13 @@ public sealed class ProcessQueueWorker
         IAudioConverter audioConverter,
         ITranscriptionService transcriptionService,
         ILlmService llmService,
-        IMarkdownExporter exporter,
         CorrectionService correctionService,
         GlossaryApplicator glossary,
         LlmCorrectionService llmCorrection,
         IAppSettings settings,
         IJobProgressNotifier progressNotifier,
         IJobCancellationRegistry cancellationRegistry,
+        IDomainEventBus eventBus,
         ILogger<ProcessQueueWorker> logger)
     {
         _jobs = jobs;
@@ -64,13 +65,13 @@ public sealed class ProcessQueueWorker
         _audioConverter = audioConverter;
         _transcriptionService = transcriptionService;
         _llmService = llmService;
-        _exporter = exporter;
         _correctionService = correctionService;
         _glossary = glossary;
         _llmCorrection = llmCorrection;
         _settings = settings;
         _progressNotifier = progressNotifier;
         _cancellationRegistry = cancellationRegistry;
+        _eventBus = eventBus;
         _logger = logger;
     }
 
@@ -178,20 +179,10 @@ public sealed class ProcessQueueWorker
         note.MarkdownContent = MarkdownGenerator.Generate(note, profile, recording, transcript.Segments);
 
         await TransitionAsync(job, JobStatus.Exporting, SummarizeEnd, "Exporting to vault", ct);
-        if (!string.IsNullOrWhiteSpace(_settings.VaultPath))
-        {
-            try
-            {
-                note.VaultPath = await _exporter.ExportAsync(note, profile, _settings.VaultPath, ct);
-                note.ExportedToVault = true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Markdown export failed for job {JobId}", job.Id);
-            }
-        }
-
+        note.ExportedToVault = false;
+        note.VaultPath = null;
         await _notes.AddAsync(note, ct);
+        await _eventBus.PublishAsync(new ProcessedNoteSaved(note.Id, profile.Id, DateTimeOffset.UtcNow), ct);
 
         recording.Status = RecordingStatus.Transcribed;
         if (segments.Count > 0)
