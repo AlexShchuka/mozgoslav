@@ -11,6 +11,7 @@ import {
   unregisterGlobalDictationHotkey,
 } from "./dictation/globalHotkey";
 import { RecordingBridge } from "./recording/RecordingBridge";
+import { AskOverlay, registerAskCorpusIpc } from "./utils/askOverlay";
 import { stopBackend, tryStartBackend } from "./utils/backendLauncher";
 import { stopSyncthing, tryStartSyncthing } from "./utils/syncthingLauncher";
 
@@ -78,6 +79,7 @@ let dictationOrchestrator: DictationOrchestrator | null = null;
 let dumpModeOrchestrator: DumpModeOrchestrator | null = null;
 let recordingBridge: RecordingBridge | null = null;
 let recordingHelper: NativeHelperClient | null = null;
+let askOverlay: AskOverlay | null = null;
 
 const createWindow = (): void => {
   mainWindow = new BrowserWindow({
@@ -309,12 +311,16 @@ app.whenReady().then(async () => {
 
   createWindow();
 
+  askOverlay = new AskOverlay();
+  registerAskCorpusIpc(askOverlay);
+
   if (process.platform === "darwin") {
     await initializeDictation();
     await initializeDumpMode();
   }
   void applyCustomHotkeyFromSettings();
   void applyDumpModeFromSettings();
+  void applyAskCorpusHotkeyFromSettings();
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -488,6 +494,43 @@ const initializeDictation = async (): Promise<void> => {
     dictationOrchestrator = null;
   }
 };
+const applyAskCorpusHotkeyFromSettings = async (): Promise<void> => {
+  const maxAttempts = 8;
+  const delayMs = 750;
+  const defaultAccelerator = "CommandOrControl+Shift+/";
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const response = await fetch(`${BACKEND_ORIGIN}/api/settings`);
+      if (!response.ok) throw new Error(`status ${response.status}`);
+      const settings = (await response.json()) as {
+        askCorpusHotkey?: string;
+      };
+      const accelerator = settings.askCorpusHotkey?.trim() || defaultAccelerator;
+
+      if (recordingHelper) {
+        try {
+          await recordingHelper.startAskCorpusHotkey(accelerator);
+          recordingHelper.on("askCorpus", (payload) => {
+            if (payload.kind === "press" && askOverlay) {
+              askOverlay.show();
+              if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send("mozgoslav:ask-corpus-hotkey");
+              }
+            }
+          });
+          console.info(`[ask-corpus] hotkey registered via Swift helper: '${accelerator}'`);
+        } catch (err) {
+          console.warn("[ask-corpus] Swift helper hotkey setup failed:", err);
+        }
+      }
+      return;
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  console.warn("[ask-corpus] backend unreachable after 8 attempts — hotkey not configured.");
+};
+
 const walkForConflicts = async (rootPath: string, maxDepth = 8): Promise<string[]> => {
   const results: string[] = [];
   const walk = async (dir: string, depth: number): Promise<void> => {
@@ -527,6 +570,8 @@ app.on("before-quit", (event) => {
       dictationOrchestrator = null;
       dumpModeOrchestrator?.destroy();
       dumpModeOrchestrator = null;
+      askOverlay?.destroy();
+      askOverlay = null;
       recordingBridge?.stop();
       recordingBridge = null;
       recordingHelper?.stop();

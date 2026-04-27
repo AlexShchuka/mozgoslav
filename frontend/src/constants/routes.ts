@@ -6,6 +6,7 @@ export const ROUTES = {
   notes: "/notes",
   note: "/notes/:id",
   rag: "/rag",
+  ask: "/ask",
   profiles: "/profiles",
   models: "/models",
   settings: "/settings",

@@ -22,6 +22,7 @@ import {
   type ObsidianWizardState,
 } from "../store/slices/obsidianWizard";
 import { initialHealthState, type HealthState } from "../store/slices/health";
+import { initialAskState, type AskState } from "../store/slices/ask/reducer";
 
 export const jobsById = (jobs: readonly ProcessingJob[]): Record<string, ProcessingJob> =>
   Object.fromEntries(jobs.map((job) => [job.id, job]));
@@ -117,6 +118,10 @@ export const mockObsidianWizardState = (
 
 export const mockHealthState = (patch: Partial<HealthState> = {}): Pick<GlobalState, "health"> => ({
   health: { ...initialHealthState, ...patch },
+});
+
+export const mockAskState = (patch: Partial<AskState> = {}): Pick<GlobalState, "ask"> => ({
+  ask: { ...initialAskState, ...patch },
 });
 
 export const mergeMockState = (...parts: Partial<GlobalState>[]): Partial<GlobalState> =>

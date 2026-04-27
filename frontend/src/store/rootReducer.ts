@@ -31,6 +31,8 @@ import type { BackupsState } from "./slices/backups";
 import { backupsReducer } from "./slices/backups";
 import type { HotkeysState } from "./slices/hotkeys";
 import { hotkeysReducer } from "./slices/hotkeys";
+import type { AskState } from "./slices/ask/reducer";
+import { askReducer } from "./slices/ask/reducer";
 import type { HealthState } from "./slices/health";
 import { healthReducer } from "./slices/health";
 
@@ -52,6 +54,7 @@ export const rootReducer = combineReducers({
   backups: backupsReducer,
   hotkeys: hotkeysReducer,
   health: healthReducer,
+  ask: askReducer,
 });
 
 export interface GlobalState {
@@ -72,4 +75,5 @@ export interface GlobalState {
   backups: BackupsState;
   hotkeys: HotkeysState;
   health: HealthState;
+  ask: AskState;
 }

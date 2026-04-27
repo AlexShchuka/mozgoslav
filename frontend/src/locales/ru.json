@@ -33,6 +33,17 @@
     "statusEmpty": "Индекс пуст — переиндексируйте заметки",
     "statusReady": "Проиндексировано: {{chunks}} фрагм. из {{notes}} заметок"
   },
+  "ask": {
+    "title": "Спросить",
+    "placeholder": "Спроси что угодно…",
+    "emptyState": "Задай вопрос — поиск идёт по корпусу, хранилищу и вебу одновременно.",
+    "includeWeb": "Веб",
+    "citationCorpus": "Из заметок",
+    "citationVault": "Из хранилища",
+    "citationWeb": "Из веба",
+    "overlayTitle": "Спроси корпус",
+    "overlayEmpty": "Ожидаю голосовой ввод…"
+  },
   "common": {
     "save": "Сохранить",
     "cancel": "Отмена",

@@ -23,10 +23,13 @@ using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.WebSearch;
 using Mozgoslav.Application.Obsidian;
 using Mozgoslav.Application.Rag;
+using Mozgoslav.Application.Search;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Application.UseCases;
 using Mozgoslav.Infrastructure.Agents;
 using Mozgoslav.Infrastructure.Configuration;
+using Mozgoslav.Infrastructure.Search;
+using Mozgoslav.Infrastructure.Search.Tools;
 using Mozgoslav.Infrastructure.WebSearch;
 using Mozgoslav.Infrastructure.Jobs;
 using Mozgoslav.Infrastructure.Observability;
@@ -323,6 +326,15 @@ try
     {
         builder.Services.AddSingleton<IAgentRunner, MafAgentRunner>();
     }
+
+    builder.Services.Configure<UnifiedSearchOptions>(
+        builder.Configuration.GetSection(UnifiedSearchOptions.SectionName));
+    builder.Services.AddSingleton<CorpusQueryTool>();
+    builder.Services.AddSingleton<WebSearchTool>();
+    builder.Services.AddSingleton<WebFetchTool>();
+    builder.Services.AddScoped<ObsidianReadTool>();
+    builder.Services.AddScoped<IUnifiedSearch, MafUnifiedSearch>();
+    builder.Services.AddScoped<AskFromVoiceUseCase>();
 
     var webProvider = builder.Configuration["Mozgoslav:Web:Provider"];
     var searxngEndpoint = builder.Configuration["Mozgoslav:Web:SearXng:Endpoint"] ?? "http://localhost:8888";

@@ -498,6 +498,7 @@ type QueryType {
   backups: [BackupEntry!]!
   ragStatus: RagIndexStatus! @cost(weight: "10")
   ragQuery(question: String! topK: Int): RagQueryResult @cost(weight: "10")
+  unifiedSearch(query: String! includeWeb: Boolean): UnifiedSearchPayload @cost(weight: "10")
   syncStatus: SyncStatusResult @cost(weight: "10")
   syncHealth: Boolean! @cost(weight: "10")
   syncPairingPayload: SyncPairingPayloadResult @cost(weight: "10")
@@ -663,6 +664,18 @@ type TemplaterSettingsCheck {
 type UnavailableError implements IUserError {
   code: String!
   message: String!
+}
+
+type UnifiedCitationDto {
+  source: String!
+  reference: String!
+  snippet: String!
+  url: String
+}
+
+type UnifiedSearchPayload {
+  answer: String!
+  citations: [UnifiedCitationDto!]!
 }
 
 type UpdateSettingsPayload {
