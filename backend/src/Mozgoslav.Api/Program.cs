@@ -218,6 +218,8 @@ try
     builder.Services.AddScoped<IObsidianRestClient, ObsidianRestApiClient>();
     builder.Services.AddSingleton<IVaultBootstrapProvider, EmbeddedVaultBootstrap>();
     builder.Services.AddScoped<IVaultDriver, FileSystemVaultDriver>();
+    builder.Services.AddSingleton<IDomainEventBus, ChannelDomainEventBus>();
+    builder.Services.AddHostedService<ObsidianDomainEventConsumer>();
     builder.Services.AddHttpClient(GitHubPluginInstaller.HttpClientName);
     builder.Services.AddScoped<IPluginInstaller, GitHubPluginInstaller>();
     builder.Services.AddScoped<IVaultDiagnostics, VaultDiagnosticsService>();
