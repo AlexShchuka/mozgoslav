@@ -10,9 +10,10 @@ public sealed record SummaryPeriod(
 {
     public static SummaryPeriod Weekly(DateTimeOffset weekStart)
     {
-        var cal = CultureInfo.InvariantCulture.Calendar;
-        var weekNumber = cal.GetWeekOfYear(weekStart.UtcDateTime, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
-        var label = $"weekly-{weekStart.Year:D4}-W{weekNumber:D2}";
+        var date = weekStart.UtcDateTime;
+        var isoYear = ISOWeek.GetYear(date);
+        var isoWeek = ISOWeek.GetWeekOfYear(date);
+        var label = $"weekly-{isoYear:D4}-W{isoWeek:D2}";
         return new SummaryPeriod(weekStart, weekStart.AddDays(7), label);
     }
 

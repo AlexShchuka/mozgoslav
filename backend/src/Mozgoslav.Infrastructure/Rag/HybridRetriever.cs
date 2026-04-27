@@ -5,10 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mozgoslav.Application.Rag;
+using Mozgoslav.Infrastructure.Persistence;
 
 namespace Mozgoslav.Infrastructure.Rag;
 
@@ -23,6 +25,7 @@ public sealed class HybridRetriever : IRetriever
 {
     private readonly IEmbeddingService _embedding;
     private readonly IVectorIndex _vectorIndex;
+    private readonly IDbContextFactory<MozgoslavDbContext> _dbContextFactory;
     private readonly string _connectionString;
     private readonly HybridRetrieverOptions _options;
     private readonly ILogger<HybridRetriever> _logger;
@@ -30,12 +33,14 @@ public sealed class HybridRetriever : IRetriever
     public HybridRetriever(
         IEmbeddingService embedding,
         IVectorIndex vectorIndex,
+        IDbContextFactory<MozgoslavDbContext> dbContextFactory,
         string connectionString,
         IOptions<HybridRetrieverOptions> options,
         ILogger<HybridRetriever> logger)
     {
         _embedding = embedding;
         _vectorIndex = vectorIndex;
+        _dbContextFactory = dbContextFactory;
         _connectionString = connectionString;
         _options = options.Value;
         _logger = logger;
@@ -73,16 +78,35 @@ public sealed class HybridRetriever : IRetriever
     {
         var rawHits = await _vectorIndex.SearchAsync(queryVector, topK * 3, ct);
 
-        var filtered = ApplyFilter(rawHits.Select(h => new RetrievedChunk(
-            ChunkId: h.Chunk.Id,
-            NoteId: h.Chunk.NoteId.ToString("D"),
-            Text: h.Chunk.Text,
-            Embedding: h.Chunk.Embedding,
-            CreatedAt: DateTimeOffset.UtcNow,
-            ProfileId: null,
-            Speaker: null,
-            Score: h.Score)), filter);
+        var chunkIds = rawHits.Select(h => h.Chunk.Id).ToList();
 
+        await using var db = await _dbContextFactory.CreateDbContextAsync(ct);
+        var metadata = await db.RagChunks
+            .AsNoTracking()
+            .Where(c => chunkIds.Contains(c.Id))
+            .Select(c => new { c.Id, c.CreatedAt, c.ProfileId, c.Speaker })
+            .ToDictionaryAsync(c => c.Id, ct);
+
+        var scoreById = rawHits.ToDictionary(h => h.Chunk.Id, h => h.Score);
+
+        var candidates = chunkIds
+            .Where(metadata.ContainsKey)
+            .Select(id =>
+            {
+                var hit = rawHits.First(h => h.Chunk.Id == id);
+                var meta = metadata[id];
+                return new RetrievedChunk(
+                    ChunkId: id,
+                    NoteId: hit.Chunk.NoteId.ToString("D"),
+                    Text: hit.Chunk.Text,
+                    Embedding: hit.Chunk.Embedding,
+                    CreatedAt: meta.CreatedAt,
+                    ProfileId: meta.ProfileId,
+                    Speaker: meta.Speaker,
+                    Score: scoreById[id]);
+            });
+
+        var filtered = ApplyFilter(candidates, filter);
         return filtered.Take(topK).ToArray();
     }
 

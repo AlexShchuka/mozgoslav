@@ -298,6 +298,7 @@ try
         new HybridRetriever(
             sp.GetRequiredService<IEmbeddingService>(),
             sp.GetRequiredService<IVectorIndex>(),
+            sp.GetRequiredService<IDbContextFactory<MozgoslavDbContext>>(),
             connectionString,
             sp.GetRequiredService<IOptions<HybridRetrieverOptions>>(),
             sp.GetRequiredService<ILogger<HybridRetriever>>()));
@@ -385,7 +386,7 @@ try
     builder.Services.AddSingleton(sp =>
         new SearxngConfigService(
             searxngBundledSettings,
-            builder.Configuration,
+            sp.GetRequiredService<IAppSettings>(),
             sp.GetRequiredService<ILogger<SearxngConfigService>>()));
 
     var syncthingBaseUrl = builder.Configuration["Mozgoslav:SyncthingBaseUrl"];

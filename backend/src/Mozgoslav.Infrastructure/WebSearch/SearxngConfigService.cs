@@ -4,9 +4,9 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
+using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Infrastructure.Platform;
 
 namespace Mozgoslav.Infrastructure.WebSearch;
@@ -17,21 +17,20 @@ public sealed class SearxngConfigService
         AppPaths.Root, "searxng", "settings.yml");
 
     private readonly string _bundledSettingsPath;
-    private readonly IConfiguration _configuration;
+    private readonly IAppSettings _appSettings;
     private readonly ILogger<SearxngConfigService> _logger;
 
     public SearxngConfigService(
         string bundledSettingsPath,
-        IConfiguration configuration,
+        IAppSettings appSettings,
         ILogger<SearxngConfigService> logger)
     {
         _bundledSettingsPath = bundledSettingsPath;
-        _configuration = configuration;
+        _appSettings = appSettings;
         _logger = logger;
     }
 
-    public int CacheTtlHours =>
-        _configuration.GetValue<int>("Mozgoslav:Web:Extract:CacheTtlHours", defaultValue: 24);
+    public int CacheTtlHours => _appSettings.WebCacheTtlHours;
 
     public async Task<SearxngEngineConfig> ReadEnginesAsync(CancellationToken ct)
     {

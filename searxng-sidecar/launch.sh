@@ -19,5 +19,4 @@ if [ ! -d "$VENV_DIR" ]; then
   "$VENV_DIR/bin/pip" install --quiet -r "$SCRIPT_DIR/requirements.txt"
 fi
 
-exec "$VENV_DIR/bin/searxng-run" \
-  --settings "$USER_SETTINGS"
+SEARXNG_SETTINGS_PATH="$USER_SETTINGS" exec "$VENV_DIR/bin/python" -m searx.webapp

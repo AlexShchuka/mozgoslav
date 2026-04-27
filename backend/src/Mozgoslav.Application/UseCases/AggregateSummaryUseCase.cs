@@ -47,10 +47,7 @@ public sealed class AggregateSummaryUseCase
             return;
         }
 
-        var allNotes = await _notes.GetAllAsync(ct);
-        var inRange = allNotes
-            .Where(n => n.CreatedAt >= period.From.UtcDateTime && n.CreatedAt < period.To.UtcDateTime)
-            .ToList();
+        var inRange = (await _notes.GetByDateRangeAsync(period.From, period.To, ct)).ToList();
 
         if (inRange.Count == 0)
         {

@@ -11,6 +11,12 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+Note: `requirements.txt` pins `searxng==2025.4.8`. The upstream SearXNG project does not publish to PyPI under a date-versioned scheme. Install directly from the upstream repository if the pinned version is unavailable:
+
+```bash
+pip install git+https://github.com/searxng/searxng.git
+```
+
 ## Running
 
 ```bash
@@ -18,7 +24,7 @@ bash launch.sh
 ```
 
 On first launch, copies `settings.yml` to `~/Library/Application Support/Mozgoslav/searxng/settings.yml`.
-Subsequent launches read from that user-editable copy.
+Subsequent launches read from that user-editable copy. Settings path is passed via `SEARXNG_SETTINGS_PATH`.
 
 ## Health check
 

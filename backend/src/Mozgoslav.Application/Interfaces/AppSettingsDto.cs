@@ -39,7 +39,8 @@ public sealed record AppSettingsDto(
     bool ObsidianFeatureEnabled = false,
     bool DictationDumpEnabled = false,
     string DictationDumpHotkeyToggle = "",
-    string DictationDumpHotkeyHold = "")
+    string DictationDumpHotkeyHold = "",
+    int WebCacheTtlHours = 24)
 {
     public const string ObsidianBootstrapPinsResource = "Mozgoslav.Infrastructure.Resources.ObsidianBootstrap.pinned-plugins.json";
 
@@ -85,5 +86,6 @@ public sealed record AppSettingsDto(
         SyncthingBaseUrl: string.Empty,
         DictationDumpEnabled: false,
         DictationDumpHotkeyToggle: string.Empty,
-        DictationDumpHotkeyHold: string.Empty);
+        DictationDumpHotkeyHold: string.Empty,
+        WebCacheTtlHours: 24);
 }

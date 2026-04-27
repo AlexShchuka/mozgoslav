@@ -14,6 +14,7 @@ public interface IProcessedNoteRepository
     Task<IReadOnlyList<ProcessedNote>> GetByTranscriptIdAsync(Guid transcriptId, CancellationToken ct);
     Task<IReadOnlyList<ProcessedNote>> GetByRecordingIdsAsync(IReadOnlyList<Guid> recordingIds, CancellationToken ct);
     Task<IReadOnlyList<ProcessedNote>> GetAllAsync(CancellationToken ct);
+    Task<IReadOnlyList<ProcessedNote>> GetByDateRangeAsync(DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken ct);
     Task<IReadOnlyList<ProcessedNote>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken ct);
     Task UpdateAsync(ProcessedNote note, CancellationToken ct);
     Task<bool> TryDeleteAsync(Guid id, CancellationToken ct);

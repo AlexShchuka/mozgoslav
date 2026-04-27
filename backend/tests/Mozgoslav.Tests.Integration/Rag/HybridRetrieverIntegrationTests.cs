@@ -39,7 +39,7 @@ public sealed class HybridRetrieverIntegrationTests
         await using var index = await BuildAndSeedIndexAsync(db.ConnectionString, CancellationToken.None);
 
         var embedding = new DeterministicEmbedding([0.9f, 0.1f]);
-        var sut = BuildHybridRetriever(embedding, index, db.ConnectionString, hybridEnabled: false);
+        var sut = BuildHybridRetriever(embedding, index, db, hybridEnabled: false);
 
         var result = await sut.RetrieveAsync(
             new RetrievalQuery("Obsidian vault", TopK: 2),
@@ -63,7 +63,7 @@ public sealed class HybridRetrieverIntegrationTests
             CancellationToken.None);
 
         var embedding = new DeterministicEmbedding([1f, 0f]);
-        var sut = BuildHybridRetriever(embedding, index, db.ConnectionString, hybridEnabled: true);
+        var sut = BuildHybridRetriever(embedding, index, db, hybridEnabled: true);
 
         var result = await sut.RetrieveAsync(
             new RetrievalQuery("QR pairing mobile", TopK: 2),
@@ -79,7 +79,7 @@ public sealed class HybridRetrieverIntegrationTests
         await using var index = await BuildAndSeedIndexAsync(db.ConnectionString, CancellationToken.None);
 
         var embedding = new DeterministicEmbedding([0.9f, 0.1f]);
-        var sut = BuildHybridRetriever(embedding, index, db.ConnectionString, hybridEnabled: false);
+        var sut = BuildHybridRetriever(embedding, index, db, hybridEnabled: false);
 
         var futureFilter = new MetadataFilter(
             FromUtc: DateTimeOffset.UtcNow.AddDays(1),
@@ -101,7 +101,7 @@ public sealed class HybridRetrieverIntegrationTests
         await using var index = new SqliteVectorIndex(db.ConnectionString);
 
         var embedding = new DeterministicEmbedding([1f, 0f]);
-        var sut = BuildHybridRetriever(embedding, index, db.ConnectionString, hybridEnabled: false);
+        var sut = BuildHybridRetriever(embedding, index, db, hybridEnabled: false);
 
         var result = await sut.RetrieveAsync(
             new RetrievalQuery("anything", TopK: 5),
@@ -113,7 +113,7 @@ public sealed class HybridRetrieverIntegrationTests
     private static HybridRetriever BuildHybridRetriever(
         IEmbeddingService embedding,
         IVectorIndex index,
-        string connectionString,
+        TestDatabase db,
         bool hybridEnabled)
     {
         var options = Options.Create(new HybridRetrieverOptions
@@ -124,7 +124,8 @@ public sealed class HybridRetrieverIntegrationTests
         return new HybridRetriever(
             embedding,
             index,
-            connectionString,
+            db.CreateFactory(),
+            db.ConnectionString,
             options,
             NullLogger<HybridRetriever>.Instance);
     }

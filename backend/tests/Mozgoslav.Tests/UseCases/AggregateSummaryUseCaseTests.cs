@@ -78,7 +78,7 @@ public sealed class AggregateSummaryUseCaseTests
         var period = BuildWeeklyPeriod();
 
         var noteInRange = MakeNote(new DateTime(2026, 4, 22, 10, 0, 0, DateTimeKind.Utc), "discussed feature X");
-        notes.GetAllAsync(Arg.Any<CancellationToken>())
+        notes.GetByDateRangeAsync(Arg.Any<DateTimeOffset>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
             .Returns([noteInRange]);
 
         llm.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
@@ -108,7 +108,7 @@ public sealed class AggregateSummaryUseCaseTests
         var period = BuildMonthlyPeriod();
 
         var noteInRange = MakeNote(new DateTime(2026, 4, 15, 10, 0, 0, DateTimeKind.Utc));
-        notes.GetAllAsync(Arg.Any<CancellationToken>())
+        notes.GetByDateRangeAsync(Arg.Any<DateTimeOffset>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
             .Returns([noteInRange]);
 
         llm.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
@@ -138,7 +138,7 @@ public sealed class AggregateSummaryUseCaseTests
         var period = BuildWeeklyPeriod();
 
         var noteInRange = MakeNote(new DateTime(2026, 4, 22, 10, 0, 0, DateTimeKind.Utc));
-        notes.GetAllAsync(Arg.Any<CancellationToken>())
+        notes.GetByDateRangeAsync(Arg.Any<DateTimeOffset>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
             .Returns([noteInRange]);
 
         llm.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
@@ -168,9 +168,8 @@ public sealed class AggregateSummaryUseCaseTests
         var (notes, llm, vault, sut) = Build();
         var period = BuildWeeklyPeriod();
 
-        var outsideRange = MakeNote(new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc));
-        notes.GetAllAsync(Arg.Any<CancellationToken>())
-            .Returns([outsideRange]);
+        notes.GetByDateRangeAsync(Arg.Any<DateTimeOffset>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<ProcessedNote>());
 
         await sut.ExecuteAsync(period, "/vault", CancellationToken.None);
 
@@ -185,7 +184,7 @@ public sealed class AggregateSummaryUseCaseTests
         var period = BuildWeeklyPeriod();
 
         var noteInRange = MakeNote(new DateTime(2026, 4, 22, 10, 0, 0, DateTimeKind.Utc), "raw content");
-        notes.GetAllAsync(Arg.Any<CancellationToken>())
+        notes.GetByDateRangeAsync(Arg.Any<DateTimeOffset>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
             .Returns([noteInRange]);
 
         llm.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(false);
@@ -204,9 +203,6 @@ public sealed class AggregateSummaryUseCaseTests
         var (notes, llm, vault, sut) = Build();
         var period = BuildWeeklyPeriod();
 
-        notes.GetAllAsync(Arg.Any<CancellationToken>())
-            .Returns([]);
-
         var act = async () => await sut.ExecuteAsync(period, string.Empty, CancellationToken.None);
 
         await act.Should().NotThrowAsync();
@@ -220,7 +216,7 @@ public sealed class AggregateSummaryUseCaseTests
         var period = BuildWeeklyPeriod();
 
         var noteInRange = MakeNote(new DateTime(2026, 4, 22, 10, 0, 0, DateTimeKind.Utc));
-        notes.GetAllAsync(Arg.Any<CancellationToken>())
+        notes.GetByDateRangeAsync(Arg.Any<DateTimeOffset>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
             .Returns([noteInRange]);
 
         llm.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(false);

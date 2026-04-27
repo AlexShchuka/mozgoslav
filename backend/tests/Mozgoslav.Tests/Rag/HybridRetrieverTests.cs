@@ -5,10 +5,14 @@ using System.Threading.Tasks;
 
 using FluentAssertions;
 
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 using Mozgoslav.Application.Rag;
+using Mozgoslav.Domain.Entities;
+using Mozgoslav.Infrastructure.Persistence;
 using Mozgoslav.Infrastructure.Rag;
 
 using NSubstitute;
@@ -34,12 +38,39 @@ public sealed class HybridRetrieverTests
         return idx;
     }
 
+    private static IDbContextFactory<MozgoslavDbContext> BuildDbFactory(
+        SqliteConnection keepAlive,
+        IReadOnlyList<NoteChunkHit> hits)
+    {
+        var options = new DbContextOptionsBuilder<MozgoslavDbContext>()
+            .UseSqlite(keepAlive)
+            .Options;
+        using var db = new MozgoslavDbContext(options);
+        db.Database.EnsureCreated();
+        foreach (var hit in hits)
+        {
+            db.RagChunks.Add(new RagChunk
+            {
+                Id = hit.Chunk.Id,
+                NoteId = hit.Chunk.NoteId,
+                Text = hit.Chunk.Text,
+                Embedding = Array.Empty<byte>(),
+                Dimensions = hit.Chunk.Embedding.Length,
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+        }
+        db.SaveChanges();
+        return new FixedConnectionFactory(keepAlive);
+    }
+
     private static HybridRetriever BuildSut(
         IEmbeddingService embedding,
         IVectorIndex index,
-        string connectionString = "Data Source=:memory:",
+        SqliteConnection keepAlive,
+        IReadOnlyList<NoteChunkHit>? hitsForDb = null,
         bool hybridEnabled = false)
     {
+        var dbFactory = BuildDbFactory(keepAlive, hitsForDb ?? []);
         var options = Options.Create(new HybridRetrieverOptions
         {
             Enabled = hybridEnabled,
@@ -48,14 +79,36 @@ public sealed class HybridRetrieverTests
         return new HybridRetriever(
             embedding,
             index,
-            connectionString,
+            dbFactory,
+            keepAlive.ConnectionString,
             options,
             NullLogger<HybridRetriever>.Instance);
+    }
+
+    private sealed class FixedConnectionFactory : IDbContextFactory<MozgoslavDbContext>
+    {
+        private readonly SqliteConnection _connection;
+
+        public FixedConnectionFactory(SqliteConnection connection)
+        {
+            _connection = connection;
+        }
+
+        public MozgoslavDbContext CreateDbContext()
+        {
+            var options = new DbContextOptionsBuilder<MozgoslavDbContext>()
+                .UseSqlite(_connection)
+                .Options;
+            return new MozgoslavDbContext(options);
+        }
     }
 
     [TestMethod]
     public async Task RetrieveAsync_HybridDisabled_ReturnsDenseTopK()
     {
+        await using var conn = new SqliteConnection("Data Source=:memory:");
+        await conn.OpenAsync();
+
         var vec = new float[] { 1f, 0f };
         var noteId = Guid.NewGuid();
         var hits = new[]
@@ -65,7 +118,7 @@ public sealed class HybridRetrieverTests
             new NoteChunkHit(new NoteChunk("c3", noteId, "text three", vec), 0.5),
         };
 
-        var sut = BuildSut(BuildEmbedding(vec), BuildIndex(hits), hybridEnabled: false);
+        var sut = BuildSut(BuildEmbedding(vec), BuildIndex(hits), conn, hits, hybridEnabled: false);
         var result = await sut.RetrieveAsync(
             new RetrievalQuery("query", TopK: 2),
             CancellationToken.None);
@@ -78,8 +131,11 @@ public sealed class HybridRetrieverTests
     [TestMethod]
     public async Task RetrieveAsync_EmptyIndex_ReturnsEmpty()
     {
+        await using var conn = new SqliteConnection("Data Source=:memory:");
+        await conn.OpenAsync();
+
         var vec = new float[] { 1f, 0f };
-        var sut = BuildSut(BuildEmbedding(vec), BuildIndex(Array.Empty<NoteChunkHit>()), hybridEnabled: false);
+        var sut = BuildSut(BuildEmbedding(vec), BuildIndex(Array.Empty<NoteChunkHit>()), conn, hybridEnabled: false);
 
         var result = await sut.RetrieveAsync(
             new RetrievalQuery("question", TopK: 5),
@@ -91,6 +147,9 @@ public sealed class HybridRetrieverTests
     [TestMethod]
     public async Task RetrieveAsync_MetadataFilter_PassedThroughQuery()
     {
+        await using var conn = new SqliteConnection("Data Source=:memory:");
+        await conn.OpenAsync();
+
         var vec = new float[] { 1f, 0f };
         var noteId = Guid.NewGuid();
         var hits = new[]
@@ -99,7 +158,7 @@ public sealed class HybridRetrieverTests
         };
 
         var index = BuildIndex(hits);
-        var sut = BuildSut(BuildEmbedding(vec), index, hybridEnabled: false);
+        var sut = BuildSut(BuildEmbedding(vec), index, conn, hits, hybridEnabled: false);
 
         var filter = new MetadataFilter(
             FromUtc: DateTimeOffset.UtcNow.AddDays(-7),
@@ -120,6 +179,9 @@ public sealed class HybridRetrieverTests
     [TestMethod]
     public async Task RetrieveAsync_HybridEnabled_FtsFailure_GracefulFallback()
     {
+        await using var conn = new SqliteConnection("Data Source=:memory:");
+        await conn.OpenAsync();
+
         var vec = new float[] { 1f, 0f };
         var noteId = Guid.NewGuid();
         var hits = new[]
@@ -130,7 +192,8 @@ public sealed class HybridRetrieverTests
         var sut = BuildSut(
             BuildEmbedding(vec),
             BuildIndex(hits),
-            connectionString: "Data Source=:memory:",
+            conn,
+            hits,
             hybridEnabled: true);
 
         var result = await sut.RetrieveAsync(

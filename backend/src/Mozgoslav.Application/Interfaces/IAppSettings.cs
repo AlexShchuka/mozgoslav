@@ -44,6 +44,7 @@ public interface IAppSettings
     string DictationDumpHotkeyToggle { get; }
     string DictationDumpHotkeyHold { get; }
     string ObsidianBootstrapPins { get; }
+    int WebCacheTtlHours { get; }
 
     AppSettingsDto Snapshot { get; }
 

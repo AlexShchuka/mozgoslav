@@ -54,6 +54,11 @@ public sealed class RagIndexingProcessedNoteRepository : IProcessedNoteRepositor
         return _inner.GetAllAsync(ct);
     }
 
+    public Task<IReadOnlyList<ProcessedNote>> GetByDateRangeAsync(DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken ct)
+    {
+        return _inner.GetByDateRangeAsync(fromUtc, toUtc, ct);
+    }
+
     public Task<IReadOnlyList<ProcessedNote>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken ct)
     {
         return _inner.GetByIdsAsync(ids, ct);

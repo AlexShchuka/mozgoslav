@@ -5,6 +5,7 @@ using HotChocolate;
 using HotChocolate.Types;
 
 using Mozgoslav.Api.GraphQL.Mutations;
+using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Infrastructure.WebSearch;
 
 namespace Mozgoslav.Api.GraphQL.WebSearch;
@@ -15,6 +16,7 @@ public sealed class WebSearchMutationType
     public async Task<WebSearchConfigPayload> UpdateWebSearchConfig(
         WebSearchConfigInput input,
         [Service] SearxngConfigService configService,
+        [Service] IAppSettings appSettings,
         CancellationToken ct)
     {
         await configService.WriteEnginesAsync(
@@ -22,6 +24,10 @@ public sealed class WebSearchMutationType
             input.YandexEnabled,
             input.GoogleEnabled,
             ct);
+
+        var snapshot = appSettings.Snapshot;
+        var updated = snapshot with { WebCacheTtlHours = input.CacheTtlHours };
+        await appSettings.SaveAsync(updated, ct);
 
         var engines = await configService.ReadEnginesAsync(ct);
         var raw = await configService.ReadRawYamlAsync(ct);
