@@ -435,6 +435,15 @@
       "finalizing": "wrapping up…"
     }
   },
+  "webSearch": {
+    "privacyDisclaimer": "Web search runs through SearXNG — a local aggregator that does not share data with third parties.",
+    "engines": "Search engines",
+    "engineDdg": "DuckDuckGo",
+    "engineYandex": "Yandex",
+    "engineGoogle": "Google",
+    "cacheTtl": "Cache duration (hours)",
+    "rawSettings": "SearXNG settings (YAML)"
+  },
   "errors": {
     "genericErrorWithMessage": "Error: {{message}}"
   }

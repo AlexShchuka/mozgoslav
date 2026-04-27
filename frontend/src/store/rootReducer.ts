@@ -35,6 +35,8 @@ import type { AskState } from "./slices/ask/reducer";
 import { askReducer } from "./slices/ask/reducer";
 import type { HealthState } from "./slices/health";
 import { healthReducer } from "./slices/health";
+import type { WebSearchState } from "./slices/webSearch/types";
+import { webSearchReducer } from "./slices/webSearch";
 
 export const rootReducer = combineReducers({
   recording: recordingReducer,
@@ -55,6 +57,7 @@ export const rootReducer = combineReducers({
   hotkeys: hotkeysReducer,
   health: healthReducer,
   ask: askReducer,
+  webSearch: webSearchReducer,
 });
 
 export interface GlobalState {
@@ -76,4 +79,5 @@ export interface GlobalState {
   hotkeys: HotkeysState;
   health: HealthState;
   ask: AskState;
+  webSearch: WebSearchState;
 }

@@ -15,6 +15,7 @@ using Mozgoslav.Api.GraphQL.Recordings;
 using Mozgoslav.Api.GraphQL.Search;
 using Mozgoslav.Api.GraphQL.Settings;
 using Mozgoslav.Api.GraphQL.Sync;
+using Mozgoslav.Api.GraphQL.WebSearch;
 
 namespace Mozgoslav.Api.GraphQL.Queries;
 
@@ -38,6 +39,7 @@ internal static class QueryRegistration
             .AddTypeExtension<BackupQueryType>()
             .AddTypeExtension<RagQueryType>()
             .AddTypeExtension<SearchQueryType>()
-            .AddTypeExtension<SyncQueryType>();
+            .AddTypeExtension<SyncQueryType>()
+            .AddTypeExtension<WebSearchQueryType>();
     }
 }

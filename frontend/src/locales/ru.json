@@ -435,6 +435,15 @@
       "finalizing": "заканчиваю…"
     }
   },
+  "webSearch": {
+    "privacyDisclaimer": "Веб-поиск выполняется через SearXNG — локальный агрегатор без передачи данных третьим сторонам.",
+    "engines": "Поисковые движки",
+    "engineDdg": "DuckDuckGo",
+    "engineYandex": "Яндекс",
+    "engineGoogle": "Google",
+    "cacheTtl": "Время кэша (часы)",
+    "rawSettings": "Настройки SearXNG (YAML)"
+  },
   "errors": {
     "genericErrorWithMessage": "Ошибка: {{message}}"
   }
