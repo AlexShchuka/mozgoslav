@@ -4,10 +4,7 @@ import type { SagaIterator } from "redux-saga";
 import type { QueryLlmCapabilitiesQuery } from "../../../../api/gql/graphql";
 import { QueryLlmCapabilitiesDocument } from "../../../../api/gql/graphql";
 import { gqlRequest } from "../../../saga/graphql";
-import {
-  LOAD_LLM_CAPABILITIES,
-  loadLlmCapabilitiesSuccess,
-} from "../actions";
+import { LOAD_LLM_CAPABILITIES, loadLlmCapabilitiesSuccess } from "../actions";
 
 export function* loadLlmCapabilitiesSaga(): SagaIterator {
   try {

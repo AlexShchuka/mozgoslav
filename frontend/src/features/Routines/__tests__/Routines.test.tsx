@@ -7,11 +7,7 @@ import Routines from "../Routines";
 import type { RoutineDefinition } from "../../../domain/routines";
 import type { RoutinesProps } from "../types";
 import { renderWithStore, mockRoutinesState, mergeMockState } from "../../../testUtils";
-import {
-  LOAD_ROUTINES,
-  TOGGLE_ROUTINE,
-  RUN_ROUTINE_NOW,
-} from "../../../store/slices/routines";
+import { LOAD_ROUTINES, TOGGLE_ROUTINE, RUN_ROUTINE_NOW } from "../../../store/slices/routines";
 import "../../../i18n";
 
 const buildRoutine = (patch: Partial<RoutineDefinition> = {}): RoutineDefinition => ({
@@ -113,9 +109,7 @@ describe("Routines — UI", () => {
 
     await waitFor(() =>
       expect(
-        getActions().some(
-          (a) => a.type === RUN_ROUTINE_NOW && a.payload.key === "action-extractor"
-        )
+        getActions().some((a) => a.type === RUN_ROUTINE_NOW && a.payload.key === "action-extractor")
       ).toBe(true)
     );
   });

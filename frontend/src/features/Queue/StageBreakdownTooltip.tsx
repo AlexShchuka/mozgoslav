@@ -26,15 +26,11 @@ const StageBreakdownTooltip: FC<StageBreakdownTooltipProps> = ({ stages }) => {
           <div>
             <StageName>{stage.stageName}</StageName>
             {stage.errorMessage && (
-              <StageError>
-                {t("queue.stages.failed", { error: stage.errorMessage })}
-              </StageError>
+              <StageError>{t("queue.stages.failed", { error: stage.errorMessage })}</StageError>
             )}
           </div>
           {stage.durationMs !== null && stage.durationMs !== undefined && (
-            <StageDuration>
-              {t("queue.stages.duration", { ms: stage.durationMs })}
-            </StageDuration>
+            <StageDuration>{t("queue.stages.duration", { ms: stage.durationMs })}</StageDuration>
           )}
         </StageRow>
       ))}

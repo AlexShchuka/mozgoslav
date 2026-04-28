@@ -12,7 +12,13 @@ import {
   SAVE_SETTINGS_SUCCESS,
   type SettingsAction,
 } from "./actions";
-import { applyLoaded, applyLlmCapabilities, applySaved, markLlmProbing, settleLlmProbing } from "./mutations";
+import {
+  applyLoaded,
+  applyLlmCapabilities,
+  applySaved,
+  markLlmProbing,
+  settleLlmProbing,
+} from "./mutations";
 import { initialSettingsState, type SettingsState } from "./types";
 
 export const settingsReducer: Reducer<SettingsState> = (

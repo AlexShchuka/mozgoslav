@@ -16,6 +16,12 @@ let package = Package(
             url: "https://github.com/grpc/grpc-swift-2",
             from: "2.0.0"),
         .package(
+            url: "https://github.com/grpc/grpc-swift-nio-transport",
+            from: "2.0.0"),
+        .package(
+            url: "https://github.com/grpc/grpc-swift-protobuf",
+            from: "2.0.0"),
+        .package(
             url: "https://github.com/apple/swift-protobuf",
             from: "1.28.0"),
     ],
@@ -25,8 +31,8 @@ let package = Package(
             dependencies: [
                 "DictationHelperCore",
                 .product(name: "GRPCCore", package: "grpc-swift-2"),
-                .product(name: "GRPCNIOTransportHTTP2", package: "grpc-swift-2"),
-                .product(name: "GRPCProtobuf", package: "grpc-swift-2"),
+                .product(name: "GRPCNIOTransportHTTP2", package: "grpc-swift-nio-transport"),
+                .product(name: "GRPCProtobuf", package: "grpc-swift-protobuf"),
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
             ],
             path: "Sources/MozgoslavDictationHelper"
@@ -46,7 +52,7 @@ let package = Package(
             dependencies: [
                 "MozgoslavDictationHelper",
                 .product(name: "GRPCCore", package: "grpc-swift-2"),
-                .product(name: "GRPCProtobuf", package: "grpc-swift-2"),
+                .product(name: "GRPCProtobuf", package: "grpc-swift-protobuf"),
             ],
             path: "Tests/MozgoslavDictationHelperTests"
         ),

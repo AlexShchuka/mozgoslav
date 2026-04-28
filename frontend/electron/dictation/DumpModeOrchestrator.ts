@@ -162,7 +162,9 @@ export class DumpModeOrchestrator {
         streamSessionId,
         backendBaseUrl: this.backendOrigin,
       });
-      console.info(`[dump-mode] capture started sessionId=${sessionId} streamSessionId=${streamSessionId} path=${filePath}`);
+      console.info(
+        `[dump-mode] capture started sessionId=${sessionId} streamSessionId=${streamSessionId} path=${filePath}`
+      );
       this.startPartialSseSubscription(streamSessionId);
     } catch (err) {
       console.error("[dump-mode] startFileCapture failed:", err);

@@ -95,7 +95,9 @@ export const saveSettingsFailure = (): SaveSettingsFailureAction => ({
 export const checkLlm = (): CheckLlmAction => ({ type: CHECK_LLM });
 export const checkLlmDone = (): CheckLlmDoneAction => ({ type: CHECK_LLM_DONE });
 
-export const loadLlmCapabilities = (): LoadLlmCapabilitiesAction => ({ type: LOAD_LLM_CAPABILITIES });
+export const loadLlmCapabilities = (): LoadLlmCapabilitiesAction => ({
+  type: LOAD_LLM_CAPABILITIES,
+});
 export const loadLlmCapabilitiesSuccess = (
   capabilities: LlmCapabilities | null
 ): LoadLlmCapabilitiesSuccessAction => ({

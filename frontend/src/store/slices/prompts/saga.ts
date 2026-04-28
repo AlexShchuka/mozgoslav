@@ -40,7 +40,10 @@ import {
 
 export function* loadPromptsSaga(): SagaIterator {
   try {
-    const result = (yield* gqlRequest(QueryPromptTemplatesDocument, {})) as QueryPromptTemplatesQuery;
+    const result = (yield* gqlRequest(
+      QueryPromptTemplatesDocument,
+      {}
+    )) as QueryPromptTemplatesQuery;
     const templates = (result.promptTemplates ?? []).map((t) => ({
       id: t.id as string,
       name: t.name,
@@ -62,7 +65,14 @@ export function* createPromptSaga(action: CreatePromptAction): SagaIterator {
       body,
     })) as MutationCreatePromptTemplateMutation;
     const t = result.createPromptTemplate;
-    yield put(createPromptSuccess({ id: t.id as string, name: t.name, body: t.body, createdAt: t.createdAt as string }));
+    yield put(
+      createPromptSuccess({
+        id: t.id as string,
+        name: t.name,
+        body: t.body,
+        createdAt: t.createdAt as string,
+      })
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     yield put(createPromptFailure(message));
@@ -79,7 +89,14 @@ export function* updatePromptSaga(action: UpdatePromptAction): SagaIterator {
     })) as MutationUpdatePromptTemplateMutation;
     if (result.updatePromptTemplate) {
       const t = result.updatePromptTemplate;
-      yield put(updatePromptSuccess({ id: t.id as string, name: t.name, body: t.body, createdAt: t.createdAt as string }));
+      yield put(
+        updatePromptSuccess({
+          id: t.id as string,
+          name: t.name,
+          body: t.body,
+          createdAt: t.createdAt as string,
+        })
+      );
     } else {
       yield put(updatePromptFailure("Template not found"));
     }

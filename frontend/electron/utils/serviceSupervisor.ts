@@ -67,7 +67,9 @@ export class ServiceSupervisor {
   }
 
   async cleanupZombies(): Promise<void> {
-    const portsToClean = this.services.flatMap((s) => (s.spec.port !== undefined ? [s.spec.port] : []));
+    const portsToClean = this.services.flatMap((s) =>
+      s.spec.port !== undefined ? [s.spec.port] : []
+    );
     for (const port of portsToClean) {
       const pids = await findPidsOnPort(port);
       if (pids.length === 0) continue;
@@ -160,13 +162,13 @@ export class ServiceSupervisor {
     const { spec } = managed;
     if (managed.stopped || this.globalStopped) return;
     if (spec.restartPolicy === "never") {
-      console.warn(`[supervisor] ${spec.name} is unhealthy and restart policy is 'never'. Skipping.`);
+      console.warn(
+        `[supervisor] ${spec.name} is unhealthy and restart policy is 'never'. Skipping.`
+      );
       return;
     }
     if (spec.restartPolicy === "on-failure" && managed.restartCount >= maxRestarts) {
-      console.error(
-        `[supervisor] ${spec.name} exceeded max restarts (${maxRestarts}). Giving up.`
-      );
+      console.error(`[supervisor] ${spec.name} exceeded max restarts (${maxRestarts}). Giving up.`);
       managed.stopped = true;
       return;
     }

@@ -79,11 +79,8 @@ const Routines: FC<RoutinesProps> = ({
                     {routine.lastRun.status}
                   </StatusBadge>
                   {" · "}
-                  {t("routines.lastRun")}{" "}
-                  {new Date(routine.lastRun.startedAt).toLocaleString()}
-                  {routine.lastRun.errorMessage && (
-                    <> · {routine.lastRun.errorMessage}</>
-                  )}
+                  {t("routines.lastRun")} {new Date(routine.lastRun.startedAt).toLocaleString()}
+                  {routine.lastRun.errorMessage && <> · {routine.lastRun.errorMessage}</>}
                 </LastRunInfo>
               )}
             </RoutineCard>

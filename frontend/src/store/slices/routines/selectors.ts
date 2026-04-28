@@ -6,7 +6,10 @@ const selectRoutinesState = (state: GlobalState): RoutinesState => state.routine
 
 export const selectAllRoutines = createSelector(selectRoutinesState, (slice) => slice.routines);
 
-export const selectRoutinesLoading = createSelector(selectRoutinesState, (slice) => slice.isLoading);
+export const selectRoutinesLoading = createSelector(
+  selectRoutinesState,
+  (slice) => slice.isLoading
+);
 
 export const selectRoutinesError = createSelector(selectRoutinesState, (slice) => slice.error);
 
