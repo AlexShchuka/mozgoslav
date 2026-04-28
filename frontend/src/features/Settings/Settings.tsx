@@ -25,7 +25,7 @@ import {
   Toolbar,
 } from "./Settings.style";
 
-type TabKey = "general" | "storage" | "llm" | "whisper" | "dictation" | "obsidian" | "sync";
+type TabKey = "general" | "llm" | "whisper" | "dictation" | "obsidian" | "sync";
 
 const Settings: FC<SettingsProps> = ({
   settings: loadedSettings,
@@ -65,14 +65,6 @@ const Settings: FC<SettingsProps> = ({
     onCheckLlm();
   };
 
-  const pickVaultFolder = async () => {
-    if (!window.mozgoslav) return;
-    const res = await window.mozgoslav.openFolder();
-    if (!res.canceled && res.filePaths[0]) {
-      update("vaultPath", res.filePaths[0]);
-    }
-  };
-
   const pickWhisperFile = async () => {
     if (!window.mozgoslav) return;
     const res = await window.mozgoslav.openAudioFiles();
@@ -84,7 +76,6 @@ const Settings: FC<SettingsProps> = ({
   const tabs = useMemo(
     () => [
       { key: "general" as TabKey, label: t("settings.tabs.general") },
-      { key: "storage" as TabKey, label: t("settings.tabs.storage") },
       { key: "llm" as TabKey, label: t("settings.tabs.llm") },
       { key: "whisper" as TabKey, label: t("settings.tabs.whisper") },
       { key: "dictation" as TabKey, label: t("settings.tabs.dictation") },
@@ -129,28 +120,6 @@ const Settings: FC<SettingsProps> = ({
                 <SelectOption value="dark">{t("settings.theme.dark")}</SelectOption>
               </SelectBox>
             </div>
-          </FormGrid>
-        </Card>
-      )}
-
-      {tab === "storage" && (
-        <Card>
-          <FormGrid>
-            <Row>
-              <Input
-                label={t("settings.fields.vaultPath")}
-                value={draft.vaultPath}
-                onChange={(e) => update("vaultPath", e.target.value)}
-                placeholder="/Users/you/Obsidian Vault"
-              />
-              <Button
-                variant="secondary"
-                leftIcon={<FolderOpen size={16} />}
-                onClick={pickVaultFolder}
-              >
-                {t("common.add")}
-              </Button>
-            </Row>
           </FormGrid>
         </Card>
       )}
