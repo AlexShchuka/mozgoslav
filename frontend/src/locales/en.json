@@ -447,5 +447,11 @@
   },
   "errors": {
     "genericErrorWithMessage": "Error: {{message}}"
+  },
+  "systemActions": {
+    "title": "System Actions",
+    "subtitle": "Import default Apple Shortcuts to enable voice-controlled reminders, calendar events, and file operations.",
+    "loading": "Loading templates…",
+    "import": "Import shortcut →"
   }
 }

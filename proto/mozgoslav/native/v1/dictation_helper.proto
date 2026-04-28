@@ -1,0 +1,136 @@
+syntax = "proto3";
+
+package mozgoslav.native.v1;
+
+option csharp_namespace = "Mozgoslav.Native.V1";
+
+import "google/protobuf/empty.proto";
+
+service DictationHelper {
+  rpc StartCapture(StartCaptureRequest) returns (CaptureStarted);
+  rpc StopCapture(StopCaptureRequest) returns (CaptureStopped);
+  rpc StartFileCapture(StartFileCaptureRequest) returns (stream PcmChunk);
+  rpc StopFileCapture(StopFileCaptureRequest) returns (FileCaptureStopped);
+  rpc CheckPermissions(PermissionCheckRequest) returns (PermissionStatus);
+  rpc RequestPermission(PermissionRequestRequest) returns (PermissionGranted);
+  rpc InjectText(InjectTextRequest) returns (InjectResult);
+  rpc DetectInjectTarget(DetectTargetRequest) returns (InjectTarget);
+  rpc StartHotkey(StartHotkeyRequest) returns (stream HotkeyEvent);
+  rpc StopHotkey(StopHotkeyRequest) returns (google.protobuf.Empty);
+  rpc StartDumpHotkey(StartDumpHotkeyRequest) returns (stream HotkeyEvent);
+  rpc StopDumpHotkey(StopDumpHotkeyRequest) returns (google.protobuf.Empty);
+  rpc StartAskCorpusHotkey(StartAskCorpusHotkeyRequest) returns (stream HotkeyEvent);
+  rpc StopAskCorpusHotkey(StopAskCorpusHotkeyRequest) returns (google.protobuf.Empty);
+  rpc RunShortcut(RunShortcutRequest) returns (RunShortcutResult);
+  rpc Shutdown(google.protobuf.Empty) returns (google.protobuf.Empty);
+}
+
+message StartCaptureRequest {
+  string device_id = 1;
+  int32 sample_rate = 2;
+}
+
+message CaptureStarted {
+  bool started = 1;
+}
+
+message StopCaptureRequest {}
+
+message CaptureStopped {
+  bool stopped = 1;
+}
+
+message StartFileCaptureRequest {
+  string session_id = 1;
+  string output_path = 2;
+  int32 sample_rate = 3;
+  string stream_session_id = 4;
+}
+
+message PcmChunk {
+  bytes samples_float32_le = 1;
+  int32 sample_rate = 2;
+  int64 offset_ms = 3;
+}
+
+message StopFileCaptureRequest {
+  string session_id = 1;
+}
+
+message FileCaptureStopped {
+  bool success = 1;
+  string path = 2;
+  int64 duration_ms = 3;
+}
+
+message PermissionCheckRequest {}
+
+message PermissionStatus {
+  string microphone = 1;
+  string accessibility = 2;
+  string input_monitoring = 3;
+}
+
+message PermissionRequestRequest {}
+
+message PermissionGranted {
+  bool accessibility = 1;
+  bool input_monitoring = 2;
+  bool opened_accessibility_settings = 3;
+  bool opened_input_monitoring_settings = 4;
+}
+
+message InjectTextRequest {
+  string text = 1;
+  string mode = 2;
+}
+
+message InjectResult {
+  int32 injected = 1;
+  string strategy = 2;
+  string bundle_id = 3;
+  string app_name = 4;
+}
+
+message DetectTargetRequest {}
+
+message InjectTarget {
+  string bundle_id = 1;
+  string app_name = 2;
+  bool use_ax = 3;
+}
+
+message StartHotkeyRequest {
+  string accelerator = 1;
+}
+
+message HotkeyEvent {
+  string kind = 1;
+  string accelerator = 2;
+  string observed_at = 3;
+}
+
+message StopHotkeyRequest {}
+
+message StartDumpHotkeyRequest {
+  string accelerator = 1;
+}
+
+message StopDumpHotkeyRequest {}
+
+message StartAskCorpusHotkeyRequest {
+  string accelerator = 1;
+}
+
+message StopAskCorpusHotkeyRequest {}
+
+message RunShortcutRequest {
+  string name = 1;
+  string input = 2;
+}
+
+message RunShortcutResult {
+  bool success = 1;
+  string stdout = 2;
+  string stderr = 3;
+}

@@ -1,24 +1,39 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.0
 
 import PackageDescription
 
 let package = Package(
     name: "MozgoslavDictationHelper",
     platforms: [
-        .macOS(.v13),
+        .macOS(.v14),
     ],
     products: [
         .executable(name: "mozgoslav-dictation-helper", targets: ["MozgoslavDictationHelper"]),
         .library(name: "DictationHelperCore", targets: ["DictationHelperCore"]),
     ],
+    dependencies: [
+        .package(
+            url: "https://github.com/grpc/grpc-swift-2",
+            from: "2.0.0"),
+        .package(
+            url: "https://github.com/apple/swift-protobuf",
+            from: "1.28.0"),
+    ],
     targets: [
         .executableTarget(
             name: "MozgoslavDictationHelper",
-            dependencies: ["DictationHelperCore"],
+            dependencies: [
+                "DictationHelperCore",
+                .product(name: "GRPCCore", package: "grpc-swift-2"),
+                .product(name: "GRPCNIOTransportHTTP2", package: "grpc-swift-2"),
+                .product(name: "GRPCProtobuf", package: "grpc-swift-2"),
+                .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+            ],
             path: "Sources/MozgoslavDictationHelper"
         ),
         .target(
             name: "DictationHelperCore",
+            dependencies: [],
             path: "Sources/DictationHelperCore"
         ),
         .testTarget(
@@ -28,7 +43,11 @@ let package = Package(
         ),
         .testTarget(
             name: "MozgoslavDictationHelperTests",
-            dependencies: ["MozgoslavDictationHelper"],
+            dependencies: [
+                "MozgoslavDictationHelper",
+                .product(name: "GRPCCore", package: "grpc-swift-2"),
+                .product(name: "GRPCProtobuf", package: "grpc-swift-2"),
+            ],
             path: "Tests/MozgoslavDictationHelperTests"
         ),
     ]
