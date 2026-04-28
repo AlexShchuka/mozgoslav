@@ -20,6 +20,7 @@ using Mozgoslav.Api.GraphQL.SchemaExport;
 using Mozgoslav.Api.Services;
 using Mozgoslav.Application.Agents;
 using Mozgoslav.Application.Agents.Skills;
+using Mozgoslav.Application.Routines;
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Llm;
 using Mozgoslav.Application.Obsidian;
@@ -31,6 +32,7 @@ using Mozgoslav.Application.UseCases;
 using Mozgoslav.Application.WebSearch;
 using Mozgoslav.Infrastructure.Agents;
 using Mozgoslav.Infrastructure.Agents.Skills;
+using Mozgoslav.Infrastructure.Routines;
 using Mozgoslav.Infrastructure.Configuration;
 using Mozgoslav.Infrastructure.Hosting;
 using Mozgoslav.Infrastructure.Jobs;
@@ -393,6 +395,9 @@ try
     builder.Services.AddSingleton<IRemindersSkill, RemindersSkill>();
     builder.Services.AddScoped<IActionExtractorSkill, MafActionExtractorSkill>();
     builder.Services.AddHostedService<ActionExtractorDomainEventConsumer>();
+
+    builder.Services.AddScoped<IRoutineRunRepository, RoutineRunRepository>();
+    builder.Services.AddScoped<IRoutineRegistry, RoutineRegistry>();
 
     builder.Services.AddMcpServer()
         .WithHttpTransport()

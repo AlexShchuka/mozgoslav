@@ -28,6 +28,7 @@ public sealed class MozgoslavDbContext : DbContext
     public DbSet<AppSetting> Settings => Set<AppSetting>();
     public DbSet<RagChunk> RagChunks => Set<RagChunk>();
     public DbSet<PromptTemplateEntity> PromptTemplates => Set<PromptTemplateEntity>();
+    public DbSet<RoutineRun> RoutineRuns => Set<RoutineRun>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -222,6 +223,21 @@ public sealed class MozgoslavDbContext : DbContext
             e.Property(x => x.Body).HasColumnName("body").IsRequired();
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
             e.HasIndex(x => x.Name).HasDatabaseName("ix_prompt_templates_name");
+        });
+
+        modelBuilder.Entity<RoutineRun>(e =>
+        {
+            e.ToTable("routine_runs");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.RoutineKey).HasColumnName("routine_key").IsRequired();
+            e.Property(x => x.StartedAt).HasColumnName("started_at");
+            e.Property(x => x.FinishedAt).HasColumnName("finished_at");
+            e.Property(x => x.Status).HasColumnName("status").IsRequired();
+            e.Property(x => x.ErrorMessage).HasColumnName("error_message");
+            e.Property(x => x.PayloadSummary).HasColumnName("payload_summary");
+            e.HasIndex(x => x.RoutineKey).HasDatabaseName("ix_routine_runs_routine_key");
+            e.HasIndex(x => x.StartedAt).HasDatabaseName("ix_routine_runs_started_at");
         });
     }
 }

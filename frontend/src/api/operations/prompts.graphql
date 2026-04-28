@@ -1,0 +1,47 @@
+query QueryPromptTemplates {
+  promptTemplates {
+    id
+    name
+    body
+    createdAt
+  }
+}
+
+query QueryPromptTemplate($id: UUID!) {
+  promptTemplate(id: $id) {
+    id
+    name
+    body
+    createdAt
+  }
+}
+
+query QueryPreviewPrompt($templateBody: String!) {
+  previewPrompt(templateBody: $templateBody)
+}
+
+mutation MutationCreatePromptTemplate($name: String!, $body: String!) {
+  createPromptTemplate(name: $name, body: $body) {
+    id
+    name
+    body
+    createdAt
+  }
+}
+
+mutation MutationUpdatePromptTemplate($id: UUID!, $name: String!, $body: String!) {
+  updatePromptTemplate(id: $id, name: $name, body: $body) {
+    id
+    name
+    body
+    createdAt
+  }
+}
+
+mutation MutationDeletePromptTemplate($id: UUID!) {
+  deletePromptTemplate(id: $id)
+}
+
+mutation MutationBuildPrompt($template: String!) {
+  buildPrompt(template: $template)
+}

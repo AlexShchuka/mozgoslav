@@ -32,6 +32,14 @@ public sealed class PromptsQueryType
         return template is null ? null : MapToDto(template);
     }
 
+    public async Task<string> PreviewPrompt(
+        string templateBody,
+        [Service] IPromptBuilder builder,
+        CancellationToken ct)
+    {
+        return await builder.BuildAsync(templateBody, new Dictionary<string, string>(), ct);
+    }
+
     private static PromptTemplateDto MapToDto(PromptTemplate t) =>
         new(t.Id, t.Name, t.Body, t.CreatedAt);
 }

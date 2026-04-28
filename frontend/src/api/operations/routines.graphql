@@ -1,0 +1,59 @@
+query QueryRoutines {
+  routines {
+    key
+    displayName
+    description
+    isEnabled
+    lastRun {
+      id
+      routineKey
+      startedAt
+      finishedAt
+      status
+      errorMessage
+      payloadSummary
+    }
+  }
+}
+
+query QueryRoutineRuns($key: String!, $limit: Int!) {
+  routineRuns(key: $key, limit: $limit) {
+    id
+    routineKey
+    startedAt
+    finishedAt
+    status
+    errorMessage
+    payloadSummary
+  }
+}
+
+mutation MutationToggleRoutine($key: String!, $enabled: Boolean!) {
+  toggleRoutine(key: $key, enabled: $enabled) {
+    key
+    displayName
+    description
+    isEnabled
+    lastRun {
+      id
+      routineKey
+      startedAt
+      finishedAt
+      status
+      errorMessage
+      payloadSummary
+    }
+  }
+}
+
+mutation MutationRunRoutineNow($key: String!) {
+  runRoutineNow(key: $key) {
+    id
+    routineKey
+    startedAt
+    finishedAt
+    status
+    errorMessage
+    payloadSummary
+  }
+}
