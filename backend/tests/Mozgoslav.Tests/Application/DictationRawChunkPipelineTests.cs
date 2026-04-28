@@ -143,6 +143,7 @@ public sealed class DictationRawChunkPipelineTests
             PerAppProfiles,
             PcmStream,
             Substitute.For<IRecordingPartialsNotifier>(),
+            Substitute.For<ISystemAction>(),
             NullLogger<DictationSessionManager>.Instance);
     }
 
