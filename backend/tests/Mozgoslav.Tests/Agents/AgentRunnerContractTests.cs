@@ -46,7 +46,7 @@ public sealed class AgentRunnerContractTests
     [TestMethod]
     public async Task RunAsync_CancellationRequested_PropagatesCancellation()
     {
-        IAgentRunner runner = Substitute.For<IAgentRunner>();
+        var runner = Substitute.For<IAgentRunner>();
         runner.RunAsync(Arg.Any<AgentRunRequest>(), Arg.Any<CancellationToken>())
             .Returns<AgentRunResult>(_ => throw new OperationCanceledException());
 

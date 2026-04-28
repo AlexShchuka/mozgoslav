@@ -52,7 +52,6 @@ _SPACE_BEFORE_PUNCT = re.compile(r"\s+([,.!?])")
 
 
 class CleanupService:
-
     def cleanup(self, request: CleanupRequest) -> CleanupResponse:
         cleaned = self._apply(request.text, request.level)
         return CleanupResponse(cleaned=cleaned)

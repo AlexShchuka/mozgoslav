@@ -27,9 +27,7 @@ def test_web_extract_trafilatura_not_installed_returns_503(
     web_client: TestClient,
 ) -> None:
     with patch.dict("sys.modules", {"trafilatura": None}):
-        res = web_client.post(
-            "/api/web-extract", json={"url": "https://example.com"}
-        )
+        res = web_client.post("/api/web-extract", json={"url": "https://example.com"})
     assert res.status_code == 503
 
 
@@ -52,7 +50,9 @@ def test_web_extract_fetch_returns_none_returns_empty_body(
 
 def test_web_extract_happy_path_returns_body(web_client: TestClient) -> None:
     mock_trafilatura = MagicMock()
-    mock_trafilatura.fetch_url.return_value = "<html><body><p>Main content</p></body></html>"
+    mock_trafilatura.fetch_url.return_value = (
+        "<html><body><p>Main content</p></body></html>"
+    )
     mock_trafilatura.extract.side_effect = ["Main content", None]
 
     with patch.dict("sys.modules", {"trafilatura": mock_trafilatura}):

@@ -14,7 +14,6 @@ _ALL_STEPS = ["diarize", "gender", "emotion", "ner", "cleanup", "embed"]
 
 
 class ProcessAllService:
-
     def __init__(
         self,
         diarize_service,
@@ -36,14 +35,18 @@ class ProcessAllService:
 
         diarize_result = None
         if "diarize" in active:
-            diarize_result = self._diarize.diarize(DiarizeRequest(audio_path=audio_path))
+            diarize_result = self._diarize.diarize(
+                DiarizeRequest(audio_path=audio_path)
+            )
 
         gender_result = None
         if "gender" in active:
             from app.ml.errors import ModelNotAvailableError  # noqa: PLC0415
 
             try:
-                gender_result = self._gender.classify(GenderRequest(audio_path=audio_path))
+                gender_result = self._gender.classify(
+                    GenderRequest(audio_path=audio_path)
+                )
             except ModelNotAvailableError:
                 gender_result = None
 
@@ -52,7 +55,9 @@ class ProcessAllService:
             from app.ml.errors import ModelNotAvailableError  # noqa: PLC0415
 
             try:
-                emotion_result = self._emotion.classify(EmotionRequest(audio_path=audio_path))
+                emotion_result = self._emotion.classify(
+                    EmotionRequest(audio_path=audio_path)
+                )
             except ModelNotAvailableError:
                 emotion_result = None
 
@@ -82,6 +87,8 @@ class ProcessAllService:
             "gender": gender_result.model_dump() if gender_result else None,
             "emotion": emotion_result.model_dump() if emotion_result else None,
             "ner": ner_result.model_dump() if ner_result else None,
-            "cleanup": cleanup_result.model_dump() if cleanup_result else {"cleaned": cleaned_text},
+            "cleanup": cleanup_result.model_dump()
+            if cleanup_result
+            else {"cleaned": cleaned_text},
             "embed": embed_result,
         }

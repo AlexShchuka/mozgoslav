@@ -78,6 +78,7 @@ export const LoadingSpinner = styled.div`
     &:nth-child(2) { animation-delay: 0.2s; }
     &:nth-child(3) { animation-delay: 0.4s; }
   }
+
   @keyframes spin {
     0%, 80%, 100% { opacity: 0.2; }
     40% { opacity: 1; }

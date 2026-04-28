@@ -30,7 +30,7 @@ public sealed class WebSearchTool
         CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(query);
-        var clampedTop = System.Math.Max(1, System.Math.Min(top, 10));
+        var clampedTop = Math.Max(1, Math.Min(top, 10));
         var results = await _webSearch.SearchAsync(query, clampedTop, ct);
         _logger.LogInformation(
             "web.search returned {Count} results for query of length {Len}",

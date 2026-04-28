@@ -15,13 +15,11 @@ from app.services.diarize_service import (
 
 
 class _StubVad:
-
     def __init__(self, _script: list[tuple[float, float]]) -> None:
         self._script = _script
 
 
 class _StubEmbedder:
-
     def __init__(self, pattern: list[int]) -> None:
         self._pattern = iter(pattern)
 
@@ -37,9 +35,7 @@ def _build_service_with_script(
 ) -> DiarizeService:
 
     class _ScriptedService(DiarizeService):
-        def _vad_segments(
-            self, wav: np.ndarray
-        ) -> list[tuple[float, float]]:  # noqa: ARG002
+        def _vad_segments(self, wav: np.ndarray) -> list[tuple[float, float]]:  # noqa: ARG002
             return list(vad_segments)
 
     from app.ml.model_paths import ModelPaths  # noqa: PLC0415

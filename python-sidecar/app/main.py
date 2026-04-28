@@ -9,7 +9,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import Settings, get_settings
 from app.ml.loader import get_model_paths
 from app.models.common import HealthResponse
-from app.routers import cleanup, diarize, embed, emotion, gender, ner, processall, rerank, web_extract
+from app.routers import (
+    cleanup,
+    diarize,
+    embed,
+    emotion,
+    gender,
+    ner,
+    processall,
+    rerank,
+    web_extract,
+)
 
 _logger = logging.getLogger("mozgoslav.sidecar")
 

@@ -44,7 +44,9 @@ def _make_cleanup_result() -> CleanupResponse:
     return CleanupResponse(cleaned="cleaned transcript text")
 
 
-def test_processall_missing_audio_path_returns_422(processall_client: TestClient) -> None:
+def test_processall_missing_audio_path_returns_422(
+    processall_client: TestClient,
+) -> None:
     res = processall_client.post("/api/process-all", json={})
     assert res.status_code == 422
 
@@ -58,7 +60,9 @@ def test_processall_file_not_found_returns_404(processall_client: TestClient) ->
     mock_diarize_svc = MagicMock()
     mock_diarize_svc.diarize.side_effect = FileNotFoundError("Audio file not found")
 
-    with patch("app.routers.processall.get_diarize_service", return_value=mock_diarize_svc):
+    with patch(
+        "app.routers.processall.get_diarize_service", return_value=mock_diarize_svc
+    ):
         res = processall_client.post(
             "/api/process-all",
             json={"audio_path": "/nonexistent/file.wav"},
@@ -67,7 +71,9 @@ def test_processall_file_not_found_returns_404(processall_client: TestClient) ->
     assert res.status_code == 404
 
 
-def test_processall_all_steps_returns_merged_result(processall_client: TestClient) -> None:
+def test_processall_all_steps_returns_merged_result(
+    processall_client: TestClient,
+) -> None:
     mock_diarize_svc = MagicMock()
     mock_diarize_svc.diarize.return_value = _make_diarize_result()
 
@@ -84,9 +90,15 @@ def test_processall_all_steps_returns_merged_result(processall_client: TestClien
     mock_embed.embed.return_value = [0.1] * 384
 
     with (
-        patch("app.routers.processall.get_diarize_service", return_value=mock_diarize_svc),
-        patch("app.routers.processall.get_gender_service", return_value=mock_gender_svc),
-        patch("app.routers.processall.get_emotion_service", return_value=mock_emotion_svc),
+        patch(
+            "app.routers.processall.get_diarize_service", return_value=mock_diarize_svc
+        ),
+        patch(
+            "app.routers.processall.get_gender_service", return_value=mock_gender_svc
+        ),
+        patch(
+            "app.routers.processall.get_emotion_service", return_value=mock_emotion_svc
+        ),
         patch("app.routers.processall.get_ner_service", return_value=mock_ner_svc),
         patch("app.routers.processall.default_backend", return_value=mock_embed),
     ):
@@ -106,7 +118,9 @@ def test_processall_all_steps_returns_merged_result(processall_client: TestClien
     assert data["embed"]["dim"] == 384
 
 
-def test_processall_subset_steps_only_calls_specified(processall_client: TestClient) -> None:
+def test_processall_subset_steps_only_calls_specified(
+    processall_client: TestClient,
+) -> None:
     mock_embed = MagicMock()
     mock_embed.embed.return_value = [0.5] * 384
 
@@ -118,9 +132,15 @@ def test_processall_subset_steps_only_calls_specified(processall_client: TestCli
     mock_ner_svc = MagicMock()
 
     with (
-        patch("app.routers.processall.get_diarize_service", return_value=mock_diarize_svc),
-        patch("app.routers.processall.get_gender_service", return_value=mock_gender_svc),
-        patch("app.routers.processall.get_emotion_service", return_value=mock_emotion_svc),
+        patch(
+            "app.routers.processall.get_diarize_service", return_value=mock_diarize_svc
+        ),
+        patch(
+            "app.routers.processall.get_gender_service", return_value=mock_gender_svc
+        ),
+        patch(
+            "app.routers.processall.get_emotion_service", return_value=mock_emotion_svc
+        ),
         patch("app.routers.processall.get_ner_service", return_value=mock_ner_svc),
         patch("app.routers.processall.default_backend", return_value=mock_embed),
     ):

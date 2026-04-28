@@ -2,7 +2,6 @@ from __future__ import annotations
 
 
 class ModelNotAvailableError(RuntimeError):
-
     def __init__(
         self, model_id: str, download_url: str, hint: str | None = None
     ) -> None:

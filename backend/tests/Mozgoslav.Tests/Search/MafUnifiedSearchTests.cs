@@ -138,11 +138,11 @@ public sealed class MafUnifiedSearchTests
             Speaker: null,
             Score: 0.9);
         retriever.RetrieveAsync(Arg.Any<RetrievalQuery>(), Arg.Any<CancellationToken>())
-            .Returns(new RetrievedChunk[] { chunk });
+            .Returns([chunk]);
 
         var reranker = Substitute.For<IReranker>();
         reranker.RerankAsync(Arg.Any<string>(), Arg.Any<IReadOnlyList<RetrievedChunk>>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
-            .Returns(new RerankedChunk[] { new(chunk, 0.9) });
+            .Returns([new(chunk, 0.9)]);
 
         var sut = BuildSut(agentRunner, retriever: retriever, reranker: reranker);
         var query = new UnifiedSearchQuery("test question", null, IncludeWeb: false);

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/api", tags=["web-extract"])
 

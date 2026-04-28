@@ -10,7 +10,6 @@ class RerankResult(Protocol):
 
 
 class CrossEncoderReranker:
-
     _lock = threading.Lock()
     _models: dict[str, object] = {}
 

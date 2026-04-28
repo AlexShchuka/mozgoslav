@@ -19,7 +19,7 @@ public sealed class SearXNGProviderTests
     [TestMethod]
     public async Task SearchAsync_WithValidResults_ReturnsMappedList()
     {
-        var json = """
+        var json = /*lang=json,strict*/ """
             {
               "results": [
                 { "title": "Title 1", "url": "https://example.com/1", "content": "Snippet one" },
@@ -43,7 +43,7 @@ public sealed class SearXNGProviderTests
     [TestMethod]
     public async Task SearchAsync_TopLimitsResultCount()
     {
-        var json = """
+        var json = /*lang=json,strict*/ """
             {
               "results": [
                 { "title": "T1", "url": "https://a.com/1", "content": "S1" },
@@ -65,7 +65,7 @@ public sealed class SearXNGProviderTests
     [TestMethod]
     public async Task SearchAsync_EmptyQuery_ReturnsEmptyWithoutCallingServer()
     {
-        using var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, """{"results":[]}""");
+        using var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, /*lang=json,strict*/ """{"results":[]}""");
         using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://127.0.0.1:8888") };
         var provider = new SearXNGProvider(httpClient, NullLogger<SearXNGProvider>.Instance);
 
@@ -89,7 +89,7 @@ public sealed class SearXNGProviderTests
     [TestMethod]
     public async Task SearchAsync_EmptyResultsArray_ReturnsEmptyList()
     {
-        using var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, """{"results":[]}""");
+        using var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, /*lang=json,strict*/ """{"results":[]}""");
         using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://127.0.0.1:8888") };
         var provider = new SearXNGProvider(httpClient, NullLogger<SearXNGProvider>.Instance);
 

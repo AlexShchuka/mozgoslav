@@ -21,7 +21,7 @@ public sealed class TrafilaturaProviderTests
     [TestMethod]
     public async Task ExtractAsync_ValidResponse_ReturnsMappedWebContent()
     {
-        var json = """
+        var json = /*lang=json,strict*/ """
             {
               "title": "Article Title",
               "body": "Main article body text.",
@@ -86,7 +86,7 @@ public sealed class TrafilaturaProviderTests
     public async Task ExtractAsync_SamUrlSecondCall_ReturnsCachedResult()
     {
         var callCount = 0;
-        var json = """{"title":"Cached","body":"Body","lang":"en","excerpt":null}""";
+        var json = /*lang=json,strict*/ """{"title":"Cached","body":"Body","lang":"en","excerpt":null}""";
 
         var handler = new CountingFakeHandler(HttpStatusCode.OK, json, () => callCount++);
         var client = new HttpClient(handler) { BaseAddress = new Uri("http://127.0.0.1:5060") };

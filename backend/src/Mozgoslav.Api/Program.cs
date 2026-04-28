@@ -1,18 +1,16 @@
 using System;
 using System.IO;
 using System.Net.Http;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-
 using Mozgoslav.Api.Endpoints;
 using Mozgoslav.Api.GraphQL;
 using Mozgoslav.Api.GraphQL.Jobs;
@@ -20,17 +18,14 @@ using Mozgoslav.Api.GraphQL.SchemaExport;
 using Mozgoslav.Api.Services;
 using Mozgoslav.Application.Agents;
 using Mozgoslav.Application.Interfaces;
-using Mozgoslav.Application.WebSearch;
 using Mozgoslav.Application.Obsidian;
 using Mozgoslav.Application.Rag;
 using Mozgoslav.Application.Search;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Application.UseCases;
+using Mozgoslav.Application.WebSearch;
 using Mozgoslav.Infrastructure.Agents;
 using Mozgoslav.Infrastructure.Configuration;
-using Mozgoslav.Infrastructure.Search;
-using Mozgoslav.Infrastructure.Search.Tools;
-using Mozgoslav.Infrastructure.WebSearch;
 using Mozgoslav.Infrastructure.Jobs;
 using Mozgoslav.Infrastructure.Observability;
 using Mozgoslav.Infrastructure.Obsidian;
@@ -38,13 +33,13 @@ using Mozgoslav.Infrastructure.Persistence;
 using Mozgoslav.Infrastructure.Platform;
 using Mozgoslav.Infrastructure.Rag;
 using Mozgoslav.Infrastructure.Repositories;
+using Mozgoslav.Infrastructure.Search;
+using Mozgoslav.Infrastructure.Search.Tools;
 using Mozgoslav.Infrastructure.Seed;
 using Mozgoslav.Infrastructure.Services;
-
+using Mozgoslav.Infrastructure.WebSearch;
 using OpenTelemetry.Metrics;
-
 using Quartz;
-
 using Serilog;
 using Serilog.Events;
 
@@ -373,7 +368,7 @@ try
                 sp.GetRequiredService<ILogger<SearXNGProvider>>()));
     }
 
-    var cacheTtlHours = builder.Configuration.GetValue<int>("Mozgoslav:Web:Extract:CacheTtlHours", 24);
+    var cacheTtlHours = builder.Configuration.GetValue("Mozgoslav:Web:Extract:CacheTtlHours", 24);
     builder.Services.AddSingleton<IWebContentExtractor>(sp =>
         new TrafilaturaProvider(
             sp.GetRequiredService<IHttpClientFactory>().CreateClient(TrafilaturaProvider.HttpClientName),

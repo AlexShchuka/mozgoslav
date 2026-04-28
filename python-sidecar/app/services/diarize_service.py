@@ -16,12 +16,10 @@ _VAD_MIN_SILENCE_MS = 300
 
 
 class _Embedder(Protocol):
-
     def embed_utterance(self, wav: np.ndarray) -> np.ndarray: ...
 
 
 class DiarizeService:
-
     def __init__(
         self,
         paths: ModelPaths,

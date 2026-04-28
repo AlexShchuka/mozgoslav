@@ -17,7 +17,6 @@ _TARGET_SR = 16_000
 
 
 class EmotionService:
-
     def __init__(self, paths: ModelPaths) -> None:
         self._paths = paths
         self._model = None

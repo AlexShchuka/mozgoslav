@@ -14,7 +14,9 @@ class RerankChunk(BaseModel):
 
 
 class RerankRequest(BaseModel):
-    model_id: str = Field(..., description="HuggingFace model identifier for the cross-encoder.")
+    model_id: str = Field(
+        ..., description="HuggingFace model identifier for the cross-encoder."
+    )
     query: str = Field(..., min_length=1)
     chunks: list[RerankChunk] = Field(..., min_length=1)
 
