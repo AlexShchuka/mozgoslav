@@ -226,8 +226,18 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Cache Swift packages and build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            native/MozgoslavDictationHelper/.build
+            ~/Library/Caches/org.swift.swiftpm
+            ~/Library/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('native/MozgoslavDictationHelper/Package.swift', 'native/MozgoslavDictationHelper/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
       - name: Build
-        run: cd native/MozgoslavDictationHelper && swift build -c release
+        run: cd native/MozgoslavDictationHelper && swift build
       - name: Test (with coverage)
         run: cd native/MozgoslavDictationHelper && swift test --enable-code-coverage
       - name: Export swift coverage (lcov)
