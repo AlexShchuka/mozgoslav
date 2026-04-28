@@ -103,6 +103,20 @@
             OutputPath="$(MSBuildProjectDirectory)\Resources\ObsidianBootstrap\manifest.json"/>
     </Target>
     <ItemGroup>
+        <PackageReference Include="Grpc.Tools">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Grpc.Net.Client"/>
+        <PackageReference Include="Grpc.Net.ClientFactory"/>
+        <PackageReference Include="Google.Protobuf"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Protobuf Include="..\..\..\proto\mozgoslav\native\v1\*.proto"
+                  GrpcServices="Client"
+                  Link="Proto/%(RecursiveDir)%(Filename)%(Extension)"/>
+    </ItemGroup>
+    <ItemGroup>
         <PackageReference Include="Microsoft.Agents.AI"/>
         <PackageReference Include="Dapper"/>
         <PackageReference Include="Microsoft.Data.Sqlite"/>

@@ -25,6 +25,7 @@ import { initialHealthState, type HealthState } from "../store/slices/health";
 import { initialAskState, type AskState } from "../store/slices/ask/reducer";
 import { initialWebSearchState } from "../store/slices/webSearch/reducer";
 import type { WebSearchState } from "../store/slices/webSearch/types";
+import { initialSystemActionsState, type SystemActionsState } from "../store/slices/systemActions";
 
 export const jobsById = (jobs: readonly ProcessingJob[]): Record<string, ProcessingJob> =>
   Object.fromEntries(jobs.map((job) => [job.id, job]));
@@ -130,6 +131,12 @@ export const mockWebSearchState = (
   patch: Partial<WebSearchState> = {}
 ): Pick<GlobalState, "webSearch"> => ({
   webSearch: { ...initialWebSearchState, ...patch },
+});
+
+export const mockSystemActionsState = (
+  patch: Partial<SystemActionsState> = {}
+): Pick<GlobalState, "systemActions"> => ({
+  systemActions: { ...initialSystemActionsState, ...patch },
 });
 
 export const mergeMockState = (...parts: Partial<GlobalState>[]): Partial<GlobalState> =>

@@ -447,5 +447,11 @@
   },
   "errors": {
     "genericErrorWithMessage": "Ошибка: {{message}}"
+  },
+  "systemActions": {
+    "title": "Системные действия",
+    "subtitle": "Импортируй стандартные Apple Shortcuts для голосового управления напоминаниями, событиями и файлами.",
+    "loading": "Загружаю шаблоны…",
+    "import": "Импортировать шорткат →"
   }
 }

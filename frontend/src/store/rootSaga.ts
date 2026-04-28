@@ -18,6 +18,7 @@ import { watchBackupsSagas } from "./slices/backups";
 import { subscribeHotkeys, watchHotkeysSagas } from "./slices/hotkeys";
 import { healthProbeRequested, watchHealthSagas } from "./slices/health";
 import { watchAskSagas } from "./slices/ask/saga";
+import { systemActionsSaga } from "./slices/systemActions";
 
 function* bootstrapJobsSubscription(): SagaIterator {
   yield put(subscribeJobs());
@@ -59,5 +60,6 @@ export function* rootSaga(): SagaIterator {
     fork(watchHealthSagas),
     fork(bootstrapHealthProbe),
     fork(watchAskSagas),
+    fork(systemActionsSaga),
   ]);
 }

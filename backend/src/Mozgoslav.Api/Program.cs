@@ -37,7 +37,9 @@ using Mozgoslav.Infrastructure.Search;
 using Mozgoslav.Infrastructure.Search.Tools;
 using Mozgoslav.Infrastructure.Seed;
 using Mozgoslav.Infrastructure.Services;
+using Mozgoslav.Infrastructure.SystemActions;
 using Mozgoslav.Infrastructure.WebSearch;
+using Mozgoslav.Native.V1;
 using OpenTelemetry.Metrics;
 using Quartz;
 using Serilog;
@@ -203,6 +205,34 @@ try
     else
     {
         builder.Services.AddSingleton<IAudioRecorder, PlatformUnsupportedAudioRecorder>();
+    }
+
+    builder.Services.Configure<NativeHelperOptions>(
+        builder.Configuration.GetSection(NativeHelperOptions.SectionName));
+
+    if (OperatingSystem.IsMacOS())
+    {
+        builder.Services.AddGrpcClient<DictationHelper.DictationHelperClient>((sp, options) =>
+        {
+            var cfg = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<NativeHelperOptions>>().Value;
+            options.Address = new Uri(cfg.GrpcEndpoint);
+        })
+        .AddStandardResilienceHandler(options =>
+        {
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(10);
+            options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
+            options.Retry.MaxRetryAttempts = 2;
+        });
+
+        builder.Services.AddSingleton<INativeHelperClient, GrpcNativeHelperClient>();
+        builder.Services.AddSingleton<ISystemAction, AppleShortcutsProvider>();
+        builder.Services.AddSingleton<ISystemActionTemplateProvider, AppleShortcutTemplateProvider>();
+    }
+    else
+    {
+        builder.Services.AddSingleton<INativeHelperClient, NoOpNativeHelperClient>();
+        builder.Services.AddSingleton<ISystemAction, NoOpSystemAction>();
+        builder.Services.AddSingleton<ISystemActionTemplateProvider, AppleShortcutTemplateProvider>();
     }
     builder.Services.AddSingleton<IPerAppCorrectionProfiles, InMemoryPerAppCorrectionProfiles>();
     builder.Services.AddSingleton<IDictationSessionManager, DictationSessionManager>();

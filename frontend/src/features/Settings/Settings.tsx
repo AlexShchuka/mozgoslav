@@ -11,6 +11,7 @@ import Input from "../../components/Input";
 import { AppSettings, DEFAULT_SETTINGS } from "../../domain/Settings";
 import { setThemeMode } from "../../styles/ThemeProvider";
 import SyncPairing from "../SyncPairing";
+import SystemActionsFeature from "../SystemActions";
 import type { SettingsProps } from "./types";
 import {
   CheckboxRow,
@@ -25,7 +26,7 @@ import {
   Toolbar,
 } from "./Settings.style";
 
-type TabKey = "general" | "llm" | "whisper" | "dictation" | "obsidian" | "sync";
+type TabKey = "general" | "llm" | "whisper" | "dictation" | "obsidian" | "sync" | "systemActions";
 
 const Settings: FC<SettingsProps> = ({
   settings: loadedSettings,
@@ -81,6 +82,7 @@ const Settings: FC<SettingsProps> = ({
       { key: "dictation" as TabKey, label: t("settings.tabs.dictation") },
       { key: "obsidian" as TabKey, label: t("settings.tabs.obsidian") },
       { key: "sync" as TabKey, label: t("settings.tabs.sync") },
+      { key: "systemActions" as TabKey, label: t("systemActions.title") },
     ],
     [t]
   );
@@ -262,7 +264,9 @@ const Settings: FC<SettingsProps> = ({
         </Card>
       )}
 
-      {tab !== "sync" && (
+      {tab === "systemActions" && <SystemActionsFeature />}
+
+      {tab !== "sync" && tab !== "systemActions" && (
         <Toolbar>
           <Button variant="primary" isLoading={isSaving} onClick={save}>
             {t("common.save")}

@@ -6587,3 +6587,42 @@ export const MutationUpdateWebSearchConfigDocument = {
   MutationUpdateWebSearchConfigMutation,
   MutationUpdateWebSearchConfigMutationVariables
 >;
+export type QuerySystemActionTemplatesQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QuerySystemActionTemplatesQuery = {
+  __typename?: "QueryType";
+  systemActionTemplates: Array<{
+    __typename?: "SystemActionTemplateDto";
+    name: string;
+    description: string;
+    deeplinkUrl: string;
+  }>;
+};
+
+export const QuerySystemActionTemplatesDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QuerySystemActionTemplates" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "systemActionTemplates" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+                { kind: "Field", name: { kind: "Name", value: "description" } },
+                { kind: "Field", name: { kind: "Name", value: "deeplinkUrl" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QuerySystemActionTemplatesQuery, QuerySystemActionTemplatesQueryVariables>;
