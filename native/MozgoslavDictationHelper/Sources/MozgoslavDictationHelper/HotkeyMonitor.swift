@@ -4,14 +4,20 @@ import Foundation
 import AppKit
 #endif
 
-public final class HotkeyMonitor {
-    public struct Payload: Codable {
-        public let kind: String 
-        public let accelerator: String
-        public let observedAt: String
-    }
+public struct HotkeyPayload: Codable, Sendable {
+    public let kind: String
+    public let accelerator: String
+    public let observedAt: String
 
-    public var onEvent: ((Payload) -> Void)?
+    public init(kind: String, accelerator: String, observedAt: String) {
+        self.kind = kind
+        self.accelerator = accelerator
+        self.observedAt = observedAt
+    }
+}
+
+public final class HotkeyMonitor: @unchecked Sendable {
+    public var onEvent: ((HotkeyPayload) -> Void)?
 
     private let isoFormatter: ISO8601DateFormatter
     private var parsed: ParsedAccelerator?
@@ -108,7 +114,7 @@ public final class HotkeyMonitor {
         }
 
         FileLog.shared.info("H1 HotkeyMonitor: \(kind) accelerator='\(parsed.accelerator)'")
-        let payload = Payload(
+        let payload = HotkeyPayload(
             kind: kind,
             accelerator: parsed.accelerator,
             observedAt: isoFormatter.string(from: Date())

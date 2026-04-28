@@ -318,9 +318,3 @@ public protocol AsyncWriter<Element>: Sendable {
     associatedtype Element
     func write(_ element: Element) async throws
 }
-
-struct HotkeyPayload {
-    let kind: String
-    let accelerator: String
-    let observedAt: String
-}

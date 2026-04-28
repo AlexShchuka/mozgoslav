@@ -5,7 +5,7 @@ import AVFoundation
 #endif
 
 #if canImport(ApplicationServices)
-import ApplicationServices
+@preconcurrency import ApplicationServices
 #endif
 
 #if canImport(AppKit) && os(macOS)
@@ -92,12 +92,12 @@ public enum PermissionProbe {
 private typealias IOHIDAccessCheckFn = @convention(c) (Int) -> Int
 private typealias IOHIDAccessRequestFn = @convention(c) (Int) -> Bool
 
-private let ioKitHandle: UnsafeMutableRawPointer? = dlopen(
+nonisolated(unsafe) private let ioKitHandle: UnsafeMutableRawPointer? = dlopen(
     "/System/Library/Frameworks/IOKit.framework/IOKit",
     RTLD_LAZY
 )
 
-private let IOHIDCheckAccess: ((Int) -> Int)? = {
+nonisolated(unsafe) private let IOHIDCheckAccess: ((Int) -> Int)? = {
     guard let handle = ioKitHandle, let sym = dlsym(handle, "IOHIDCheckAccess") else {
         return nil
     }
@@ -105,7 +105,7 @@ private let IOHIDCheckAccess: ((Int) -> Int)? = {
     return { type in fn(type) }
 }()
 
-private let IOHIDRequestAccess: ((Int) -> Bool)? = {
+nonisolated(unsafe) private let IOHIDRequestAccess: ((Int) -> Bool)? = {
     guard let handle = ioKitHandle, let sym = dlsym(handle, "IOHIDRequestAccess") else {
         return nil
     }

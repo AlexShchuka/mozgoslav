@@ -4,7 +4,7 @@ import Foundation
 import AVFoundation
 #endif
 
-public final class AudioCaptureService {
+public final class AudioCaptureService: @unchecked Sendable {
     public struct Chunk {
         public let samples: [Float]
         public let sampleRate: Int

@@ -4,7 +4,7 @@ import Foundation
 import AVFoundation
 #endif
 
-public final class DeviceWatcher {
+public final class DeviceWatcher: @unchecked Sendable {
     public struct Payload: Codable {
         public let kind: String
         public let devices: [DeviceInfo]

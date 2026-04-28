@@ -1,4 +1,5 @@
 import Foundation
+import os
 import DictationHelperCore
 
 #if canImport(ApplicationServices)
@@ -9,7 +10,7 @@ import ApplicationServices
 import AppKit
 #endif
 
-public final class TextInjectionService {
+public final class TextInjectionService: @unchecked Sendable {
     public static let accessibilityTimeoutSeconds: Double = 0.5
 
     public init() {}
@@ -71,13 +72,14 @@ public final class TextInjectionService {
     private func injectViaAccessibilityWithFallback(_ text: String) throws {
         #if canImport(ApplicationServices)
         let semaphore = DispatchSemaphore(value: 0)
-        var result: AXInjectionResult = .timeout
+        let resultBox = OSAllocatedUnfairLock<AXInjectionResult>(initialState: .timeout)
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else {
                 semaphore.signal()
                 return
             }
-            result = self.injectViaAccessibility(text)
+            let computed = self.injectViaAccessibility(text)
+            resultBox.withLock { $0 = computed }
             semaphore.signal()
         }
 
@@ -87,7 +89,8 @@ public final class TextInjectionService {
             return
         }
 
-        switch result {
+        let finalResult = resultBox.withLock { $0 }
+        switch finalResult {
         case .success:
             return
         case .retryViaCgEvent:

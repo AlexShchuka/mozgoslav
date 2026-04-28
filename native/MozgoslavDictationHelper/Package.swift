@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "MozgoslavDictationHelper",
     platforms: [
-        .macOS(.v14),
+        .macOS(.v15),
     ],
     products: [
         .executable(name: "mozgoslav-dictation-helper", targets: ["MozgoslavDictationHelper"]),
