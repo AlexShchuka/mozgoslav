@@ -20,8 +20,7 @@ const buildMessage = (patch: Partial<AskMessage> & { id: string }): AskMessage =
   ...patch,
 });
 
-const renderAsk = (ui: ReactElement) =>
-  renderWithStore(<MemoryRouter>{ui}</MemoryRouter>);
+const renderAsk = (ui: ReactElement) => renderWithStore(<MemoryRouter>{ui}</MemoryRouter>);
 
 describe("Ask — presentational", () => {
   it("renders empty state when no messages", () => {
