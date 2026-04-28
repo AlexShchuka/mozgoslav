@@ -164,13 +164,6 @@ const Settings: FC<SettingsProps> = ({
             >
               {t("settings.testConnection")}
             </Button>
-          </FormGrid>
-        </Card>
-      )}
-
-      {tab === "llm" && (
-        <Card>
-          <FormGrid>
             <div>
               <label>{t("settings.llmCapabilities.title")}</label>
               {llmCapabilities === null ? (

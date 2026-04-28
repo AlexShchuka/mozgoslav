@@ -12,7 +12,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-
 using Mozgoslav.Api.Endpoints;
 using Mozgoslav.Api.GraphQL;
 using Mozgoslav.Api.GraphQL.Jobs;
@@ -20,19 +19,18 @@ using Mozgoslav.Api.GraphQL.SchemaExport;
 using Mozgoslav.Api.Services;
 using Mozgoslav.Application.Agents;
 using Mozgoslav.Application.Agents.Skills;
-using Mozgoslav.Application.Routines;
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Llm;
 using Mozgoslav.Application.Obsidian;
 using Mozgoslav.Application.Prompts;
 using Mozgoslav.Application.Rag;
+using Mozgoslav.Application.Routines;
 using Mozgoslav.Application.Search;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Application.UseCases;
 using Mozgoslav.Application.WebSearch;
 using Mozgoslav.Infrastructure.Agents;
 using Mozgoslav.Infrastructure.Agents.Skills;
-using Mozgoslav.Infrastructure.Routines;
 using Mozgoslav.Infrastructure.Configuration;
 using Mozgoslav.Infrastructure.Hosting;
 using Mozgoslav.Infrastructure.Jobs;
@@ -44,6 +42,7 @@ using Mozgoslav.Infrastructure.Platform;
 using Mozgoslav.Infrastructure.Prompts;
 using Mozgoslav.Infrastructure.Rag;
 using Mozgoslav.Infrastructure.Repositories;
+using Mozgoslav.Infrastructure.Routines;
 using Mozgoslav.Infrastructure.Search;
 using Mozgoslav.Infrastructure.Search.Tools;
 using Mozgoslav.Infrastructure.Seed;
@@ -229,7 +228,7 @@ try
     {
         builder.Services.AddGrpcClient<DictationHelper.DictationHelperClient>((sp, options) =>
         {
-            var cfg = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<NativeHelperOptions>>().Value;
+            var cfg = sp.GetRequiredService<IOptions<NativeHelperOptions>>().Value;
             options.Address = new Uri(cfg.GrpcEndpoint);
         })
         .AddStandardResilienceHandler(options =>

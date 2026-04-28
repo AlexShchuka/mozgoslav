@@ -59,11 +59,11 @@ public sealed class OpenAiCompatibleLlmProvider : ILlmProvider
             Temperature = Temperature,
             MaxTokens = MaxTokens,
             ResponseFormat = new ResponseFormat { Type = "json_object" },
-            Messages = new[]
-            {
+            Messages =
+            [
                 new ChatMessage { Role = "system", Content = systemPrompt },
                 new ChatMessage { Role = "user", Content = userPrompt }
-            }
+            ]
         };
 
         try

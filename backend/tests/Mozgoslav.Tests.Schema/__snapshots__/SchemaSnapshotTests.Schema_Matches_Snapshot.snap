@@ -64,6 +64,13 @@ type AppSettingsDto {
   dictationDumpHotkeyToggle: String!
   dictationDumpHotkeyHold: String!
   webCacheTtlHours: Int!
+  mcpServerEnabled: Boolean!
+  mcpServerPort: Int!
+  mcpServerToken: String!
+  actionsSkillEnabled: Boolean!
+  remindersSkillEnabled: Boolean!
+  dictationClassifyIntentEnabled: Boolean!
+  claudeCliPath: String!
   obsidianBootstrapPins: String!
 }
 
@@ -223,6 +230,14 @@ type KeyValuePairOfStringAndString {
   value: String!
 }
 
+type LlmCapabilities {
+  supportsToolCalling: Boolean!
+  supportsJsonMode: Boolean!
+  ctxLength: Int!
+  tokensPerSecond: Float!
+  probedAt: DateTime!
+}
+
 type LlmHealthStatus {
   available: Boolean!
 }
@@ -303,6 +318,12 @@ type MutationType {
   ragReindex: RagReindexPayload! @cost(weight: "10")
   acceptSyncDevice(deviceId: String! name: String folderIds: [String!]): AcceptSyncDevicePayload! @cost(weight: "10")
   updateWebSearchConfig(input: WebSearchConfigInput!): WebSearchConfigPayload! @cost(weight: "10")
+  createPromptTemplate(name: String! body: String!): PromptTemplateDto! @cost(weight: "10")
+  updatePromptTemplate(id: UUID! name: String! body: String!): PromptTemplateDto @cost(weight: "10")
+  deletePromptTemplate(id: UUID!): Boolean! @cost(weight: "10")
+  buildPrompt(template: String!): String! @cost(weight: "10")
+  toggleRoutine(key: String! enabled: Boolean!): RoutineDefinitionDto! @cost(weight: "10")
+  runRoutineNow(key: String!): RoutineRunDto! @cost(weight: "10")
 }
 
 type NotFoundError implements IUserError {
@@ -452,6 +473,17 @@ type ProcessingJob implements Node {
   startedAt: DateTime
   finishedAt: DateTime
   cancelRequested: Boolean!
+  stages: [ProcessingJobStage!]! @cost(weight: "10")
+}
+
+type ProcessingJobStage {
+  id: UUID!
+  jobId: UUID!
+  stageName: String!
+  startedAt: DateTime!
+  finishedAt: DateTime
+  durationMs: Int
+  errorMessage: String
 }
 
 type Profile implements Node {
@@ -474,6 +506,13 @@ type ProfilePayload {
   errors: [IUserError!]!
 }
 
+type PromptTemplateDto {
+  id: UUID!
+  name: String!
+  body: String!
+  createdAt: DateTime!
+}
+
 type QueryType {
   "Fetches an object given its ID."
   node("ID of the object." id: ID!): Node @cost(weight: "10")
@@ -483,6 +522,7 @@ type QueryType {
   llmHealth: LlmHealthStatus! @cost(weight: "10")
   meta: MetaInfo!
   settings: AppSettingsDto! @cost(weight: "10")
+  llmCapabilities: LlmCapabilities
   llmModels: [String!]! @cost(weight: "10")
   profiles: [Profile!]! @cost(weight: "10")
   profile(id: UUID!): Profile @cost(weight: "10")
@@ -505,6 +545,12 @@ type QueryType {
   syncHealth: Boolean! @cost(weight: "10")
   syncPairingPayload: SyncPairingPayloadResult @cost(weight: "10")
   webSearchConfig: WebSearchConfigDto! @cost(weight: "10")
+  systemActionTemplates: [SystemActionTemplateDto!]!
+  promptTemplates: [PromptTemplateDto!]! @cost(weight: "10")
+  promptTemplate(id: UUID!): PromptTemplateDto @cost(weight: "10")
+  previewPrompt(templateBody: String!): String! @cost(weight: "10")
+  routines: [RoutineDefinitionDto!]! @cost(weight: "10")
+  routineRuns(key: String! limit: Int!): [RoutineRunDto!]! @cost(weight: "10")
 }
 
 type RagCitation {
@@ -590,6 +636,24 @@ type RestApiCheck {
   version: String
 }
 
+type RoutineDefinitionDto {
+  key: String!
+  displayName: String!
+  description: String!
+  isEnabled: Boolean!
+  lastRun: RoutineRunDto
+}
+
+type RoutineRunDto {
+  id: UUID!
+  routineKey: String!
+  startedAt: DateTime!
+  finishedAt: DateTime
+  status: String!
+  errorMessage: String
+  payloadSummary: String
+}
+
 type SetupObsidianPayload {
   report: ObsidianSetupReport
   errors: [IUserError!]!
@@ -652,6 +716,12 @@ type SyncPairingPayloadResult {
 type SyncStatusResult {
   folders: [SyncFolderEntry!]!
   devices: [SyncDeviceEntry!]!
+}
+
+type SystemActionTemplateDto {
+  name: String!
+  description: String!
+  deeplinkUrl: String!
 }
 
 type TemplaterSettingsCheck {
@@ -1027,6 +1097,13 @@ input UpdateSettingsInput {
   dictationDumpEnabled: Boolean! = false
   dictationDumpHotkeyToggle: String! = ""
   dictationDumpHotkeyHold: String! = ""
+  mcpServerEnabled: Boolean! = false
+  mcpServerPort: Int! = 51051
+  mcpServerToken: String! = ""
+  actionsSkillEnabled: Boolean! = false
+  remindersSkillEnabled: Boolean! = false
+  dictationClassifyIntentEnabled: Boolean! = false
+  claudeCliPath: String! = ""
 }
 
 input UploadRecordingsInput {

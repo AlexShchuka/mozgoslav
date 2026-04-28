@@ -56,7 +56,7 @@ export const TemplateBody = styled.pre`
   font-size: ${({ theme }) => theme.font.size.sm};
   color: ${({ theme }) => theme.colors.text.secondary};
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: anywhere;
   max-height: 120px;
   overflow: auto;
 `;
@@ -159,7 +159,7 @@ export const PreviewOutput = styled.pre`
   font-size: ${({ theme }) => theme.font.size.sm};
   color: ${({ theme }) => theme.colors.text.primary};
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 `;
 
 export const PreviewTitle = styled.div`

@@ -103,6 +103,9 @@ dotnet_diagnostic.IDE0161.severity = warning # file-scoped namespace
 # Primary constructors: not preferred per team convention
 dotnet_diagnostic.IDE0290.severity = suggestion
 
+# JSON-string detection: code-bans annotation comments (`/*lang=json,strict*/`); suppress globally
+dotnet_diagnostic.JSON002.severity = none
+
 [*.{json,yml,yaml}]
 indent_size = 2
 

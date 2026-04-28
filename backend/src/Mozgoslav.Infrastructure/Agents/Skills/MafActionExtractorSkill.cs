@@ -17,13 +17,15 @@ namespace Mozgoslav.Infrastructure.Agents.Skills;
 
 public sealed class MafActionExtractorSkill : IActionExtractorSkill
 {
+    private const string ActionExampleJson =
+        "[{\"title\":\"Send report to team\",\"due_iso\":null},{\"title\":\"Book flight\",\"due_iso\":\"2026-05-10\"}]";
+
     private const string ActionsSystemPrompt =
         "You are an action-item extraction assistant. " +
         "Given a note or meeting transcript, extract all action items. " +
         "For each action item output a JSON array element with fields: " +
         "\"title\" (string, the action description) and \"due_iso\" (string or null, due date in ISO 8601 if mentioned). " +
-        "Output ONLY a valid JSON array, nothing else. Example: " +
-        "[{\"title\":\"Send report to team\",\"due_iso\":null},{\"title\":\"Book flight\",\"due_iso\":\"2026-05-10\"}]";
+        "Output ONLY a valid JSON array, nothing else. Example: " + ActionExampleJson;
 
     private readonly IAgentRunner _agentRunner;
     private readonly IProcessedNoteRepository _notes;

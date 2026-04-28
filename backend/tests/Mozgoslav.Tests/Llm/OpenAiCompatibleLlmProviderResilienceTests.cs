@@ -51,7 +51,8 @@ public sealed class OpenAiCompatibleLlmProviderResilienceTests
 
         var result = await provider.ChatAsync("system", "user", CancellationToken.None);
 
-        result.Should().Be("{\"summary\":\"ok\"}");
+        const string expectedJson = "{\"summary\":\"ok\"}";
+        result.Should().Be(expectedJson);
     }
 
     [TestMethod]
