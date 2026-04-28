@@ -1,3 +1,4 @@
+import type { LlmCapabilities } from "../../../api/gql/graphql";
 import type { AppSettings } from "../../../domain/Settings";
 import type { SettingsState } from "./types";
 
@@ -21,4 +22,12 @@ export const applySaved = (state: SettingsState, settings: AppSettings): Setting
   ...state,
   settings,
   isSaving: false,
+});
+
+export const applyLlmCapabilities = (
+  state: SettingsState,
+  capabilities: LlmCapabilities | null
+): SettingsState => ({
+  ...state,
+  llmCapabilities: capabilities,
 });

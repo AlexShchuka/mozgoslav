@@ -23,6 +23,7 @@ public sealed class MozgoslavDbContext : DbContext
     public DbSet<ProcessedNote> ProcessedNotes => Set<ProcessedNote>();
     public DbSet<Profile> Profiles => Set<Profile>();
     public DbSet<ProcessingJob> ProcessingJobs => Set<ProcessingJob>();
+    public DbSet<ProcessingJobStage> ProcessingJobStages => Set<ProcessingJobStage>();
     public DbSet<AppSetting> Settings => Set<AppSetting>();
     public DbSet<RagChunk> RagChunks => Set<RagChunk>();
 
@@ -194,6 +195,20 @@ public sealed class MozgoslavDbContext : DbContext
             e.Property(x => x.Speaker).HasColumnName("speaker");
             e.HasIndex(x => x.NoteId).HasDatabaseName("ix_rag_chunks_note_id");
             e.HasIndex(x => x.CreatedAt).HasDatabaseName("ix_rag_chunks_created_at");
+        });
+
+        modelBuilder.Entity<ProcessingJobStage>(e =>
+        {
+            e.ToTable("processing_job_stages");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.JobId).HasColumnName("job_id");
+            e.Property(x => x.StageName).HasColumnName("stage_name").IsRequired();
+            e.Property(x => x.StartedAt).HasColumnName("started_at");
+            e.Property(x => x.FinishedAt).HasColumnName("finished_at");
+            e.Property(x => x.DurationMs).HasColumnName("duration_ms");
+            e.Property(x => x.ErrorMessage).HasColumnName("error_message");
+            e.HasIndex(x => x.JobId).HasDatabaseName("ix_processing_job_stages_job_id");
         });
     }
 }

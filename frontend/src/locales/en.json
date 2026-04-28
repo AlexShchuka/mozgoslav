@@ -120,6 +120,11 @@
       "Done": "Done",
       "Failed": "Failed",
       "Cancelled": "Cancelled"
+    },
+    "stages": {
+      "title": "Stage breakdown",
+      "duration": "{{ms}} ms",
+      "failed": "Failed: {{error}}"
     }
   },
   "notes": {
@@ -243,7 +248,15 @@
     "tokenHint": "Stored locally in SQLite. Never leaves your machine except to the configured endpoint.",
     "savedToast": "Settings saved",
     "llmCheckSuccessToast": "LLM: connection OK",
-    "llmCheckFailureToast": "LLM: connection failed"
+    "llmCheckFailureToast": "LLM: connection failed",
+    "llmCapabilities": {
+      "title": "Detected capabilities",
+      "notProbed": "Not probed yet",
+      "toolCalling": "Tool calling",
+      "jsonMode": "JSON mode",
+      "ctxLength": "Context: {{n}} tokens",
+      "tokensPerSec": "{{n}} tok/s"
+    }
   },
   "sync": {
     "live": "Live",

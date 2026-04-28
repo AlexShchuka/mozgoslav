@@ -4,8 +4,10 @@ import { bindActionCreators, type Dispatch } from "redux";
 import type { GlobalState } from "../../store";
 import {
   checkLlm,
+  loadLlmCapabilities,
   loadSettings,
   saveSettings,
+  selectLlmCapabilities,
   selectLlmProbing,
   selectSettings,
   selectSettingsLoading,
@@ -19,6 +21,7 @@ const mapStateToProps = (state: GlobalState): SettingsStateProps => ({
   isLoading: selectSettingsLoading(state),
   isSaving: selectSettingsSaving(state),
   isLlmProbing: selectLlmProbing(state),
+  llmCapabilities: selectLlmCapabilities(state),
 });
 
 const mapDispatchToProps = (dispatch: Dispatch): SettingsDispatchProps =>
@@ -27,6 +30,7 @@ const mapDispatchToProps = (dispatch: Dispatch): SettingsDispatchProps =>
       onLoad: loadSettings,
       onSave: saveSettings,
       onCheckLlm: checkLlm,
+      onLoadCapabilities: loadLlmCapabilities,
     },
     dispatch
   );

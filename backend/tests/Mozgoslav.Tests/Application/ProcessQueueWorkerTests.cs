@@ -273,6 +273,7 @@ public sealed class ProcessQueueWorkerTests
     private sealed class Fixture
     {
         public IProcessingJobRepository Jobs { get; } = Substitute.For<IProcessingJobRepository>();
+        public IProcessingJobStageRepository Stages { get; } = Substitute.For<IProcessingJobStageRepository>();
         public IRecordingRepository Recordings { get; } = Substitute.For<IRecordingRepository>();
         public ITranscriptRepository Transcripts { get; } = Substitute.For<ITranscriptRepository>();
         public IProcessedNoteRepository Notes { get; } = Substitute.For<IProcessedNoteRepository>();
@@ -288,7 +289,7 @@ public sealed class ProcessQueueWorkerTests
         public string VaultPath { get; init; } = "/tmp/vault";
 
         public ProcessQueueWorker Worker => new(
-            Jobs, Recordings, Transcripts, Notes, Profiles,
+            Jobs, Stages, Recordings, Transcripts, Notes, Profiles,
             AudioConverter, Transcription, Llm,
             new CorrectionService(),
             new GlossaryApplicator(),

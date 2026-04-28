@@ -438,6 +438,15 @@ export type ListStringOperationFilterInput = {
   some?: InputMaybe<StringOperationFilterInput>;
 };
 
+export type LlmCapabilities = {
+  __typename?: "LlmCapabilities";
+  ctxLength: Scalars["Int"]["output"];
+  probedAt: Scalars["DateTime"]["output"];
+  supportsJsonMode: Scalars["Boolean"]["output"];
+  supportsToolCalling: Scalars["Boolean"]["output"];
+  tokensPerSecond: Scalars["Float"]["output"];
+};
+
 export type LlmHealthStatus = {
   __typename?: "LlmHealthStatus";
   available: Scalars["Boolean"]["output"];
@@ -868,6 +877,7 @@ export type ProcessingJob = Node & {
   profileId: Scalars["UUID"]["output"];
   progress: Scalars["Int"]["output"];
   recordingId: Scalars["UUID"]["output"];
+  stages: Array<ProcessingJobStage>;
   startedAt?: Maybe<Scalars["DateTime"]["output"]>;
   status: JobStatus;
   userHint?: Maybe<Scalars["String"]["output"]>;
@@ -905,6 +915,17 @@ export type ProcessingJobSortInput = {
   userHint?: InputMaybe<SortEnumType>;
 };
 
+export type ProcessingJobStage = {
+  __typename?: "ProcessingJobStage";
+  durationMs?: Maybe<Scalars["Int"]["output"]>;
+  errorMessage?: Maybe<Scalars["String"]["output"]>;
+  finishedAt?: Maybe<Scalars["DateTime"]["output"]>;
+  id: Scalars["UUID"]["output"];
+  jobId: Scalars["UUID"]["output"];
+  stageName: Scalars["String"]["output"];
+  startedAt: Scalars["DateTime"]["output"];
+};
+
 export type Profile = Node & {
   __typename?: "Profile";
   autoTags: Array<Scalars["String"]["output"]>;
@@ -936,6 +957,7 @@ export type QueryType = {
   health: HealthStatus;
   job?: Maybe<ProcessingJob>;
   jobs?: Maybe<JobsConnection>;
+  llmCapabilities?: Maybe<LlmCapabilities>;
   llmHealth: LlmHealthStatus;
   llmModels: Array<Scalars["String"]["output"]>;
   meta: MetaInfo;
@@ -2659,6 +2681,20 @@ export type MutationStopRecordingMutation = {
       | { __typename?: "ValidationError"; code: string; message: string }
     >;
   };
+};
+
+export type QueryLlmCapabilitiesQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QueryLlmCapabilitiesQuery = {
+  __typename?: "QueryType";
+  llmCapabilities?: {
+    __typename?: "LlmCapabilities";
+    supportsToolCalling: boolean;
+    supportsJsonMode: boolean;
+    ctxLength: number;
+    tokensPerSecond: number;
+    probedAt: string;
+  } | null;
 };
 
 export type QuerySettingsQueryVariables = Exact<{ [key: string]: never }>;
@@ -6035,6 +6071,35 @@ export const MutationStopRecordingDocument = {
     },
   ],
 } as unknown as DocumentNode<MutationStopRecordingMutation, MutationStopRecordingMutationVariables>;
+export const QueryLlmCapabilitiesDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryLlmCapabilities" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "llmCapabilities" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "supportsToolCalling" } },
+                { kind: "Field", name: { kind: "Name", value: "supportsJsonMode" } },
+                { kind: "Field", name: { kind: "Name", value: "ctxLength" } },
+                { kind: "Field", name: { kind: "Name", value: "tokensPerSecond" } },
+                { kind: "Field", name: { kind: "Name", value: "probedAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryLlmCapabilitiesQuery, QueryLlmCapabilitiesQueryVariables>;
 export const QuerySettingsDocument = {
   kind: "Document",
   definitions: [
