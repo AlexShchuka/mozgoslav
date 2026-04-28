@@ -25,11 +25,7 @@ export interface AskFailureAction {
   payload: { assistantId: string; message: string };
 }
 
-export type AskAction =
-  | SubmitAskAction
-  | AskPendingAction
-  | AskSuccessAction
-  | AskFailureAction;
+export type AskAction = SubmitAskAction | AskPendingAction | AskSuccessAction | AskFailureAction;
 
 export const submitAsk = (question: string, includeWeb: boolean): SubmitAskAction => ({
   type: SUBMIT_ASK,

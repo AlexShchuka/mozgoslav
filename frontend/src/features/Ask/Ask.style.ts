@@ -123,13 +123,23 @@ export const TypingDots = styled.span`
     border-radius: 50%;
     background: ${({ theme }) => theme.colors.text.muted};
     animation: blink 1.4s infinite both;
-    &:nth-child(2) { animation-delay: 0.2s; }
-    &:nth-child(3) { animation-delay: 0.4s; }
+    &:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    &:nth-child(3) {
+      animation-delay: 0.4s;
+    }
   }
 
   @keyframes blink {
-    0%, 80%, 100% { opacity: 0.2; }
-    40% { opacity: 1; }
+    0%,
+    80%,
+    100% {
+      opacity: 0.2;
+    }
+    40% {
+      opacity: 1;
+    }
   }
 `;
 
@@ -169,5 +179,7 @@ export const IncludeWebToggle = styled.label`
   color: ${({ theme }) => theme.colors.text.secondary};
   cursor: pointer;
   white-space: nowrap;
-  input { cursor: pointer; }
+  input {
+    cursor: pointer;
+  }
 `;

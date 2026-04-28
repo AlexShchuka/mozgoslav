@@ -59,9 +59,7 @@ const Ask: FC<AskProps> = ({ messages, isAsking, onAsk }) => {
         {messages.map((message) => (
           <li key={message.id} style={{ listStyle: "none" }}>
             <MessageRow $role={message.role}>
-              <MessageBubble $role={message.role}>
-                {renderBody(message, t)}
-              </MessageBubble>
+              <MessageBubble $role={message.role}>{renderBody(message, t)}</MessageBubble>
             </MessageRow>
           </li>
         ))}
@@ -97,10 +95,7 @@ const Ask: FC<AskProps> = ({ messages, isAsking, onAsk }) => {
   );
 };
 
-const renderBody = (
-  message: AskMessage,
-  t: ReturnType<typeof useTranslation>["t"]
-) => {
+const renderBody = (message: AskMessage, t: ReturnType<typeof useTranslation>["t"]) => {
   if (message.state === "pending") {
     return (
       <TypingDots aria-label="ask-pending">

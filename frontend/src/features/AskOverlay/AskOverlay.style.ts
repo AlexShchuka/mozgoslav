@@ -75,12 +75,22 @@ export const LoadingSpinner = styled.div`
     border-radius: 50%;
     background: ${({ theme }) => theme.colors.text.muted};
     animation: spin 1.4s infinite both;
-    &:nth-child(2) { animation-delay: 0.2s; }
-    &:nth-child(3) { animation-delay: 0.4s; }
+    &:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    &:nth-child(3) {
+      animation-delay: 0.4s;
+    }
   }
 
   @keyframes spin {
-    0%, 80%, 100% { opacity: 0.2; }
-    40% { opacity: 1; }
+    0%,
+    80%,
+    100% {
+      opacity: 0.2;
+    }
+    40% {
+      opacity: 1;
+    }
   }
 `;

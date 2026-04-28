@@ -4,13 +4,7 @@ import { parse } from "graphql";
 import type { TypedDocumentNode } from "@graphql-typed-document-node/core";
 
 import { gqlRequest } from "../../saga/graphql";
-import {
-  SUBMIT_ASK,
-  askFailure,
-  askPending,
-  askSuccess,
-  type SubmitAskAction,
-} from "./actions";
+import { SUBMIT_ASK, askFailure, askPending, askSuccess, type SubmitAskAction } from "./actions";
 import type { AskMessage, UnifiedCitation } from "../../../features/Ask/types";
 
 const UNIFIED_SEARCH_QUERY = `

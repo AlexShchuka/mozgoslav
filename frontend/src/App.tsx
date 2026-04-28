@@ -91,10 +91,7 @@ const AppShell: FC = () => {
               </OnboardingCompleteGuard>
             }
           />
-          <Route
-            path={ROUTES.rag}
-            element={<Navigate to={ROUTES.ask} replace />}
-          />
+          <Route path={ROUTES.rag} element={<Navigate to={ROUTES.ask} replace />} />
           <Route
             path={ROUTES.ask}
             element={

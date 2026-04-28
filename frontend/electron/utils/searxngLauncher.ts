@@ -16,13 +16,10 @@ const pollHealthz = (): Promise<boolean> =>
 
     const tryOnce = () => {
       attempts++;
-      const req = httpGet(
-        `http://127.0.0.1:${SEARXNG_PORT}${HEALTH_PATH}`,
-        (res) => {
-          res.resume();
-          resolve(res.statusCode === 200);
-        }
-      );
+      const req = httpGet(`http://127.0.0.1:${SEARXNG_PORT}${HEALTH_PATH}`, (res) => {
+        res.resume();
+        resolve(res.statusCode === 200);
+      });
       req.on("error", () => {
         if (attempts >= HEALTH_MAX_ATTEMPTS) {
           resolve(false);
@@ -55,20 +52,13 @@ export const tryStartSearxng = async (options: SearxngStartOptions): Promise<voi
   }
   candidatePaths.push(path.join(options.userDataDir, "searxng-sidecar", "launch.sh"));
   candidatePaths.push(
-    path.join(
-      process.resourcesPath ?? "",
-      "app.asar.unpacked",
-      "searxng-sidecar",
-      "launch.sh"
-    )
+    path.join(process.resourcesPath ?? "", "app.asar.unpacked", "searxng-sidecar", "launch.sh")
   );
 
   const launchScript = candidatePaths.find((p) => existsSync(p));
 
   if (!launchScript) {
-    console.info(
-      "[searxngLauncher] launch.sh not found. SearXNG sidecar disabled."
-    );
+    console.info("[searxngLauncher] launch.sh not found. SearXNG sidecar disabled.");
     return;
   }
 

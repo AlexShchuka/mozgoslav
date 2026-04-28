@@ -87,8 +87,10 @@ class ProcessAllService:
             "gender": gender_result.model_dump() if gender_result else None,
             "emotion": emotion_result.model_dump() if emotion_result else None,
             "ner": ner_result.model_dump() if ner_result else None,
-            "cleanup": cleanup_result.model_dump()
-            if cleanup_result
-            else {"cleaned": cleaned_text},
+            "cleanup": (
+                cleanup_result.model_dump()
+                if cleanup_result
+                else {"cleaned": cleaned_text}
+            ),
             "embed": embed_result,
         }

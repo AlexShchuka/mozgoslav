@@ -1,11 +1,6 @@
 import { expectSaga } from "redux-saga-test-plan";
 
-import {
-  askFailure,
-  askPending,
-  askSuccess,
-  submitAsk,
-} from "../actions";
+import { askFailure, askPending, askSuccess, submitAsk } from "../actions";
 import { askReducer } from "../reducer";
 import { submitAskSaga } from "../saga";
 
@@ -30,9 +25,7 @@ describe("ask saga — submitAsk", () => {
     mockedRequest.mockResolvedValueOnce({
       unifiedSearch: {
         answer: "42 is the answer.",
-        citations: [
-          { source: "Corpus", reference: "note1", snippet: "a snippet", url: null },
-        ],
+        citations: [{ source: "Corpus", reference: "note1", snippet: "a snippet", url: null }],
       },
     });
 
@@ -73,7 +66,12 @@ describe("ask saga — submitAsk", () => {
       unifiedSearch: {
         answer: "News answer.",
         citations: [
-          { source: "Web", reference: "Some Title", snippet: "web snippet", url: "https://example.com" },
+          {
+            source: "Web",
+            reference: "Some Title",
+            snippet: "web snippet",
+            url: "https://example.com",
+          },
         ],
       },
     });
@@ -94,7 +92,13 @@ describe("ask saga — submitAsk", () => {
   });
 
   it("reducer — ASK_PENDING appends user and pending assistant messages", () => {
-    const userMessage = { id: "u1", role: "user" as const, content: "hello", citations: [], state: "done" as const };
+    const userMessage = {
+      id: "u1",
+      role: "user" as const,
+      content: "hello",
+      citations: [],
+      state: "done" as const,
+    };
     const state = askReducer(undefined, dispatch(askPending(userMessage, "a1")));
     expect(state.messages).toHaveLength(2);
     expect(state.messages[1]!.state).toBe("pending");
@@ -102,7 +106,13 @@ describe("ask saga — submitAsk", () => {
   });
 
   it("reducer — ASK_SUCCESS replaces pending assistant with answer and citations", () => {
-    const userMessage = { id: "u1", role: "user" as const, content: "q", citations: [], state: "done" as const };
+    const userMessage = {
+      id: "u1",
+      role: "user" as const,
+      content: "q",
+      citations: [],
+      state: "done" as const,
+    };
     const seeded = askReducer(undefined, dispatch(askPending(userMessage, "a1")));
     const citations = [{ source: "Corpus" as const, reference: "n1", snippet: "s", url: null }];
     const state = askReducer(seeded, dispatch(askSuccess("a1", "the answer", citations)));
@@ -114,7 +124,13 @@ describe("ask saga — submitAsk", () => {
   });
 
   it("reducer — ASK_FAILURE marks assistant message as error", () => {
-    const userMessage = { id: "u1", role: "user" as const, content: "q", citations: [], state: "done" as const };
+    const userMessage = {
+      id: "u1",
+      role: "user" as const,
+      content: "q",
+      citations: [],
+      state: "done" as const,
+    };
     const seeded = askReducer(undefined, dispatch(askPending(userMessage, "a1")));
     const state = askReducer(seeded, dispatch(askFailure("a1", "exploded")));
     const assistant = state.messages.find((m) => m.id === "a1")!;

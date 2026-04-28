@@ -71,14 +71,14 @@ describe("WebSearchSettings", () => {
     await user.click(screen.getByTestId("websearch-google"));
     await user.click(screen.getByRole("button"));
 
-    expect(onSave).toHaveBeenCalledWith(
-      expect.objectContaining({ googleEnabled: true })
-    );
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ googleEnabled: true }));
   });
 
   it("dispatches LOAD_WEB_SEARCH_CONFIG via container on mount", () => {
     const state = mergeMockState(mockWebSearchState());
-    const { getActions } = renderWithStore(<WebSearchSettingsContainer />, { preloadedState: state });
+    const { getActions } = renderWithStore(<WebSearchSettingsContainer />, {
+      preloadedState: state,
+    });
     const actions = getActions();
     expect(actions.some((a) => a.type === LOAD_WEB_SEARCH_CONFIG)).toBe(true);
   });
@@ -87,7 +87,9 @@ describe("WebSearchSettings", () => {
     const user = userEvent.setup();
     const config = buildConfig();
     const state = mergeMockState(mockWebSearchState({ config }));
-    const { getActions } = renderWithStore(<WebSearchSettingsContainer />, { preloadedState: state });
+    const { getActions } = renderWithStore(<WebSearchSettingsContainer />, {
+      preloadedState: state,
+    });
 
     await user.click(screen.getByRole("button"));
 

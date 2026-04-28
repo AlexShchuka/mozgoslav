@@ -37,7 +37,13 @@ describe("AskOverlay — presentational", () => {
 
   it("shows error text when error is set", () => {
     renderWithStore(
-      <AskOverlay question="Q" answer="" error="Something went wrong" isLoading={false} onHide={noop} />
+      <AskOverlay
+        question="Q"
+        answer=""
+        error="Something went wrong"
+        isLoading={false}
+        onHide={noop}
+      />
     );
     expect(screen.getByText("Something went wrong")).toBeInTheDocument();
   });

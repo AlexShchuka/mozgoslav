@@ -1,12 +1,6 @@
 import type { Reducer } from "redux";
 
-import {
-  ASK_FAILURE,
-  ASK_PENDING,
-  ASK_SUCCESS,
-  type AskAction,
-  SUBMIT_ASK,
-} from "./actions";
+import { ASK_FAILURE, ASK_PENDING, ASK_SUCCESS, type AskAction, SUBMIT_ASK } from "./actions";
 import type { AskMessage } from "../../../features/Ask/types";
 
 export interface AskState {

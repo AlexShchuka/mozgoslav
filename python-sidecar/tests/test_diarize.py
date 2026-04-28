@@ -35,7 +35,9 @@ def _build_service_with_script(
 ) -> DiarizeService:
 
     class _ScriptedService(DiarizeService):
-        def _vad_segments(self, wav: np.ndarray) -> list[tuple[float, float]]:  # noqa: ARG002
+        def _vad_segments(
+            self, wav: np.ndarray
+        ) -> list[tuple[float, float]]:  # noqa: ARG002
             return list(vad_segments)
 
     from app.ml.model_paths import ModelPaths  # noqa: PLC0415

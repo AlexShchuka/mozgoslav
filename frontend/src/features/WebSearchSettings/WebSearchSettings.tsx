@@ -45,11 +45,11 @@ const WebSearchSettings: FC<WebSearchSettingsProps> = ({
     }
   }, [config]);
 
-  const toggle = (key: keyof Pick<WebSearchConfig, "ddgEnabled" | "yandexEnabled" | "googleEnabled">) =>
-    setDraft((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggle = (
+    key: keyof Pick<WebSearchConfig, "ddgEnabled" | "yandexEnabled" | "googleEnabled">
+  ) => setDraft((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  const setTtl = (hours: number) =>
-    setDraft((prev) => ({ ...prev, cacheTtlHours: hours }));
+  const setTtl = (hours: number) => setDraft((prev) => ({ ...prev, cacheTtlHours: hours }));
 
   return (
     <Card>

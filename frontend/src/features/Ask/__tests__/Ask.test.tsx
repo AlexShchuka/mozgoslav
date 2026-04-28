@@ -10,9 +10,7 @@ import type { AskMessage } from "../types";
 
 const noop = () => undefined;
 
-const buildMessage = (
-  patch: Partial<AskMessage> & { id: string }
-): AskMessage => ({
+const buildMessage = (patch: Partial<AskMessage> & { id: string }): AskMessage => ({
   role: "user",
   content: "question",
   citations: [],
@@ -22,9 +20,7 @@ const buildMessage = (
 
 describe("Ask — presentational", () => {
   it("renders empty state when no messages", () => {
-    renderWithStore(
-      <Ask messages={[]} isAsking={false} onAsk={noop} />
-    );
+    renderWithStore(<Ask messages={[]} isAsking={false} onAsk={noop} />);
     expect(screen.getByTestId("ask-message-list")).toBeInTheDocument();
   });
 
@@ -68,9 +64,7 @@ describe("Ask — presentational", () => {
   });
 
   it("disables input when isAsking is true", () => {
-    renderWithStore(
-      <Ask messages={[]} isAsking={true} onAsk={noop} />
-    );
+    renderWithStore(<Ask messages={[]} isAsking={true} onAsk={noop} />);
     expect(screen.getByTestId<HTMLTextAreaElement>("ask-input").disabled).toBe(true);
   });
 
@@ -82,7 +76,12 @@ describe("Ask — presentational", () => {
         content: "Answer with sources.",
         citations: [
           { source: "Corpus", reference: "note-abc", snippet: "corp snippet", url: null },
-          { source: "Web", reference: "Blog Post", snippet: "web snippet", url: "https://example.com" },
+          {
+            source: "Web",
+            reference: "Blog Post",
+            snippet: "web snippet",
+            url: "https://example.com",
+          },
         ],
       }),
     ];
