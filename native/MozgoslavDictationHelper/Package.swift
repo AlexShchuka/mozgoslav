@@ -14,13 +14,13 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/grpc/grpc-swift-2",
-            from: "2.0.0"),
+            "2.0.0"..<"2.5.0"),
         .package(
             url: "https://github.com/grpc/grpc-swift-nio-transport",
-            from: "2.0.0"),
+            "2.0.0"..<"2.5.0"),
         .package(
             url: "https://github.com/grpc/grpc-swift-protobuf",
-            from: "2.0.0"),
+            "2.0.0"..<"2.5.0"),
         .package(
             url: "https://github.com/apple/swift-protobuf",
             from: "1.28.0"),
