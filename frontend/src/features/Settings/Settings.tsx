@@ -4,6 +4,7 @@ import i18n from "i18next";
 import { toast } from "react-toastify";
 import { FolderOpen, Play } from "lucide-react";
 
+import Badge from "../../components/Badge";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import HotkeyRecorder from "../../components/HotkeyRecorder";
@@ -11,6 +12,7 @@ import Input from "../../components/Input";
 import { AppSettings, DEFAULT_SETTINGS } from "../../domain/Settings";
 import { setThemeMode } from "../../styles/ThemeProvider";
 import SyncPairing from "../SyncPairing";
+import SystemActionsFeature from "../SystemActions";
 import type { SettingsProps } from "./types";
 import {
   CheckboxRow,
@@ -25,15 +27,17 @@ import {
   Toolbar,
 } from "./Settings.style";
 
-type TabKey = "general" | "storage" | "llm" | "whisper" | "dictation" | "obsidian" | "sync";
+type TabKey = "general" | "llm" | "whisper" | "dictation" | "obsidian" | "sync" | "systemActions";
 
 const Settings: FC<SettingsProps> = ({
   settings: loadedSettings,
   isSaving,
   isLlmProbing,
+  llmCapabilities,
   onLoad,
   onSave,
   onCheckLlm,
+  onLoadCapabilities,
 }) => {
   const { t } = useTranslation();
   const [tab, setTab] = useState<TabKey>("general");
@@ -42,6 +46,12 @@ const Settings: FC<SettingsProps> = ({
   useEffect(() => {
     onLoad();
   }, [onLoad]);
+
+  useEffect(() => {
+    if (tab === "llm") {
+      onLoadCapabilities();
+    }
+  }, [tab, onLoadCapabilities]);
 
   useEffect(() => {
     if (loadedSettings) {
@@ -65,14 +75,6 @@ const Settings: FC<SettingsProps> = ({
     onCheckLlm();
   };
 
-  const pickVaultFolder = async () => {
-    if (!window.mozgoslav) return;
-    const res = await window.mozgoslav.openFolder();
-    if (!res.canceled && res.filePaths[0]) {
-      update("vaultPath", res.filePaths[0]);
-    }
-  };
-
   const pickWhisperFile = async () => {
     if (!window.mozgoslav) return;
     const res = await window.mozgoslav.openAudioFiles();
@@ -84,12 +86,12 @@ const Settings: FC<SettingsProps> = ({
   const tabs = useMemo(
     () => [
       { key: "general" as TabKey, label: t("settings.tabs.general") },
-      { key: "storage" as TabKey, label: t("settings.tabs.storage") },
       { key: "llm" as TabKey, label: t("settings.tabs.llm") },
       { key: "whisper" as TabKey, label: t("settings.tabs.whisper") },
       { key: "dictation" as TabKey, label: t("settings.tabs.dictation") },
       { key: "obsidian" as TabKey, label: t("settings.tabs.obsidian") },
       { key: "sync" as TabKey, label: t("settings.tabs.sync") },
+      { key: "systemActions" as TabKey, label: t("systemActions.title") },
     ],
     [t]
   );
@@ -133,28 +135,6 @@ const Settings: FC<SettingsProps> = ({
         </Card>
       )}
 
-      {tab === "storage" && (
-        <Card>
-          <FormGrid>
-            <Row>
-              <Input
-                label={t("settings.fields.vaultPath")}
-                value={draft.vaultPath}
-                onChange={(e) => update("vaultPath", e.target.value)}
-                placeholder="/Users/you/Obsidian Vault"
-              />
-              <Button
-                variant="secondary"
-                leftIcon={<FolderOpen size={16} />}
-                onClick={pickVaultFolder}
-              >
-                {t("common.add")}
-              </Button>
-            </Row>
-          </FormGrid>
-        </Card>
-      )}
-
       {tab === "llm" && (
         <Card>
           <FormGrid>
@@ -184,6 +164,33 @@ const Settings: FC<SettingsProps> = ({
             >
               {t("settings.testConnection")}
             </Button>
+            <div>
+              <label>{t("settings.llmCapabilities.title")}</label>
+              {llmCapabilities === null ? (
+                <Badge tone="neutral">{t("settings.llmCapabilities.notProbed")}</Badge>
+              ) : (
+                <Row>
+                  <Badge tone={llmCapabilities.supportsToolCalling ? "success" : "warning"}>
+                    {t("settings.llmCapabilities.toolCalling")}
+                  </Badge>
+                  <Badge tone={llmCapabilities.supportsJsonMode ? "success" : "warning"}>
+                    {t("settings.llmCapabilities.jsonMode")}
+                  </Badge>
+                  {llmCapabilities.ctxLength > 0 && (
+                    <Badge tone="info">
+                      {t("settings.llmCapabilities.ctxLength", { n: llmCapabilities.ctxLength })}
+                    </Badge>
+                  )}
+                  {llmCapabilities.tokensPerSecond > 0 && (
+                    <Badge tone="neutral">
+                      {t("settings.llmCapabilities.tokensPerSec", {
+                        n: Math.round(llmCapabilities.tokensPerSecond),
+                      })}
+                    </Badge>
+                  )}
+                </Row>
+              )}
+            </div>
           </FormGrid>
         </Card>
       )}
@@ -293,7 +300,9 @@ const Settings: FC<SettingsProps> = ({
         </Card>
       )}
 
-      {tab !== "sync" && (
+      {tab === "systemActions" && <SystemActionsFeature />}
+
+      {tab !== "sync" && tab !== "systemActions" && (
         <Toolbar>
           <Button variant="primary" isLoading={isSaving} onClick={save}>
             {t("common.save")}

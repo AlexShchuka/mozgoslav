@@ -188,6 +188,46 @@ namespace Mozgoslav.Infrastructure.Persistence.EfMigrations
                     b.ToTable("processing_jobs", (string)null);
                 });
 
+            modelBuilder.Entity("Mozgoslav.Domain.Entities.ProcessingJobStage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<int?>("DurationMs")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("duration_ms");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("error_message");
+
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("finished_at");
+
+                    b.Property<Guid>("JobId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("job_id");
+
+                    b.Property<string>("StageName")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("stage_name");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("started_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobId")
+                        .HasDatabaseName("ix_processing_job_stages_job_id");
+
+                    b.ToTable("processing_job_stages", (string)null);
+                });
+
             modelBuilder.Entity("Mozgoslav.Domain.Entities.Profile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -261,7 +301,7 @@ namespace Mozgoslav.Infrastructure.Persistence.EfMigrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero))
+                        .HasDefaultValue(new DateTimeOffset(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)))
                         .HasColumnName("created_at");
 
                     b.Property<int>("Dimensions")
@@ -419,6 +459,79 @@ namespace Mozgoslav.Infrastructure.Persistence.EfMigrations
                     b.HasKey("Key");
 
                     b.ToTable("settings", (string)null);
+                });
+
+            modelBuilder.Entity("Mozgoslav.Domain.Entities.RoutineRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("error_message");
+
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("finished_at");
+
+                    b.Property<string>("PayloadSummary")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("payload_summary");
+
+                    b.Property<string>("RoutineKey")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("routine_key");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("started_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoutineKey")
+                        .HasDatabaseName("ix_routine_runs_routine_key");
+
+                    b.HasIndex("StartedAt")
+                        .HasDatabaseName("ix_routine_runs_started_at");
+
+                    b.ToTable("routine_runs", (string)null);
+                });
+
+            modelBuilder.Entity("Mozgoslav.Infrastructure.Prompts.PromptTemplateEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("body");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .HasDatabaseName("ix_prompt_templates_name");
+
+                    b.ToTable("prompt_templates", (string)null);
                 });
 #pragma warning restore 612, 618
         }

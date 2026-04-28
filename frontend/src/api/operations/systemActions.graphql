@@ -1,0 +1,7 @@
+query QuerySystemActionTemplates {
+  systemActionTemplates {
+    name
+    description
+    deeplinkUrl
+  }
+}

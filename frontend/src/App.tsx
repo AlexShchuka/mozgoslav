@@ -19,6 +19,8 @@ import Sync from "./features/Sync";
 import Onboarding from "./features/Onboarding";
 import DictationOverlay from "./features/DictationOverlay";
 import CommandPalette, { useCommandPaletteActions } from "./features/CommandPalette";
+import RoutinesContainer from "./features/Routines/Routines.container";
+import PromptsContainer from "./features/Prompts/Prompts.container";
 import { useGlobalHotkeys } from "./hooks/useGlobalHotkeys";
 import { ROUTES } from "./constants/routes";
 import { GLOBAL_HOTKEY_REDISPATCH_EVENT } from "./constants/events";
@@ -145,6 +147,22 @@ const AppShell: FC = () => {
             element={
               <OnboardingCompleteGuard>
                 <Sync />
+              </OnboardingCompleteGuard>
+            }
+          />
+          <Route
+            path={ROUTES.routines}
+            element={
+              <OnboardingCompleteGuard>
+                <RoutinesContainer />
+              </OnboardingCompleteGuard>
+            }
+          />
+          <Route
+            path={ROUTES.prompts}
+            element={
+              <OnboardingCompleteGuard>
+                <PromptsContainer />
               </OnboardingCompleteGuard>
             }
           />

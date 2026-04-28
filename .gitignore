@@ -91,3 +91,4 @@ frontend/resources/backend/
 
 # Test output artifacts (created by `dotnet test`); not tracked
 backend/TestResults/
+.claude/agent-reports/

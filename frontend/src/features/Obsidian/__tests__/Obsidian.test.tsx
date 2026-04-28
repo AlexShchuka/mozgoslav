@@ -13,7 +13,7 @@ import {
   mockSettingsState,
   renderWithStore,
 } from "../../../testUtils";
-import type { VaultDiagnosticsReport } from "../../../store/slices/obsidian/apiTypes";
+import type { VaultDiagnosticsReport } from "../../../domain/obsidian/types";
 import { DEFAULT_SETTINGS } from "../../../domain/Settings";
 import "../../../i18n";
 

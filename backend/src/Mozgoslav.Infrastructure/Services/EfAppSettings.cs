@@ -63,6 +63,13 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     public string DictationDumpHotkeyHold => Snapshot.DictationDumpHotkeyHold;
     public string ObsidianBootstrapPins => AppSettingsDto.ObsidianBootstrapPinsResource;
     public int WebCacheTtlHours => Snapshot.WebCacheTtlHours;
+    public bool McpServerEnabled => Snapshot.McpServerEnabled;
+    public int McpServerPort => Snapshot.McpServerPort;
+    public string McpServerToken => Snapshot.McpServerToken;
+    public bool ActionsSkillEnabled => Snapshot.ActionsSkillEnabled;
+    public bool RemindersSkillEnabled => Snapshot.RemindersSkillEnabled;
+    public bool DictationClassifyIntentEnabled => Snapshot.DictationClassifyIntentEnabled;
+    public string ClaudeCliPath => Snapshot.ClaudeCliPath;
     public AppSettingsDto Snapshot { get; private set; } = AppSettingsDto.Defaults;
 
     public async Task<AppSettingsDto> LoadAsync(CancellationToken ct)
@@ -109,7 +116,14 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             DictationDumpEnabled: ParseBool(map, Keys.DictationDumpEnabled, defaults.DictationDumpEnabled),
             DictationDumpHotkeyToggle: map.GetValueOrDefault(Keys.DictationDumpHotkeyToggle, defaults.DictationDumpHotkeyToggle),
             DictationDumpHotkeyHold: map.GetValueOrDefault(Keys.DictationDumpHotkeyHold, defaults.DictationDumpHotkeyHold),
-            WebCacheTtlHours: ParseInt(map, Keys.WebCacheTtlHours, defaults.WebCacheTtlHours));
+            WebCacheTtlHours: ParseInt(map, Keys.WebCacheTtlHours, defaults.WebCacheTtlHours),
+            McpServerEnabled: ParseBool(map, Keys.McpServerEnabled, defaults.McpServerEnabled),
+            McpServerPort: ParseInt(map, Keys.McpServerPort, defaults.McpServerPort),
+            McpServerToken: map.GetValueOrDefault(Keys.McpServerToken, defaults.McpServerToken),
+            ActionsSkillEnabled: ParseBool(map, Keys.ActionsSkillEnabled, defaults.ActionsSkillEnabled),
+            RemindersSkillEnabled: ParseBool(map, Keys.RemindersSkillEnabled, defaults.RemindersSkillEnabled),
+            DictationClassifyIntentEnabled: ParseBool(map, Keys.DictationClassifyIntentEnabled, defaults.DictationClassifyIntentEnabled),
+            ClaudeCliPath: map.GetValueOrDefault(Keys.ClaudeCliPath, defaults.ClaudeCliPath));
 
         await _lock.WaitAsync(ct);
         try { Snapshot = dto; }
@@ -162,6 +176,13 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             (Keys.DictationDumpHotkeyToggle, dto.DictationDumpHotkeyToggle),
             (Keys.DictationDumpHotkeyHold, dto.DictationDumpHotkeyHold),
             (Keys.WebCacheTtlHours, dto.WebCacheTtlHours.ToString(CultureInfo.InvariantCulture)),
+            (Keys.McpServerEnabled, BoolToString(dto.McpServerEnabled)),
+            (Keys.McpServerPort, dto.McpServerPort.ToString(CultureInfo.InvariantCulture)),
+            (Keys.McpServerToken, dto.McpServerToken),
+            (Keys.ActionsSkillEnabled, BoolToString(dto.ActionsSkillEnabled)),
+            (Keys.RemindersSkillEnabled, BoolToString(dto.RemindersSkillEnabled)),
+            (Keys.DictationClassifyIntentEnabled, BoolToString(dto.DictationClassifyIntentEnabled)),
+            (Keys.ClaudeCliPath, dto.ClaudeCliPath),
         };
 
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
@@ -297,5 +318,12 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         public const string DictationDumpHotkeyToggle = "dictation_dump_hotkey_toggle";
         public const string DictationDumpHotkeyHold = "dictation_dump_hotkey_hold";
         public const string WebCacheTtlHours = "web_cache_ttl_hours";
+        public const string McpServerEnabled = "mcp_server_enabled";
+        public const string McpServerPort = "mcp_server_port";
+        public const string McpServerToken = "mcp_server_token";
+        public const string ActionsSkillEnabled = "actions_skill_enabled";
+        public const string RemindersSkillEnabled = "reminders_skill_enabled";
+        public const string DictationClassifyIntentEnabled = "dictation_classify_intent_enabled";
+        public const string ClaudeCliPath = "claude_cli_path";
     }
 }

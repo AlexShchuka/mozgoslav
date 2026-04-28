@@ -5,6 +5,8 @@ import { randomUUID } from "node:crypto";
 import { OverlayWindow } from "./OverlayWindow";
 import type { HotkeyEventPayload, NativeHelperClient } from "./NativeHelperClient";
 
+const BACKEND_ORIGIN = "http://localhost:5050";
+
 export interface DumpModeOrchestratorOptions {
   readonly helper: NativeHelperClient;
   readonly backendOrigin: string;
@@ -27,6 +29,7 @@ export class DumpModeOrchestrator {
   private phase: DumpPhase = "idle";
   private currentSessionId: string | null = null;
   private currentFilePath: string | null = null;
+  private partialSseController: AbortController | null = null;
 
   constructor(options: DumpModeOrchestratorOptions) {
     this.helper = options.helper;
@@ -142,6 +145,7 @@ export class DumpModeOrchestrator {
 
   private async startCapture(): Promise<void> {
     const sessionId = `dump-${Date.now()}-${randomUUID()}`;
+    const streamSessionId = randomUUID();
     const filePath = path.join(this.tempDir, `${sessionId}.wav`);
 
     this.phase = "recording";
@@ -154,11 +158,64 @@ export class DumpModeOrchestrator {
     }
 
     try {
-      await this.helper.startFileCapture(filePath, sessionId);
-      console.info(`[dump-mode] capture started sessionId=${sessionId} path=${filePath}`);
+      await this.helper.startFileCapture(filePath, sessionId, {
+        streamSessionId,
+        backendBaseUrl: this.backendOrigin,
+      });
+      console.info(`[dump-mode] capture started sessionId=${sessionId} streamSessionId=${streamSessionId} path=${filePath}`);
+      this.startPartialSseSubscription(streamSessionId);
     } catch (err) {
       console.error("[dump-mode] startFileCapture failed:", err);
       this.cleanup();
+    }
+  }
+
+  private startPartialSseSubscription(streamSessionId: string): void {
+    this.partialSseController = new AbortController();
+    const request = net.request({
+      method: "GET",
+      url: `${BACKEND_ORIGIN}/api/dictation/stream/${streamSessionId}`,
+    });
+    request.on("response", (response) => {
+      response.on("data", (chunk: Buffer) => {
+        if (this.phase !== "recording") return;
+        this.parseDumpSseChunk(chunk.toString("utf8"));
+      });
+      response.on("end", () => {
+        this.partialSseController = null;
+      });
+      response.on("error", (error: Error) => {
+        console.error("[dump-mode:sse] error:", error);
+      });
+    });
+    request.on("error", (error: Error) => {
+      console.error("[dump-mode:sse] request error:", error);
+    });
+    request.end();
+    this.partialSseController.signal.addEventListener("abort", () => {
+      try {
+        request.abort();
+      } catch {}
+    });
+  }
+
+  private parseDumpSseChunk(raw: string): void {
+    for (const block of raw.split("\n\n")) {
+      if (!block.trim().length) continue;
+      let event = "message";
+      let data = "";
+      for (const line of block.split("\n")) {
+        if (line.startsWith("event:")) event = line.slice("event:".length).trim();
+        else if (line.startsWith("data:")) data += line.slice("data:".length).trim();
+      }
+      if (event === "partial" && data.length > 0) {
+        try {
+          const parsed = JSON.parse(data) as { text: string };
+          if (this.overlay) this.overlay.updateState("recording", parsed.text);
+        } catch (error) {
+          console.error("[dump-mode:sse] bad payload:", data, error);
+        }
+      }
     }
   }
 
@@ -188,6 +245,8 @@ export class DumpModeOrchestrator {
   }
 
   private cleanup(): void {
+    this.partialSseController?.abort();
+    this.partialSseController = null;
     this.currentSessionId = null;
     this.currentFilePath = null;
     this.holding = false;

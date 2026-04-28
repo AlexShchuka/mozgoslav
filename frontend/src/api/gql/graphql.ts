@@ -438,6 +438,15 @@ export type ListStringOperationFilterInput = {
   some?: InputMaybe<StringOperationFilterInput>;
 };
 
+export type LlmCapabilities = {
+  __typename?: "LlmCapabilities";
+  ctxLength: Scalars["Int"]["output"];
+  probedAt: Scalars["DateTime"]["output"];
+  supportsJsonMode: Scalars["Boolean"]["output"];
+  supportsToolCalling: Scalars["Boolean"]["output"];
+  tokensPerSecond: Scalars["Float"]["output"];
+};
+
 export type LlmHealthStatus = {
   __typename?: "LlmHealthStatus";
   available: Scalars["Boolean"]["output"];
@@ -509,12 +518,15 @@ export enum ModelTier {
 export type MutationType = {
   __typename?: "MutationType";
   acceptSyncDevice: AcceptSyncDevicePayload;
+  buildPrompt: Scalars["String"]["output"];
   cancelJob: CancelJobPayload;
   createBackup: CreateBackupPayload;
   createNote: NotePayload;
   createProfile: ProfilePayload;
+  createPromptTemplate: PromptTemplateDto;
   deleteNote: NotePayload;
   deleteProfile: ProfilePayload;
+  deletePromptTemplate: Scalars["Boolean"]["output"];
   deleteRecording: RecordingPayload;
   dictationCancel: DictationCancelPayload;
   dictationStart: DictationStartPayload;
@@ -531,10 +543,13 @@ export type MutationType = {
   obsidianRunWizardStep: ObsidianWizardStepPayload;
   ragReindex: RagReindexPayload;
   reprocessRecording: RecordingPayload;
+  runRoutineNow: RoutineRunDto;
   setupObsidian: SetupObsidianPayload;
   startRecording: StartRecordingPayload;
   stopRecording: StopRecordingPayload;
+  toggleRoutine: RoutineDefinitionDto;
   updateProfile: ProfilePayload;
+  updatePromptTemplate?: Maybe<PromptTemplateDto>;
   updateSettings: UpdateSettingsPayload;
   updateWebSearchConfig: WebSearchConfigPayload;
   uploadRecordings: ImportRecordingsPayload;
@@ -544,6 +559,10 @@ export type MutationTypeAcceptSyncDeviceArgs = {
   deviceId: Scalars["String"]["input"];
   folderIds?: InputMaybe<Array<Scalars["String"]["input"]>>;
   name?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+export type MutationTypeBuildPromptArgs = {
+  template: Scalars["String"]["input"];
 };
 
 export type MutationTypeCancelJobArgs = {
@@ -558,11 +577,20 @@ export type MutationTypeCreateProfileArgs = {
   input: CreateProfileInput;
 };
 
+export type MutationTypeCreatePromptTemplateArgs = {
+  body: Scalars["String"]["input"];
+  name: Scalars["String"]["input"];
+};
+
 export type MutationTypeDeleteNoteArgs = {
   id: Scalars["UUID"]["input"];
 };
 
 export type MutationTypeDeleteProfileArgs = {
+  id: Scalars["UUID"]["input"];
+};
+
+export type MutationTypeDeletePromptTemplateArgs = {
   id: Scalars["UUID"]["input"];
 };
 
@@ -617,6 +645,10 @@ export type MutationTypeReprocessRecordingArgs = {
   recordingId: Scalars["UUID"]["input"];
 };
 
+export type MutationTypeRunRoutineNowArgs = {
+  key: Scalars["String"]["input"];
+};
+
 export type MutationTypeSetupObsidianArgs = {
   vaultPath?: InputMaybe<Scalars["String"]["input"]>;
 };
@@ -629,9 +661,20 @@ export type MutationTypeStopRecordingArgs = {
   sessionId: Scalars["String"]["input"];
 };
 
+export type MutationTypeToggleRoutineArgs = {
+  enabled: Scalars["Boolean"]["input"];
+  key: Scalars["String"]["input"];
+};
+
 export type MutationTypeUpdateProfileArgs = {
   id: Scalars["UUID"]["input"];
   input: CreateProfileInput;
+};
+
+export type MutationTypeUpdatePromptTemplateArgs = {
+  body: Scalars["String"]["input"];
+  id: Scalars["UUID"]["input"];
+  name: Scalars["String"]["input"];
 };
 
 export type MutationTypeUpdateSettingsArgs = {
@@ -868,6 +911,7 @@ export type ProcessingJob = Node & {
   profileId: Scalars["UUID"]["output"];
   progress: Scalars["Int"]["output"];
   recordingId: Scalars["UUID"]["output"];
+  stages: Array<ProcessingJobStage>;
   startedAt?: Maybe<Scalars["DateTime"]["output"]>;
   status: JobStatus;
   userHint?: Maybe<Scalars["String"]["output"]>;
@@ -905,6 +949,17 @@ export type ProcessingJobSortInput = {
   userHint?: InputMaybe<SortEnumType>;
 };
 
+export type ProcessingJobStage = {
+  __typename?: "ProcessingJobStage";
+  durationMs?: Maybe<Scalars["Int"]["output"]>;
+  errorMessage?: Maybe<Scalars["String"]["output"]>;
+  finishedAt?: Maybe<Scalars["DateTime"]["output"]>;
+  id: Scalars["UUID"]["output"];
+  jobId: Scalars["UUID"]["output"];
+  stageName: Scalars["String"]["output"];
+  startedAt: Scalars["DateTime"]["output"];
+};
+
 export type Profile = Node & {
   __typename?: "Profile";
   autoTags: Array<Scalars["String"]["output"]>;
@@ -927,6 +982,14 @@ export type ProfilePayload = {
   profile?: Maybe<Profile>;
 };
 
+export type PromptTemplateDto = {
+  __typename?: "PromptTemplateDto";
+  body: Scalars["String"]["output"];
+  createdAt: Scalars["DateTime"]["output"];
+  id: Scalars["UUID"]["output"];
+  name: Scalars["String"]["output"];
+};
+
 export type QueryType = {
   __typename?: "QueryType";
   activeJobs: Array<ProcessingJob>;
@@ -936,6 +999,7 @@ export type QueryType = {
   health: HealthStatus;
   job?: Maybe<ProcessingJob>;
   jobs?: Maybe<JobsConnection>;
+  llmCapabilities?: Maybe<LlmCapabilities>;
   llmHealth: LlmHealthStatus;
   llmModels: Array<Scalars["String"]["output"]>;
   meta: MetaInfo;
@@ -947,16 +1011,22 @@ export type QueryType = {
   note?: Maybe<ProcessedNote>;
   notes?: Maybe<NotesConnection>;
   obsidianDetect: ObsidianDetectionResult;
+  previewPrompt: Scalars["String"]["output"];
   profile?: Maybe<Profile>;
   profiles: Array<Profile>;
+  promptTemplate?: Maybe<PromptTemplateDto>;
+  promptTemplates: Array<PromptTemplateDto>;
   ragQuery?: Maybe<RagQueryResult>;
   ragStatus: RagIndexStatus;
   recording?: Maybe<Recording>;
   recordings?: Maybe<RecordingsConnection>;
+  routineRuns: Array<RoutineRunDto>;
+  routines: Array<RoutineDefinitionDto>;
   settings: AppSettingsDto;
   syncHealth: Scalars["Boolean"]["output"];
   syncPairingPayload?: Maybe<SyncPairingPayloadResult>;
   syncStatus?: Maybe<SyncStatusResult>;
+  systemActionTemplates: Array<SystemActionTemplateDto>;
   unifiedSearch: UnifiedSearchPayload;
   webSearchConfig: WebSearchConfigDto;
 };
@@ -999,7 +1069,15 @@ export type QueryTypeNotesArgs = {
   where?: InputMaybe<ProcessedNoteFilterInput>;
 };
 
+export type QueryTypePreviewPromptArgs = {
+  templateBody: Scalars["String"]["input"];
+};
+
 export type QueryTypeProfileArgs = {
+  id: Scalars["UUID"]["input"];
+};
+
+export type QueryTypePromptTemplateArgs = {
   id: Scalars["UUID"]["input"];
 };
 
@@ -1019,6 +1097,11 @@ export type QueryTypeRecordingsArgs = {
   last?: InputMaybe<Scalars["Int"]["input"]>;
   order?: InputMaybe<Array<RecordingSortInput>>;
   where?: InputMaybe<RecordingFilterInput>;
+};
+
+export type QueryTypeRoutineRunsArgs = {
+  key: Scalars["String"]["input"];
+  limit: Scalars["Int"]["input"];
 };
 
 export type QueryTypeUnifiedSearchArgs = {
@@ -1159,6 +1242,26 @@ export type RestApiCheck = {
   version?: Maybe<Scalars["String"]["output"]>;
 };
 
+export type RoutineDefinitionDto = {
+  __typename?: "RoutineDefinitionDto";
+  description: Scalars["String"]["output"];
+  displayName: Scalars["String"]["output"];
+  isEnabled: Scalars["Boolean"]["output"];
+  key: Scalars["String"]["output"];
+  lastRun?: Maybe<RoutineRunDto>;
+};
+
+export type RoutineRunDto = {
+  __typename?: "RoutineRunDto";
+  errorMessage?: Maybe<Scalars["String"]["output"]>;
+  finishedAt?: Maybe<Scalars["DateTime"]["output"]>;
+  id: Scalars["UUID"]["output"];
+  payloadSummary?: Maybe<Scalars["String"]["output"]>;
+  routineKey: Scalars["String"]["output"];
+  startedAt: Scalars["DateTime"]["output"];
+  status: Scalars["String"]["output"];
+};
+
 export type SetupObsidianPayload = {
   __typename?: "SetupObsidianPayload";
   errors: Array<IUserError>;
@@ -1274,6 +1377,13 @@ export type SyncStatusResult = {
   __typename?: "SyncStatusResult";
   devices: Array<SyncDeviceEntry>;
   folders: Array<SyncFolderEntry>;
+};
+
+export type SystemActionTemplateDto = {
+  __typename?: "SystemActionTemplateDto";
+  deeplinkUrl: Scalars["String"]["output"];
+  description: Scalars["String"]["output"];
+  name: Scalars["String"]["output"];
 };
 
 export type TemplaterSettingsCheck = {
@@ -2386,6 +2496,88 @@ export type MutationDuplicateProfileMutation = {
   };
 };
 
+export type QueryPromptTemplatesQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QueryPromptTemplatesQuery = {
+  __typename?: "QueryType";
+  promptTemplates: Array<{
+    __typename?: "PromptTemplateDto";
+    id: string;
+    name: string;
+    body: string;
+    createdAt: string;
+  }>;
+};
+
+export type QueryPromptTemplateQueryVariables = Exact<{
+  id: Scalars["UUID"]["input"];
+}>;
+
+export type QueryPromptTemplateQuery = {
+  __typename?: "QueryType";
+  promptTemplate?: {
+    __typename?: "PromptTemplateDto";
+    id: string;
+    name: string;
+    body: string;
+    createdAt: string;
+  } | null;
+};
+
+export type QueryPreviewPromptQueryVariables = Exact<{
+  templateBody: Scalars["String"]["input"];
+}>;
+
+export type QueryPreviewPromptQuery = { __typename?: "QueryType"; previewPrompt: string };
+
+export type MutationCreatePromptTemplateMutationVariables = Exact<{
+  name: Scalars["String"]["input"];
+  body: Scalars["String"]["input"];
+}>;
+
+export type MutationCreatePromptTemplateMutation = {
+  __typename?: "MutationType";
+  createPromptTemplate: {
+    __typename?: "PromptTemplateDto";
+    id: string;
+    name: string;
+    body: string;
+    createdAt: string;
+  };
+};
+
+export type MutationUpdatePromptTemplateMutationVariables = Exact<{
+  id: Scalars["UUID"]["input"];
+  name: Scalars["String"]["input"];
+  body: Scalars["String"]["input"];
+}>;
+
+export type MutationUpdatePromptTemplateMutation = {
+  __typename?: "MutationType";
+  updatePromptTemplate?: {
+    __typename?: "PromptTemplateDto";
+    id: string;
+    name: string;
+    body: string;
+    createdAt: string;
+  } | null;
+};
+
+export type MutationDeletePromptTemplateMutationVariables = Exact<{
+  id: Scalars["UUID"]["input"];
+}>;
+
+export type MutationDeletePromptTemplateMutation = {
+  __typename?: "MutationType";
+  deletePromptTemplate: boolean;
+};
+
+export type MutationBuildPromptMutationVariables = Exact<{
+  template: Scalars["String"]["input"];
+}>;
+
+export type MutationBuildPromptMutation = { __typename?: "MutationType"; buildPrompt: string };
+
 export type QueryRagStatusQueryVariables = Exact<{ [key: string]: never }>;
 
 export type QueryRagStatusQuery = {
@@ -2661,6 +2853,106 @@ export type MutationStopRecordingMutation = {
   };
 };
 
+export type QueryRoutinesQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QueryRoutinesQuery = {
+  __typename?: "QueryType";
+  routines: Array<{
+    __typename?: "RoutineDefinitionDto";
+    key: string;
+    displayName: string;
+    description: string;
+    isEnabled: boolean;
+    lastRun?: {
+      __typename?: "RoutineRunDto";
+      id: string;
+      routineKey: string;
+      startedAt: string;
+      finishedAt?: string | null;
+      status: string;
+      errorMessage?: string | null;
+      payloadSummary?: string | null;
+    } | null;
+  }>;
+};
+
+export type QueryRoutineRunsQueryVariables = Exact<{
+  key: Scalars["String"]["input"];
+  limit: Scalars["Int"]["input"];
+}>;
+
+export type QueryRoutineRunsQuery = {
+  __typename?: "QueryType";
+  routineRuns: Array<{
+    __typename?: "RoutineRunDto";
+    id: string;
+    routineKey: string;
+    startedAt: string;
+    finishedAt?: string | null;
+    status: string;
+    errorMessage?: string | null;
+    payloadSummary?: string | null;
+  }>;
+};
+
+export type MutationToggleRoutineMutationVariables = Exact<{
+  key: Scalars["String"]["input"];
+  enabled: Scalars["Boolean"]["input"];
+}>;
+
+export type MutationToggleRoutineMutation = {
+  __typename?: "MutationType";
+  toggleRoutine: {
+    __typename?: "RoutineDefinitionDto";
+    key: string;
+    displayName: string;
+    description: string;
+    isEnabled: boolean;
+    lastRun?: {
+      __typename?: "RoutineRunDto";
+      id: string;
+      routineKey: string;
+      startedAt: string;
+      finishedAt?: string | null;
+      status: string;
+      errorMessage?: string | null;
+      payloadSummary?: string | null;
+    } | null;
+  };
+};
+
+export type MutationRunRoutineNowMutationVariables = Exact<{
+  key: Scalars["String"]["input"];
+}>;
+
+export type MutationRunRoutineNowMutation = {
+  __typename?: "MutationType";
+  runRoutineNow: {
+    __typename?: "RoutineRunDto";
+    id: string;
+    routineKey: string;
+    startedAt: string;
+    finishedAt?: string | null;
+    status: string;
+    errorMessage?: string | null;
+    payloadSummary?: string | null;
+  };
+};
+
+export type QueryLlmCapabilitiesQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QueryLlmCapabilitiesQuery = {
+  __typename?: "QueryType";
+  llmCapabilities?: {
+    __typename?: "LlmCapabilities";
+    supportsToolCalling: boolean;
+    supportsJsonMode: boolean;
+    ctxLength: number;
+    tokensPerSecond: number;
+    probedAt: string;
+  } | null;
+};
+
 export type QuerySettingsQueryVariables = Exact<{ [key: string]: never }>;
 
 export type QuerySettingsQuery = {
@@ -2867,6 +3159,18 @@ export type SubscriptionSyncEventsSubscription = {
     } | null;
     fileConflict?: { __typename?: "FileConflictPayload"; folder: string; path: string } | null;
   };
+};
+
+export type QuerySystemActionTemplatesQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QuerySystemActionTemplatesQuery = {
+  __typename?: "QueryType";
+  systemActionTemplates: Array<{
+    __typename?: "SystemActionTemplateDto";
+    name: string;
+    description: string;
+    deeplinkUrl: string;
+  }>;
 };
 
 export type QueryWebSearchConfigQueryVariables = Exact<{ [key: string]: never }>;
@@ -5245,6 +5549,325 @@ export const MutationDuplicateProfileDocument = {
   MutationDuplicateProfileMutation,
   MutationDuplicateProfileMutationVariables
 >;
+export const QueryPromptTemplatesDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryPromptTemplates" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "promptTemplates" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+                { kind: "Field", name: { kind: "Name", value: "body" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryPromptTemplatesQuery, QueryPromptTemplatesQueryVariables>;
+export const QueryPromptTemplateDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryPromptTemplate" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "promptTemplate" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+                { kind: "Field", name: { kind: "Name", value: "body" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryPromptTemplateQuery, QueryPromptTemplateQueryVariables>;
+export const QueryPreviewPromptDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryPreviewPrompt" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "templateBody" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "previewPrompt" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "templateBody" },
+                value: { kind: "Variable", name: { kind: "Name", value: "templateBody" } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryPreviewPromptQuery, QueryPreviewPromptQueryVariables>;
+export const MutationCreatePromptTemplateDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationCreatePromptTemplate" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "name" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "body" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createPromptTemplate" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "name" },
+                value: { kind: "Variable", name: { kind: "Name", value: "name" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "body" },
+                value: { kind: "Variable", name: { kind: "Name", value: "body" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+                { kind: "Field", name: { kind: "Name", value: "body" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationCreatePromptTemplateMutation,
+  MutationCreatePromptTemplateMutationVariables
+>;
+export const MutationUpdatePromptTemplateDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationUpdatePromptTemplate" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "name" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "body" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "updatePromptTemplate" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "name" },
+                value: { kind: "Variable", name: { kind: "Name", value: "name" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "body" },
+                value: { kind: "Variable", name: { kind: "Name", value: "body" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+                { kind: "Field", name: { kind: "Name", value: "body" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationUpdatePromptTemplateMutation,
+  MutationUpdatePromptTemplateMutationVariables
+>;
+export const MutationDeletePromptTemplateDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationDeletePromptTemplate" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "deletePromptTemplate" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationDeletePromptTemplateMutation,
+  MutationDeletePromptTemplateMutationVariables
+>;
+export const MutationBuildPromptDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationBuildPrompt" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "template" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "buildPrompt" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "template" },
+                value: { kind: "Variable", name: { kind: "Name", value: "template" } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationBuildPromptMutation, MutationBuildPromptMutationVariables>;
 export const QueryRagStatusDocument = {
   kind: "Document",
   definitions: [
@@ -6035,6 +6658,262 @@ export const MutationStopRecordingDocument = {
     },
   ],
 } as unknown as DocumentNode<MutationStopRecordingMutation, MutationStopRecordingMutationVariables>;
+export const QueryRoutinesDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryRoutines" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "routines" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "key" } },
+                { kind: "Field", name: { kind: "Name", value: "displayName" } },
+                { kind: "Field", name: { kind: "Name", value: "description" } },
+                { kind: "Field", name: { kind: "Name", value: "isEnabled" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "lastRun" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "routineKey" } },
+                      { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+                      { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+                      { kind: "Field", name: { kind: "Name", value: "status" } },
+                      { kind: "Field", name: { kind: "Name", value: "errorMessage" } },
+                      { kind: "Field", name: { kind: "Name", value: "payloadSummary" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryRoutinesQuery, QueryRoutinesQueryVariables>;
+export const QueryRoutineRunsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryRoutineRuns" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "key" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "limit" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "Int" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "routineRuns" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "key" },
+                value: { kind: "Variable", name: { kind: "Name", value: "key" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "limit" },
+                value: { kind: "Variable", name: { kind: "Name", value: "limit" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "routineKey" } },
+                { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+                { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+                { kind: "Field", name: { kind: "Name", value: "status" } },
+                { kind: "Field", name: { kind: "Name", value: "errorMessage" } },
+                { kind: "Field", name: { kind: "Name", value: "payloadSummary" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryRoutineRunsQuery, QueryRoutineRunsQueryVariables>;
+export const MutationToggleRoutineDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationToggleRoutine" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "key" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "enabled" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "Boolean" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "toggleRoutine" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "key" },
+                value: { kind: "Variable", name: { kind: "Name", value: "key" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "enabled" },
+                value: { kind: "Variable", name: { kind: "Name", value: "enabled" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "key" } },
+                { kind: "Field", name: { kind: "Name", value: "displayName" } },
+                { kind: "Field", name: { kind: "Name", value: "description" } },
+                { kind: "Field", name: { kind: "Name", value: "isEnabled" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "lastRun" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "routineKey" } },
+                      { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+                      { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+                      { kind: "Field", name: { kind: "Name", value: "status" } },
+                      { kind: "Field", name: { kind: "Name", value: "errorMessage" } },
+                      { kind: "Field", name: { kind: "Name", value: "payloadSummary" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationToggleRoutineMutation, MutationToggleRoutineMutationVariables>;
+export const MutationRunRoutineNowDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationRunRoutineNow" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "key" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "runRoutineNow" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "key" },
+                value: { kind: "Variable", name: { kind: "Name", value: "key" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "routineKey" } },
+                { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+                { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+                { kind: "Field", name: { kind: "Name", value: "status" } },
+                { kind: "Field", name: { kind: "Name", value: "errorMessage" } },
+                { kind: "Field", name: { kind: "Name", value: "payloadSummary" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationRunRoutineNowMutation, MutationRunRoutineNowMutationVariables>;
+export const QueryLlmCapabilitiesDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryLlmCapabilities" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "llmCapabilities" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "supportsToolCalling" } },
+                { kind: "Field", name: { kind: "Name", value: "supportsJsonMode" } },
+                { kind: "Field", name: { kind: "Name", value: "ctxLength" } },
+                { kind: "Field", name: { kind: "Name", value: "tokensPerSecond" } },
+                { kind: "Field", name: { kind: "Name", value: "probedAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryLlmCapabilitiesQuery, QueryLlmCapabilitiesQueryVariables>;
 export const QuerySettingsDocument = {
   kind: "Document",
   definitions: [
@@ -6488,6 +7367,36 @@ export const SubscriptionSyncEventsDocument = {
 } as unknown as DocumentNode<
   SubscriptionSyncEventsSubscription,
   SubscriptionSyncEventsSubscriptionVariables
+>;
+export const QuerySystemActionTemplatesDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QuerySystemActionTemplates" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "systemActionTemplates" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+                { kind: "Field", name: { kind: "Name", value: "description" } },
+                { kind: "Field", name: { kind: "Name", value: "deeplinkUrl" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  QuerySystemActionTemplatesQuery,
+  QuerySystemActionTemplatesQueryVariables
 >;
 export const QueryWebSearchConfigDocument = {
   kind: "Document",

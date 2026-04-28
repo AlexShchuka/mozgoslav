@@ -14,3 +14,8 @@ export const selectLlmProbing = createSelector(
   selectSettingsState,
   (slice) => slice.llmProbe.probing
 );
+
+export const selectLlmCapabilities = createSelector(
+  selectSettingsState,
+  (slice) => slice.llmCapabilities
+);

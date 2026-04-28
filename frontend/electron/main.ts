@@ -12,8 +12,12 @@ import {
 } from "./dictation/globalHotkey";
 import { RecordingBridge } from "./recording/RecordingBridge";
 import { AskOverlay, registerAskCorpusIpc } from "./utils/askOverlay";
-import { stopBackend, tryStartBackend } from "./utils/backendLauncher";
-import { stopSyncthing, tryStartSyncthing } from "./utils/syncthingLauncher";
+import { ServiceSupervisor } from "./utils/serviceSupervisor";
+import { makeBackendSpec } from "./utils/services/backendSpec";
+import { makeSearxngSpec } from "./utils/services/searxngSpec";
+import { makeSyncthingSpec } from "./utils/services/syncthingSpec";
+import { makePythonSidecarSpec } from "./utils/services/pythonSidecarSpec";
+import type { SyncthingConfig } from "./utils/syncthingLauncher";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -80,6 +84,7 @@ let dumpModeOrchestrator: DumpModeOrchestrator | null = null;
 let recordingBridge: RecordingBridge | null = null;
 let recordingHelper: NativeHelperClient | null = null;
 let askOverlay: AskOverlay | null = null;
+const supervisor = new ServiceSupervisor();
 
 const createWindow = (): void => {
   mainWindow = new BrowserWindow({
@@ -151,18 +156,11 @@ app.whenReady().then(async () => {
   });
 
   const userDataDir = app.getPath("userData");
+  const resourcesRoot = process.resourcesPath ?? path.join(__dirname, "..");
 
-  const syncthingConfig = await tryStartSyncthing({
-    userDataDir,
-    resourcesRoot: process.resourcesPath ?? path.join(__dirname, ".."),
-  });
-  const backendExtraArgs = syncthingConfig
-    ? [
-        `--Mozgoslav:SyncthingBaseUrl=${syncthingConfig.baseUrl}`,
-        `--Mozgoslav:SyncthingApiKey=${syncthingConfig.apiKey}`,
-      ]
-    : [];
+  const syncthingState: { config: SyncthingConfig | null } = { config: null };
   const recorderEnv: Record<string, string> = {};
+
   if (process.platform === "darwin") {
     ensureParentAccessibility();
     try {
@@ -179,11 +177,35 @@ app.whenReady().then(async () => {
     }
   }
 
-  await tryStartBackend(userDataDir, {
-    resourcesRoot: process.resourcesPath ?? path.join(__dirname, ".."),
+  supervisor.register(
+    makeSyncthingSpec(
+      { userDataDir, resourcesRoot },
+      {
+        onStarted: (config) => {
+          syncthingState.config = config;
+        },
+      }
+    )
+  );
+  supervisor.register(makePythonSidecarSpec(resourcesRoot));
+  supervisor.register(makeSearxngSpec({ userDataDir, resourcesRoot }));
+
+  await supervisor.startAll();
+
+  const resolvedSyncthing = syncthingState.config;
+  const backendExtraArgs = resolvedSyncthing
+    ? [
+        `--Mozgoslav:SyncthingBaseUrl=${resolvedSyncthing.baseUrl}`,
+        `--Mozgoslav:SyncthingApiKey=${resolvedSyncthing.apiKey}`,
+      ]
+    : [];
+  const backendSpec = makeBackendSpec(userDataDir, {
+    resourcesRoot,
     extraArgs: backendExtraArgs,
     extraEnv: recorderEnv,
   });
+  supervisor.register(backendSpec);
+  await backendSpec.startFn();
 
   ipcMain.handle("dialog:openAudioFiles", async () => {
     if (!mainWindow) return { filePaths: [] };
@@ -576,7 +598,7 @@ app.on("before-quit", (event) => {
       recordingBridge = null;
       recordingHelper?.stop();
       recordingHelper = null;
-      await Promise.allSettled([stopBackend(), stopSyncthing()]);
+      await supervisor.stopAll();
     } finally {
       app.exit(0);
     }

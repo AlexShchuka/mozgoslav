@@ -116,6 +116,30 @@ module.exports = [
         },
     },
     {
+        files: ["src/features/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}", "src/hooks/**/*.{ts,tsx}"],
+        rules: {
+            "no-restricted-imports": ["error", {
+                patterns: [{
+                    group: [
+                        "*/api/ApiFactory",
+                        "*/api/BaseApi",
+                        "*/api/ObsidianApi",
+                        "../api/ApiFactory",
+                        "../../api/ApiFactory",
+                        "../api/BaseApi",
+                        "../../api/BaseApi",
+                        "../api/ObsidianApi",
+                        "../../api/ObsidianApi",
+                        "../../../api/ApiFactory",
+                        "../../../api/BaseApi",
+                        "../../../api/ObsidianApi",
+                    ],
+                    message: "REST API clients (ApiFactory, BaseApi, ObsidianApi) are dead — use GraphQL via saga. Import domain types from 'src/domain/'.",
+                }],
+            }],
+        },
+    },
+    {
         files: ["**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
         rules: {
             "@typescript-eslint/no-require-imports": "off",

@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { Action, Dispatch } from "redux";
 
-import { HEALTH_POLL_INTERVAL_MS } from "../constants/api";
 import {
   type BackendHealthStatus,
   healthProbeRequested,
@@ -10,6 +9,8 @@ import {
 } from "../store/slices/health";
 
 export type { BackendHealthStatus };
+
+const HEALTH_POLL_INTERVAL_MS = 5000;
 
 export interface BackendHealth {
   status: BackendHealthStatus;

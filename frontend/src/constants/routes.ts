@@ -13,6 +13,8 @@ export const ROUTES = {
   backup: "/backup",
   obsidian: "/obsidian",
   sync: "/sync",
+  routines: "/routines",
+  prompts: "/prompts",
 } as const;
 
 export const noteRoute = (id: string) => `/notes/${id}`;

@@ -44,7 +44,7 @@ public sealed class OpenAiCompatibleLlmServiceTests : IDisposable
         _settings.LlmModel.Returns("test-model");
 
         var openAiProvider = new OpenAiCompatibleLlmProvider(
-            _settings, NullLogger<OpenAiCompatibleLlmProvider>.Instance);
+            _stubFactory, _settings, NullLogger<OpenAiCompatibleLlmProvider>.Instance);
         var providerFactory = Substitute.For<ILlmProviderFactory>();
         providerFactory.GetCurrentAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult<ILlmProvider>(openAiProvider));
 

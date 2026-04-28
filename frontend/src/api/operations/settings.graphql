@@ -1,3 +1,13 @@
+query QueryLlmCapabilities {
+  llmCapabilities {
+    supportsToolCalling
+    supportsJsonMode
+    ctxLength
+    tokensPerSecond
+    probedAt
+  }
+}
+
 query QuerySettings {
   settings {
     vaultPath

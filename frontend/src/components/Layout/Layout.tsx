@@ -15,8 +15,10 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   RefreshCw,
+  RotateCw,
   Settings,
   Sparkles,
+  TextQuote,
 } from "lucide-react";
 
 import { useBackendHealth } from "../../hooks/useBackendHealth";
@@ -135,6 +137,22 @@ const Layout: FC<LayoutProps> = ({ children }) => {
               onClick={onNavClick}
             >
               {t("nav.sync")}
+            </NavItem>
+            <NavItem
+              to={ROUTES.routines}
+              icon={<RotateCw size={16} />}
+              collapsed={collapsed}
+              onClick={onNavClick}
+            >
+              {t("nav.routines")}
+            </NavItem>
+            <NavItem
+              to={ROUTES.prompts}
+              icon={<TextQuote size={16} />}
+              collapsed={collapsed}
+              onClick={onNavClick}
+            >
+              {t("nav.prompts")}
             </NavItem>
           </SidebarGroup>
 
