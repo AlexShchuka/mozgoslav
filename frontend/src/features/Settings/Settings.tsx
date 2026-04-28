@@ -4,6 +4,7 @@ import i18n from "i18next";
 import { toast } from "react-toastify";
 import { FolderOpen, Play } from "lucide-react";
 
+import Badge from "../../components/Badge";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import HotkeyRecorder from "../../components/HotkeyRecorder";
@@ -32,9 +33,11 @@ const Settings: FC<SettingsProps> = ({
   settings: loadedSettings,
   isSaving,
   isLlmProbing,
+  llmCapabilities,
   onLoad,
   onSave,
   onCheckLlm,
+  onLoadCapabilities,
 }) => {
   const { t } = useTranslation();
   const [tab, setTab] = useState<TabKey>("general");
@@ -43,6 +46,12 @@ const Settings: FC<SettingsProps> = ({
   useEffect(() => {
     onLoad();
   }, [onLoad]);
+
+  useEffect(() => {
+    if (tab === "llm") {
+      onLoadCapabilities();
+    }
+  }, [tab, onLoadCapabilities]);
 
   useEffect(() => {
     if (loadedSettings) {
@@ -155,6 +164,40 @@ const Settings: FC<SettingsProps> = ({
             >
               {t("settings.testConnection")}
             </Button>
+          </FormGrid>
+        </Card>
+      )}
+
+      {tab === "llm" && (
+        <Card>
+          <FormGrid>
+            <div>
+              <label>{t("settings.llmCapabilities.title")}</label>
+              {llmCapabilities === null ? (
+                <Badge tone="neutral">{t("settings.llmCapabilities.notProbed")}</Badge>
+              ) : (
+                <Row>
+                  <Badge tone={llmCapabilities.supportsToolCalling ? "success" : "warning"}>
+                    {t("settings.llmCapabilities.toolCalling")}
+                  </Badge>
+                  <Badge tone={llmCapabilities.supportsJsonMode ? "success" : "warning"}>
+                    {t("settings.llmCapabilities.jsonMode")}
+                  </Badge>
+                  {llmCapabilities.ctxLength > 0 && (
+                    <Badge tone="info">
+                      {t("settings.llmCapabilities.ctxLength", { n: llmCapabilities.ctxLength })}
+                    </Badge>
+                  )}
+                  {llmCapabilities.tokensPerSecond > 0 && (
+                    <Badge tone="neutral">
+                      {t("settings.llmCapabilities.tokensPerSec", {
+                        n: Math.round(llmCapabilities.tokensPerSecond),
+                      })}
+                    </Badge>
+                  )}
+                </Row>
+              )}
+            </div>
           </FormGrid>
         </Card>
       )}

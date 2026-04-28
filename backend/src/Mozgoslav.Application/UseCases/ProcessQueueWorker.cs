@@ -23,6 +23,7 @@ public sealed class ProcessQueueWorker
     private const int ExportEnd = 100;
 
     private readonly IProcessingJobRepository _jobs;
+    private readonly IProcessingJobStageRepository _stages;
     private readonly IRecordingRepository _recordings;
     private readonly ITranscriptRepository _transcripts;
     private readonly IProcessedNoteRepository _notes;
@@ -41,6 +42,7 @@ public sealed class ProcessQueueWorker
 
     public ProcessQueueWorker(
         IProcessingJobRepository jobs,
+        IProcessingJobStageRepository stages,
         IRecordingRepository recordings,
         ITranscriptRepository transcripts,
         IProcessedNoteRepository notes,
@@ -58,6 +60,7 @@ public sealed class ProcessQueueWorker
         ILogger<ProcessQueueWorker> logger)
     {
         _jobs = jobs;
+        _stages = stages;
         _recordings = recordings;
         _transcripts = transcripts;
         _notes = notes;
@@ -221,13 +224,39 @@ public sealed class ProcessQueueWorker
             Tags = llm?.Tags.ToList() ?? []
         };
 
+    private ProcessingJobStage? _currentStage;
+
     private async Task TransitionAsync(ProcessingJob job, JobStatus status, int progress, string? step, CancellationToken ct)
     {
+        var now = DateTimeOffset.UtcNow;
+
+        if (_currentStage is not null)
+        {
+            _currentStage.FinishedAt = now;
+            _currentStage.DurationMs = (int)(now - _currentStage.StartedAt).TotalMilliseconds;
+            await _stages.UpdateAsync(_currentStage, ct);
+        }
+
         job.Status = status;
         job.Progress = progress;
         job.CurrentStep = step;
         await _jobs.UpdateAsync(job, ct);
         await _progressNotifier.PublishAsync(job, ct);
+
+        if (!string.IsNullOrWhiteSpace(step))
+        {
+            _currentStage = new ProcessingJobStage
+            {
+                JobId = job.Id,
+                StageName = step,
+                StartedAt = now
+            };
+            await _stages.AddAsync(_currentStage, ct);
+        }
+        else
+        {
+            _currentStage = null;
+        }
     }
 
     private async Task NotifyProgressAsync(ProcessingJob job, int progress, CancellationToken ct)
@@ -238,6 +267,16 @@ public sealed class ProcessQueueWorker
 
     private async Task MarkFailedAsync(ProcessingJob job, string error, CancellationToken ct)
     {
+        if (_currentStage is not null)
+        {
+            var now = DateTimeOffset.UtcNow;
+            _currentStage.FinishedAt = now;
+            _currentStage.DurationMs = (int)(now - _currentStage.StartedAt).TotalMilliseconds;
+            _currentStage.ErrorMessage = error;
+            await _stages.UpdateAsync(_currentStage, ct);
+            _currentStage = null;
+        }
+
         job.Status = JobStatus.Failed;
         job.ErrorMessage = error;
         job.FinishedAt = DateTime.UtcNow;

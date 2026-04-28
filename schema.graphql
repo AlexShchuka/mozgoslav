@@ -451,6 +451,25 @@ type ProcessingJob implements Node {
   startedAt: DateTime
   finishedAt: DateTime
   cancelRequested: Boolean!
+  stages: [ProcessingJobStage!]!
+}
+
+type ProcessingJobStage {
+  id: UUID!
+  jobId: UUID!
+  stageName: String!
+  startedAt: DateTime!
+  finishedAt: DateTime
+  durationMs: Int
+  errorMessage: String
+}
+
+type LlmCapabilities {
+  supportsToolCalling: Boolean!
+  supportsJsonMode: Boolean!
+  ctxLength: Int!
+  tokensPerSecond: Float!
+  probedAt: DateTime!
 }
 
 type Profile implements Node {
@@ -482,6 +501,7 @@ type QueryType {
   llmHealth: LlmHealthStatus! @cost(weight: "10")
   meta: MetaInfo!
   settings: AppSettingsDto! @cost(weight: "10")
+  llmCapabilities: LlmCapabilities @cost(weight: "10")
   llmModels: [String!]! @cost(weight: "10")
   profiles: [Profile!]! @cost(weight: "10")
   profile(id: UUID!): Profile @cost(weight: "10")

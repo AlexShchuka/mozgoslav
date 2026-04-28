@@ -120,6 +120,11 @@
       "Done": "Готово",
       "Failed": "Ошибка",
       "Cancelled": "Отменено"
+    },
+    "stages": {
+      "title": "Разбивка по стадиям",
+      "duration": "{{ms}} мс",
+      "failed": "Ошибка: {{error}}"
     }
   },
   "notes": {
@@ -243,7 +248,15 @@
     "tokenHint": "Хранится локально в SQLite. Никогда не отправляется никуда, кроме указанного endpoint.",
     "savedToast": "Настройки сохранены",
     "llmCheckSuccessToast": "LLM: соединение установлено",
-    "llmCheckFailureToast": "LLM: соединение не установлено"
+    "llmCheckFailureToast": "LLM: соединение не установлено",
+    "llmCapabilities": {
+      "title": "Определённые возможности",
+      "notProbed": "Ещё не проверялось",
+      "toolCalling": "Вызов инструментов",
+      "jsonMode": "JSON-режим",
+      "ctxLength": "Контекст: {{n}} токенов",
+      "tokensPerSec": "{{n}} tok/s"
+    }
   },
   "sync": {
     "live": "Онлайн",

@@ -18,6 +18,7 @@ using Mozgoslav.Api.GraphQL.SchemaExport;
 using Mozgoslav.Api.Services;
 using Mozgoslav.Application.Agents;
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Application.Llm;
 using Mozgoslav.Application.Obsidian;
 using Mozgoslav.Application.Rag;
 using Mozgoslav.Application.Search;
@@ -26,6 +27,7 @@ using Mozgoslav.Application.UseCases;
 using Mozgoslav.Application.WebSearch;
 using Mozgoslav.Infrastructure.Agents;
 using Mozgoslav.Infrastructure.Configuration;
+using Mozgoslav.Infrastructure.Hosting;
 using Mozgoslav.Infrastructure.Jobs;
 using Mozgoslav.Infrastructure.Observability;
 using Mozgoslav.Infrastructure.Obsidian;
@@ -130,6 +132,7 @@ try
             sp.GetRequiredService<ILogger<RagIndexingProcessedNoteRepository>>()));
     builder.Services.AddScoped<IProfileRepository, EfProfileRepository>();
     builder.Services.AddScoped<IProcessingJobRepository, EfProcessingJobRepository>();
+    builder.Services.AddScoped<IProcessingJobStageRepository, EfProcessingJobStageRepository>();
 
     builder.Services.AddSingleton<IAppSettings, EfAppSettings>();
 
@@ -192,6 +195,9 @@ try
     builder.Services.AddSingleton<ILlmProvider, OllamaLlmProvider>();
     builder.Services.AddSingleton<ILlmProviderFactory, LlmProviderFactory>();
     builder.Services.AddSingleton<ILlmService, OpenAiCompatibleLlmService>();
+    builder.Services.AddSingleton<ILlmCapabilitiesCache, InMemoryLlmCapabilitiesCache>();
+    builder.Services.AddTransient<ILlmCapabilitiesProbe, OpenAiCompatibleCapabilitiesProbe>();
+    builder.Services.AddHostedService<LlmCapabilitiesStartupProbe>();
     builder.Services.AddSingleton<IMarkdownExporter, FileMarkdownExporter>();
     builder.Services.Configure<AudioRecorderOptions>(
         builder.Configuration.GetSection(AudioRecorderOptions.SectionName));
@@ -360,6 +366,7 @@ try
         builder.Services.AddSingleton<IAgentRunner>(sp =>
             new MafAgentRunner(
                 sp.GetRequiredService<ILlmProviderFactory>(),
+                sp.GetRequiredService<ILlmCapabilitiesCache>(),
                 [
                     sp.GetRequiredService<CorpusQueryTool>(),
                     sp.GetRequiredService<WebSearchTool>(),

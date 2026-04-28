@@ -29,6 +29,7 @@ internal static class QueryRegistration
             .AddQueryType<QueryType>()
             .AddTypeExtension<HealthQueryType>()
             .AddTypeExtension<SettingsQueryType>()
+            .AddTypeExtension<LlmCapabilitiesQueryType>()
             .AddTypeExtension<LlmCatalogQueryType>()
             .AddTypeExtension<ProfileQueryType>()
             .AddTypeExtension<ModelQueryType>()
