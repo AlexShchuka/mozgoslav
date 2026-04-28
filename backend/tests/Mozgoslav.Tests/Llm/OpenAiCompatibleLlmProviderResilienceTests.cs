@@ -47,6 +47,7 @@ public sealed class OpenAiCompatibleLlmProviderResilienceTests
         var provider = new OpenAiCompatibleLlmProvider(
             sp.GetRequiredService<IHttpClientFactory>(),
             settings,
+            new InMemoryLlmCapabilitiesCache(),
             NullLogger<OpenAiCompatibleLlmProvider>.Instance);
 
         var result = await provider.ChatAsync("system", "user", CancellationToken.None);
@@ -72,6 +73,7 @@ public sealed class OpenAiCompatibleLlmProviderResilienceTests
         var provider = new OpenAiCompatibleLlmProvider(
             sp.GetRequiredService<IHttpClientFactory>(),
             settings,
+            new InMemoryLlmCapabilitiesCache(),
             NullLogger<OpenAiCompatibleLlmProvider>.Instance);
 
         var result = await provider.ChatAsync("system", "user", CancellationToken.None);
@@ -94,6 +96,7 @@ public sealed class OpenAiCompatibleLlmProviderResilienceTests
         var provider = new OpenAiCompatibleLlmProvider(
             sp.GetRequiredService<IHttpClientFactory>(),
             settings,
+            new InMemoryLlmCapabilitiesCache(),
             NullLogger<OpenAiCompatibleLlmProvider>.Instance);
 
         var result = await provider.ChatAsync("system", "user", CancellationToken.None);
@@ -119,6 +122,7 @@ public sealed class OpenAiCompatibleLlmProviderResilienceTests
         var provider = new OpenAiCompatibleLlmProvider(
             sp.GetRequiredService<IHttpClientFactory>(),
             settings,
+            new InMemoryLlmCapabilitiesCache(),
             NullLogger<OpenAiCompatibleLlmProvider>.Instance);
 
         await provider.ChatAsync("s", "u", CancellationToken.None);

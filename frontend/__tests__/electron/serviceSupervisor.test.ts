@@ -1,3 +1,6 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { resolveRepoRoot } from "../../electron/utils/repoRoot";
 import { ServiceSupervisor, type ServiceSpec } from "../../electron/utils/serviceSupervisor";
 
 const makeSpec = (overrides: Partial<ServiceSpec> = {}): ServiceSpec => ({
@@ -116,6 +119,21 @@ describe("ServiceSupervisor", () => {
 
     const callsToStart = (spec.startFn as jest.Mock).mock.calls.length;
     expect(callsToStart).toBeLessThanOrEqual(3);
+  });
+
+  it("resolves dev-mode python-sidecar launch path via MOZGOSLAV_REPO_ROOT override", () => {
+    const repoRoot = path.resolve(__dirname, "..", "..", "..");
+    const expectedLaunchScript = path.join(repoRoot, "python-sidecar", "launch.sh");
+    expect(existsSync(expectedLaunchScript)).toBe(true);
+
+    const resolved = resolveRepoRoot({
+      dirname: "/tmp/cannot-find-repo-here",
+      cwd: "/tmp/cannot-find-repo-here",
+      env: { MOZGOSLAV_REPO_ROOT: repoRoot },
+    });
+
+    expect(resolved).toBe(repoRoot);
+    expect(path.join(resolved!, "python-sidecar", "launch.sh")).toBe(expectedLaunchScript);
   });
 
   it("does not call startFn after stopAll", async () => {
