@@ -125,6 +125,50 @@ public sealed class RagServiceTests
         answer.Answer.Should().Contain(answer.Citations[0].Chunk.Text);
     }
 
+    [TestMethod]
+    public async Task AnswerAsync_WithMetadataFilter_PassesFilterToRetriever()
+    {
+        var retriever = Substitute.For<IRetriever>();
+        retriever.RetrieveAsync(Arg.Any<RetrievalQuery>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<RetrievedChunk>());
+        var reranker = Substitute.For<IReranker>();
+        var llm = Substitute.For<ILlmService>();
+        var embedding = Substitute.For<IEmbeddingService>();
+        var index = Substitute.For<IVectorIndex>();
+        var sut = new RagService(embedding, index, retriever, reranker, llm, NullLogger<RagService>.Instance);
+
+        var filter = new MetadataFilter(
+            FromUtc: DateTimeOffset.UtcNow.AddDays(-7),
+            ToUtc: DateTimeOffset.UtcNow,
+            ProfileIds: null,
+            SpeakerIds: null);
+
+        await sut.AnswerAsync("test question", topK: 5, filter, CancellationToken.None);
+
+        await retriever.Received(1).RetrieveAsync(
+            Arg.Is<RetrievalQuery>(q => q.Filter == filter),
+            Arg.Any<CancellationToken>());
+    }
+
+    [TestMethod]
+    public async Task AnswerAsync_LegacyOverload_PassesNullFilter()
+    {
+        var retriever = Substitute.For<IRetriever>();
+        retriever.RetrieveAsync(Arg.Any<RetrievalQuery>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<RetrievedChunk>());
+        var reranker = Substitute.For<IReranker>();
+        var llm = Substitute.For<ILlmService>();
+        var embedding = Substitute.For<IEmbeddingService>();
+        var index = Substitute.For<IVectorIndex>();
+        var sut = new RagService(embedding, index, retriever, reranker, llm, NullLogger<RagService>.Instance);
+
+        await sut.AnswerAsync("test question", topK: 5, CancellationToken.None);
+
+        await retriever.Received(1).RetrieveAsync(
+            Arg.Is<RetrievalQuery>(q => q.Filter == null),
+            Arg.Any<CancellationToken>());
+    }
+
     private sealed class PassthroughRetriever : IRetriever
     {
         private readonly IEmbeddingService _embedding;

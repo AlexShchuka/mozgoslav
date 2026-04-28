@@ -7,6 +7,7 @@ using HotChocolate;
 using HotChocolate.Types;
 
 using Mozgoslav.Api.GraphQL.Queries;
+using Mozgoslav.Application.Exceptions;
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Rag;
 
@@ -37,15 +38,28 @@ public sealed class RagQueryType
             return null;
         }
         var k = topK ?? 5;
-        var answer = await rag.AnswerAsync(question, k, ct);
-        return new RagQueryResult(
-            answer.Answer,
-            answer.Citations.Select(h => new RagCitation(
-                h.Chunk.NoteId,
-                h.Chunk.Id,
-                h.Chunk.Text,
-                BuildSnippet(h.Chunk.Text))).ToArray(),
-            answer.LlmAvailable);
+        try
+        {
+            var answer = await rag.AnswerAsync(question, k, ct);
+            return new RagQueryResult(
+                answer.Answer,
+                answer.Citations.Select(h => new RagCitation(
+                    h.Chunk.NoteId,
+                    h.Chunk.Id,
+                    h.Chunk.Text,
+                    BuildSnippet(h.Chunk.Text))).ToArray(),
+                answer.LlmAvailable);
+        }
+        catch (SidecarUnavailableException ex)
+        {
+            throw new GraphQLException(ErrorBuilder.New()
+                .SetMessage("RAG embedding sidecar is unavailable.")
+                .SetCode("SIDECAR_UNAVAILABLE")
+                .SetExtension("statusCode", 503)
+                .SetExtension("sidecar", ex.Sidecar)
+                .SetException(ex)
+                .Build());
+        }
     }
 
     private static string BuildSnippet(string text)

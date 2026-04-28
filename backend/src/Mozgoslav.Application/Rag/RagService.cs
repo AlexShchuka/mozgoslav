@@ -70,13 +70,16 @@ public sealed class RagService : IRagService
         return _index.RemoveByNoteAsync(noteId, ct);
     }
 
-    public async Task<RagAnswer> AnswerAsync(string question, int topK, CancellationToken ct)
+    public Task<RagAnswer> AnswerAsync(string question, int topK, CancellationToken ct)
+        => AnswerAsync(question, topK, filter: null, ct);
+
+    public async Task<RagAnswer> AnswerAsync(string question, int topK, MetadataFilter? filter, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(question);
         topK = Math.Clamp(topK, MinTopK, MaxTopK);
 
         var candidateK = topK * RetrievalCandidateMultiplier;
-        var query = new RetrievalQuery(question, candidateK);
+        var query = new RetrievalQuery(question, candidateK, filter);
         var candidates = await _retriever.RetrieveAsync(query, ct);
 
         if (candidates.Count == 0)

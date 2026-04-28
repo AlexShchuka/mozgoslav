@@ -7,12 +7,15 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
+using Mozgoslav.Application.Exceptions;
 using Mozgoslav.Application.Rag;
 
 namespace Mozgoslav.Infrastructure.Rag;
 
 public sealed class PythonSidecarEmbeddingService : IEmbeddingService
 {
+    private const string SidecarName = "python-sidecar";
+
     private readonly HttpClient _httpClient;
     private readonly ILogger<PythonSidecarEmbeddingService> _logger;
 
@@ -29,12 +32,29 @@ public sealed class PythonSidecarEmbeddingService : IEmbeddingService
 
     public async Task<float[]> EmbedAsync(string text, CancellationToken ct)
     {
-        var request = new EmbedRequest(text);
-        using var response = await _httpClient.PostAsJsonAsync("/api/embed", request, ct);
-        response.EnsureSuccessStatusCode();
+        EmbedResponse? body;
+        try
+        {
+            var request = new EmbedRequest(text);
+            using var response = await _httpClient.PostAsJsonAsync("/api/embed", request, ct);
+            response.EnsureSuccessStatusCode();
+            body = await response.Content.ReadFromJsonAsync<EmbedResponse>(ct);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "python-sidecar /api/embed unavailable");
+            throw new SidecarUnavailableException(SidecarName, ex);
+        }
+        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            _logger.LogError(ex, "python-sidecar /api/embed timed out");
+            throw new SidecarUnavailableException(SidecarName, ex);
+        }
 
-        var body = await response.Content.ReadFromJsonAsync<EmbedResponse>(ct)
-            ?? throw new InvalidOperationException("Sidecar returned null body for /api/embed");
+        if (body is null)
+        {
+            throw new InvalidOperationException("Sidecar returned null body for /api/embed");
+        }
 
         if (body.Embedding is null || body.Embedding.Length == 0)
         {

@@ -14,6 +14,8 @@ public interface IRagService
     Task DeindexAsync(Guid noteId, CancellationToken ct);
 
     Task<RagAnswer> AnswerAsync(string question, int topK, CancellationToken ct);
+
+    Task<RagAnswer> AnswerAsync(string question, int topK, MetadataFilter? filter, CancellationToken ct);
 }
 
 public sealed record RagAnswer(

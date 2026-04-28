@@ -11,6 +11,7 @@ using FluentAssertions;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
+using Mozgoslav.Application.Exceptions;
 using Mozgoslav.Infrastructure.Rag;
 
 using WireMock.RequestBuilders;
@@ -66,18 +67,19 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
     }
 
     [TestMethod]
-    public async Task EmbedAsync_WhenSidecarDown_ThrowsHttpRequestException()
+    public async Task EmbedAsync_WhenSidecarDown_ThrowsSidecarUnavailable()
     {
         _server.Stop();
 
         var sut = new PythonSidecarEmbeddingService(_http, NullLogger<PythonSidecarEmbeddingService>.Instance);
 
         var act = async () => await sut.EmbedAsync("обсидиан синхронизация", CancellationToken.None);
-        await act.Should().ThrowAsync<HttpRequestException>();
+        var thrown = await act.Should().ThrowAsync<SidecarUnavailableException>();
+        thrown.Which.Sidecar.Should().Be("python-sidecar");
     }
 
     [TestMethod]
-    public async Task EmbedAsync_WhenSidecarReturns500_ThrowsHttpRequestException()
+    public async Task EmbedAsync_WhenSidecarReturns500_ThrowsSidecarUnavailable()
     {
         _server.Given(Request.Create().WithPath("/api/embed").UsingPost())
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.InternalServerError));
@@ -85,7 +87,7 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
         var sut = new PythonSidecarEmbeddingService(_http, NullLogger<PythonSidecarEmbeddingService>.Instance);
 
         var act = async () => await sut.EmbedAsync("hello", CancellationToken.None);
-        await act.Should().ThrowAsync<HttpRequestException>();
+        await act.Should().ThrowAsync<SidecarUnavailableException>();
     }
 
     [TestMethod]
