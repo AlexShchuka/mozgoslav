@@ -37,6 +37,12 @@ import type { HealthState } from "./slices/health";
 import { healthReducer } from "./slices/health";
 import type { WebSearchState } from "./slices/webSearch/types";
 import { webSearchReducer } from "./slices/webSearch";
+import type { SystemActionsState } from "./slices/systemActions";
+import { systemActionsReducer } from "./slices/systemActions";
+import type { RoutinesState } from "./slices/routines";
+import { routinesReducer } from "./slices/routines";
+import type { PromptsState } from "./slices/prompts";
+import { promptsReducer } from "./slices/prompts";
 
 export const rootReducer = combineReducers({
   recording: recordingReducer,
@@ -58,6 +64,9 @@ export const rootReducer = combineReducers({
   health: healthReducer,
   ask: askReducer,
   webSearch: webSearchReducer,
+  systemActions: systemActionsReducer,
+  routines: routinesReducer,
+  prompts: promptsReducer,
 });
 
 export interface GlobalState {
@@ -80,4 +89,7 @@ export interface GlobalState {
   health: HealthState;
   ask: AskState;
   webSearch: WebSearchState;
+  systemActions: SystemActionsState;
+  routines: RoutinesState;
+  prompts: PromptsState;
 }

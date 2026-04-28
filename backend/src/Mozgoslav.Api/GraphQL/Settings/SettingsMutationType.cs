@@ -54,7 +54,15 @@ public sealed class SettingsMutationType
             input.ObsidianFeatureEnabled,
             input.DictationDumpEnabled,
             input.DictationDumpHotkeyToggle,
-            input.DictationDumpHotkeyHold);
+            input.DictationDumpHotkeyHold,
+            WebCacheTtlHours: 24,
+            McpServerEnabled: input.McpServerEnabled,
+            McpServerPort: input.McpServerPort,
+            McpServerToken: input.McpServerToken,
+            ActionsSkillEnabled: input.ActionsSkillEnabled,
+            RemindersSkillEnabled: input.RemindersSkillEnabled,
+            DictationClassifyIntentEnabled: input.DictationClassifyIntentEnabled,
+            ClaudeCliPath: input.ClaudeCliPath);
 
         await appSettings.SaveAsync(dto, ct);
         var saved = await appSettings.LoadAsync(ct);

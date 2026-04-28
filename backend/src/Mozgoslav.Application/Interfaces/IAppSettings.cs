@@ -45,6 +45,13 @@ public interface IAppSettings
     string DictationDumpHotkeyHold { get; }
     string ObsidianBootstrapPins { get; }
     int WebCacheTtlHours { get; }
+    bool McpServerEnabled { get; }
+    int McpServerPort { get; }
+    string McpServerToken { get; }
+    bool ActionsSkillEnabled { get; }
+    bool RemindersSkillEnabled { get; }
+    bool DictationClassifyIntentEnabled { get; }
+    string ClaudeCliPath { get; }
 
     AppSettingsDto Snapshot { get; }
 

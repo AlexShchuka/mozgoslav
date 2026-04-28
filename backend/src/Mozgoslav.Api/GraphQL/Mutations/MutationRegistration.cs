@@ -1,7 +1,5 @@
 using HotChocolate.Execution.Configuration;
-
 using Microsoft.Extensions.DependencyInjection;
-
 using Mozgoslav.Api.GraphQL.Backup;
 using Mozgoslav.Api.GraphQL.Dictation;
 using Mozgoslav.Api.GraphQL.Jobs;
@@ -10,8 +8,10 @@ using Mozgoslav.Api.GraphQL.Models;
 using Mozgoslav.Api.GraphQL.Notes;
 using Mozgoslav.Api.GraphQL.Obsidian;
 using Mozgoslav.Api.GraphQL.Profiles;
+using Mozgoslav.Api.GraphQL.Prompts;
 using Mozgoslav.Api.GraphQL.Rag;
 using Mozgoslav.Api.GraphQL.Recordings;
+using Mozgoslav.Api.GraphQL.Routines;
 using Mozgoslav.Api.GraphQL.Settings;
 using Mozgoslav.Api.GraphQL.Sync;
 using Mozgoslav.Api.GraphQL.WebSearch;
@@ -37,6 +37,8 @@ internal static class MutationRegistration
             .AddTypeExtension<BackupMutationType>()
             .AddTypeExtension<RagMutationType>()
             .AddTypeExtension<SyncMutationType>()
-            .AddTypeExtension<WebSearchMutationType>();
+            .AddTypeExtension<WebSearchMutationType>()
+            .AddTypeExtension<PromptsMutationType>()
+            .AddTypeExtension<RoutinesMutationType>();
     }
 }

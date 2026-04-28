@@ -29,6 +29,7 @@ internal static class SchemaBuilderExtensions
             .AddTypeExtension<ProcessedNoteType>()
             .AddDataLoader<ProcessedNoteByIdDataLoader>()
             .AddTypeExtension<ProcessingJobType>()
+            .AddTypeExtension<ProcessingJobStagesExtension>()
             .AddDataLoader<ProcessingJobByIdDataLoader>()
             .AddFiltering()
             .AddSorting()

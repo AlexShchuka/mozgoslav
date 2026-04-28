@@ -4,7 +4,7 @@ import Foundation
 import AppKit
 #endif
 
-public final class FocusedAppDetector {
+public final class FocusedAppDetector: @unchecked Sendable {
     public struct Result {
         public let bundleId: String?
         public let appName: String?

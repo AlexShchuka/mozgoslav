@@ -14,7 +14,9 @@
     "settings": "Settings",
     "backup": "Backups",
     "obsidian": "Obsidian",
-    "sync": "Sync"
+    "sync": "Sync",
+    "routines": "Routines",
+    "prompts": "Prompt Templates"
   },
   "rag": {
     "title": "Q&A over notes",
@@ -120,6 +122,11 @@
       "Done": "Done",
       "Failed": "Failed",
       "Cancelled": "Cancelled"
+    },
+    "stages": {
+      "title": "Stage breakdown",
+      "duration": "{{ms}} ms",
+      "failed": "Failed: {{error}}"
     }
   },
   "notes": {
@@ -243,7 +250,15 @@
     "tokenHint": "Stored locally in SQLite. Never leaves your machine except to the configured endpoint.",
     "savedToast": "Settings saved",
     "llmCheckSuccessToast": "LLM: connection OK",
-    "llmCheckFailureToast": "LLM: connection failed"
+    "llmCheckFailureToast": "LLM: connection failed",
+    "llmCapabilities": {
+      "title": "Detected capabilities",
+      "notProbed": "Not probed yet",
+      "toolCalling": "Tool calling",
+      "jsonMode": "JSON mode",
+      "ctxLength": "Context: {{n}} tokens",
+      "tokensPerSec": "{{n}} tok/s"
+    }
   },
   "sync": {
     "live": "Live",
@@ -447,5 +462,43 @@
   },
   "errors": {
     "genericErrorWithMessage": "Error: {{message}}"
+  },
+  "systemActions": {
+    "title": "System Actions",
+    "subtitle": "Import default Apple Shortcuts to enable voice-controlled reminders, calendar events, and file operations.",
+    "loading": "Loading templates…",
+    "import": "Import shortcut →"
+  },
+  "routines": {
+    "title": "Routines",
+    "empty": "No routines configured",
+    "enable": "Enable",
+    "disable": "Disable",
+    "runNow": "Run Now",
+    "running": "Running…",
+    "lastRun": "Last run:",
+    "cronSlot": {
+      "title": "Cron Routine (coming soon)",
+      "description": "Scheduled tasks on a recurring schedule — next version."
+    }
+  },
+  "prompts": {
+    "title": "Prompt Templates",
+    "empty": "No templates yet. Create your first one.",
+    "create": "Create",
+    "editor": {
+      "createTitle": "New Template",
+      "editTitle": "Edit Template",
+      "name": "Name",
+      "namePlaceholder": "e.g. Meeting Summary",
+      "body": "Template Body",
+      "bodyPlaceholder": "Write the template with placeholders like {name}…"
+    },
+    "testRunner": {
+      "inputLabel": "Test runner: enter a template body",
+      "placeholder": "Paste your template to preview…",
+      "run": "Preview",
+      "output": "Result"
+    }
   }
 }

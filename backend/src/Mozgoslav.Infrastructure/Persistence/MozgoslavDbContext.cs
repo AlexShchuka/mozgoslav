@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.ValueObjects;
+using Mozgoslav.Infrastructure.Prompts;
 
 namespace Mozgoslav.Infrastructure.Persistence;
 
@@ -23,8 +24,11 @@ public sealed class MozgoslavDbContext : DbContext
     public DbSet<ProcessedNote> ProcessedNotes => Set<ProcessedNote>();
     public DbSet<Profile> Profiles => Set<Profile>();
     public DbSet<ProcessingJob> ProcessingJobs => Set<ProcessingJob>();
+    public DbSet<ProcessingJobStage> ProcessingJobStages => Set<ProcessingJobStage>();
     public DbSet<AppSetting> Settings => Set<AppSetting>();
     public DbSet<RagChunk> RagChunks => Set<RagChunk>();
+    public DbSet<PromptTemplateEntity> PromptTemplates => Set<PromptTemplateEntity>();
+    public DbSet<RoutineRun> RoutineRuns => Set<RoutineRun>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -194,6 +198,46 @@ public sealed class MozgoslavDbContext : DbContext
             e.Property(x => x.Speaker).HasColumnName("speaker");
             e.HasIndex(x => x.NoteId).HasDatabaseName("ix_rag_chunks_note_id");
             e.HasIndex(x => x.CreatedAt).HasDatabaseName("ix_rag_chunks_created_at");
+        });
+
+        modelBuilder.Entity<ProcessingJobStage>(e =>
+        {
+            e.ToTable("processing_job_stages");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.JobId).HasColumnName("job_id");
+            e.Property(x => x.StageName).HasColumnName("stage_name").IsRequired();
+            e.Property(x => x.StartedAt).HasColumnName("started_at");
+            e.Property(x => x.FinishedAt).HasColumnName("finished_at");
+            e.Property(x => x.DurationMs).HasColumnName("duration_ms");
+            e.Property(x => x.ErrorMessage).HasColumnName("error_message");
+            e.HasIndex(x => x.JobId).HasDatabaseName("ix_processing_job_stages_job_id");
+        });
+
+        modelBuilder.Entity<PromptTemplateEntity>(e =>
+        {
+            e.ToTable("prompt_templates");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.Name).HasColumnName("name").IsRequired();
+            e.Property(x => x.Body).HasColumnName("body").IsRequired();
+            e.Property(x => x.CreatedAt).HasColumnName("created_at");
+            e.HasIndex(x => x.Name).HasDatabaseName("ix_prompt_templates_name");
+        });
+
+        modelBuilder.Entity<RoutineRun>(e =>
+        {
+            e.ToTable("routine_runs");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.RoutineKey).HasColumnName("routine_key").IsRequired();
+            e.Property(x => x.StartedAt).HasColumnName("started_at");
+            e.Property(x => x.FinishedAt).HasColumnName("finished_at");
+            e.Property(x => x.Status).HasColumnName("status").IsRequired();
+            e.Property(x => x.ErrorMessage).HasColumnName("error_message");
+            e.Property(x => x.PayloadSummary).HasColumnName("payload_summary");
+            e.HasIndex(x => x.RoutineKey).HasDatabaseName("ix_routine_runs_routine_key");
+            e.HasIndex(x => x.StartedAt).HasDatabaseName("ix_routine_runs_started_at");
         });
     }
 }

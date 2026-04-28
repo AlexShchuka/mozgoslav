@@ -14,7 +14,9 @@
     "settings": "Настройки",
     "backup": "Бэкапы",
     "obsidian": "Obsidian",
-    "sync": "Синхронизация"
+    "sync": "Синхронизация",
+    "routines": "Рутины",
+    "prompts": "Шаблоны промптов"
   },
   "rag": {
     "title": "Q&A по заметкам",
@@ -120,6 +122,11 @@
       "Done": "Готово",
       "Failed": "Ошибка",
       "Cancelled": "Отменено"
+    },
+    "stages": {
+      "title": "Разбивка по стадиям",
+      "duration": "{{ms}} мс",
+      "failed": "Ошибка: {{error}}"
     }
   },
   "notes": {
@@ -243,7 +250,15 @@
     "tokenHint": "Хранится локально в SQLite. Никогда не отправляется никуда, кроме указанного endpoint.",
     "savedToast": "Настройки сохранены",
     "llmCheckSuccessToast": "LLM: соединение установлено",
-    "llmCheckFailureToast": "LLM: соединение не установлено"
+    "llmCheckFailureToast": "LLM: соединение не установлено",
+    "llmCapabilities": {
+      "title": "Определённые возможности",
+      "notProbed": "Ещё не проверялось",
+      "toolCalling": "Вызов инструментов",
+      "jsonMode": "JSON-режим",
+      "ctxLength": "Контекст: {{n}} токенов",
+      "tokensPerSec": "{{n}} tok/s"
+    }
   },
   "sync": {
     "live": "Онлайн",
@@ -447,5 +462,43 @@
   },
   "errors": {
     "genericErrorWithMessage": "Ошибка: {{message}}"
+  },
+  "systemActions": {
+    "title": "Системные действия",
+    "subtitle": "Импортируй стандартные Apple Shortcuts для голосового управления напоминаниями, событиями и файлами.",
+    "loading": "Загружаю шаблоны…",
+    "import": "Импортировать шорткат →"
+  },
+  "routines": {
+    "title": "Рутины",
+    "empty": "Нет настроенных рутин",
+    "enable": "Включить",
+    "disable": "Отключить",
+    "runNow": "Запустить",
+    "running": "Запускается…",
+    "lastRun": "Последний запуск:",
+    "cronSlot": {
+      "title": "Cron-рутина (в разработке)",
+      "description": "Запланированные задачи по расписанию — ближайшая версия."
+    }
+  },
+  "prompts": {
+    "title": "Шаблоны промптов",
+    "empty": "Нет шаблонов. Создай первый.",
+    "create": "Создать",
+    "editor": {
+      "createTitle": "Новый шаблон",
+      "editTitle": "Редактировать шаблон",
+      "name": "Название",
+      "namePlaceholder": "Например: Резюме встречи",
+      "body": "Тело шаблона",
+      "bodyPlaceholder": "Напиши шаблон с плейсхолдерами вида {name}…"
+    },
+    "testRunner": {
+      "inputLabel": "Тест-runner: введи тело шаблона",
+      "placeholder": "Вставь шаблон для предпросмотра…",
+      "run": "Предпросмотр",
+      "output": "Результат"
+    }
   }
 }

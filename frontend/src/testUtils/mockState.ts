@@ -25,6 +25,9 @@ import { initialHealthState, type HealthState } from "../store/slices/health";
 import { initialAskState, type AskState } from "../store/slices/ask/reducer";
 import { initialWebSearchState } from "../store/slices/webSearch/reducer";
 import type { WebSearchState } from "../store/slices/webSearch/types";
+import { initialSystemActionsState, type SystemActionsState } from "../store/slices/systemActions";
+import { initialRoutinesState, type RoutinesState } from "../store/slices/routines";
+import { initialPromptsState, type PromptsState } from "../store/slices/prompts";
 
 export const jobsById = (jobs: readonly ProcessingJob[]): Record<string, ProcessingJob> =>
   Object.fromEntries(jobs.map((job) => [job.id, job]));
@@ -130,6 +133,24 @@ export const mockWebSearchState = (
   patch: Partial<WebSearchState> = {}
 ): Pick<GlobalState, "webSearch"> => ({
   webSearch: { ...initialWebSearchState, ...patch },
+});
+
+export const mockSystemActionsState = (
+  patch: Partial<SystemActionsState> = {}
+): Pick<GlobalState, "systemActions"> => ({
+  systemActions: { ...initialSystemActionsState, ...patch },
+});
+
+export const mockRoutinesState = (
+  patch: Partial<RoutinesState> = {}
+): Pick<GlobalState, "routines"> => ({
+  routines: { ...initialRoutinesState, ...patch },
+});
+
+export const mockPromptsState = (
+  patch: Partial<PromptsState> = {}
+): Pick<GlobalState, "prompts"> => ({
+  prompts: { ...initialPromptsState, ...patch },
 });
 
 export const mergeMockState = (...parts: Partial<GlobalState>[]): Partial<GlobalState> =>

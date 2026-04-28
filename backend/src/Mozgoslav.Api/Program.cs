@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Net.Http;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -17,27 +18,38 @@ using Mozgoslav.Api.GraphQL.Jobs;
 using Mozgoslav.Api.GraphQL.SchemaExport;
 using Mozgoslav.Api.Services;
 using Mozgoslav.Application.Agents;
+using Mozgoslav.Application.Agents.Skills;
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Application.Llm;
 using Mozgoslav.Application.Obsidian;
+using Mozgoslav.Application.Prompts;
 using Mozgoslav.Application.Rag;
+using Mozgoslav.Application.Routines;
 using Mozgoslav.Application.Search;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Application.UseCases;
 using Mozgoslav.Application.WebSearch;
 using Mozgoslav.Infrastructure.Agents;
+using Mozgoslav.Infrastructure.Agents.Skills;
 using Mozgoslav.Infrastructure.Configuration;
+using Mozgoslav.Infrastructure.Hosting;
 using Mozgoslav.Infrastructure.Jobs;
+using Mozgoslav.Infrastructure.Mcp.Tools;
 using Mozgoslav.Infrastructure.Observability;
 using Mozgoslav.Infrastructure.Obsidian;
 using Mozgoslav.Infrastructure.Persistence;
 using Mozgoslav.Infrastructure.Platform;
+using Mozgoslav.Infrastructure.Prompts;
 using Mozgoslav.Infrastructure.Rag;
 using Mozgoslav.Infrastructure.Repositories;
+using Mozgoslav.Infrastructure.Routines;
 using Mozgoslav.Infrastructure.Search;
 using Mozgoslav.Infrastructure.Search.Tools;
 using Mozgoslav.Infrastructure.Seed;
 using Mozgoslav.Infrastructure.Services;
+using Mozgoslav.Infrastructure.SystemActions;
 using Mozgoslav.Infrastructure.WebSearch;
+using Mozgoslav.Native.V1;
 using OpenTelemetry.Metrics;
 using Quartz;
 using Serilog;
@@ -128,6 +140,7 @@ try
             sp.GetRequiredService<ILogger<RagIndexingProcessedNoteRepository>>()));
     builder.Services.AddScoped<IProfileRepository, EfProfileRepository>();
     builder.Services.AddScoped<IProcessingJobRepository, EfProcessingJobRepository>();
+    builder.Services.AddScoped<IProcessingJobStageRepository, EfProcessingJobStageRepository>();
 
     builder.Services.AddSingleton<IAppSettings, EfAppSettings>();
 
@@ -190,6 +203,9 @@ try
     builder.Services.AddSingleton<ILlmProvider, OllamaLlmProvider>();
     builder.Services.AddSingleton<ILlmProviderFactory, LlmProviderFactory>();
     builder.Services.AddSingleton<ILlmService, OpenAiCompatibleLlmService>();
+    builder.Services.AddSingleton<ILlmCapabilitiesCache, InMemoryLlmCapabilitiesCache>();
+    builder.Services.AddTransient<ILlmCapabilitiesProbe, OpenAiCompatibleCapabilitiesProbe>();
+    builder.Services.AddHostedService<LlmCapabilitiesStartupProbe>();
     builder.Services.AddSingleton<IMarkdownExporter, FileMarkdownExporter>();
     builder.Services.Configure<AudioRecorderOptions>(
         builder.Configuration.GetSection(AudioRecorderOptions.SectionName));
@@ -203,6 +219,34 @@ try
     else
     {
         builder.Services.AddSingleton<IAudioRecorder, PlatformUnsupportedAudioRecorder>();
+    }
+
+    builder.Services.Configure<NativeHelperOptions>(
+        builder.Configuration.GetSection(NativeHelperOptions.SectionName));
+
+    if (OperatingSystem.IsMacOS())
+    {
+        builder.Services.AddGrpcClient<DictationHelper.DictationHelperClient>((sp, options) =>
+        {
+            var cfg = sp.GetRequiredService<IOptions<NativeHelperOptions>>().Value;
+            options.Address = new Uri(cfg.GrpcEndpoint);
+        })
+        .AddStandardResilienceHandler(options =>
+        {
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(10);
+            options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
+            options.Retry.MaxRetryAttempts = 2;
+        });
+
+        builder.Services.AddSingleton<INativeHelperClient, GrpcNativeHelperClient>();
+        builder.Services.AddSingleton<ISystemAction, AppleShortcutsProvider>();
+        builder.Services.AddSingleton<ISystemActionTemplateProvider, AppleShortcutTemplateProvider>();
+    }
+    else
+    {
+        builder.Services.AddSingleton<INativeHelperClient, NoOpNativeHelperClient>();
+        builder.Services.AddSingleton<ISystemAction, NoOpSystemAction>();
+        builder.Services.AddSingleton<ISystemActionTemplateProvider, AppleShortcutTemplateProvider>();
     }
     builder.Services.AddSingleton<IPerAppCorrectionProfiles, InMemoryPerAppCorrectionProfiles>();
     builder.Services.AddSingleton<IDictationSessionManager, DictationSessionManager>();
@@ -330,6 +374,7 @@ try
         builder.Services.AddSingleton<IAgentRunner>(sp =>
             new MafAgentRunner(
                 sp.GetRequiredService<ILlmProviderFactory>(),
+                sp.GetRequiredService<ILlmCapabilitiesCache>(),
                 [
                     sp.GetRequiredService<CorpusQueryTool>(),
                     sp.GetRequiredService<WebSearchTool>(),
@@ -341,6 +386,28 @@ try
     builder.Services.AddScoped<IUnifiedSearch, MafUnifiedSearch>();
     builder.Services.AddScoped<AskFromVoiceUseCase>();
     builder.Services.AddScoped<AggregateSummaryUseCase>();
+
+    builder.Services.AddScoped<IPromptTemplateRepository, PromptTemplateRepository>();
+    builder.Services.AddSingleton<IPromptBuilder, MozgoslavPromptBuilder>();
+    builder.Services.AddSingleton<PromptDispatcher>();
+
+    builder.Services.AddSingleton<IRemindersSkill, RemindersSkill>();
+    builder.Services.AddScoped<IActionExtractorSkill, MafActionExtractorSkill>();
+    builder.Services.AddHostedService<ActionExtractorDomainEventConsumer>();
+
+    builder.Services.AddScoped<IRoutineRunRepository, RoutineRunRepository>();
+    builder.Services.AddScoped<IRoutineRegistry, RoutineRegistry>();
+
+    builder.Services.AddMcpServer()
+        .WithHttpTransport()
+        .WithToolsFromAssembly(typeof(CorpusMcpTools).Assembly);
+    builder.Services.AddScoped<CorpusMcpTools>();
+    builder.Services.AddScoped<RecordingsMcpTools>();
+    builder.Services.AddScoped<NotesMcpTools>();
+    builder.Services.AddScoped<DictationMcpTools>();
+    builder.Services.AddScoped<ObsidianMcpTools>();
+    builder.Services.AddScoped<WebMcpTools>();
+    builder.Services.AddScoped<PromptsMcpTools>();
 
     builder.Services.Configure<SummaryOptions>(
         builder.Configuration.GetSection(SummaryOptions.SectionName));
@@ -487,6 +554,16 @@ try
     app.MapGraphQL("/graphql");
 
     app.MapInternalEndpoints();
+
+    var mcpSettings = app.Services.GetRequiredService<IAppSettings>();
+    if (mcpSettings.McpServerEnabled)
+    {
+        app.MapMcpEndpoints();
+    }
+    else
+    {
+        app.Map("/mcp", () => Results.StatusCode(503));
+    }
 
     await app.RunAsync();
 }

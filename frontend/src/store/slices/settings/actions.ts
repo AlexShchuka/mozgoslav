@@ -1,3 +1,4 @@
+import type { LlmCapabilities } from "../../../api/gql/graphql";
 import type { AppSettings } from "../../../domain/Settings";
 
 export const LOAD_SETTINGS = "settings/LOAD";
@@ -10,6 +11,9 @@ export const SAVE_SETTINGS_FAILURE = "settings/SAVE_FAILURE";
 
 export const CHECK_LLM = "settings/CHECK_LLM";
 export const CHECK_LLM_DONE = "settings/CHECK_LLM_DONE";
+
+export const LOAD_LLM_CAPABILITIES = "settings/LOAD_LLM_CAPABILITIES";
+export const LOAD_LLM_CAPABILITIES_SUCCESS = "settings/LOAD_LLM_CAPABILITIES_SUCCESS";
 
 export interface LoadSettingsAction {
   type: typeof LOAD_SETTINGS;
@@ -46,6 +50,15 @@ export interface CheckLlmDoneAction {
   type: typeof CHECK_LLM_DONE;
 }
 
+export interface LoadLlmCapabilitiesAction {
+  type: typeof LOAD_LLM_CAPABILITIES;
+}
+
+export interface LoadLlmCapabilitiesSuccessAction {
+  type: typeof LOAD_LLM_CAPABILITIES_SUCCESS;
+  payload: LlmCapabilities | null;
+}
+
 export type SettingsAction =
   | LoadSettingsAction
   | LoadSettingsSuccessAction
@@ -54,7 +67,9 @@ export type SettingsAction =
   | SaveSettingsSuccessAction
   | SaveSettingsFailureAction
   | CheckLlmAction
-  | CheckLlmDoneAction;
+  | CheckLlmDoneAction
+  | LoadLlmCapabilitiesAction
+  | LoadLlmCapabilitiesSuccessAction;
 
 export const loadSettings = (): LoadSettingsAction => ({ type: LOAD_SETTINGS });
 export const loadSettingsSuccess = (settings: AppSettings): LoadSettingsSuccessAction => ({
@@ -79,3 +94,13 @@ export const saveSettingsFailure = (): SaveSettingsFailureAction => ({
 
 export const checkLlm = (): CheckLlmAction => ({ type: CHECK_LLM });
 export const checkLlmDone = (): CheckLlmDoneAction => ({ type: CHECK_LLM_DONE });
+
+export const loadLlmCapabilities = (): LoadLlmCapabilitiesAction => ({
+  type: LOAD_LLM_CAPABILITIES,
+});
+export const loadLlmCapabilitiesSuccess = (
+  capabilities: LlmCapabilities | null
+): LoadLlmCapabilitiesSuccessAction => ({
+  type: LOAD_LLM_CAPABILITIES_SUCCESS,
+  payload: capabilities,
+});

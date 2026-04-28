@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Mozgoslav.Application.Agents;
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Application.Llm;
 using Mozgoslav.Infrastructure.Agents;
 
 using NSubstitute;
@@ -45,6 +46,7 @@ public sealed class MafAgentRunnerIntegrationTests : IDisposable
         providerFactory.GetCurrentAsync(Arg.Any<CancellationToken>()).Returns(provider);
         return new MafAgentRunner(
             providerFactory,
+            Substitute.For<ILlmCapabilitiesCache>(),
             tools ?? [],
             NullLogger<MafAgentRunner>.Instance);
     }

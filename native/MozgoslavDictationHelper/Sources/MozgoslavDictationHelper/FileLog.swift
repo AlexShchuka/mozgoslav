@@ -1,6 +1,6 @@
 import Foundation
 
-public final class FileLog {
+public final class FileLog: @unchecked Sendable {
     public static let shared = FileLog()
 
     private let queue = DispatchQueue(label: "mozgoslav.helper.filelog")

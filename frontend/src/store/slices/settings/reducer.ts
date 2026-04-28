@@ -3,6 +3,7 @@ import type { Reducer } from "redux";
 import {
   CHECK_LLM,
   CHECK_LLM_DONE,
+  LOAD_LLM_CAPABILITIES_SUCCESS,
   LOAD_SETTINGS,
   LOAD_SETTINGS_FAILURE,
   LOAD_SETTINGS_SUCCESS,
@@ -11,7 +12,13 @@ import {
   SAVE_SETTINGS_SUCCESS,
   type SettingsAction,
 } from "./actions";
-import { applyLoaded, applySaved, markLlmProbing, settleLlmProbing } from "./mutations";
+import {
+  applyLoaded,
+  applyLlmCapabilities,
+  applySaved,
+  markLlmProbing,
+  settleLlmProbing,
+} from "./mutations";
 import { initialSettingsState, type SettingsState } from "./types";
 
 export const settingsReducer: Reducer<SettingsState> = (
@@ -38,6 +45,9 @@ export const settingsReducer: Reducer<SettingsState> = (
       return markLlmProbing(state);
     case CHECK_LLM_DONE:
       return settleLlmProbing(state);
+
+    case LOAD_LLM_CAPABILITIES_SUCCESS:
+      return applyLlmCapabilities(state, typed.payload);
 
     default:
       return state;

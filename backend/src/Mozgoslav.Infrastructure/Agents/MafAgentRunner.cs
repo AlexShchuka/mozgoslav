@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 
 using Mozgoslav.Application.Agents;
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Application.Llm;
 
 namespace Mozgoslav.Infrastructure.Agents;
 
@@ -22,15 +23,18 @@ public sealed class MafAgentRunner : IAgentRunner
     private const int MaxToolIterations = 5;
 
     private readonly ILlmProviderFactory _providerFactory;
+    private readonly ILlmCapabilitiesCache _capabilitiesCache;
     private readonly IReadOnlyDictionary<string, IAgentTool> _toolRegistry;
     private readonly ILogger<MafAgentRunner> _logger;
 
     public MafAgentRunner(
         ILlmProviderFactory providerFactory,
+        ILlmCapabilitiesCache capabilitiesCache,
         IReadOnlyList<IAgentTool> tools,
         ILogger<MafAgentRunner> logger)
     {
         _providerFactory = providerFactory;
+        _capabilitiesCache = capabilitiesCache;
         _toolRegistry = tools.ToDictionary(t => t.Name, StringComparer.Ordinal);
         _logger = logger;
     }
@@ -39,6 +43,15 @@ public sealed class MafAgentRunner : IAgentRunner
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Prompt);
+
+        var capabilities = _capabilitiesCache.TryGetCurrent();
+        if (capabilities is not null && !capabilities.SupportsToolCalling)
+        {
+            throw new InvalidOperationException(
+                "The configured LLM does not support tool-calling. " +
+                "Agent loop requires tool-calling capability. " +
+                "Switch to a model that supports function-calling (e.g. a 7B+ instruction-tuned model).");
+        }
 
         var availableTools = request.ToolNames.Count > 0
             ? request.ToolNames
