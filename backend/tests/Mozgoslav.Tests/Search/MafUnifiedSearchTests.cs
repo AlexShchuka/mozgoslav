@@ -34,17 +34,25 @@ public sealed class MafUnifiedSearchTests
         IAppSettings? appSettings = null,
         bool defaultIncludeWeb = false)
     {
+        var retrieverNeedsDefault = retriever is null;
+        var rerankerNeedsDefault = reranker is null;
         retriever ??= Substitute.For<IRetriever>();
         reranker ??= Substitute.For<IReranker>();
         webSearch ??= Substitute.For<IWebSearch>();
         webExtractor ??= Substitute.For<IWebContentExtractor>();
         appSettings ??= Substitute.For<IAppSettings>();
 
-        reranker.RerankAsync(Arg.Any<string>(), Arg.Any<IReadOnlyList<RetrievedChunk>>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
-            .Returns(Array.Empty<RerankedChunk>());
+        if (rerankerNeedsDefault)
+        {
+            reranker.RerankAsync(Arg.Any<string>(), Arg.Any<IReadOnlyList<RetrievedChunk>>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+                .Returns(Array.Empty<RerankedChunk>());
+        }
 
-        retriever.RetrieveAsync(Arg.Any<RetrievalQuery>(), Arg.Any<CancellationToken>())
-            .Returns(Array.Empty<RetrievedChunk>());
+        if (retrieverNeedsDefault)
+        {
+            retriever.RetrieveAsync(Arg.Any<RetrievalQuery>(), Arg.Any<CancellationToken>())
+                .Returns(Array.Empty<RetrievedChunk>());
+        }
 
         var corpus = new CorpusQueryTool(retriever, reranker, NullLogger<CorpusQueryTool>.Instance);
         var webSearchTool = new WebSearchTool(webSearch, NullLogger<WebSearchTool>.Instance);

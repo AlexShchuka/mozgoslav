@@ -1,12 +1,20 @@
 import { fireEvent, screen } from "@testing-library/react";
 
-import "../../../i18n";
+import i18n from "../../../i18n";
 import { renderWithStore } from "../../../testUtils";
 import AskOverlay from "../AskOverlay";
 
 const noop = () => undefined;
 
 describe("AskOverlay — presentational", () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  afterAll(async () => {
+    await i18n.changeLanguage("ru");
+  });
+
   it("renders overlayTitle from i18n", () => {
     renderWithStore(
       <AskOverlay question="" answer="" error={null} isLoading={false} onHide={noop} />
