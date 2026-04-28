@@ -12,8 +12,10 @@ using Mozgoslav.Api.GraphQL.Obsidian;
 using Mozgoslav.Api.GraphQL.Profiles;
 using Mozgoslav.Api.GraphQL.Rag;
 using Mozgoslav.Api.GraphQL.Recordings;
+using Mozgoslav.Api.GraphQL.Search;
 using Mozgoslav.Api.GraphQL.Settings;
 using Mozgoslav.Api.GraphQL.Sync;
+using Mozgoslav.Api.GraphQL.WebSearch;
 
 namespace Mozgoslav.Api.GraphQL.Queries;
 
@@ -36,6 +38,8 @@ internal static class QueryRegistration
             .AddTypeExtension<ObsidianQueryType>()
             .AddTypeExtension<BackupQueryType>()
             .AddTypeExtension<RagQueryType>()
-            .AddTypeExtension<SyncQueryType>();
+            .AddTypeExtension<SearchQueryType>()
+            .AddTypeExtension<SyncQueryType>()
+            .AddTypeExtension<WebSearchQueryType>();
     }
 }

@@ -8,7 +8,8 @@ import { Layout } from "./components/Layout";
 import Home from "./features/Home";
 import NotesList from "./features/Notes/NotesList";
 import NoteViewer from "./features/Notes/NoteViewer";
-import RagChat from "./features/RagChat";
+import Ask from "./features/Ask";
+import AskOverlay from "./features/AskOverlay";
 import Profiles from "./features/Profiles";
 import Models from "./features/Models";
 import SettingsPage from "./features/Settings";
@@ -25,6 +26,7 @@ import { OnboardingCompleteGuard } from "./guards";
 import { dictationCancelRequested } from "./store/slices/dictation";
 
 const OVERLAY_ROUTE = "/dictation-overlay";
+const ASK_OVERLAY_ROUTE = "/ask-overlay";
 
 const AppShell: FC = () => {
   useGlobalHotkeys();
@@ -89,11 +91,12 @@ const AppShell: FC = () => {
               </OnboardingCompleteGuard>
             }
           />
+          <Route path={ROUTES.rag} element={<Navigate to={ROUTES.ask} replace />} />
           <Route
-            path={ROUTES.rag}
+            path={ROUTES.ask}
             element={
               <OnboardingCompleteGuard>
-                <RagChat />
+                <Ask />
               </OnboardingCompleteGuard>
             }
           />
@@ -156,11 +159,20 @@ const AppShell: FC = () => {
 const App: FC = () => {
   const location = useLocation();
   const isOverlay = location.pathname === OVERLAY_ROUTE;
+  const isAskOverlay = location.pathname === ASK_OVERLAY_ROUTE;
 
   if (isOverlay) {
     return (
       <Routes>
         <Route path={OVERLAY_ROUTE} element={<DictationOverlay />} />
+      </Routes>
+    );
+  }
+
+  if (isAskOverlay) {
+    return (
+      <Routes>
+        <Route path={ASK_OVERLAY_ROUTE} element={<AskOverlay />} />
       </Routes>
     );
   }

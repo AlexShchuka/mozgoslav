@@ -103,6 +103,7 @@
             OutputPath="$(MSBuildProjectDirectory)\Resources\ObsidianBootstrap\manifest.json"/>
     </Target>
     <ItemGroup>
+        <PackageReference Include="Microsoft.Agents.AI"/>
         <PackageReference Include="Dapper"/>
         <PackageReference Include="Microsoft.Data.Sqlite"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore"/>

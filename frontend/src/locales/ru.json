@@ -33,6 +33,17 @@
     "statusEmpty": "Индекс пуст — переиндексируйте заметки",
     "statusReady": "Проиндексировано: {{chunks}} фрагм. из {{notes}} заметок"
   },
+  "ask": {
+    "title": "Спросить",
+    "placeholder": "Спроси что угодно…",
+    "emptyState": "Задай вопрос — поиск идёт по корпусу, хранилищу и вебу одновременно.",
+    "includeWeb": "Веб",
+    "citationCorpus": "Из заметок",
+    "citationVault": "Из хранилища",
+    "citationWeb": "Из веба",
+    "overlayTitle": "Спроси корпус",
+    "overlayEmpty": "Ожидаю голосовой ввод…"
+  },
   "common": {
     "save": "Сохранить",
     "cancel": "Отмена",
@@ -423,6 +434,16 @@
       "listening": "говори, я слушаю…",
       "finalizing": "заканчиваю…"
     }
+  },
+  "webSearch": {
+    "privacyDisclaimer": "Веб-поиск выполняется через SearXNG — локальный агрегатор без передачи данных третьим сторонам.",
+    "engines": "Поисковые движки",
+    "engineDdg": "DuckDuckGo",
+    "engineYandex": "Яндекс",
+    "engineGoogle": "Google",
+    "cacheTtl": "Время кэша (часы)",
+    "rawSettings": "Настройки SearXNG (YAML)",
+    "saveNote": "Настройки применятся при следующем перезапуске sidecar"
   },
   "errors": {
     "genericErrorWithMessage": "Ошибка: {{message}}"

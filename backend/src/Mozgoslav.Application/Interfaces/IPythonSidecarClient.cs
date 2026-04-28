@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,4 +15,9 @@ public interface IPythonSidecarClient
     Task<SidecarEmotionResult> EmotionAsync(string audioPath, CancellationToken ct);
 
     Task<SidecarNerResult> NerAsync(string text, CancellationToken ct);
+
+    Task<SidecarProcessAllResult> ProcessAllAsync(
+        string audioPath,
+        IReadOnlyList<string>? steps,
+        CancellationToken ct);
 }

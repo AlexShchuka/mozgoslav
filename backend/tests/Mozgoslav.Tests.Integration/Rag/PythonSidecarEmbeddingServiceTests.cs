@@ -11,6 +11,7 @@ using FluentAssertions;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
+using Mozgoslav.Application.Exceptions;
 using Mozgoslav.Infrastructure.Rag;
 
 using WireMock.RequestBuilders;
@@ -24,7 +25,6 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
 {
     private WireMockServer _server = null!;
     private HttpClient _http = null!;
-    private BagOfWordsEmbeddingService _fallback = null!;
     private bool _disposed;
 
     [TestInitialize]
@@ -32,7 +32,6 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
     {
         _server = WireMockServer.Start();
         _http = new HttpClient { BaseAddress = new Uri(_server.Urls[0]) };
-        _fallback = new BagOfWordsEmbeddingService(dimensions: 64);
     }
 
     [TestCleanup]
@@ -60,7 +59,7 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
                 .WithHeader("Content-Type", "application/json")
                 .WithBody(BuildResponse(sidecarVector, 4)));
 
-        var sut = new PythonSidecarEmbeddingService(_http, _fallback, NullLogger<PythonSidecarEmbeddingService>.Instance);
+        var sut = new PythonSidecarEmbeddingService(_http, NullLogger<PythonSidecarEmbeddingService>.Instance);
         var vector = await sut.EmbedAsync("hello", CancellationToken.None);
 
         vector.Should().BeEquivalentTo(sidecarVector);
@@ -68,32 +67,31 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
     }
 
     [TestMethod]
-    public async Task EmbedAsync_WhenSidecarDown_FallsBackToInnerEmbedding()
+    public async Task EmbedAsync_WhenSidecarDown_ThrowsSidecarUnavailable()
     {
         _server.Stop();
 
-        var sut = new PythonSidecarEmbeddingService(_http, _fallback, NullLogger<PythonSidecarEmbeddingService>.Instance);
-        var vector = await sut.EmbedAsync("обсидиан синхронизация", CancellationToken.None);
-        var expected = await _fallback.EmbedAsync("обсидиан синхронизация", CancellationToken.None);
+        var sut = new PythonSidecarEmbeddingService(_http, NullLogger<PythonSidecarEmbeddingService>.Instance);
 
-        vector.Should().BeEquivalentTo(expected);
+        var act = async () => await sut.EmbedAsync("обсидиан синхронизация", CancellationToken.None);
+        var thrown = await act.Should().ThrowAsync<SidecarUnavailableException>();
+        thrown.Which.Sidecar.Should().Be("python-sidecar");
     }
 
     [TestMethod]
-    public async Task EmbedAsync_WhenSidecarReturns500_FallsBackToInnerEmbedding()
+    public async Task EmbedAsync_WhenSidecarReturns500_ThrowsSidecarUnavailable()
     {
         _server.Given(Request.Create().WithPath("/api/embed").UsingPost())
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.InternalServerError));
 
-        var sut = new PythonSidecarEmbeddingService(_http, _fallback, NullLogger<PythonSidecarEmbeddingService>.Instance);
-        var vector = await sut.EmbedAsync("hello", CancellationToken.None);
-        var expected = await _fallback.EmbedAsync("hello", CancellationToken.None);
+        var sut = new PythonSidecarEmbeddingService(_http, NullLogger<PythonSidecarEmbeddingService>.Instance);
 
-        vector.Should().BeEquivalentTo(expected);
+        var act = async () => await sut.EmbedAsync("hello", CancellationToken.None);
+        await act.Should().ThrowAsync<SidecarUnavailableException>();
     }
 
     [TestMethod]
-    public async Task EmbedAsync_EmptyVectors_FallsBackToInnerEmbedding()
+    public async Task EmbedAsync_EmptyVectors_ThrowsInvalidOperationException()
     {
         _server.Given(Request.Create().WithPath("/api/embed").UsingPost())
             .RespondWith(Response.Create()
@@ -101,15 +99,14 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
                 .WithHeader("Content-Type", "application/json")
                 .WithBody(BuildResponse(Array.Empty<float>(), 0)));
 
-        var sut = new PythonSidecarEmbeddingService(_http, _fallback, NullLogger<PythonSidecarEmbeddingService>.Instance);
-        var vector = await sut.EmbedAsync("hello", CancellationToken.None);
-        var expected = await _fallback.EmbedAsync("hello", CancellationToken.None);
+        var sut = new PythonSidecarEmbeddingService(_http, NullLogger<PythonSidecarEmbeddingService>.Instance);
 
-        vector.Should().BeEquivalentTo(expected);
+        var act = async () => await sut.EmbedAsync("hello", CancellationToken.None);
+        await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
     [TestMethod]
-    public async Task EmbedAsync_DimensionDrift_AfterFirstCall_IsIgnored()
+    public async Task EmbedAsync_DimensionDrift_UpdatesDimensions()
     {
         var first = new[] { 0.1f, 0.2f, 0.3f, 0.4f };
         var drifted = new[] { 0.5f, 0.5f, 0.5f, 0.5f, 0.5f };
@@ -130,14 +127,14 @@ public sealed class PythonSidecarEmbeddingServiceTests : IDisposable
                 .WithHeader("Content-Type", "application/json")
                 .WithBody(BuildResponse(drifted, 5)));
 
-        var sut = new PythonSidecarEmbeddingService(_http, _fallback, NullLogger<PythonSidecarEmbeddingService>.Instance);
+        var sut = new PythonSidecarEmbeddingService(_http, NullLogger<PythonSidecarEmbeddingService>.Instance);
 
         var v1 = await sut.EmbedAsync("first", CancellationToken.None);
         sut.Dimensions.Should().Be(4);
 
         var v2 = await sut.EmbedAsync("second", CancellationToken.None);
         v2.Should().BeEquivalentTo(drifted);
-        sut.Dimensions.Should().Be(4);
+        sut.Dimensions.Should().Be(5);
         v1.Should().BeEquivalentTo(first);
     }
 

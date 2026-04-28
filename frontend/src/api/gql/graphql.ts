@@ -77,6 +77,7 @@ export type AppSettingsDto = {
   llmProvider: Scalars["String"]["output"];
   obsidianApiHost: Scalars["String"]["output"];
   obsidianApiToken: Scalars["String"]["output"];
+  obsidianBootstrapPins: Scalars["String"]["output"];
   obsidianFeatureEnabled: Scalars["Boolean"]["output"];
   syncthingApiKey: Scalars["String"]["output"];
   syncthingBaseUrl: Scalars["String"]["output"];
@@ -535,6 +536,7 @@ export type MutationType = {
   stopRecording: StopRecordingPayload;
   updateProfile: ProfilePayload;
   updateSettings: UpdateSettingsPayload;
+  updateWebSearchConfig: WebSearchConfigPayload;
   uploadRecordings: ImportRecordingsPayload;
 };
 
@@ -634,6 +636,10 @@ export type MutationTypeUpdateProfileArgs = {
 
 export type MutationTypeUpdateSettingsArgs = {
   input: UpdateSettingsInput;
+};
+
+export type MutationTypeUpdateWebSearchConfigArgs = {
+  input: WebSearchConfigInput;
 };
 
 export type MutationTypeUploadRecordingsArgs = {
@@ -951,6 +957,8 @@ export type QueryType = {
   syncHealth: Scalars["Boolean"]["output"];
   syncPairingPayload?: Maybe<SyncPairingPayloadResult>;
   syncStatus?: Maybe<SyncStatusResult>;
+  unifiedSearch: UnifiedSearchPayload;
+  webSearchConfig: WebSearchConfigDto;
 };
 
 export type QueryTypeDictationStatusArgs = {
@@ -1011,6 +1019,11 @@ export type QueryTypeRecordingsArgs = {
   last?: InputMaybe<Scalars["Int"]["input"]>;
   order?: InputMaybe<Array<RecordingSortInput>>;
   where?: InputMaybe<RecordingFilterInput>;
+};
+
+export type QueryTypeUnifiedSearchArgs = {
+  includeWeb?: InputMaybe<Scalars["Boolean"]["input"]>;
+  query: Scalars["String"]["input"];
 };
 
 export type RagCitation = {
@@ -1295,6 +1308,20 @@ export type UnavailableError = IUserError & {
   message: Scalars["String"]["output"];
 };
 
+export type UnifiedCitationDto = {
+  __typename?: "UnifiedCitationDto";
+  reference: Scalars["String"]["output"];
+  snippet: Scalars["String"]["output"];
+  source: Scalars["String"]["output"];
+  url?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type UnifiedSearchPayload = {
+  __typename?: "UnifiedSearchPayload";
+  answer: Scalars["String"]["output"];
+  citations: Array<UnifiedCitationDto>;
+};
+
 export type UpdateSettingsInput = {
   dictationAppProfiles: Array<KeyValuePairOfStringAndStringInput>;
   dictationCaptureSampleRate: Scalars["Int"]["input"];
@@ -1389,6 +1416,48 @@ export type VaultPathCheck = {
   ok: Scalars["Boolean"]["output"];
   severity: CheckSeverity;
   vaultPath: Scalars["String"]["output"];
+};
+
+export type WebSearchConfigDto = {
+  __typename?: "WebSearchConfigDto";
+  cacheTtlHours: Scalars["Int"]["output"];
+  ddgEnabled: Scalars["Boolean"]["output"];
+  googleEnabled: Scalars["Boolean"]["output"];
+  rawSettingsYaml: Scalars["String"]["output"];
+  yandexEnabled: Scalars["Boolean"]["output"];
+};
+
+export type WebSearchConfigInput = {
+  cacheTtlHours: Scalars["Int"]["input"];
+  ddgEnabled: Scalars["Boolean"]["input"];
+  googleEnabled: Scalars["Boolean"]["input"];
+  yandexEnabled: Scalars["Boolean"]["input"];
+};
+
+export type WebSearchConfigPayload = {
+  __typename?: "WebSearchConfigPayload";
+  config?: Maybe<WebSearchConfigDto>;
+  errors: Array<IUserError>;
+};
+
+export type UnifiedSearchQueryVariables = Exact<{
+  query: Scalars["String"]["input"];
+  includeWeb?: InputMaybe<Scalars["Boolean"]["input"]>;
+}>;
+
+export type UnifiedSearchQuery = {
+  __typename?: "QueryType";
+  unifiedSearch: {
+    __typename?: "UnifiedSearchPayload";
+    answer: string;
+    citations: Array<{
+      __typename?: "UnifiedCitationDto";
+      source: string;
+      reference: string;
+      snippet: string;
+      url?: string | null;
+    }>;
+  };
 };
 
 export type QueryBackupsQueryVariables = Exact<{ [key: string]: never }>;
@@ -2800,6 +2869,110 @@ export type SubscriptionSyncEventsSubscription = {
   };
 };
 
+export type QueryWebSearchConfigQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QueryWebSearchConfigQuery = {
+  __typename?: "QueryType";
+  webSearchConfig: {
+    __typename?: "WebSearchConfigDto";
+    ddgEnabled: boolean;
+    yandexEnabled: boolean;
+    googleEnabled: boolean;
+    cacheTtlHours: number;
+    rawSettingsYaml: string;
+  };
+};
+
+export type MutationUpdateWebSearchConfigMutationVariables = Exact<{
+  input: WebSearchConfigInput;
+}>;
+
+export type MutationUpdateWebSearchConfigMutation = {
+  __typename?: "MutationType";
+  updateWebSearchConfig: {
+    __typename?: "WebSearchConfigPayload";
+    config?: {
+      __typename?: "WebSearchConfigDto";
+      ddgEnabled: boolean;
+      yandexEnabled: boolean;
+      googleEnabled: boolean;
+      cacheTtlHours: number;
+      rawSettingsYaml: string;
+    } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export const UnifiedSearchDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "UnifiedSearch" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "query" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "includeWeb" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "Boolean" } },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "unifiedSearch" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "query" },
+                value: { kind: "Variable", name: { kind: "Name", value: "query" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "includeWeb" },
+                value: { kind: "Variable", name: { kind: "Name", value: "includeWeb" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "answer" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "citations" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "source" } },
+                      { kind: "Field", name: { kind: "Name", value: "reference" } },
+                      { kind: "Field", name: { kind: "Name", value: "snippet" } },
+                      { kind: "Field", name: { kind: "Name", value: "url" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<UnifiedSearchQuery, UnifiedSearchQueryVariables>;
 export const QueryBackupsDocument = {
   kind: "Document",
   definitions: [
@@ -6315,4 +6488,102 @@ export const SubscriptionSyncEventsDocument = {
 } as unknown as DocumentNode<
   SubscriptionSyncEventsSubscription,
   SubscriptionSyncEventsSubscriptionVariables
+>;
+export const QueryWebSearchConfigDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryWebSearchConfig" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "webSearchConfig" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "ddgEnabled" } },
+                { kind: "Field", name: { kind: "Name", value: "yandexEnabled" } },
+                { kind: "Field", name: { kind: "Name", value: "googleEnabled" } },
+                { kind: "Field", name: { kind: "Name", value: "cacheTtlHours" } },
+                { kind: "Field", name: { kind: "Name", value: "rawSettingsYaml" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryWebSearchConfigQuery, QueryWebSearchConfigQueryVariables>;
+export const MutationUpdateWebSearchConfigDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationUpdateWebSearchConfig" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "input" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "WebSearchConfigInput" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "updateWebSearchConfig" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: { kind: "Variable", name: { kind: "Name", value: "input" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "config" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "ddgEnabled" } },
+                      { kind: "Field", name: { kind: "Name", value: "yandexEnabled" } },
+                      { kind: "Field", name: { kind: "Name", value: "googleEnabled" } },
+                      { kind: "Field", name: { kind: "Name", value: "cacheTtlHours" } },
+                      { kind: "Field", name: { kind: "Name", value: "rawSettingsYaml" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationUpdateWebSearchConfigMutation,
+  MutationUpdateWebSearchConfigMutationVariables
 >;

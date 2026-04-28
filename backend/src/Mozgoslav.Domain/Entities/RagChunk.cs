@@ -10,4 +10,7 @@ public sealed class RagChunk
     public byte[] Embedding { get; set; } = Array.Empty<byte>();
     public int Dimensions { get; set; }
     public string Schema { get; set; } = "v1";
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public string? ProfileId { get; set; }
+    public string? Speaker { get; set; }
 }

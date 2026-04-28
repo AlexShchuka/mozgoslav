@@ -4,6 +4,15 @@ export interface GlobalHotkeyPayload {
   source: "global-hotkey";
 }
 
+export interface AskCorpusAnswerPayload {
+  question: string;
+  answer: string;
+}
+
+export interface AskCorpusErrorPayload {
+  message: string;
+}
+
 export interface MozgoslavBridge {
   version: string;
   openAudioFiles: () => Promise<{ canceled: boolean; filePaths: string[] }>;
@@ -22,6 +31,9 @@ export interface MozgoslavBridge {
   startNativeRecording?: (outputPath: string) => Promise<{ sessionId: string }>;
   stopNativeRecording?: (sessionId: string) => Promise<{ path: string; durationMs: number }>;
   dictationInject?: (text: string, mode: "auto" | "cgevent" | "accessibility") => Promise<void>;
+  hideAskOverlay: () => void;
+  onAskCorpusAnswer: (listener: (payload: AskCorpusAnswerPayload) => void) => () => void;
+  onAskCorpusError: (listener: (payload: AskCorpusErrorPayload) => void) => () => void;
 }
 
 export interface DictationOverlayState {
@@ -59,6 +71,25 @@ const bridge: MozgoslavBridge = {
   startNativeRecording: (outputPath) => ipcRenderer.invoke("record:start", outputPath),
   stopNativeRecording: (sessionId) => ipcRenderer.invoke("record:stop", sessionId),
   dictationInject: (text, mode) => ipcRenderer.invoke("dictation:inject", text, mode),
+  hideAskOverlay: () => {
+    ipcRenderer.send("ask-corpus:hide");
+  },
+  onAskCorpusAnswer: (listener) => {
+    const handler = (_event: Electron.IpcRendererEvent, payload: AskCorpusAnswerPayload) =>
+      listener(payload);
+    ipcRenderer.on("ask-corpus:answer", handler);
+    return () => {
+      ipcRenderer.removeListener("ask-corpus:answer", handler);
+    };
+  },
+  onAskCorpusError: (listener) => {
+    const handler = (_event: Electron.IpcRendererEvent, payload: AskCorpusErrorPayload) =>
+      listener(payload);
+    ipcRenderer.on("ask-corpus:error", handler);
+    return () => {
+      ipcRenderer.removeListener("ask-corpus:error", handler);
+    };
+  },
   onOverlayCancelRequest: (listener) => {
     const handler = () => listener();
     ipcRenderer.on("dictation:cancel-from-overlay", handler);

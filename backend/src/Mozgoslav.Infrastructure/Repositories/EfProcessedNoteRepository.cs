@@ -53,6 +53,16 @@ public sealed class EfProcessedNoteRepository : IProcessedNoteRepository
             .OrderByDescending(n => n.CreatedAt)
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<ProcessedNote>> GetByDateRangeAsync(DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken ct)
+    {
+        var from = fromUtc.UtcDateTime;
+        var to = toUtc.UtcDateTime;
+        return await _db.ProcessedNotes.AsNoTracking()
+            .Where(n => n.CreatedAt >= from && n.CreatedAt < to)
+            .OrderByDescending(n => n.CreatedAt)
+            .ToListAsync(ct);
+    }
+
     public async Task<IReadOnlyList<ProcessedNote>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken ct) =>
         await _db.ProcessedNotes.AsNoTracking()
             .Where(n => ids.Contains(n.Id))

@@ -62,6 +62,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     public string DictationDumpHotkeyToggle => Snapshot.DictationDumpHotkeyToggle;
     public string DictationDumpHotkeyHold => Snapshot.DictationDumpHotkeyHold;
     public string ObsidianBootstrapPins => AppSettingsDto.ObsidianBootstrapPinsResource;
+    public int WebCacheTtlHours => Snapshot.WebCacheTtlHours;
     public AppSettingsDto Snapshot { get; private set; } = AppSettingsDto.Defaults;
 
     public async Task<AppSettingsDto> LoadAsync(CancellationToken ct)
@@ -107,7 +108,8 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             ObsidianFeatureEnabled: ParseObsidianFeatureEnabled(map),
             DictationDumpEnabled: ParseBool(map, Keys.DictationDumpEnabled, defaults.DictationDumpEnabled),
             DictationDumpHotkeyToggle: map.GetValueOrDefault(Keys.DictationDumpHotkeyToggle, defaults.DictationDumpHotkeyToggle),
-            DictationDumpHotkeyHold: map.GetValueOrDefault(Keys.DictationDumpHotkeyHold, defaults.DictationDumpHotkeyHold));
+            DictationDumpHotkeyHold: map.GetValueOrDefault(Keys.DictationDumpHotkeyHold, defaults.DictationDumpHotkeyHold),
+            WebCacheTtlHours: ParseInt(map, Keys.WebCacheTtlHours, defaults.WebCacheTtlHours));
 
         await _lock.WaitAsync(ct);
         try { Snapshot = dto; }
@@ -159,6 +161,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             (Keys.DictationDumpEnabled, BoolToString(dto.DictationDumpEnabled)),
             (Keys.DictationDumpHotkeyToggle, dto.DictationDumpHotkeyToggle),
             (Keys.DictationDumpHotkeyHold, dto.DictationDumpHotkeyHold),
+            (Keys.WebCacheTtlHours, dto.WebCacheTtlHours.ToString(CultureInfo.InvariantCulture)),
         };
 
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
@@ -293,5 +296,6 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         public const string DictationDumpEnabled = "dictation_dump_enabled";
         public const string DictationDumpHotkeyToggle = "dictation_dump_hotkey_toggle";
         public const string DictationDumpHotkeyHold = "dictation_dump_hotkey_hold";
+        public const string WebCacheTtlHours = "web_cache_ttl_hours";
     }
 }

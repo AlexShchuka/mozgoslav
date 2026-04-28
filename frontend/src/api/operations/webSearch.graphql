@@ -1,0 +1,25 @@
+query QueryWebSearchConfig {
+  webSearchConfig {
+    ddgEnabled
+    yandexEnabled
+    googleEnabled
+    cacheTtlHours
+    rawSettingsYaml
+  }
+}
+
+mutation MutationUpdateWebSearchConfig($input: WebSearchConfigInput!) {
+  updateWebSearchConfig(input: $input) {
+    config {
+      ddgEnabled
+      yandexEnabled
+      googleEnabled
+      cacheTtlHours
+      rawSettingsYaml
+    }
+    errors {
+      code
+      message
+    }
+  }
+}

@@ -4,7 +4,6 @@ from app.models.schemas import NerRequest, NerResponse
 
 
 class NerService:
-
     def __init__(self) -> None:
         self._segmenter = None
         self._morph_vocab = None

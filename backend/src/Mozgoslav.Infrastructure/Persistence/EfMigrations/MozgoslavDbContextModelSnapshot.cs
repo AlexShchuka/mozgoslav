@@ -258,6 +258,12 @@ namespace Mozgoslav.Infrastructure.Persistence.EfMigrations
                         .HasColumnType("TEXT")
                         .HasColumnName("id");
 
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue(new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero))
+                        .HasColumnName("created_at");
+
                     b.Property<int>("Dimensions")
                         .HasColumnType("INTEGER")
                         .HasColumnName("dimensions");
@@ -272,6 +278,10 @@ namespace Mozgoslav.Infrastructure.Persistence.EfMigrations
                         .HasColumnType("TEXT")
                         .HasColumnName("note_id");
 
+                    b.Property<string>("ProfileId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("profile_id");
+
                     b.Property<string>("Schema")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -279,12 +289,19 @@ namespace Mozgoslav.Infrastructure.Persistence.EfMigrations
                         .HasDefaultValue("v1")
                         .HasColumnName("schema");
 
+                    b.Property<string>("Speaker")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("speaker");
+
                     b.Property<string>("Text")
                         .IsRequired()
                         .HasColumnType("TEXT")
                         .HasColumnName("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_rag_chunks_created_at");
 
                     b.HasIndex("NoteId")
                         .HasDatabaseName("ix_rag_chunks_note_id");

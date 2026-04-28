@@ -10,12 +10,10 @@ DIM = 384
 
 
 class EmbedBackend(Protocol):
-
     def embed(self, text: str) -> list[float]: ...
 
 
 class DeterministicBoWBackend:
-
     def embed(self, text: str) -> list[float]:
         buckets = [0.0] * DIM
         for word in text.lower().split():
@@ -28,7 +26,6 @@ class DeterministicBoWBackend:
 
 
 class SentenceTransformersBackend:
-
     _lock = threading.Lock()
     _model = None
 

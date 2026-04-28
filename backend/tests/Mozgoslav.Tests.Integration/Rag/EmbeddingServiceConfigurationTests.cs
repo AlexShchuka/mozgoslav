@@ -25,19 +25,19 @@ public sealed class EmbeddingServiceConfigurationTests
         var embed = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
 
         embed.Should().BeOfType<PythonSidecarEmbeddingService>(
-            "G2 — the sidecar is primary whenever Mozgoslav:PythonSidecar:BaseUrl is configured");
+            "the sidecar is the exclusive embedding provider");
     }
 
     [TestMethod]
-    public async Task WhenSidecarBaseUrlEmpty_ResolvesBagOfWordsEmbedding()
+    public async Task WhenSidecarBaseUrlEmpty_StillResolvesPythonSidecarEmbedding()
     {
         await using var factory = new ConfigurableFactory(sidecarBaseUrl: string.Empty);
 
         using var scope = factory.Services.CreateScope();
         var embed = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
 
-        embed.Should().BeOfType<BagOfWordsEmbeddingService>(
-            "explicit empty string disables the sidecar — zero-dependency BoW fallback applies");
+        embed.Should().BeOfType<PythonSidecarEmbeddingService>(
+            "BoW fallback was retired in EA.12; PythonSidecarEmbeddingService is always registered");
     }
 
     private sealed class ConfigurableFactory : WebApplicationFactory<Program>
@@ -61,10 +61,19 @@ public sealed class EmbeddingServiceConfigurationTests
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            if (!disposing) return;
+            if (!disposing)
+            {
+                return;
+            }
             foreach (var path in new[] { _databasePath, _databasePath + "-wal", _databasePath + "-shm" })
             {
-                try { if (File.Exists(path)) File.Delete(path); }
+                try
+                {
+                    if (File.Exists(path))
+                    {
+                        File.Delete(path);
+                    }
+                }
                 catch (IOException) { }
                 catch (UnauthorizedAccessException) { }
             }

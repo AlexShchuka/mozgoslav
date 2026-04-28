@@ -1,0 +1,11 @@
+query UnifiedSearch($query: String!, $includeWeb: Boolean) {
+  unifiedSearch(query: $query, includeWeb: $includeWeb) {
+    answer
+    citations {
+      source
+      reference
+      snippet
+      url
+    }
+  }
+}

@@ -17,7 +17,6 @@ AUDEERING_EMOTION_URL = (
 
 
 class ModelPaths:
-
     def __init__(self, root: Path | None = None) -> None:
         if root is None:
             env_override = os.environ.get("MOZGOSLAV_MODELS_DIR")

@@ -188,7 +188,12 @@ public sealed class MozgoslavDbContext : DbContext
             e.Property(x => x.Schema).HasColumnName("schema")
                 .IsRequired()
                 .HasDefaultValue("v1");
+            e.Property(x => x.CreatedAt).HasColumnName("created_at")
+                .HasDefaultValue(DateTimeOffset.UnixEpoch);
+            e.Property(x => x.ProfileId).HasColumnName("profile_id");
+            e.Property(x => x.Speaker).HasColumnName("speaker");
             e.HasIndex(x => x.NoteId).HasDatabaseName("ix_rag_chunks_note_id");
+            e.HasIndex(x => x.CreatedAt).HasDatabaseName("ix_rag_chunks_created_at");
         });
     }
 }

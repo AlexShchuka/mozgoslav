@@ -63,6 +63,7 @@ type AppSettingsDto {
   dictationDumpEnabled: Boolean!
   dictationDumpHotkeyToggle: String!
   dictationDumpHotkeyHold: String!
+  webCacheTtlHours: Int!
   obsidianBootstrapPins: String!
 }
 
@@ -301,6 +302,7 @@ type MutationType {
   createBackup: CreateBackupPayload! @cost(weight: "10")
   ragReindex: RagReindexPayload! @cost(weight: "10")
   acceptSyncDevice(deviceId: String! name: String folderIds: [String!]): AcceptSyncDevicePayload! @cost(weight: "10")
+  updateWebSearchConfig(input: WebSearchConfigInput!): WebSearchConfigPayload! @cost(weight: "10")
 }
 
 type NotFoundError implements IUserError {
@@ -498,9 +500,11 @@ type QueryType {
   backups: [BackupEntry!]!
   ragStatus: RagIndexStatus! @cost(weight: "10")
   ragQuery(question: String! topK: Int): RagQueryResult @cost(weight: "10")
+  unifiedSearch(query: String! includeWeb: Boolean): UnifiedSearchPayload! @cost(weight: "10")
   syncStatus: SyncStatusResult @cost(weight: "10")
   syncHealth: Boolean! @cost(weight: "10")
   syncPairingPayload: SyncPairingPayloadResult @cost(weight: "10")
+  webSearchConfig: WebSearchConfigDto! @cost(weight: "10")
 }
 
 type RagCitation {
@@ -665,6 +669,18 @@ type UnavailableError implements IUserError {
   message: String!
 }
 
+type UnifiedCitationDto {
+  source: String!
+  reference: String!
+  snippet: String!
+  url: String
+}
+
+type UnifiedSearchPayload {
+  answer: String!
+  citations: [UnifiedCitationDto!]!
+}
+
 type UpdateSettingsPayload {
   settings: AppSettingsDto
   errors: [IUserError!]!
@@ -695,6 +711,19 @@ type VaultPathCheck {
   message: String!
   actions: [DiagnosticAction!]!
   vaultPath: String!
+}
+
+type WebSearchConfigDto {
+  ddgEnabled: Boolean!
+  yandexEnabled: Boolean!
+  googleEnabled: Boolean!
+  cacheTtlHours: Int!
+  rawSettingsYaml: String!
+}
+
+type WebSearchConfigPayload {
+  config: WebSearchConfigDto
+  errors: [IUserError!]!
 }
 
 input ActionItemFilterInput {
@@ -1018,6 +1047,13 @@ input UuidOperationFilterInput {
   nlt: UUID @cost(weight: "10")
   lte: UUID @cost(weight: "10")
   nlte: UUID @cost(weight: "10")
+}
+
+input WebSearchConfigInput {
+  ddgEnabled: Boolean!
+  yandexEnabled: Boolean!
+  googleEnabled: Boolean!
+  cacheTtlHours: Int!
 }
 
 enum AudioFormat {

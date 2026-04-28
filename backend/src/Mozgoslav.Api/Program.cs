@@ -1,26 +1,30 @@
 using System;
 using System.IO;
 using System.Net.Http;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
-
+using Microsoft.Extensions.Options;
 using Mozgoslav.Api.Endpoints;
 using Mozgoslav.Api.GraphQL;
 using Mozgoslav.Api.GraphQL.Jobs;
 using Mozgoslav.Api.GraphQL.SchemaExport;
 using Mozgoslav.Api.Services;
+using Mozgoslav.Application.Agents;
 using Mozgoslav.Application.Interfaces;
 using Mozgoslav.Application.Obsidian;
 using Mozgoslav.Application.Rag;
+using Mozgoslav.Application.Search;
 using Mozgoslav.Application.Services;
 using Mozgoslav.Application.UseCases;
+using Mozgoslav.Application.WebSearch;
+using Mozgoslav.Infrastructure.Agents;
 using Mozgoslav.Infrastructure.Configuration;
 using Mozgoslav.Infrastructure.Jobs;
 using Mozgoslav.Infrastructure.Observability;
@@ -29,13 +33,13 @@ using Mozgoslav.Infrastructure.Persistence;
 using Mozgoslav.Infrastructure.Platform;
 using Mozgoslav.Infrastructure.Rag;
 using Mozgoslav.Infrastructure.Repositories;
+using Mozgoslav.Infrastructure.Search;
+using Mozgoslav.Infrastructure.Search.Tools;
 using Mozgoslav.Infrastructure.Seed;
 using Mozgoslav.Infrastructure.Services;
-
+using Mozgoslav.Infrastructure.WebSearch;
 using OpenTelemetry.Metrics;
-
 using Quartz;
-
 using Serilog;
 using Serilog.Events;
 
@@ -230,44 +234,47 @@ try
     builder.Services.AddSingleton<IObsidianMetricsSink, ObsidianMetricsSink>();
     builder.Services.AddSingleton<SyncthingConfigService>();
 
-    builder.Services.AddSingleton(_ => new BagOfWordsEmbeddingService());
     var sidecarBaseUrl = builder.Configuration["Mozgoslav:PythonSidecar:BaseUrl"];
-    if (!string.IsNullOrWhiteSpace(sidecarBaseUrl))
+    if (string.IsNullOrWhiteSpace(sidecarBaseUrl))
     {
-        const string SidecarClientName = "Mozgoslav.PythonSidecar";
-        builder.Services.AddHttpClient(SidecarClientName, client =>
+        Log.Error(
+            "Mozgoslav:PythonSidecar:BaseUrl is not configured. " +
+            "RAG embedding and reranking require the python-sidecar. " +
+            "Start the sidecar and set this configuration value.");
+    }
+
+    const string SidecarClientName = "Mozgoslav.PythonSidecar";
+    builder.Services.AddHttpClient(SidecarClientName, client =>
+    {
+        if (!string.IsNullOrWhiteSpace(sidecarBaseUrl))
         {
             client.BaseAddress = new Uri(sidecarBaseUrl);
-        })
-        .AddStandardResilienceHandler(options =>
-        {
-            options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(2);
-            options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
-            options.Retry.MaxRetryAttempts = 3;
-            options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
-            options.Retry.Delay = TimeSpan.FromSeconds(1);
-            options.Retry.UseJitter = true;
-            options.CircuitBreaker.FailureRatio = 0.5;
-            options.CircuitBreaker.MinimumThroughput = 5;
-            options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(1);
-            options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
-        });
-        builder.Services.AddSingleton<IEmbeddingService>(sp =>
-            new PythonSidecarEmbeddingService(
-                sp.GetRequiredService<IHttpClientFactory>().CreateClient(SidecarClientName),
-                sp.GetRequiredService<BagOfWordsEmbeddingService>(),
-                sp.GetRequiredService<ILogger<PythonSidecarEmbeddingService>>()));
-        builder.Services.AddSingleton<IPythonSidecarClient>(sp =>
-            new PythonSidecarClient(
-                sp.GetRequiredService<IHttpClientFactory>().CreateClient(SidecarClientName),
-                sp.GetRequiredService<ILogger<PythonSidecarClient>>()));
-    }
-    else
+        }
+    })
+    .AddStandardResilienceHandler(options =>
     {
-        builder.Services.AddSingleton<IEmbeddingService>(sp =>
-            sp.GetRequiredService<BagOfWordsEmbeddingService>());
-    }
-    var persistRag = builder.Configuration.GetValue<bool>("Mozgoslav:Rag:Persist");
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(2);
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
+        options.Retry.MaxRetryAttempts = 3;
+        options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+        options.Retry.Delay = TimeSpan.FromSeconds(1);
+        options.Retry.UseJitter = true;
+        options.CircuitBreaker.FailureRatio = 0.5;
+        options.CircuitBreaker.MinimumThroughput = 5;
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(1);
+        options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
+    });
+
+    builder.Services.AddSingleton<IEmbeddingService>(sp =>
+        new PythonSidecarEmbeddingService(
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient(SidecarClientName),
+            sp.GetRequiredService<ILogger<PythonSidecarEmbeddingService>>()));
+    builder.Services.AddSingleton<IPythonSidecarClient>(sp =>
+        new PythonSidecarClient(
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient(SidecarClientName),
+            sp.GetRequiredService<ILogger<PythonSidecarClient>>()));
+
+    var persistRag = builder.Configuration.GetValue("Mozgoslav:Rag:Persist", defaultValue: true);
     if (persistRag)
     {
         builder.Services.AddSingleton<IVectorIndex>(_ => new SqliteVectorIndex(connectionString));
@@ -276,7 +283,115 @@ try
     {
         builder.Services.AddSingleton<IVectorIndex, InMemoryVectorIndex>();
     }
-    builder.Services.AddSingleton<IRagService, RagService>();
+
+    builder.Services.Configure<HybridRetrieverOptions>(
+        builder.Configuration.GetSection(HybridRetrieverOptions.SectionName));
+    builder.Services.Configure<RerankerOptions>(
+        builder.Configuration.GetSection(RerankerOptions.SectionName));
+
+    builder.Services.AddSingleton<IRetriever>(sp =>
+        new HybridRetriever(
+            sp.GetRequiredService<IEmbeddingService>(),
+            sp.GetRequiredService<IVectorIndex>(),
+            sp.GetRequiredService<IDbContextFactory<MozgoslavDbContext>>(),
+            connectionString,
+            sp.GetRequiredService<IOptions<HybridRetrieverOptions>>(),
+            sp.GetRequiredService<ILogger<HybridRetriever>>()));
+
+    builder.Services.AddSingleton<IReranker>(sp =>
+        new BgeRerankerProvider(
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient(SidecarClientName),
+            sp.GetRequiredService<IOptions<RerankerOptions>>(),
+            sp.GetRequiredService<ILogger<BgeRerankerProvider>>()));
+
+    builder.Services.AddSingleton<IRagService>(sp =>
+        new RagService(
+            sp.GetRequiredService<IEmbeddingService>(),
+            sp.GetRequiredService<IVectorIndex>(),
+            sp.GetRequiredService<IRetriever>(),
+            sp.GetRequiredService<IReranker>(),
+            sp.GetRequiredService<ILlmService>(),
+            sp.GetRequiredService<ILogger<RagService>>()));
+
+    builder.Services.Configure<UnifiedSearchOptions>(
+        builder.Configuration.GetSection(UnifiedSearchOptions.SectionName));
+    builder.Services.AddSingleton<CorpusQueryTool>();
+    builder.Services.AddSingleton<WebSearchTool>();
+    builder.Services.AddSingleton<WebFetchTool>();
+    builder.Services.AddSingleton<ObsidianReadTool>();
+
+    var agentsProvider = builder.Configuration["Mozgoslav:Agents:Provider"];
+    if (string.Equals(agentsProvider, "NoOp", StringComparison.OrdinalIgnoreCase))
+    {
+        builder.Services.AddSingleton<IAgentRunner, NoOpAgentRunner>();
+    }
+    else
+    {
+        builder.Services.AddSingleton<IAgentRunner>(sp =>
+            new MafAgentRunner(
+                sp.GetRequiredService<ILlmProviderFactory>(),
+                [
+                    sp.GetRequiredService<CorpusQueryTool>(),
+                    sp.GetRequiredService<WebSearchTool>(),
+                    sp.GetRequiredService<WebFetchTool>(),
+                    sp.GetRequiredService<ObsidianReadTool>(),
+                ],
+                sp.GetRequiredService<ILogger<MafAgentRunner>>()));
+    }
+    builder.Services.AddScoped<IUnifiedSearch, MafUnifiedSearch>();
+    builder.Services.AddScoped<AskFromVoiceUseCase>();
+    builder.Services.AddScoped<AggregateSummaryUseCase>();
+
+    builder.Services.Configure<SummaryOptions>(
+        builder.Configuration.GetSection(SummaryOptions.SectionName));
+
+    var webProvider = builder.Configuration["Mozgoslav:Web:Provider"];
+    var searxngEndpoint = builder.Configuration["Mozgoslav:Web:SearXng:Endpoint"] ?? "http://localhost:8888";
+    if (string.Equals(webProvider, "NoOp", StringComparison.OrdinalIgnoreCase))
+    {
+        builder.Services.AddSingleton<IWebSearch, NoOpWebSearch>();
+    }
+    else
+    {
+        const string SearXNGClientName = SearXNGProvider.HttpClientName;
+        builder.Services.AddHttpClient(SearXNGClientName, client =>
+        {
+            client.BaseAddress = new Uri(searxngEndpoint);
+        })
+        .AddStandardResilienceHandler(options =>
+        {
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
+            options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
+            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.UseJitter = true;
+            options.CircuitBreaker.FailureRatio = 0.5;
+            options.CircuitBreaker.MinimumThroughput = 3;
+            options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+            options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(15);
+        });
+        builder.Services.AddSingleton<IWebSearch>(sp =>
+            new SearXNGProvider(
+                sp.GetRequiredService<IHttpClientFactory>().CreateClient(SearXNGClientName),
+                sp.GetRequiredService<ILogger<SearXNGProvider>>()));
+    }
+
+    var cacheTtlHours = builder.Configuration.GetValue("Mozgoslav:Web:Extract:CacheTtlHours", 24);
+    builder.Services.AddSingleton<IWebContentExtractor>(sp =>
+        new TrafilaturaProvider(
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient(TrafilaturaProvider.HttpClientName),
+            sp.GetRequiredService<IMemoryCache>(),
+            TimeSpan.FromHours(cacheTtlHours),
+            sp.GetRequiredService<ILogger<TrafilaturaProvider>>()));
+
+    var searxngBundledSettings = Path.Combine(
+        AppContext.BaseDirectory, "searxng-settings.yml");
+    builder.Services.AddSingleton(sp =>
+        new SearxngConfigService(
+            searxngBundledSettings,
+            sp.GetRequiredService<IAppSettings>(),
+            sp.GetRequiredService<ILogger<SearxngConfigService>>()));
 
     var syncthingBaseUrl = builder.Configuration["Mozgoslav:SyncthingBaseUrl"];
     if (!string.IsNullOrWhiteSpace(syncthingBaseUrl))
@@ -303,12 +418,38 @@ try
         .AddPrometheusExporter());
 
     builder.Services.AddHostedService<DatabaseInitializer>();
+    var summaryOptions = builder.Configuration
+        .GetSection(SummaryOptions.SectionName)
+        .Get<SummaryOptions>() ?? new SummaryOptions();
+
     builder.Services.AddQuartz(q =>
     {
         q.AddJob<ProcessRecordingQuartzJob>(jobConfig => jobConfig
             .StoreDurably()
             .RequestRecovery()
             .WithIdentity("process-recording-template", ProcessRecordingQuartzJob.JobGroup));
+
+        if (summaryOptions.Weekly.Enabled)
+        {
+            q.AddJob<WeeklyAggregatedSummaryJob>(jobConfig => jobConfig
+                .StoreDurably()
+                .WithIdentity("weekly-summary", WeeklyAggregatedSummaryJob.JobGroup));
+            q.AddTrigger(t => t
+                .ForJob("weekly-summary", WeeklyAggregatedSummaryJob.JobGroup)
+                .WithIdentity("weekly-summary-trigger", WeeklyAggregatedSummaryJob.JobGroup)
+                .WithCronSchedule(summaryOptions.Weekly.Cron));
+        }
+
+        if (summaryOptions.Monthly.Enabled)
+        {
+            q.AddJob<MonthlyAggregatedSummaryJob>(jobConfig => jobConfig
+                .StoreDurably()
+                .WithIdentity("monthly-summary", MonthlyAggregatedSummaryJob.JobGroup));
+            q.AddTrigger(t => t
+                .ForJob("monthly-summary", MonthlyAggregatedSummaryJob.JobGroup)
+                .WithIdentity("monthly-summary-trigger", MonthlyAggregatedSummaryJob.JobGroup)
+                .WithCronSchedule(summaryOptions.Monthly.Cron));
+        }
     });
     builder.Services.AddQuartzHostedService(options =>
     {

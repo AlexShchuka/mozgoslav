@@ -14,6 +14,7 @@ using Mozgoslav.Api.GraphQL.Rag;
 using Mozgoslav.Api.GraphQL.Recordings;
 using Mozgoslav.Api.GraphQL.Settings;
 using Mozgoslav.Api.GraphQL.Sync;
+using Mozgoslav.Api.GraphQL.WebSearch;
 
 namespace Mozgoslav.Api.GraphQL.Mutations;
 
@@ -35,6 +36,7 @@ internal static class MutationRegistration
             .AddTypeExtension<MeetilyMutationType>()
             .AddTypeExtension<BackupMutationType>()
             .AddTypeExtension<RagMutationType>()
-            .AddTypeExtension<SyncMutationType>();
+            .AddTypeExtension<SyncMutationType>()
+            .AddTypeExtension<WebSearchMutationType>();
     }
 }

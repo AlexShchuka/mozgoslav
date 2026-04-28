@@ -15,13 +15,11 @@ from app.services.diarize_service import (
 
 
 class _StubVad:
-
     def __init__(self, _script: list[tuple[float, float]]) -> None:
         self._script = _script
 
 
 class _StubEmbedder:
-
     def __init__(self, pattern: list[int]) -> None:
         self._pattern = iter(pattern)
 

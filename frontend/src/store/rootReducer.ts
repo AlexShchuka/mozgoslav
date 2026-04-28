@@ -31,8 +31,12 @@ import type { BackupsState } from "./slices/backups";
 import { backupsReducer } from "./slices/backups";
 import type { HotkeysState } from "./slices/hotkeys";
 import { hotkeysReducer } from "./slices/hotkeys";
+import type { AskState } from "./slices/ask/reducer";
+import { askReducer } from "./slices/ask/reducer";
 import type { HealthState } from "./slices/health";
 import { healthReducer } from "./slices/health";
+import type { WebSearchState } from "./slices/webSearch/types";
+import { webSearchReducer } from "./slices/webSearch";
 
 export const rootReducer = combineReducers({
   recording: recordingReducer,
@@ -52,6 +56,8 @@ export const rootReducer = combineReducers({
   backups: backupsReducer,
   hotkeys: hotkeysReducer,
   health: healthReducer,
+  ask: askReducer,
+  webSearch: webSearchReducer,
 });
 
 export interface GlobalState {
@@ -72,4 +78,6 @@ export interface GlobalState {
   backups: BackupsState;
   hotkeys: HotkeysState;
   health: HealthState;
+  ask: AskState;
+  webSearch: WebSearchState;
 }

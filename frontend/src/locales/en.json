@@ -33,6 +33,17 @@
     "statusEmpty": "Index is empty — reindex your notes",
     "statusReady": "Indexed: {{chunks}} chunks across {{notes}} notes"
   },
+  "ask": {
+    "title": "Ask",
+    "placeholder": "Ask anything…",
+    "emptyState": "Ask a question. Corpus, vault notes, and web are searched together.",
+    "includeWeb": "Web",
+    "citationCorpus": "From notes",
+    "citationVault": "From vault",
+    "citationWeb": "From web",
+    "overlayTitle": "Ask Corpus",
+    "overlayEmpty": "Waiting for voice input…"
+  },
   "common": {
     "save": "Save",
     "cancel": "Cancel",
@@ -423,6 +434,16 @@
       "listening": "go ahead, I'm listening…",
       "finalizing": "wrapping up…"
     }
+  },
+  "webSearch": {
+    "privacyDisclaimer": "Web search runs through SearXNG — a local aggregator that does not share data with third parties.",
+    "engines": "Search engines",
+    "engineDdg": "DuckDuckGo",
+    "engineYandex": "Yandex",
+    "engineGoogle": "Google",
+    "cacheTtl": "Cache duration (hours)",
+    "rawSettings": "SearXNG settings (YAML)",
+    "saveNote": "Settings apply on next sidecar restart"
   },
   "errors": {
     "genericErrorWithMessage": "Error: {{message}}"

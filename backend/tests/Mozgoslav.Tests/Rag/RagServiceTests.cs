@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -122,16 +125,107 @@ public sealed class RagServiceTests
         answer.Answer.Should().Contain(answer.Citations[0].Chunk.Text);
     }
 
+    [TestMethod]
+    public async Task AnswerAsync_WithMetadataFilter_PassesFilterToRetriever()
+    {
+        var retriever = Substitute.For<IRetriever>();
+        retriever.RetrieveAsync(Arg.Any<RetrievalQuery>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<RetrievedChunk>());
+        var reranker = Substitute.For<IReranker>();
+        var llm = Substitute.For<ILlmService>();
+        var embedding = Substitute.For<IEmbeddingService>();
+        var index = Substitute.For<IVectorIndex>();
+        var sut = new RagService(embedding, index, retriever, reranker, llm, NullLogger<RagService>.Instance);
+
+        var filter = new MetadataFilter(
+            FromUtc: DateTimeOffset.UtcNow.AddDays(-7),
+            ToUtc: DateTimeOffset.UtcNow,
+            ProfileIds: null,
+            SpeakerIds: null);
+
+        await sut.AnswerAsync("test question", topK: 5, filter, CancellationToken.None);
+
+        await retriever.Received(1).RetrieveAsync(
+            Arg.Is<RetrievalQuery>(q => q.Filter == filter),
+            Arg.Any<CancellationToken>());
+    }
+
+    [TestMethod]
+    public async Task AnswerAsync_LegacyOverload_PassesNullFilter()
+    {
+        var retriever = Substitute.For<IRetriever>();
+        retriever.RetrieveAsync(Arg.Any<RetrievalQuery>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<RetrievedChunk>());
+        var reranker = Substitute.For<IReranker>();
+        var llm = Substitute.For<ILlmService>();
+        var embedding = Substitute.For<IEmbeddingService>();
+        var index = Substitute.For<IVectorIndex>();
+        var sut = new RagService(embedding, index, retriever, reranker, llm, NullLogger<RagService>.Instance);
+
+        await sut.AnswerAsync("test question", topK: 5, CancellationToken.None);
+
+        await retriever.Received(1).RetrieveAsync(
+            Arg.Is<RetrievalQuery>(q => q.Filter == null),
+            Arg.Any<CancellationToken>());
+    }
+
+    private sealed class PassthroughRetriever : IRetriever
+    {
+        private readonly IEmbeddingService _embedding;
+        private readonly IVectorIndex _index;
+
+        public PassthroughRetriever(IEmbeddingService embedding, IVectorIndex index)
+        {
+            _embedding = embedding;
+            _index = index;
+        }
+
+        public async Task<IReadOnlyList<RetrievedChunk>> RetrieveAsync(
+            RetrievalQuery query,
+            CancellationToken ct)
+        {
+            var vec = await _embedding.EmbedAsync(query.Query, ct);
+            var hits = await _index.SearchAsync(vec, query.TopK, ct);
+            return hits.Select(h => new RetrievedChunk(
+                ChunkId: h.Chunk.Id,
+                NoteId: h.Chunk.NoteId.ToString("D"),
+                Text: h.Chunk.Text,
+                Embedding: h.Chunk.Embedding,
+                CreatedAt: DateTimeOffset.UtcNow,
+                ProfileId: null,
+                Speaker: null,
+                Score: h.Score)).ToArray();
+        }
+    }
+
+    private sealed class PassthroughReranker : IReranker
+    {
+        public Task<IReadOnlyList<RerankedChunk>> RerankAsync(
+            string query,
+            IReadOnlyList<RetrievedChunk> chunks,
+            int topK,
+            CancellationToken ct)
+        {
+            IReadOnlyList<RerankedChunk> result = chunks
+                .Take(topK)
+                .Select(c => new RerankedChunk(c, c.Score))
+                .ToArray();
+            return Task.FromResult(result);
+        }
+    }
+
     private sealed class Fixture
     {
         public ILlmService Llm { get; } = Substitute.For<ILlmService>();
         public InMemoryVectorIndex Index { get; } = new();
-        public IEmbeddingService Embedding { get; } = new BagOfWordsEmbeddingService(dimensions: 128);
+        public IEmbeddingService Embedding { get; } = new FakeEmbeddingService();
         public RagService Rag { get; }
 
         private Fixture()
         {
-            Rag = new RagService(Embedding, Index, Llm, NullLogger<RagService>.Instance);
+            var retriever = new PassthroughRetriever(Embedding, Index);
+            var reranker = new PassthroughReranker();
+            Rag = new RagService(Embedding, Index, retriever, reranker, Llm, NullLogger<RagService>.Instance);
         }
 
         public static Fixture Empty() => new();
@@ -155,5 +249,82 @@ public sealed class RagServiceTests
         }
 
         private static ProcessedNote MakeNote(string markdown) => new() { MarkdownContent = markdown };
+    }
+
+    private sealed class FakeEmbeddingService : IEmbeddingService
+    {
+        public int Dimensions => 128;
+
+        public Task<float[]> EmbedAsync(string text, CancellationToken ct)
+        {
+            var bow = new FnvHashEmbeddingService(dimensions: 128);
+            return bow.EmbedAsync(text, ct);
+        }
+
+        private sealed class FnvHashEmbeddingService : IEmbeddingService
+        {
+            private static readonly char[] Delimiters = [
+                ' ', '\t', '\r', '\n', '.', ',', ';', ':', '!', '?',
+            ];
+
+            public FnvHashEmbeddingService(int dimensions)
+            {
+                Dimensions = dimensions;
+            }
+
+            public int Dimensions { get; }
+
+            public Task<float[]> EmbedAsync(string text, CancellationToken ct)
+            {
+                var vector = new float[Dimensions];
+                if (string.IsNullOrWhiteSpace(text))
+                {
+                    return Task.FromResult(vector);
+                }
+                var tokens = text.ToLowerInvariant().Split(Delimiters, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var token in tokens)
+                {
+                    if (token.Length < 2)
+                    {
+                        continue;
+                    }
+                    var bucket = (int)((uint)StableHash(token) % (uint)Dimensions);
+                    vector[bucket] += 1f;
+                }
+                Normalize(vector);
+                return Task.FromResult(vector);
+            }
+
+            private static void Normalize(float[] vector)
+            {
+                double sumSq = 0;
+                foreach (var v in vector)
+                {
+                    sumSq += v * v;
+                }
+                if (sumSq == 0)
+                {
+                    return;
+                }
+                var norm = (float)Math.Sqrt(sumSq);
+                for (var i = 0; i < vector.Length; i++)
+                {
+                    vector[i] /= norm;
+                }
+            }
+
+            private static int StableHash(string s)
+            {
+                const uint FnvOffsetBasis = 2166136261u;
+                const uint FnvPrime = 16777619u;
+                var hash = FnvOffsetBasis;
+                foreach (var c in s)
+                {
+                    hash ^= c;
+                    hash *= FnvPrime;
+                }
+                return unchecked((int)hash);
+            }
+        }
     }
 }

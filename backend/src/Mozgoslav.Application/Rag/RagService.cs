@@ -17,20 +17,27 @@ public sealed class RagService : IRagService
 {
     private const int MinTopK = 1;
     private const int MaxTopK = 20;
+    private const int RetrievalCandidateMultiplier = 10;
 
     private readonly IEmbeddingService _embedding;
     private readonly IVectorIndex _index;
+    private readonly IRetriever _retriever;
+    private readonly IReranker _reranker;
     private readonly ILlmService _llm;
     private readonly ILogger<RagService> _logger;
 
     public RagService(
         IEmbeddingService embedding,
         IVectorIndex index,
+        IRetriever retriever,
+        IReranker reranker,
         ILlmService llm,
         ILogger<RagService> logger)
     {
         _embedding = embedding;
         _index = index;
+        _retriever = retriever;
+        _reranker = reranker;
         _llm = llm;
         _logger = logger;
     }
@@ -63,20 +70,36 @@ public sealed class RagService : IRagService
         return _index.RemoveByNoteAsync(noteId, ct);
     }
 
-    public async Task<RagAnswer> AnswerAsync(string question, int topK, CancellationToken ct)
+    public Task<RagAnswer> AnswerAsync(string question, int topK, CancellationToken ct)
+        => AnswerAsync(question, topK, filter: null, ct);
+
+    public async Task<RagAnswer> AnswerAsync(string question, int topK, MetadataFilter? filter, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(question);
         topK = Math.Clamp(topK, MinTopK, MaxTopK);
 
-        var queryEmbedding = await _embedding.EmbedAsync(question, ct);
-        var hits = await _index.SearchAsync(queryEmbedding, topK, ct);
-        if (hits.Count == 0)
+        var candidateK = topK * RetrievalCandidateMultiplier;
+        var query = new RetrievalQuery(question, candidateK, filter);
+        var candidates = await _retriever.RetrieveAsync(query, ct);
+
+        if (candidates.Count == 0)
         {
             return new RagAnswer(
                 Answer: "В базе не нашлось заметок, относящихся к вопросу.",
                 Citations: [],
                 LlmAvailable: true);
         }
+
+        var reranked = await _reranker.RerankAsync(question, candidates, topK, ct);
+        var hits = reranked
+            .Select(r => new NoteChunkHit(
+                new NoteChunk(
+                    r.Chunk.ChunkId,
+                    Guid.TryParse(r.Chunk.NoteId, out var nid) ? nid : Guid.Empty,
+                    r.Chunk.Text,
+                    r.Chunk.Embedding),
+                r.RerankScore))
+            .ToArray();
 
         var llmAvailable = await SafeIsAvailableAsync(ct);
         if (!llmAvailable)

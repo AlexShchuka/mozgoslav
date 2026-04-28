@@ -131,6 +131,14 @@ export class NativeHelperClient extends EventEmitter {
     await this.send<object>("dumpHotkey.stop", undefined);
   }
 
+  async startAskCorpusHotkey(accelerator: string): Promise<void> {
+    await this.send<object>("askCorpusHotkey.start", { accelerator });
+  }
+
+  async stopAskCorpusHotkey(): Promise<void> {
+    await this.send<object>("askCorpusHotkey.stop", undefined);
+  }
+
   async detectTarget(): Promise<FocusedTarget> {
     const result = (await this.send<FocusedTarget>("inject.detectTarget", undefined)) as
       | { bundleId?: string; appName?: string; useAX?: boolean }
@@ -201,6 +209,8 @@ export class NativeHelperClient extends EventEmitter {
         this.emit("hotkey", params as unknown as HotkeyEventPayload);
       } else if (event === "dumpHotkey" && params) {
         this.emit("dumpHotkey", params as unknown as HotkeyEventPayload);
+      } else if (event === "askCorpus" && params) {
+        this.emit("askCorpus", params as unknown as HotkeyEventPayload);
       }
       return;
     }

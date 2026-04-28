@@ -29,7 +29,7 @@ module.exports = {
         ],
     },
     moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json"],
-    testPathIgnorePatterns: ["/node_modules/", "/dist/", "/dist-electron/", "/release/"],
+    testPathIgnorePatterns: ["/node_modules/", "/dist/", "/dist-electron/", "/release/", "/\\.archive/"],
     collectCoverageFrom: [
         "src/**/*.{ts,tsx}",
         "!src/**/*.d.ts",
