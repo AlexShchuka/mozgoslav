@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -7,11 +8,12 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
+using Mozgoslav.Application.Agents;
 using Mozgoslav.Application.WebSearch;
 
 namespace Mozgoslav.Infrastructure.Search.Tools;
 
-public sealed class WebSearchTool
+public sealed class WebSearchTool : IAgentTool
 {
     public const string ToolName = "web.search";
 
@@ -22,6 +24,19 @@ public sealed class WebSearchTool
     {
         _webSearch = webSearch;
         _logger = logger;
+    }
+
+    public string Name => ToolName;
+
+    public string Description => "Search the web for current public information. Use when the user asks about recent events, public facts, or anything not in personal notes.";
+
+    public async Task<string> InvokeAsync(string argsJson, CancellationToken ct)
+    {
+        var doc = JsonDocument.Parse(argsJson);
+        var query = doc.RootElement.GetProperty("query").GetString() ?? string.Empty;
+        var top = doc.RootElement.TryGetProperty("top", out var topEl) ? topEl.GetInt32() : 5;
+        var results = await ExecuteAsync(query, top, ct);
+        return JsonSerializer.Serialize(results.Select(r => new { r.Title, r.Snippet, r.Url }));
     }
 
     public async Task<IReadOnlyList<WebSearchResult>> ExecuteAsync(

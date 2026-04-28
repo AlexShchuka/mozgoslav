@@ -4,7 +4,7 @@ import { get as httpGet } from "node:http";
 import path from "node:path";
 
 const SEARXNG_PORT = 8888;
-const HEALTH_PATH = "/healthz";
+const HEALTH_PATH = "/";
 const HEALTH_POLL_MS = 500;
 const HEALTH_MAX_ATTEMPTS = 20;
 

@@ -442,7 +442,8 @@
     "engineYandex": "Яндекс",
     "engineGoogle": "Google",
     "cacheTtl": "Время кэша (часы)",
-    "rawSettings": "Настройки SearXNG (YAML)"
+    "rawSettings": "Настройки SearXNG (YAML)",
+    "saveNote": "Настройки применятся при следующем перезапуске sidecar"
   },
   "errors": {
     "genericErrorWithMessage": "Ошибка: {{message}}"

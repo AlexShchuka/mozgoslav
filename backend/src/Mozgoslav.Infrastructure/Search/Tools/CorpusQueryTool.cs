@@ -8,11 +8,12 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
+using Mozgoslav.Application.Agents;
 using Mozgoslav.Application.Rag;
 
 namespace Mozgoslav.Infrastructure.Search.Tools;
 
-public sealed class CorpusQueryTool
+public sealed class CorpusQueryTool : IAgentTool
 {
     public const string ToolName = "corpus.query";
 
@@ -25,6 +26,19 @@ public sealed class CorpusQueryTool
         _retriever = retriever;
         _reranker = reranker;
         _logger = logger;
+    }
+
+    public string Name => ToolName;
+
+    public string Description => "Search the personal notes corpus. Use for past conversations, personal notes, meeting summaries stored locally.";
+
+    public async Task<string> InvokeAsync(string argsJson, CancellationToken ct)
+    {
+        var doc = JsonDocument.Parse(argsJson);
+        var query = doc.RootElement.GetProperty("query").GetString() ?? string.Empty;
+        var top = doc.RootElement.TryGetProperty("top", out var topEl) ? topEl.GetInt32() : 5;
+        var chunks = await ExecuteAsync(query, null, top, ct);
+        return JsonSerializer.Serialize(chunks.Select(c => new { c.NoteId, c.Text, c.Score }));
     }
 
     public async Task<IReadOnlyList<RetrievedChunk>> ExecuteAsync(

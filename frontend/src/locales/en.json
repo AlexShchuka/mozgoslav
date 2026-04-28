@@ -442,7 +442,8 @@
     "engineYandex": "Yandex",
     "engineGoogle": "Google",
     "cacheTtl": "Cache duration (hours)",
-    "rawSettings": "SearXNG settings (YAML)"
+    "rawSettings": "SearXNG settings (YAML)",
+    "saveNote": "Settings apply on next sidecar restart"
   },
   "errors": {
     "genericErrorWithMessage": "Error: {{message}}"

@@ -11,11 +11,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Note: `requirements.txt` pins `searxng==2025.4.8`. The upstream SearXNG project does not publish to PyPI under a date-versioned scheme. Install directly from the upstream repository if the pinned version is unavailable:
-
-```bash
-pip install git+https://github.com/searxng/searxng.git
-```
+`requirements.txt` installs SearXNG directly from the upstream repository at a pinned commit (SearXNG does not publish stable releases to PyPI under a date-versioned scheme).
 
 ## Running
 
@@ -29,10 +25,10 @@ Subsequent launches read from that user-editable copy. Settings path is passed v
 ## Health check
 
 ```
-GET http://127.0.0.1:8888/healthz
+GET http://127.0.0.1:8888/
 ```
 
-Returns `200 OK` when SearXNG is ready.
+Returns `200 OK` (SearXNG home page) when the service is ready. The Electron launcher polls this endpoint before marking the sidecar as healthy.
 
 ## Search API
 

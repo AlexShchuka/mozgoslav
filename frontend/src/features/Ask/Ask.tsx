@@ -1,11 +1,14 @@
 import { FC, FormEvent, KeyboardEvent, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import Button from "../../components/Button";
+import { noteRoute } from "../../constants/routes";
 import type { AskMessage, AskProps } from "./types";
 import {
   AskRoot,
   CitationChipCorpus,
+  CitationChipVault,
   CitationChipWeb,
   CitationGroupTitle,
   CitationGroups,
@@ -16,6 +19,7 @@ import {
   InputField,
   MessageBubble,
   MessageList,
+  MessageListItem,
   MessageRow,
   Title,
   TypingDots,
@@ -23,6 +27,7 @@ import {
 
 const Ask: FC<AskProps> = ({ messages, isAsking, onAsk }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [draft, setDraft] = useState("");
   const [includeWeb, setIncludeWeb] = useState(true);
   const listRef = useRef<HTMLOListElement | null>(null);
@@ -57,11 +62,11 @@ const Ask: FC<AskProps> = ({ messages, isAsking, onAsk }) => {
       <MessageList ref={listRef} data-testid="ask-message-list">
         {messages.length === 0 && <EmptyState>{t("ask.emptyState")}</EmptyState>}
         {messages.map((message) => (
-          <li key={message.id} style={{ listStyle: "none" }}>
+          <MessageListItem key={message.id}>
             <MessageRow $role={message.role}>
-              <MessageBubble $role={message.role}>{renderBody(message, t)}</MessageBubble>
+              <MessageBubble $role={message.role}>{renderBody(message, t, navigate)}</MessageBubble>
             </MessageRow>
-          </li>
+          </MessageListItem>
         ))}
       </MessageList>
       <InputBar onSubmit={handleSubmit}>
@@ -95,7 +100,13 @@ const Ask: FC<AskProps> = ({ messages, isAsking, onAsk }) => {
   );
 };
 
-const renderBody = (message: AskMessage, t: ReturnType<typeof useTranslation>["t"]) => {
+type NavigateFn = ReturnType<typeof useNavigate>;
+
+const renderBody = (
+  message: AskMessage,
+  t: ReturnType<typeof useTranslation>["t"],
+  navigate: NavigateFn
+) => {
   if (message.state === "pending") {
     return (
       <TypingDots aria-label="ask-pending">
@@ -111,20 +122,45 @@ const renderBody = (message: AskMessage, t: ReturnType<typeof useTranslation>["t
   }
 
   const corpusCitations = message.citations.filter((c) => c.source === "Corpus");
+  const vaultCitations = message.citations.filter((c) => c.source === "Vault");
   const webCitations = message.citations.filter((c) => c.source === "Web");
 
   return (
     <>
       <div>{message.content}</div>
-      {(corpusCitations.length > 0 || webCitations.length > 0) && (
+      {(corpusCitations.length > 0 || vaultCitations.length > 0 || webCitations.length > 0) && (
         <CitationGroups>
           {corpusCitations.length > 0 && (
             <div>
               <CitationGroupTitle>{t("ask.citationCorpus")}</CitationGroupTitle>
               {corpusCitations.map((c, i) => (
-                <CitationChipCorpus key={`corpus-${i}`} type="button" title={c.snippet}>
+                <CitationChipCorpus
+                  key={`corpus-${i}`}
+                  type="button"
+                  title={c.snippet}
+                  onClick={() => navigate(noteRoute(c.reference))}
+                >
                   {c.reference}
                 </CitationChipCorpus>
+              ))}
+            </div>
+          )}
+          {vaultCitations.length > 0 && (
+            <div>
+              <CitationGroupTitle>{t("ask.citationVault")}</CitationGroupTitle>
+              {vaultCitations.map((c, i) => (
+                <CitationChipVault
+                  key={`vault-${i}`}
+                  type="button"
+                  title={c.snippet}
+                  onClick={() => {
+                    if (typeof window !== "undefined" && window.mozgoslav?.openExternal && c.url) {
+                      void window.mozgoslav.openExternal(c.url);
+                    }
+                  }}
+                >
+                  {c.reference}
+                </CitationChipVault>
               ))}
             </div>
           )}

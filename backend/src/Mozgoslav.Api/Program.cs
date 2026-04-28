@@ -274,7 +274,7 @@ try
             sp.GetRequiredService<IHttpClientFactory>().CreateClient(SidecarClientName),
             sp.GetRequiredService<ILogger<PythonSidecarClient>>()));
 
-    var persistRag = builder.Configuration.GetValue<bool>("Mozgoslav:Rag:Persist");
+    var persistRag = builder.Configuration.GetValue("Mozgoslav:Rag:Persist", defaultValue: true);
     if (persistRag)
     {
         builder.Services.AddSingleton<IVectorIndex>(_ => new SqliteVectorIndex(connectionString));
@@ -313,6 +313,13 @@ try
             sp.GetRequiredService<ILlmService>(),
             sp.GetRequiredService<ILogger<RagService>>()));
 
+    builder.Services.Configure<UnifiedSearchOptions>(
+        builder.Configuration.GetSection(UnifiedSearchOptions.SectionName));
+    builder.Services.AddSingleton<CorpusQueryTool>();
+    builder.Services.AddSingleton<WebSearchTool>();
+    builder.Services.AddSingleton<WebFetchTool>();
+    builder.Services.AddSingleton<ObsidianReadTool>();
+
     var agentsProvider = builder.Configuration["Mozgoslav:Agents:Provider"];
     if (string.Equals(agentsProvider, "NoOp", StringComparison.OrdinalIgnoreCase))
     {
@@ -320,15 +327,17 @@ try
     }
     else
     {
-        builder.Services.AddSingleton<IAgentRunner, MafAgentRunner>();
+        builder.Services.AddSingleton<IAgentRunner>(sp =>
+            new MafAgentRunner(
+                sp.GetRequiredService<ILlmProviderFactory>(),
+                [
+                    sp.GetRequiredService<CorpusQueryTool>(),
+                    sp.GetRequiredService<WebSearchTool>(),
+                    sp.GetRequiredService<WebFetchTool>(),
+                    sp.GetRequiredService<ObsidianReadTool>(),
+                ],
+                sp.GetRequiredService<ILogger<MafAgentRunner>>()));
     }
-
-    builder.Services.Configure<UnifiedSearchOptions>(
-        builder.Configuration.GetSection(UnifiedSearchOptions.SectionName));
-    builder.Services.AddSingleton<CorpusQueryTool>();
-    builder.Services.AddSingleton<WebSearchTool>();
-    builder.Services.AddSingleton<WebFetchTool>();
-    builder.Services.AddScoped<ObsidianReadTool>();
     builder.Services.AddScoped<IUnifiedSearch, MafUnifiedSearch>();
     builder.Services.AddScoped<AskFromVoiceUseCase>();
     builder.Services.AddScoped<AggregateSummaryUseCase>();

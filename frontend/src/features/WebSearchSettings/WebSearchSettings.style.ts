@@ -70,5 +70,13 @@ export const PrivacyDisclaimer = styled.p`
 
 export const Toolbar = styled.div`
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: ${({ theme }) => theme.space(3)};
+`;
+
+export const SaveNote = styled.p`
+  font-size: ${({ theme }) => theme.font.size.xs};
+  color: ${({ theme }) => theme.colors.text.muted};
+  margin: 0;
 `;

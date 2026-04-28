@@ -7,11 +7,12 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
+using Mozgoslav.Application.Agents;
 using Mozgoslav.Application.Interfaces;
 
 namespace Mozgoslav.Infrastructure.Search.Tools;
 
-public sealed class ObsidianReadTool
+public sealed class ObsidianReadTool : IAgentTool
 {
     public const string ToolName = "obsidian.read";
 
@@ -22,6 +23,17 @@ public sealed class ObsidianReadTool
     {
         _settings = settings;
         _logger = logger;
+    }
+
+    public string Name => ToolName;
+
+    public string Description => "Read a vault note by its vault-relative path. Use when the user explicitly asks about a specific note.";
+
+    public async Task<string> InvokeAsync(string argsJson, CancellationToken ct)
+    {
+        var doc = JsonDocument.Parse(argsJson);
+        var path = doc.RootElement.GetProperty("path").GetString() ?? string.Empty;
+        return await ExecuteAsync(path, ct);
     }
 
     public async Task<string> ExecuteAsync(string path, CancellationToken ct)

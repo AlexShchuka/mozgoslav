@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -101,6 +102,9 @@ public sealed class HybridRetrieverTests
                 .Options;
             return new MozgoslavDbContext(options);
         }
+
+        public Task<MozgoslavDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(CreateDbContext());
     }
 
     [TestMethod]
@@ -201,5 +205,50 @@ public sealed class HybridRetrieverTests
             CancellationToken.None);
 
         result.Should().NotBeEmpty();
+    }
+
+    [TestMethod]
+    public async Task RetrieveAsync_HybridEnabled_FtsRescuesMissingChunk()
+    {
+        var dbName = $"test_hybrid_{Guid.NewGuid():N}";
+        var connString = $"Data Source={dbName};Mode=Memory;Cache=Shared";
+        await using var keepAlive = new SqliteConnection(connString);
+        await keepAlive.OpenAsync();
+
+        var vec = new float[] { 1f, 0f };
+        var noteId = Guid.NewGuid();
+
+        var chunkA = new NoteChunkHit(new NoteChunk("ca", noteId, "alpha beta", vec), 0.9);
+        var chunkB = new NoteChunkHit(new NoteChunk("cb", noteId, "bravo zulu", vec), 0.7);
+        var chunkC = new NoteChunkHit(new NoteChunk("cc", noteId, "rare proper noun Zygotplatz", vec), 0.0);
+
+        var dbFactory = BuildDbFactory(keepAlive, [chunkA, chunkB, chunkC]);
+
+        await using var ftsCmd = keepAlive.CreateCommand();
+        ftsCmd.CommandText = """
+            CREATE VIRTUAL TABLE IF NOT EXISTS rag_chunks_fts USING fts5(chunk_id UNINDEXED, content);
+            INSERT INTO rag_chunks_fts(chunk_id, content) VALUES ('ca', 'alpha beta');
+            INSERT INTO rag_chunks_fts(chunk_id, content) VALUES ('cb', 'bravo zulu');
+            INSERT INTO rag_chunks_fts(chunk_id, content) VALUES ('cc', 'rare proper noun Zygotplatz');
+            """;
+        await ftsCmd.ExecuteNonQueryAsync();
+
+        var denseIndex = BuildIndex([chunkA, chunkB]);
+
+        var options = Options.Create(new HybridRetrieverOptions { Enabled = true, RrfK = 60 });
+        var sut = new HybridRetriever(
+            BuildEmbedding(vec),
+            denseIndex,
+            dbFactory,
+            connString,
+            options,
+            NullLogger<HybridRetriever>.Instance);
+
+        var result = await sut.RetrieveAsync(
+            new RetrievalQuery("Zygotplatz", TopK: 3),
+            CancellationToken.None);
+
+        result.Should().HaveCount(3);
+        result.Select(r => r.ChunkId).Should().Contain("cc");
     }
 }

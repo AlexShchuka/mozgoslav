@@ -1,5 +1,7 @@
+import type { ReactElement } from "react";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 
 import "../../../i18n";
 import { renderWithStore } from "../../../testUtils";
@@ -18,9 +20,12 @@ const buildMessage = (patch: Partial<AskMessage> & { id: string }): AskMessage =
   ...patch,
 });
 
+const renderAsk = (ui: ReactElement) =>
+  renderWithStore(<MemoryRouter>{ui}</MemoryRouter>);
+
 describe("Ask — presentational", () => {
   it("renders empty state when no messages", () => {
-    renderWithStore(<Ask messages={[]} isAsking={false} onAsk={noop} />);
+    renderAsk(<Ask messages={[]} isAsking={false} onAsk={noop} />);
     expect(screen.getByTestId("ask-message-list")).toBeInTheDocument();
   });
 
@@ -29,7 +34,7 @@ describe("Ask — presentational", () => {
       buildMessage({ id: "u1", role: "user", content: "What is life?" }),
       buildMessage({ id: "a1", role: "assistant", content: "42." }),
     ];
-    renderWithStore(<Ask messages={messages} isAsking={false} onAsk={noop} />);
+    renderAsk(<Ask messages={messages} isAsking={false} onAsk={noop} />);
     expect(screen.getByText("What is life?")).toBeInTheDocument();
     expect(screen.getByText("42.")).toBeInTheDocument();
   });
@@ -38,14 +43,14 @@ describe("Ask — presentational", () => {
     const messages: AskMessage[] = [
       buildMessage({ id: "a1", role: "assistant", content: "", state: "pending" }),
     ];
-    renderWithStore(<Ask messages={messages} isAsking={true} onAsk={noop} />);
+    renderAsk(<Ask messages={messages} isAsking={true} onAsk={noop} />);
     expect(screen.getByLabelText("ask-pending")).toBeInTheDocument();
   });
 
   it("calls onAsk with question text and includeWeb when form submitted", async () => {
     const user = userEvent.setup();
     const onAsk = jest.fn();
-    renderWithStore(<Ask messages={[]} isAsking={false} onAsk={onAsk} />);
+    renderAsk(<Ask messages={[]} isAsking={false} onAsk={onAsk} />);
 
     await user.type(screen.getByTestId("ask-input"), "Who invented chess?");
     await user.keyboard("{Enter}");
@@ -56,7 +61,7 @@ describe("Ask — presentational", () => {
   it("does not call onAsk when input is empty", async () => {
     const user = userEvent.setup();
     const onAsk = jest.fn();
-    renderWithStore(<Ask messages={[]} isAsking={false} onAsk={onAsk} />);
+    renderAsk(<Ask messages={[]} isAsking={false} onAsk={onAsk} />);
 
     await user.keyboard("{Enter}");
 
@@ -64,7 +69,7 @@ describe("Ask — presentational", () => {
   });
 
   it("disables input when isAsking is true", () => {
-    renderWithStore(<Ask messages={[]} isAsking={true} onAsk={noop} />);
+    renderAsk(<Ask messages={[]} isAsking={true} onAsk={noop} />);
     expect(screen.getByTestId<HTMLTextAreaElement>("ask-input").disabled).toBe(true);
   });
 
@@ -85,7 +90,7 @@ describe("Ask — presentational", () => {
         ],
       }),
     ];
-    renderWithStore(<Ask messages={messages} isAsking={false} onAsk={noop} />);
+    renderAsk(<Ask messages={messages} isAsking={false} onAsk={noop} />);
     expect(screen.getByText("note-abc")).toBeInTheDocument();
     expect(screen.getByText("Blog Post")).toBeInTheDocument();
   });
@@ -94,7 +99,11 @@ describe("Ask — presentational", () => {
 describe("Ask — container", () => {
   it("dispatches SUBMIT_ASK when onAsk is called via container", async () => {
     const user = userEvent.setup();
-    const { getActions } = renderWithStore(<AskContainer />);
+    const { getActions } = renderWithStore(
+      <MemoryRouter>
+        <AskContainer />
+      </MemoryRouter>
+    );
 
     await user.type(screen.getByTestId("ask-input"), "test question");
     await user.keyboard("{Enter}");

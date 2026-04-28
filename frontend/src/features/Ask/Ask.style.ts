@@ -33,6 +33,10 @@ export const MessageList = styled.ol`
   gap: ${({ theme }) => theme.space(4)};
 `;
 
+export const MessageListItem = styled.li`
+  list-style: none;
+`;
+
 export const EmptyState = styled.p`
   color: ${({ theme }) => theme.colors.text.muted};
   font-size: ${({ theme }) => theme.font.size.sm};
@@ -110,6 +114,22 @@ export const CitationChipWeb = styled.a`
   cursor: pointer;
   &:hover {
     background: ${({ theme }) => theme.colors.infoSoft};
+  }
+`;
+
+export const CitationChipVault = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.space(1)};
+  padding: ${({ theme }) => `${theme.space(1)} ${theme.space(2)}`};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
+  background: ${({ theme }) => theme.colors.bg.elevated2};
+  color: ${({ theme }) => theme.colors.success};
+  font-size: ${({ theme }) => theme.font.size.xs};
+  cursor: pointer;
+  &:hover {
+    background: ${({ theme }) => theme.colors.successSoft};
   }
 `;
 

@@ -67,7 +67,7 @@ public sealed class HybridRetriever : IRetriever
 
         var (embedding, ftsHits) = (await embeddingTask, await ftsTask);
         var hybridDenseHits = await SearchDenseAsync(embedding, candidateK, query.Filter, ct);
-        return MergeWithRrf(hybridDenseHits, ftsHits, query.TopK, _options.RrfK);
+        return await MergeWithRrfAsync(hybridDenseHits, ftsHits, query.TopK, _options.RrfK, ct);
     }
 
     private async Task<IReadOnlyList<RetrievedChunk>> SearchDenseAsync(
@@ -252,11 +252,12 @@ public sealed class HybridRetriever : IRetriever
         return result;
     }
 
-    private static IReadOnlyList<RetrievedChunk> MergeWithRrf(
+    private async Task<IReadOnlyList<RetrievedChunk>> MergeWithRrfAsync(
         IReadOnlyList<RetrievedChunk> denseRanked,
         IReadOnlyList<FtsHit> ftsRanked,
         int topK,
-        int rrfK)
+        int rrfK,
+        CancellationToken ct)
     {
         var scores = new Dictionary<string, double>(StringComparer.Ordinal);
 
@@ -273,16 +274,53 @@ public sealed class HybridRetriever : IRetriever
 
         var denseById = denseRanked.ToDictionary(c => c.ChunkId, StringComparer.Ordinal);
 
-        return scores
+        var topIds = scores
             .OrderByDescending(kv => kv.Value)
             .Take(topK)
-            .Where(kv => denseById.ContainsKey(kv.Key))
-            .Select(kv =>
+            .Select(kv => kv.Key)
+            .ToList();
+
+        var ftsOnlyIds = topIds
+            .Where(id => !denseById.ContainsKey(id))
+            .ToList();
+
+        var ftsOnlyMeta = new Dictionary<string, (string NoteId, string Text, DateTimeOffset CreatedAt, string? ProfileId, string? Speaker)>(StringComparer.Ordinal);
+        if (ftsOnlyIds.Count > 0)
+        {
+            await using var db = await _dbContextFactory.CreateDbContextAsync(ct);
+            var rows = await db.RagChunks
+                .AsNoTracking()
+                .Where(c => ftsOnlyIds.Contains(c.Id))
+                .Select(c => new { c.Id, c.NoteId, c.Text, c.CreatedAt, c.ProfileId, c.Speaker })
+                .ToListAsync(ct);
+            foreach (var row in rows)
             {
-                var chunk = denseById[kv.Key];
-                return chunk with { Score = kv.Value };
-            })
-            .ToArray();
+                ftsOnlyMeta[row.Id] = (row.NoteId.ToString("D"), row.Text, row.CreatedAt, row.ProfileId, row.Speaker);
+            }
+        }
+
+        var result = new List<RetrievedChunk>(topK);
+        foreach (var id in topIds)
+        {
+            var rrfScore = scores[id];
+            if (denseById.TryGetValue(id, out var denseChunk))
+            {
+                result.Add(denseChunk with { Score = rrfScore });
+            }
+            else if (ftsOnlyMeta.TryGetValue(id, out var meta))
+            {
+                result.Add(new RetrievedChunk(
+                    ChunkId: id,
+                    NoteId: meta.NoteId,
+                    Text: meta.Text,
+                    Embedding: [],
+                    CreatedAt: meta.CreatedAt,
+                    ProfileId: meta.ProfileId,
+                    Speaker: meta.Speaker,
+                    Score: rrfScore));
+            }
+        }
+        return result;
     }
 
     private static string SanitizeFtsQuery(string raw)

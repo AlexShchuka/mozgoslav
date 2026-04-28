@@ -10,6 +10,7 @@ import {
   EngineRow,
   PrivacyDisclaimer,
   RawYamlPre,
+  SaveNote,
   SectionTitle,
   SliderLabel,
   SliderRow,
@@ -107,6 +108,7 @@ const WebSearchSettings: FC<WebSearchSettingsProps> = ({
       )}
 
       <Toolbar>
+        <SaveNote>{t("webSearch.saveNote")}</SaveNote>
         <Button variant="primary" isLoading={isSaving} onClick={() => onSave(draft)}>
           {t("common.save")}
         </Button>
