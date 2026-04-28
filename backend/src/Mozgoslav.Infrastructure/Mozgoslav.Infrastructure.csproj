@@ -151,5 +151,7 @@
         <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore"/>
         <PackageReference Include="OpenTelemetry.Instrumentation.Runtime"/>
         <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore"/>
+        <PackageReference Include="ModelContextProtocol"/>
+        <PackageReference Include="ModelContextProtocol.AspNetCore"/>
     </ItemGroup>
 </Project>

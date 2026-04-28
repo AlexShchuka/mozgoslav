@@ -32,6 +32,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
     private readonly IPerAppCorrectionProfiles _perAppProfiles;
     private readonly IDictationPcmStream _pcmStream;
     private readonly IRecordingPartialsNotifier _recordingPartials;
+    private readonly ISystemAction _systemAction;
     private readonly ILogger<DictationSessionManager> _logger;
 
     private readonly ConcurrentDictionary<Guid, SessionRuntime> _sessions = new();
@@ -46,6 +47,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
         IPerAppCorrectionProfiles perAppProfiles,
         IDictationPcmStream pcmStream,
         IRecordingPartialsNotifier recordingPartials,
+        ISystemAction systemAction,
         ILogger<DictationSessionManager> logger)
     {
         _streaming = streaming;
@@ -54,6 +56,7 @@ public sealed class DictationSessionManager : IDictationSessionManager
         _perAppProfiles = perAppProfiles;
         _pcmStream = pcmStream;
         _recordingPartials = recordingPartials;
+        _systemAction = systemAction;
         _logger = logger;
     }
 
@@ -291,7 +294,15 @@ public sealed class DictationSessionManager : IDictationSessionManager
         var polished = glossaryApplied;
         if (_settings.DictationLlmPolish && !string.IsNullOrWhiteSpace(glossaryApplied))
         {
-            polished = await PolishAsync(glossaryApplied, profile, ct);
+            if (_settings.DictationClassifyIntentEnabled)
+            {
+                var classified = await ClassifyAndRouteAsync(glossaryApplied, ct);
+                polished = classified ? string.Empty : await PolishAsync(glossaryApplied, profile, ct);
+            }
+            else
+            {
+                polished = await PolishAsync(glossaryApplied, profile, ct);
+            }
         }
 
         runtime.Session.State = DictationState.Injecting;
@@ -550,6 +561,71 @@ public sealed class DictationSessionManager : IDictationSessionManager
         runtime.Session.State = DictationState.Error;
         runtime.Partials.Writer.TryComplete(ex);
         _logger.LogError(ex, "Dictation session {SessionId} failed", runtime.Session.Id);
+    }
+
+    private async Task<bool> ClassifyAndRouteAsync(string text, CancellationToken ct)
+    {
+        const string ClassifySystemPrompt =
+            "You are a voice input classifier. Decide if the input is a COMMAND (an action to perform, " +
+            "e.g. creating a reminder, running a shortcut, sending a message) or DICTATION (text to be " +
+            "typed/inserted as-is). " +
+            "Reply with exactly one word: COMMAND or DICTATION. " +
+            "If COMMAND, also output on the next line: ACTION:<shortcut_name>|<title>|<due_iso_or_empty>. " +
+            "Example for a reminder: COMMAND\nACTION:Mozgoslav: Add reminder|Call Vasya on Friday|2026-05-02";
+
+        try
+        {
+            if (!await _llm.IsAvailableAsync(ct))
+            {
+                return false;
+            }
+
+            var result = await _llm.ProcessAsync(text, ClassifySystemPrompt, ct);
+            var answer = result.Summary?.Trim() ?? string.Empty;
+
+            if (!answer.StartsWith("COMMAND", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var lines = answer.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var line in lines)
+            {
+                if (!line.StartsWith("ACTION:", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var parts = line["ACTION:".Length..].Split('|');
+                if (parts.Length < 2)
+                {
+                    break;
+                }
+
+                var shortcutName = parts[0].Trim();
+                var title = parts[1].Trim();
+                var due = parts.Length > 2 ? parts[2].Trim() : string.Empty;
+
+                var args = new Dictionary<string, string>
+                {
+                    ["title"] = title,
+                    ["due"] = due,
+                };
+                await _systemAction.InvokeAsync(shortcutName, args, ct);
+                _logger.LogInformation(
+                    "Dictation classified as COMMAND; invoked '{Shortcut}' with title='{Title}'",
+                    shortcutName, title);
+                return true;
+            }
+
+            _logger.LogInformation("Dictation classified as COMMAND but no ACTION line found");
+            return true;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Dictation intent classification failed, falling back to dictation mode");
+            return false;
+        }
     }
 
     private async Task<string> PolishAsync(string rawText, PerAppCorrectionProfile profile, CancellationToken ct)

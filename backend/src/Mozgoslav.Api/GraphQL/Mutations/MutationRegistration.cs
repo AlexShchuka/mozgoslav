@@ -10,6 +10,7 @@ using Mozgoslav.Api.GraphQL.Models;
 using Mozgoslav.Api.GraphQL.Notes;
 using Mozgoslav.Api.GraphQL.Obsidian;
 using Mozgoslav.Api.GraphQL.Profiles;
+using Mozgoslav.Api.GraphQL.Prompts;
 using Mozgoslav.Api.GraphQL.Rag;
 using Mozgoslav.Api.GraphQL.Recordings;
 using Mozgoslav.Api.GraphQL.Settings;
@@ -37,6 +38,7 @@ internal static class MutationRegistration
             .AddTypeExtension<BackupMutationType>()
             .AddTypeExtension<RagMutationType>()
             .AddTypeExtension<SyncMutationType>()
-            .AddTypeExtension<WebSearchMutationType>();
+            .AddTypeExtension<WebSearchMutationType>()
+            .AddTypeExtension<PromptsMutationType>();
     }
 }

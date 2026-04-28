@@ -40,7 +40,14 @@ public sealed record AppSettingsDto(
     bool DictationDumpEnabled = false,
     string DictationDumpHotkeyToggle = "",
     string DictationDumpHotkeyHold = "",
-    int WebCacheTtlHours = 24)
+    int WebCacheTtlHours = 24,
+    bool McpServerEnabled = false,
+    int McpServerPort = 51051,
+    string McpServerToken = "",
+    bool ActionsSkillEnabled = false,
+    bool RemindersSkillEnabled = false,
+    bool DictationClassifyIntentEnabled = false,
+    string ClaudeCliPath = "")
 {
     public const string ObsidianBootstrapPinsResource = "Mozgoslav.Infrastructure.Resources.ObsidianBootstrap.pinned-plugins.json";
 
@@ -87,5 +94,12 @@ public sealed record AppSettingsDto(
         DictationDumpEnabled: false,
         DictationDumpHotkeyToggle: string.Empty,
         DictationDumpHotkeyHold: string.Empty,
-        WebCacheTtlHours: 24);
+        WebCacheTtlHours: 24,
+        McpServerEnabled: false,
+        McpServerPort: 51051,
+        McpServerToken: string.Empty,
+        ActionsSkillEnabled: false,
+        RemindersSkillEnabled: false,
+        DictationClassifyIntentEnabled: false,
+        ClaudeCliPath: string.Empty);
 }

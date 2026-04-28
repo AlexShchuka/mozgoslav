@@ -160,6 +160,7 @@ public sealed class DictationSessionManager_LongformTests
             PerAppProfiles,
             PcmStream,
             _notifier,
+            Substitute.For<ISystemAction>(),
             NullLogger<DictationSessionManager>.Instance);
 
         public void ArrangeStream()

@@ -39,4 +39,11 @@ public sealed record UpdateSettingsInput(
     bool ObsidianFeatureEnabled = false,
     bool DictationDumpEnabled = false,
     string DictationDumpHotkeyToggle = "",
-    string DictationDumpHotkeyHold = "");
+    string DictationDumpHotkeyHold = "",
+    bool McpServerEnabled = false,
+    int McpServerPort = 51051,
+    string McpServerToken = "",
+    bool ActionsSkillEnabled = false,
+    bool RemindersSkillEnabled = false,
+    bool DictationClassifyIntentEnabled = false,
+    string ClaudeCliPath = "");

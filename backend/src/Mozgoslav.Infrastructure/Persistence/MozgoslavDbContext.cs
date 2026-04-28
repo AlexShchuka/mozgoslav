@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.ValueObjects;
+using Mozgoslav.Infrastructure.Prompts;
 
 namespace Mozgoslav.Infrastructure.Persistence;
 
@@ -26,6 +27,7 @@ public sealed class MozgoslavDbContext : DbContext
     public DbSet<ProcessingJobStage> ProcessingJobStages => Set<ProcessingJobStage>();
     public DbSet<AppSetting> Settings => Set<AppSetting>();
     public DbSet<RagChunk> RagChunks => Set<RagChunk>();
+    public DbSet<PromptTemplateEntity> PromptTemplates => Set<PromptTemplateEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -209,6 +211,17 @@ public sealed class MozgoslavDbContext : DbContext
             e.Property(x => x.DurationMs).HasColumnName("duration_ms");
             e.Property(x => x.ErrorMessage).HasColumnName("error_message");
             e.HasIndex(x => x.JobId).HasDatabaseName("ix_processing_job_stages_job_id");
+        });
+
+        modelBuilder.Entity<PromptTemplateEntity>(e =>
+        {
+            e.ToTable("prompt_templates");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.Name).HasColumnName("name").IsRequired();
+            e.Property(x => x.Body).HasColumnName("body").IsRequired();
+            e.Property(x => x.CreatedAt).HasColumnName("created_at");
+            e.HasIndex(x => x.Name).HasDatabaseName("ix_prompt_templates_name");
         });
     }
 }
