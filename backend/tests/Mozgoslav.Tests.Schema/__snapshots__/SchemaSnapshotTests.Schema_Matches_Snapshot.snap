@@ -242,6 +242,14 @@ type LlmHealthStatus {
   available: Boolean!
 }
 
+type LlmModelDescriptor {
+  id: String!
+  ownedBy: String
+  contextLength: Int
+  supportsToolCalling: Boolean
+  supportsJsonMode: Boolean
+}
+
 type LmStudioCheck {
   ok: Boolean!
   severity: CheckSeverity!
@@ -523,7 +531,7 @@ type QueryType {
   meta: MetaInfo!
   settings: AppSettingsDto! @cost(weight: "10")
   llmCapabilities: LlmCapabilities
-  llmModels: [String!]! @cost(weight: "10")
+  llmModels: [LlmModelDescriptor!]! @cost(weight: "10")
   profiles: [Profile!]! @cost(weight: "10")
   profile(id: UUID!): Profile @cost(weight: "10")
   models: [ModelEntry!]!
