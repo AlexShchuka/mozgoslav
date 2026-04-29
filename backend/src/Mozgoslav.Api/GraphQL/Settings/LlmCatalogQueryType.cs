@@ -7,16 +7,17 @@ using HotChocolate.Types;
 
 using Mozgoslav.Api.GraphQL.Queries;
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Application.Llm;
 
 namespace Mozgoslav.Api.GraphQL.Settings;
 
 [ExtendObjectType(typeof(QueryType))]
 public sealed class LlmCatalogQueryType
 {
-    public async Task<IReadOnlyList<string>> LlmModels(
-        [Service] ILlmService llm,
+    public Task<IReadOnlyList<LlmModelDescriptor>> LlmModels(
+        [Service] IModelCatalogService catalog,
         CancellationToken ct)
     {
-        return await llm.ListAvailableModelsAsync(ct);
+        return catalog.GetAvailableAsync(ct);
     }
 }

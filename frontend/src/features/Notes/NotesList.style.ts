@@ -44,20 +44,6 @@ export const FieldLabel = styled.label`
   }
 `;
 
-export const TitleField = styled.input`
-  width: 100%;
-  padding: ${({ theme }) => theme.space(2)} ${({ theme }) => theme.space(3)};
-  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
-  border-radius: ${({ theme }) => theme.radii.md};
-  background: ${({ theme }) => theme.colors.bg.elevated2};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font: inherit;
-  font-size: ${({ theme }) => theme.font.size.md};
-
-  &:focus-visible {
-    outline: 2px solid ${({ theme }) => theme.colors.focusRing};
-  }
-`;
 
 export const BodyField = styled.textarea`
   width: 100%;

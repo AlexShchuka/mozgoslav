@@ -58,7 +58,7 @@ const variantStyles = {
 
     &:hover:not(:disabled) {
       background: ${({ theme }) => theme.colors.error};
-      color: #fff;
+      color: ${({ theme }) => theme.colors.surfaceInverse};
     }
   `,
   success: css`

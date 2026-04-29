@@ -478,6 +478,14 @@ type LlmCapabilities {
   probedAt: DateTime!
 }
 
+type LlmModelDescriptor {
+  id: String!
+  ownedBy: String
+  contextLength: Int
+  supportsToolCalling: Boolean
+  supportsJsonMode: Boolean
+}
+
 type Profile implements Node {
   id: ID!
   name: String!
@@ -533,7 +541,7 @@ type QueryType {
   meta: MetaInfo!
   settings: AppSettingsDto! @cost(weight: "10")
   llmCapabilities: LlmCapabilities @cost(weight: "10")
-  llmModels: [String!]! @cost(weight: "10")
+  llmModels: [LlmModelDescriptor!]! @cost(weight: "10")
   profiles: [Profile!]! @cost(weight: "10")
   profile(id: UUID!): Profile @cost(weight: "10")
   models: [ModelEntry!]!

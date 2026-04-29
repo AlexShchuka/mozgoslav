@@ -452,6 +452,15 @@ export type LlmHealthStatus = {
   available: Scalars["Boolean"]["output"];
 };
 
+export type LlmModelDescriptor = {
+  __typename?: "LlmModelDescriptor";
+  contextLength?: Maybe<Scalars["Int"]["output"]>;
+  id: Scalars["String"]["output"];
+  ownedBy?: Maybe<Scalars["String"]["output"]>;
+  supportsJsonMode?: Maybe<Scalars["Boolean"]["output"]>;
+  supportsToolCalling?: Maybe<Scalars["Boolean"]["output"]>;
+};
+
 export type LmStudioCheck = {
   __typename?: "LmStudioCheck";
   actions: Array<DiagnosticAction>;
@@ -1001,7 +1010,7 @@ export type QueryType = {
   jobs?: Maybe<JobsConnection>;
   llmCapabilities?: Maybe<LlmCapabilities>;
   llmHealth: LlmHealthStatus;
-  llmModels: Array<Scalars["String"]["output"]>;
+  llmModels: Array<LlmModelDescriptor>;
   meta: MetaInfo;
   models: Array<ModelEntry>;
   /** Fetches an object given its ID. */
@@ -1870,7 +1879,17 @@ export type SubscriptionJobProgressSubscription = {
 
 export type QueryLlmModelsQueryVariables = Exact<{ [key: string]: never }>;
 
-export type QueryLlmModelsQuery = { __typename?: "QueryType"; llmModels: Array<string> };
+export type QueryLlmModelsQuery = {
+  __typename?: "QueryType";
+  llmModels: Array<{
+    __typename?: "LlmModelDescriptor";
+    id: string;
+    ownedBy?: string | null;
+    contextLength?: number | null;
+    supportsToolCalling?: boolean | null;
+    supportsJsonMode?: boolean | null;
+  }>;
+};
 
 export type MutationImportFromMeetilyMutationVariables = Exact<{
   meetilyDatabasePath: Scalars["String"]["input"];
@@ -4085,7 +4104,22 @@ export const QueryLlmModelsDocument = {
       name: { kind: "Name", value: "QueryLlmModels" },
       selectionSet: {
         kind: "SelectionSet",
-        selections: [{ kind: "Field", name: { kind: "Name", value: "llmModels" } }],
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "llmModels" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "ownedBy" } },
+                { kind: "Field", name: { kind: "Name", value: "contextLength" } },
+                { kind: "Field", name: { kind: "Name", value: "supportsToolCalling" } },
+                { kind: "Field", name: { kind: "Name", value: "supportsJsonMode" } },
+              ],
+            },
+          },
+        ],
       },
     },
   ],

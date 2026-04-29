@@ -37,11 +37,14 @@ export interface Theme {
     warningSoft: string;
     warningBorder: string;
     error: string;
+    errorStrong: string;
     errorSoft: string;
     info: string;
     infoSoft: string;
     focusRing: string;
     overlayBackdrop: string;
+    surfaceInverse: string;
+    onWarning: string;
   };
   radii: { sm: string; md: string; lg: string; full: string };
   space: (n: number) => string;
@@ -57,6 +60,7 @@ export interface Theme {
     md: string;
     lg: string;
     accent: string;
+    overlay: string;
   };
   motion: {
     duration: {
@@ -138,11 +142,14 @@ export const darkTheme: Theme = {
     warningSoft: "rgba(251, 191, 36, 0.08)",
     warningBorder: "rgba(251, 191, 36, 0.3)",
     error: "#f87171",
+    errorStrong: "#d94848",
     errorSoft: "rgba(248, 113, 113, 0.14)",
     info: "#60a5fa",
     infoSoft: "rgba(59, 130, 246, 0.14)",
     focusRing: "rgba(41, 252, 195, 0.5)",
     overlayBackdrop: "rgba(10, 12, 18, 0.55)",
+    surfaceInverse: "#ffffff",
+    onWarning: "#ffffff",
   },
   radii: sharedRadii,
   space: (n) => `${n * 4}px`,
@@ -153,6 +160,7 @@ export const darkTheme: Theme = {
     md: "0 10px 28px rgba(0, 0, 0, 0.5)",
     lg: "0 24px 56px rgba(0, 0, 0, 0.6)",
     accent: "0 0 0 1px rgba(41, 252, 195, 0.35), 0 8px 24px rgba(41, 252, 195, 0.18)",
+    overlay: "0 12px 40px rgba(0, 0, 0, 0.25)",
   },
   motion: {
     duration: sharedMotion.duration,
@@ -199,11 +207,14 @@ export const lightTheme: Theme = {
     warningSoft: "rgba(245, 158, 11, 0.08)",
     warningBorder: "rgba(245, 158, 11, 0.3)",
     error: "#ef4444",
+    errorStrong: "#d94848",
     errorSoft: "rgba(239, 68, 68, 0.14)",
     info: "#3b82f6",
     infoSoft: "rgba(59, 130, 246, 0.14)",
     focusRing: "rgba(11, 212, 205, 0.5)",
     overlayBackdrop: "rgba(15, 23, 42, 0.55)",
+    surfaceInverse: "#ffffff",
+    onWarning: "#ffffff",
   },
   radii: sharedRadii,
   space: (n) => `${n * 4}px`,
@@ -214,6 +225,7 @@ export const lightTheme: Theme = {
     md: "0 10px 28px rgba(15, 23, 42, 0.12)",
     lg: "0 24px 56px rgba(15, 23, 42, 0.18)",
     accent: "0 0 0 1px rgba(11, 212, 205, 0.35), 0 8px 24px rgba(11, 212, 205, 0.18)",
+    overlay: "0 12px 40px rgba(15, 23, 42, 0.18)",
   },
   motion: {
     duration: sharedMotion.duration,

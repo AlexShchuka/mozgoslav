@@ -125,6 +125,7 @@ describe("NotesList — grouping by vault path folder", () => {
           isSaving: false,
           llmProbe: { probing: false },
           llmCapabilities: null,
+          llmModels: { loading: false, available: [], error: false },
         },
       })
     );

@@ -6,6 +6,10 @@
 # Guard format (one line per entry, fields separated by ASCII 0x1F):
 #   label<US>pattern<US>path1<US>path2<US>...
 #
+# Optional include filter: prefix a path with `include:<glob>=` to scope
+# the guard to filenames matching the glob (passed to grep as
+# `--include=<glob>`). Apply this to all paths in that entry.
+#
 # Failure mode: print the offending matches, exit non-zero.
 
 set -euo pipefail
@@ -20,12 +24,16 @@ US=$'\x1f'
 GUARDS=(
   "frontend-graphqlClient-jest-mock-banned${US}jest\\.mock\\(['\"]\\.\\.\\/\\.\\.\\/api\\/graphqlClient['\"]\\)|jest\\.mock\\(['\"]graphqlClient['\"]\\)${US}frontend/src/features${US}frontend/src/components"
   "frontend-no-bare-fetch-in-features${US}^[^/].*\\bfetch\\(${US}frontend/src/features${US}frontend/src/components"
+  "frontend-no-magic-color-in-style-ts${US}#[0-9a-fA-F]{3,6}\\b|rgb\\(|rgba\\(${US}include:*.style.ts${US}frontend/src"
+  "frontend-no-styled-input-in-features${US}styled\\.input\\b${US}include:*.style.ts${US}frontend/src/features"
 )
 
 # Paths that may legitimately contain the otherwise-banned shape; matches
 # are filtered out via fixed-string substring search.
 ALLOWLIST=(
   "frontend/src/api/dictationPush.ts"
+  "frontend/src/styles/theme.ts"
+  "frontend/src/features/CommandPalette/CommandPalette.style.ts"
 )
 
 is_allowlisted() {
@@ -45,10 +53,15 @@ trap 'rm -f "$report"' EXIT
 run_guard() {
   local label="$1"; shift
   local pattern="$1"; shift
-  local -a paths=("$@")
+  local -a raw_paths=("$@")
   local -a existing=()
+  local -a include_globs=()
 
-  for p in "${paths[@]}"; do
+  for p in "${raw_paths[@]}"; do
+    if [[ "${p}" == include:* ]]; then
+      include_globs+=("${p#include:}")
+      continue
+    fi
     if [[ -e "${p}" ]]; then
       existing+=("${p}")
     fi
@@ -59,8 +72,13 @@ run_guard() {
     return 0
   fi
 
+  local -a grep_flags=(-rEn)
+  for inc in "${include_globs[@]}"; do
+    grep_flags+=("--include=${inc}")
+  done
+
   local raw
-  raw=$(grep -rEn "${pattern}" "${existing[@]}" 2>/dev/null || true)
+  raw=$(grep "${grep_flags[@]}" "${pattern}" "${existing[@]}" 2>/dev/null || true)
   if [[ -z "${raw}" ]]; then
     printf '  %s — clean\n' "${label}"
     return 0

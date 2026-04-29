@@ -203,6 +203,7 @@ try
     builder.Services.AddSingleton<ILlmProvider, OllamaLlmProvider>();
     builder.Services.AddSingleton<ILlmProviderFactory, LlmProviderFactory>();
     builder.Services.AddSingleton<ILlmService, OpenAiCompatibleLlmService>();
+    builder.Services.AddSingleton<IModelCatalogService, OpenAiCompatibleModelCatalogService>();
     builder.Services.AddSingleton<ILlmCapabilitiesCache, InMemoryLlmCapabilitiesCache>();
     builder.Services.AddTransient<ILlmCapabilitiesProbe, OpenAiCompatibleCapabilitiesProbe>();
     builder.Services.AddHostedService<LlmCapabilitiesStartupProbe>();

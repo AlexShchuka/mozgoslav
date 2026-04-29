@@ -15,11 +15,17 @@ import SyncPairing from "../SyncPairing";
 import SystemActionsFeature from "../SystemActions";
 import type { SettingsProps } from "./types";
 import {
+  CapabilityBadges,
   CheckboxRow,
+  FieldHint,
   FormGrid,
+  InlineEmpty,
+  ModelOption,
   PageRoot,
   PageTitle,
   Row,
+  Section,
+  SectionHeader,
   SelectBox,
   SelectOption,
   Tab,
@@ -29,19 +35,29 @@ import {
 
 type TabKey = "general" | "llm" | "whisper" | "dictation" | "obsidian" | "sync" | "systemActions";
 
+const URL_RE = /^https?:\/\//i;
+const HTTP_PROTOCOL = "http://";
+
+const isValidUrl = (value: string): boolean => URL_RE.test(value.trim());
+
 const Settings: FC<SettingsProps> = ({
   settings: loadedSettings,
   isSaving,
   isLlmProbing,
   llmCapabilities,
+  llmModels,
+  llmModelsLoading,
   onLoad,
   onSave,
   onCheckLlm,
   onLoadCapabilities,
+  onLoadModels,
 }) => {
   const { t } = useTranslation();
   const [tab, setTab] = useState<TabKey>("general");
   const [draft, setDraft] = useState<AppSettings>(loadedSettings ?? DEFAULT_SETTINGS);
+  const [advancedOpen, setAdvancedOpen] = useState<boolean>(false);
+  const [dictationDumpOpen, setDictationDumpOpen] = useState<boolean>(false);
 
   useEffect(() => {
     onLoad();
@@ -50,8 +66,9 @@ const Settings: FC<SettingsProps> = ({
   useEffect(() => {
     if (tab === "llm") {
       onLoadCapabilities();
+      onLoadModels();
     }
-  }, [tab, onLoadCapabilities]);
+  }, [tab, onLoadCapabilities, onLoadModels]);
 
   useEffect(() => {
     if (loadedSettings) {
@@ -62,6 +79,20 @@ const Settings: FC<SettingsProps> = ({
       setThemeMode(loadedSettings.themeMode);
     }
   }, [loadedSettings]);
+
+  useEffect(() => {
+    if (tab !== "llm") {
+      return undefined;
+    }
+    const trimmed = draft.llmEndpoint.trim();
+    if (!isValidUrl(trimmed)) {
+      return undefined;
+    }
+    const handle = window.setTimeout(() => {
+      onLoadModels();
+    }, 500);
+    return () => window.clearTimeout(handle);
+  }, [tab, draft.llmEndpoint, onLoadModels]);
 
   const update = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) =>
     setDraft((prev) => ({ ...prev, [key]: value }));
@@ -82,6 +113,22 @@ const Settings: FC<SettingsProps> = ({
       update("whisperModelPath", res.filePaths[0]);
     }
   };
+
+  const llmEndpointError = useMemo(() => {
+    const trimmed = draft.llmEndpoint.trim();
+    if (trimmed.length === 0) {
+      return undefined;
+    }
+    return isValidUrl(trimmed) ? undefined : t("settings.validation.invalidUrl");
+  }, [draft.llmEndpoint, t]);
+
+  const obsidianHostError = useMemo(() => {
+    const trimmed = draft.obsidianApiHost.trim();
+    if (trimmed.length === 0) {
+      return undefined;
+    }
+    return isValidUrl(trimmed) ? undefined : t("settings.validation.invalidUrl");
+  }, [draft.obsidianApiHost, t]);
 
   const tabs = useMemo(
     () => [
@@ -108,7 +155,7 @@ const Settings: FC<SettingsProps> = ({
       </Tabs>
 
       {tab === "general" && (
-        <Card>
+        <Card title={t("settings.sections.uiAndLanguage")}>
           <FormGrid>
             <div>
               <label>{t("settings.fields.language")}</label>
@@ -136,67 +183,102 @@ const Settings: FC<SettingsProps> = ({
       )}
 
       {tab === "llm" && (
-        <Card>
-          <FormGrid>
-            <Input
-              label={t("settings.fields.llmEndpoint")}
-              value={draft.llmEndpoint}
-              onChange={(e) => update("llmEndpoint", e.target.value)}
-            />
-            <Input
-              label={t("settings.fields.llmModel")}
-              value={draft.llmModel}
-              onChange={(e) => update("llmModel", e.target.value)}
-            />
-            <Input
-              label={t("settings.fields.llmApiKey")}
-              value={draft.llmApiKey}
-              onChange={(e) => update("llmApiKey", e.target.value)}
-              sensitive
-              hint={t("settings.tokenHint")}
-            />
-            <Button
-              variant="secondary"
-              leftIcon={<Play size={16} />}
-              onClick={checkLlm}
-              isLoading={isLlmProbing}
-              disabled={isLlmProbing}
-            >
-              {t("settings.testConnection")}
-            </Button>
-            <div>
-              <label>{t("settings.llmCapabilities.title")}</label>
-              {llmCapabilities === null ? (
-                <Badge tone="neutral">{t("settings.llmCapabilities.notProbed")}</Badge>
-              ) : (
-                <Row>
-                  <Badge tone={llmCapabilities.supportsToolCalling ? "success" : "warning"}>
-                    {t("settings.llmCapabilities.toolCalling")}
-                  </Badge>
-                  <Badge tone={llmCapabilities.supportsJsonMode ? "success" : "warning"}>
-                    {t("settings.llmCapabilities.jsonMode")}
-                  </Badge>
-                  {llmCapabilities.ctxLength > 0 && (
-                    <Badge tone="info">
-                      {t("settings.llmCapabilities.ctxLength", { n: llmCapabilities.ctxLength })}
+        <Section>
+          <Card title={t("settings.sections.llmCore")}>
+            <FormGrid>
+              <Input
+                label={t("settings.fields.llmEndpoint")}
+                value={draft.llmEndpoint}
+                onChange={(e) => update("llmEndpoint", e.target.value)}
+                placeholder={HTTP_PROTOCOL}
+                error={llmEndpointError}
+              />
+              <div>
+                <label>{t("settings.llmModels.label")}</label>
+                <SelectBox
+                  value={draft.llmModel}
+                  onChange={(e) => update("llmModel", e.target.value)}
+                  disabled={llmModelsLoading || llmModels.length === 0}
+                  data-testid="settings-llm-model-select"
+                >
+                  <SelectOption value="">
+                    {llmModelsLoading
+                      ? t("settings.llmModels.loading")
+                      : t("settings.llmModels.placeholder")}
+                  </SelectOption>
+                  {llmModels.map((model) => (
+                    <SelectOption key={model.id} value={model.id}>
+                      {model.id}
+                    </SelectOption>
+                  ))}
+                </SelectBox>
+                {llmModels.length === 0 && !llmModelsLoading ? (
+                  <InlineEmpty data-testid="settings-llm-models-empty">
+                    {t("settings.llmModels.empty")}
+                  </InlineEmpty>
+                ) : null}
+                {llmModels.length > 0 && (
+                  <ModelOption>
+                    <CapabilityBadges>
+                      {llmModels
+                        .filter((m) => m.id === draft.llmModel)
+                        .map((m) => (
+                          <Badges key={m.id} model={m} />
+                        ))}
+                    </CapabilityBadges>
+                  </ModelOption>
+                )}
+              </div>
+              <Input
+                label={t("settings.fields.llmApiKey")}
+                value={draft.llmApiKey}
+                onChange={(e) => update("llmApiKey", e.target.value)}
+                sensitive
+                hint={t("settings.tokenHint")}
+              />
+              <Button
+                variant="secondary"
+                leftIcon={<Play size={16} />}
+                onClick={checkLlm}
+                isLoading={isLlmProbing}
+                disabled={isLlmProbing}
+              >
+                {t("settings.testConnection")}
+              </Button>
+              <div>
+                <label>{t("settings.llmCapabilities.title")}</label>
+                {llmCapabilities === null ? (
+                  <Badge tone="neutral">{t("settings.llmCapabilities.notProbed")}</Badge>
+                ) : (
+                  <Row>
+                    <Badge tone={llmCapabilities.supportsToolCalling ? "success" : "warning"}>
+                      {t("settings.llmCapabilities.toolCalling")}
                     </Badge>
-                  )}
-                  {llmCapabilities.tokensPerSecond > 0 && (
-                    <Badge tone="neutral">
-                      {t("settings.llmCapabilities.tokensPerSec", {
-                        n: Math.round(llmCapabilities.tokensPerSecond),
-                      })}
+                    <Badge tone={llmCapabilities.supportsJsonMode ? "success" : "warning"}>
+                      {t("settings.llmCapabilities.jsonMode")}
                     </Badge>
-                  )}
-                </Row>
-              )}
-            </div>
-          </FormGrid>
-        </Card>
+                    {llmCapabilities.ctxLength > 0 && (
+                      <Badge tone="info">
+                        {t("settings.llmCapabilities.ctxLength", { n: llmCapabilities.ctxLength })}
+                      </Badge>
+                    )}
+                    {llmCapabilities.tokensPerSecond > 0 && (
+                      <Badge tone="neutral">
+                        {t("settings.llmCapabilities.tokensPerSec", {
+                          n: Math.round(llmCapabilities.tokensPerSecond),
+                        })}
+                      </Badge>
+                    )}
+                  </Row>
+                )}
+              </div>
+            </FormGrid>
+          </Card>
+        </Section>
       )}
 
       {tab === "whisper" && (
-        <Card>
+        <Card title={t("settings.sections.transcription")}>
           <FormGrid>
             <Row>
               <Input
@@ -228,66 +310,86 @@ const Settings: FC<SettingsProps> = ({
       )}
 
       {tab === "dictation" && (
-        <Card>
-          <FormGrid>
-            <div>
-              <label>{t("settings.fields.dictationKeyboardHotkey")}</label>
-              <HotkeyRecorder
-                value={draft.dictationKeyboardHotkey}
-                onChange={(accelerator) => update("dictationKeyboardHotkey", accelerator)}
-                hint={t("settings.hotkeyHint")}
-                testId="dictation"
-              />
-            </div>
-            <CheckboxRow>
-              <input
-                type="checkbox"
-                data-testid="settings-dictation-push-to-talk"
-                checked={draft.dictationPushToTalk}
-                onChange={(e) => update("dictationPushToTalk", e.target.checked)}
-              />
-              <span>{t("settings.fields.dictationPushToTalk")}</span>
-            </CheckboxRow>
-            <CheckboxRow>
-              <input
-                type="checkbox"
-                data-testid="settings-dictation-dump-enabled"
-                checked={draft.dictationDumpEnabled}
-                onChange={(e) => update("dictationDumpEnabled", e.target.checked)}
-              />
-              <span>{t("settings.fields.dictationDumpEnabled")}</span>
-            </CheckboxRow>
-            <div>
-              <label>{t("settings.fields.dictationDumpHotkeyToggle")}</label>
-              <HotkeyRecorder
-                value={draft.dictationDumpHotkeyToggle}
-                onChange={(accelerator) => update("dictationDumpHotkeyToggle", accelerator)}
-                hint={t("settings.dumpHotkeyToggleHint")}
-                testId="dictation-dump-toggle"
-              />
-            </div>
-            <div>
-              <label>{t("settings.fields.dictationDumpHotkeyHold")}</label>
-              <HotkeyRecorder
-                value={draft.dictationDumpHotkeyHold}
-                onChange={(accelerator) => update("dictationDumpHotkeyHold", accelerator)}
-                hint={t("settings.dumpHotkeyHoldHint")}
-                testId="dictation-dump-hold"
-              />
-            </div>
-          </FormGrid>
-        </Card>
+        <Section>
+          <Card title={t("settings.sections.dictationCore")}>
+            <FormGrid>
+              <div>
+                <label>{t("settings.fields.dictationKeyboardHotkey")}</label>
+                <HotkeyRecorder
+                  value={draft.dictationKeyboardHotkey}
+                  onChange={(accelerator) => update("dictationKeyboardHotkey", accelerator)}
+                  hint={t("settings.hotkeyHint")}
+                  testId="dictation"
+                />
+              </div>
+              <CheckboxRow>
+                <input
+                  type="checkbox"
+                  data-testid="settings-dictation-push-to-talk"
+                  checked={draft.dictationPushToTalk}
+                  onChange={(e) => update("dictationPushToTalk", e.target.checked)}
+                />
+                <span>{t("settings.fields.dictationPushToTalk")}</span>
+              </CheckboxRow>
+            </FormGrid>
+          </Card>
+
+          <SectionHeader
+            type="button"
+            $expanded={dictationDumpOpen}
+            onClick={() => setDictationDumpOpen((v) => !v)}
+            data-testid="settings-section-dictation-dump"
+            aria-expanded={dictationDumpOpen}
+          >
+            {t("settings.sections.dictationDump")}
+          </SectionHeader>
+          {dictationDumpOpen && (
+            <Card>
+              <FormGrid>
+                <CheckboxRow>
+                  <input
+                    type="checkbox"
+                    data-testid="settings-dictation-dump-enabled"
+                    checked={draft.dictationDumpEnabled}
+                    onChange={(e) => update("dictationDumpEnabled", e.target.checked)}
+                  />
+                  <span>{t("settings.fields.dictationDumpEnabled")}</span>
+                </CheckboxRow>
+                <div>
+                  <label>{t("settings.fields.dictationDumpHotkeyToggle")}</label>
+                  <HotkeyRecorder
+                    value={draft.dictationDumpHotkeyToggle}
+                    onChange={(accelerator) => update("dictationDumpHotkeyToggle", accelerator)}
+                    hint={t("settings.dumpHotkeyToggleHint")}
+                    testId="dictation-dump-toggle"
+                  />
+                </div>
+                <div>
+                  <label>{t("settings.fields.dictationDumpHotkeyHold")}</label>
+                  <HotkeyRecorder
+                    value={draft.dictationDumpHotkeyHold}
+                    onChange={(accelerator) => update("dictationDumpHotkeyHold", accelerator)}
+                    hint={t("settings.dumpHotkeyHoldHint")}
+                    testId="dictation-dump-hold"
+                  />
+                </div>
+              </FormGrid>
+            </Card>
+          )}
+        </Section>
       )}
 
       {tab === "sync" && <SyncPairing />}
 
       {tab === "obsidian" && (
-        <Card>
+        <Card title={t("settings.sections.obsidian")}>
           <FormGrid>
             <Input
               label={t("settings.fields.obsidianApiHost")}
               value={draft.obsidianApiHost}
               onChange={(e) => update("obsidianApiHost", e.target.value)}
+              placeholder={HTTP_PROTOCOL}
+              error={obsidianHostError}
             />
             <Input
               label={t("settings.fields.obsidianApiToken")}
@@ -309,7 +411,57 @@ const Settings: FC<SettingsProps> = ({
           </Button>
         </Toolbar>
       )}
+
+      {tab === "general" && (
+        <Section>
+          <SectionHeader
+            type="button"
+            $expanded={advancedOpen}
+            onClick={() => setAdvancedOpen((v) => !v)}
+            data-testid="settings-section-advanced"
+            aria-expanded={advancedOpen}
+          >
+            {t("settings.sections.advanced")}
+          </SectionHeader>
+          {advancedOpen && (
+            <Card>
+              <FieldHint>{t("settings.tokenHint")}</FieldHint>
+            </Card>
+          )}
+        </Section>
+      )}
     </PageRoot>
+  );
+};
+
+interface BadgesProps {
+  readonly model: {
+    readonly contextLength?: number | null;
+    readonly supportsToolCalling?: boolean | null;
+    readonly supportsJsonMode?: boolean | null;
+    readonly ownedBy?: string | null;
+  };
+}
+
+const Badges: FC<BadgesProps> = ({ model }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {model.ownedBy && (
+        <Badge tone="neutral">{t("settings.llmModels.ownedBy", { owner: model.ownedBy })}</Badge>
+      )}
+      {model.contextLength != null && (
+        <Badge tone="info">
+          {t("settings.llmModels.ctxLength", { n: model.contextLength })}
+        </Badge>
+      )}
+      {model.supportsToolCalling === true && (
+        <Badge tone="success">{t("settings.llmModels.supportsToolCalling")}</Badge>
+      )}
+      {model.supportsJsonMode === true && (
+        <Badge tone="success">{t("settings.llmModels.supportsJsonMode")}</Badge>
+      )}
+    </>
   );
 };
 
