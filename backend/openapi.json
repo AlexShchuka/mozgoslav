@@ -49,39 +49,6 @@
         }
       }
     },
-    "/api/dictation/push/{sessionId}": {
-      "post": {
-        "tags": [
-          "Mozgoslav.Api"
-        ],
-        "parameters": [
-          {
-            "name": "sessionId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PushChunkRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/dictation/{sessionId}/push": {
       "post": {
         "tags": [
@@ -167,43 +134,6 @@
           "observedAt": {
             "type": "string",
             "format": "date-time"
-          }
-        }
-      },
-      "PushChunkRequest": {
-        "required": [
-          "samples",
-          "sampleRate",
-          "offsetSeconds"
-        ],
-        "type": "object",
-        "properties": {
-          "samples": {
-            "type": "array",
-            "items": {
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
-              "type": [
-                "number",
-                "string"
-              ],
-              "format": "float"
-            }
-          },
-          "sampleRate": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "offsetSeconds": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
-            "type": [
-              "number",
-              "string"
-            ],
-            "format": "double"
           }
         }
       }

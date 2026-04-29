@@ -10,6 +10,7 @@ Contract between this repo and any coding agent. Only things you cannot infer fr
 - Open outbound network calls from the app to anything other than: configured LLM endpoint, configured Obsidian endpoint, loopback sidecars (`python-sidecar`, `searxng-sidecar`), and web-fetch URLs that originated from the local SearXNG aggregator. Anything else is denied.
 - Put secrets in env vars or logs. Secrets live in the SQLite `settings` store and render through `<Input sensitive />`.
 - Use `--no-verify`, `--force`, `--amend` on pushed commits, `git reset --hard`, or any other destructive git without explicit user approval.
+- Push commits as an agent. Pre-push hook refuses unless `MOZGOSLAV_HUMAN_PUSH=1` env is set — humans only.
 
 **Ask first:**
 
@@ -24,6 +25,7 @@ Contract between this repo and any coding agent. Only things you cannot infer fr
 - Branch as `<username>/<kebab-slug>` off `main`.
 - Squash-merge only. The PR title is the commit message and is linted against `@commitlint/config-conventional` (header ≤ 100, types: `feat fix docs style refactor perf test build ci chore`, `!` for breaking).
 - When stuck on a flaky test: open a `type/bug` Issue with `flaky-test` in the title. Do not retry-until-green.
+- Any `feat(*)` or `refactor(*)` PR with ≥ 3 commits links a `type/decision` issue or ships an `ADR-` file under `docs/adr/`. Enforced by `scripts/check-adr-discipline.sh`.
 
 ## Do-not-do catalogue (bans with concrete shape)
 
@@ -54,6 +56,12 @@ cd frontend && npm run dist:mac
 
 # Regenerate GraphQL typed ops after adding a .graphql operation:
 cd frontend && npm run codegen
+
+# Phase exit grep guards (banned patterns under feature/component test trees):
+bash scripts/check-grep-guards.sh
+
+# ADR discipline gate (≥ 3 feat/refactor commits without an ADR or decision link):
+bash scripts/check-adr-discipline.sh
 ```
 
 Everything else (`npm run dev/build/test/lint/typecheck`, `dotnet build/format`, `pytest`, `ruff`, `swift build/test`) is discoverable from `package.json` / `.csproj` / `pyproject.toml` / `Package.swift`.
@@ -71,6 +79,7 @@ Everything else (`npm run dev/build/test/lint/typecheck`, `dotnet build/format`,
 - `Mozgoslav.Tests.Schema` snapshots the GraphQL SDL via Snapshooter. Schema changes require a deliberate snapshot update, not blind approval.
 - Frontend sagas use `redux-saga-test-plan`. Mock `graphqlClient`, not fetch / WebSocket primitives.
 - Coverage floor: 1% line rate per cobertura report, enforced by CI. Don't ship below.
+- Zero known-failing tests. CI strictly fails on any red test. No `[Ignore]` shortcuts.
 
 ## Non-obvious patterns (pointers, not prose)
 

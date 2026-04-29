@@ -51,6 +51,15 @@ commit-msg:
 
 pre-push:
   commands:
+    # Per #201 — agents never push directly. Humans set MOZGOSLAV_HUMAN_PUSH=1
+    # for one-shot pushes; CI / agent runs are blocked at git-plumbing level.
+    no-agent-push:
+      run: |
+        if [ "${MOZGOSLAV_HUMAN_PUSH:-}" = "1" ]; then
+          exit 0
+        fi
+        echo "lefthook: agent push refused. Set MOZGOSLAV_HUMAN_PUSH=1 to override (humans only)." >&2
+        exit 1
     gitleaks:
       run: |
         if command -v gitleaks >/dev/null 2>&1; then
