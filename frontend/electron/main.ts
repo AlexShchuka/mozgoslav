@@ -356,14 +356,24 @@ const applyCustomHotkeyFromSettings = async (): Promise<void> => {
   const delayMs = 750;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      const response = await fetch(`${BACKEND_ORIGIN}/api/settings`);
-      if (!response.ok) throw new Error(`status ${response.status}`);
-      const settings = (await response.json()) as {
+      const gqlResponse = await fetch(`${BACKEND_ORIGIN}/graphql`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query:
+            "query QuerySettings { settings { dictationKeyboardHotkey dictationPushToTalk askCorpusHotkey } }",
+        }),
+      });
+      if (!gqlResponse.ok) throw new Error(`status ${gqlResponse.status}`);
+      const gqlBody = (await gqlResponse.json()) as {
+        data?: { settings?: { dictationKeyboardHotkey?: string; dictationPushToTalk?: boolean } };
+      };
+      const settingsTyped = (gqlBody.data?.settings ?? {}) as {
         dictationKeyboardHotkey?: string;
         dictationPushToTalk?: boolean;
       };
-      const custom = settings.dictationKeyboardHotkey?.trim() ?? "";
-      const pushToTalk = settings.dictationPushToTalk === true;
+      const custom = settingsTyped.dictationKeyboardHotkey?.trim() ?? "";
+      const pushToTalk = settingsTyped.dictationPushToTalk === true;
       console.info("=".repeat(70));
       console.info(
         `[hotkey] CHECKPOINT settings.custom='${custom}' settings.pushToTalk=${pushToTalk} orchestratorReady=${dictationOrchestrator !== null}`
@@ -522,12 +532,20 @@ const applyAskCorpusHotkeyFromSettings = async (): Promise<void> => {
   const defaultAccelerator = "CommandOrControl+Shift+/";
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      const response = await fetch(`${BACKEND_ORIGIN}/api/settings`);
-      if (!response.ok) throw new Error(`status ${response.status}`);
-      const settings = (await response.json()) as {
-        askCorpusHotkey?: string;
+      const gqlResponse = await fetch(`${BACKEND_ORIGIN}/graphql`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query:
+            "query QuerySettings { settings { dictationKeyboardHotkey dictationPushToTalk askCorpusHotkey } }",
+        }),
+      });
+      if (!gqlResponse.ok) throw new Error(`status ${gqlResponse.status}`);
+      const gqlBody = (await gqlResponse.json()) as {
+        data?: { settings?: { askCorpusHotkey?: string } };
       };
-      const accelerator = settings.askCorpusHotkey?.trim() || defaultAccelerator;
+      const settingsTyped = (gqlBody.data?.settings ?? {}) as { askCorpusHotkey?: string };
+      const accelerator = settingsTyped.askCorpusHotkey?.trim() || defaultAccelerator;
 
       if (recordingHelper) {
         try {
