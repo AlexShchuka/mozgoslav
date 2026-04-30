@@ -66,8 +66,11 @@ public sealed class ProcessQueueWorkerEnrichmentTests
         var sidecar = Substitute.For<IPythonSidecarClient>();
         var eventBus = Substitute.For<IDomainEventBus>();
 
+        var modelPath = Path.Combine(Path.GetTempPath(), $"mozgoslav-test-model-{Guid.NewGuid():N}.bin");
+        File.WriteAllText(modelPath, "fake-model");
+
         appSettings.Language.Returns("ru");
-        appSettings.WhisperModelPath.Returns(string.Empty);
+        appSettings.WhisperModelPath.Returns(modelPath);
         appSettings.SidecarEnrichmentEnabled.Returns(enrichmentEnabled);
 
         var profile = new Profile

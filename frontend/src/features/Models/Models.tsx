@@ -38,7 +38,7 @@ const KIND_FILTER_VALUES = [
   ModelKind.NlpMl,
 ] as const;
 
-type FilterValue = typeof KIND_FILTER_VALUES[number] | "all";
+type FilterValue = (typeof KIND_FILTER_VALUES)[number] | "all";
 
 const Models: FC = () => {
   const { t } = useTranslation();
@@ -70,13 +70,10 @@ const Models: FC = () => {
   const filteredModels =
     activeFilter === "all" ? models : models.filter((m) => m.kind === activeFilter);
 
-  const groupedByKind = KIND_FILTER_VALUES.reduce<Record<string, typeof models>>(
-    (acc, kind) => {
-      acc[kind] = filteredModels.filter((m) => m.kind === kind);
-      return acc;
-    },
-    {}
-  );
+  const groupedByKind = KIND_FILTER_VALUES.reduce<Record<string, typeof models>>((acc, kind) => {
+    acc[kind] = filteredModels.filter((m) => m.kind === kind);
+    return acc;
+  }, {});
 
   const nonEmptyKinds = KIND_FILTER_VALUES.filter((k) => (groupedByKind[k]?.length ?? 0) > 0);
 

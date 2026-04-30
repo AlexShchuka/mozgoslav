@@ -1,7 +1,13 @@
 import { screen } from "@testing-library/react";
 
 import LiveTranscript from "../LiveTranscript";
-import { renderWithStore, mergeMockState, mockRecordingState, mockJobsState, jobsById } from "../../../testUtils";
+import {
+  renderWithStore,
+  mergeMockState,
+  mockRecordingState,
+  mockJobsState,
+  jobsById,
+} from "../../../testUtils";
 import type { ProcessingJob } from "../../../domain/ProcessingJob";
 import "../../../i18n";
 
@@ -28,7 +34,9 @@ const renderLiveTranscript = (job: ProcessingJob | null, recordingId = "rec-1") 
     mockRecordingState(),
     mockJobsState(job ? { byId: jobsById([job]) } : {})
   );
-  return renderWithStore(<LiveTranscript recordingId={recordingId} />, { preloadedState: preloaded });
+  return renderWithStore(<LiveTranscript recordingId={recordingId} />, {
+    preloadedState: preloaded,
+  });
 };
 
 describe("LiveTranscript — context-aware status label", () => {

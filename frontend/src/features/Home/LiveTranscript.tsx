@@ -26,7 +26,8 @@ export interface LiveTranscriptProps {
 const selectStatusLabel = (status: JobStatus | null, step: string | null, t: TFunction): string => {
   if (status === null) return t("recording.listening");
   if (status === "Transcribing") return t("recording.processing.transcribing");
-  if (status === "Correcting" && step === "LLM correction") return t("recording.processing.llmCleanup");
+  if (status === "Correcting" && step === "LLM correction")
+    return t("recording.processing.llmCleanup");
   if (status === "Correcting") return t("recording.processing.correcting");
   if (status === "Summarizing") return t("recording.processing.summarizing");
   if (status === "Exporting") return t("recording.processing.exporting");

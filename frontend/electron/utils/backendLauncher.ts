@@ -86,7 +86,7 @@ export const tryStartBackend = async (
   userDataDir: string,
   options: BackendStartOptions = {}
 ): Promise<void> => {
-  if (process.env.MOZGOSLAV_BACKEND_ATTACH === "1" || await isBackendAlive()) {
+  if (process.env.MOZGOSLAV_BACKEND_ATTACH === "1" || (await isBackendAlive())) {
     console.info("[backendLauncher] backend already running on :5050, attaching");
     return;
   }

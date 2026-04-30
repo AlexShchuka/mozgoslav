@@ -6,12 +6,12 @@ namespace Mozgoslav.Domain.Enums;
 public enum JobStatus
 {
     Queued,
+    PreflightChecks,
     Transcribing,
     Correcting,
     Summarizing,
     Exporting,
     Done,
     Failed,
-    Cancelled,
-    PreflightChecks
+    Cancelled
 }
