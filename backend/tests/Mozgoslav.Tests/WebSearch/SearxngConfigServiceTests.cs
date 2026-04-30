@@ -100,8 +100,10 @@ public sealed class SearxngConfigServiceTests
 
     private SearxngConfigService CreateService(string bundledPath, IAppSettings appSettings)
     {
+        var userPath = Path.Combine(_tempDir, "user-settings.yml");
         return new SearxngConfigService(
             bundledPath,
+            userPath,
             appSettings,
             NullLogger<SearxngConfigService>.Instance);
     }

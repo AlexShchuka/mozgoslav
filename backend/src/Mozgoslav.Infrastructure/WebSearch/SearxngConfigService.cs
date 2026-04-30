@@ -15,10 +15,11 @@ public sealed class SearxngConfigService
 {
     private const string SearxngRestartEvent = "MOZGOSLAV_EVENT:searxng-restart";
 
-    private static readonly string UserSettingsPath = Path.Combine(
+    private static readonly string DefaultUserSettingsPath = Path.Combine(
         AppPaths.Root, "searxng", "settings.yml");
 
     private readonly string _bundledSettingsPath;
+    private readonly string _userSettingsPath;
     private readonly IAppSettings _appSettings;
     private readonly ILogger<SearxngConfigService> _logger;
 
@@ -26,8 +27,18 @@ public sealed class SearxngConfigService
         string bundledSettingsPath,
         IAppSettings appSettings,
         ILogger<SearxngConfigService> logger)
+        : this(bundledSettingsPath, DefaultUserSettingsPath, appSettings, logger)
+    {
+    }
+
+    public SearxngConfigService(
+        string bundledSettingsPath,
+        string userSettingsPath,
+        IAppSettings appSettings,
+        ILogger<SearxngConfigService> logger)
     {
         _bundledSettingsPath = bundledSettingsPath;
+        _userSettingsPath = userSettingsPath;
         _appSettings = appSettings;
         _logger = logger;
     }
@@ -37,14 +48,14 @@ public sealed class SearxngConfigService
     public async Task<SearxngEngineConfig> ReadEnginesAsync(CancellationToken ct)
     {
         EnsureUserSettingsExist();
-        var yaml = await File.ReadAllTextAsync(UserSettingsPath, ct);
+        var yaml = await File.ReadAllTextAsync(_userSettingsPath, ct);
         return ParseEngines(yaml);
     }
 
     public async Task<string> ReadRawYamlAsync(CancellationToken ct)
     {
         EnsureUserSettingsExist();
-        return await File.ReadAllTextAsync(UserSettingsPath, ct);
+        return await File.ReadAllTextAsync(_userSettingsPath, ct);
     }
 
     public async Task WriteEnginesAsync(
@@ -52,37 +63,37 @@ public sealed class SearxngConfigService
         CancellationToken ct)
     {
         EnsureUserSettingsExist();
-        var yaml = await File.ReadAllTextAsync(UserSettingsPath, ct);
+        var yaml = await File.ReadAllTextAsync(_userSettingsPath, ct);
 
         yaml = SetEngineEnabled(yaml, "duckduckgo", ddgEnabled);
         yaml = SetEngineEnabled(yaml, "yandex", yandexEnabled);
         yaml = SetEngineEnabled(yaml, "google", googleEnabled);
 
-        await File.WriteAllTextAsync(UserSettingsPath, yaml, ct);
+        await File.WriteAllTextAsync(_userSettingsPath, yaml, ct);
         Console.WriteLine(SearxngRestartEvent);
     }
 
     private void EnsureUserSettingsExist()
     {
-        if (File.Exists(UserSettingsPath))
+        if (File.Exists(_userSettingsPath))
         {
             return;
         }
 
-        var dir = Path.GetDirectoryName(UserSettingsPath)!;
+        var dir = Path.GetDirectoryName(_userSettingsPath)!;
         Directory.CreateDirectory(dir);
 
         if (File.Exists(_bundledSettingsPath))
         {
-            File.Copy(_bundledSettingsPath, UserSettingsPath);
+            File.Copy(_bundledSettingsPath, _userSettingsPath);
             _logger.LogInformation(
-                "Copied bundled SearXNG settings to {Path}", UserSettingsPath);
+                "Copied bundled SearXNG settings to {Path}", _userSettingsPath);
         }
         else
         {
-            File.WriteAllText(UserSettingsPath, BuildDefaultYaml());
+            File.WriteAllText(_userSettingsPath, BuildDefaultYaml());
             _logger.LogInformation(
-                "Created default SearXNG settings at {Path}", UserSettingsPath);
+                "Created default SearXNG settings at {Path}", _userSettingsPath);
         }
     }
 

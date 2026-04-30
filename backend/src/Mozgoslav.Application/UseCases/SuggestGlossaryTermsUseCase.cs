@@ -108,7 +108,7 @@ public sealed class SuggestGlossaryTermsUseCase
         for (var i = 0; i < text.Length; i++)
         {
             var c = text[i];
-            if (char.IsLetter(c) || c == '-' || c == '\'')
+            if (char.IsLetterOrDigit(c) || c == '-' || c == '\'')
             {
                 if (start < 0) start = i;
             }
