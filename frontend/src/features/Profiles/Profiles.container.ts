@@ -12,6 +12,8 @@ import {
   selectProfilesError,
   selectProfilesLoading,
   selectProfilesSaving,
+  selectSuggestingKey,
+  suggestGlossaryTerms,
   updateProfile,
 } from "../../store/slices/profiles";
 import Profiles from "./Profiles";
@@ -23,6 +25,8 @@ const mapStateToProps = (state: GlobalState): ProfilesStateProps => ({
   saving: selectProfilesSaving(state),
   deletingId: selectProfilesDeletingId(state),
   error: selectProfilesError(state),
+  suggestions: state.profiles.suggestions,
+  suggestingKey: selectSuggestingKey(state),
 });
 
 const mapDispatchToProps = (dispatch: Dispatch): ProfilesDispatchProps =>
@@ -33,6 +37,7 @@ const mapDispatchToProps = (dispatch: Dispatch): ProfilesDispatchProps =>
       onUpdate: updateProfile,
       onDelete: deleteProfile,
       onDuplicate: duplicateProfile,
+      onSuggest: suggestGlossaryTerms,
     },
     dispatch
   );

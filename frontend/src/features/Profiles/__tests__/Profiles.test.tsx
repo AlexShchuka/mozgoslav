@@ -38,6 +38,10 @@ const buildProfile = (patch: Partial<Profile> = {}): Profile => ({
   autoTags: patch.autoTags ?? [],
   isDefault: patch.isDefault ?? false,
   isBuiltIn: patch.isBuiltIn ?? false,
+  glossaryByLanguage: patch.glossaryByLanguage ?? {},
+  llmCorrectionEnabled: patch.llmCorrectionEnabled ?? false,
+  llmProviderOverride: patch.llmProviderOverride ?? "",
+  llmModelOverride: patch.llmModelOverride ?? "",
 });
 
 const renderProfiles = (profiles: readonly Profile[] = []) => {

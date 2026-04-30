@@ -13,6 +13,8 @@ namespace Mozgoslav.Infrastructure.WebSearch;
 
 public sealed class SearxngConfigService
 {
+    private const string SearxngRestartEvent = "MOZGOSLAV_EVENT:searxng-restart";
+
     private static readonly string UserSettingsPath = Path.Combine(
         AppPaths.Root, "searxng", "settings.yml");
 
@@ -57,7 +59,7 @@ public sealed class SearxngConfigService
         yaml = SetEngineEnabled(yaml, "google", googleEnabled);
 
         await File.WriteAllTextAsync(UserSettingsPath, yaml, ct);
-        Console.WriteLine("MOZGOSLAV_EVENT:searxng-restart");
+        Console.WriteLine(SearxngRestartEvent);
     }
 
     private void EnsureUserSettingsExist()

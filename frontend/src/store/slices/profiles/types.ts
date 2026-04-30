@@ -7,6 +7,8 @@ export interface ProfilesState {
   readonly error: string | null;
   readonly saving: boolean;
   readonly deletingId: string | null;
+  readonly suggestions: Record<string, Record<string, string[]>>;
+  readonly suggestingKey: string | null;
 }
 
 export const initialProfilesState: ProfilesState = {
@@ -16,6 +18,8 @@ export const initialProfilesState: ProfilesState = {
   error: null,
   saving: false,
   deletingId: null,
+  suggestions: {},
+  suggestingKey: null,
 };
 
 export type ProfileDraft = Omit<Profile, "isBuiltIn">;

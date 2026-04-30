@@ -106,3 +106,69 @@ export const FieldError = styled.div`
   color: ${({ theme }) => theme.colors.error};
   font-size: ${({ theme }) => theme.font.size.xs};
 `;
+
+export const SectionLabel = styled.div`
+  font-size: ${({ theme }) => theme.font.size.sm};
+  font-weight: ${({ theme }) => theme.font.weight.medium};
+  color: ${({ theme }) => theme.colors.text.secondary};
+  margin-bottom: ${({ theme }) => theme.space(2)};
+`;
+
+export const HintText = styled.div`
+  font-size: ${({ theme }) => theme.font.size.xs};
+  color: ${({ theme }) => theme.colors.text.muted};
+  margin-top: ${({ theme }) => theme.space(1)};
+`;
+
+export const GlossarySection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.space(3)};
+  padding: ${({ theme }) => theme.space(3)};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
+  border-radius: ${({ theme }) => theme.radii.md};
+`;
+
+export const GlossaryLanguageBlock = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.space(2)};
+`;
+
+export const GlossaryLanguageHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+export const SuggestChipRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: ${({ theme }) => theme.space(1)};
+  margin-top: ${({ theme }) => theme.space(1.5)};
+`;
+
+export const SuggestChip = styled.button`
+  border: 1px dashed ${({ theme }) => theme.colors.border.subtle};
+  background: transparent;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  padding: ${({ theme }) => `${theme.space(0.5)} ${theme.space(1.5)}`};
+  border-radius: ${({ theme }) => theme.radii.full};
+  font-size: ${({ theme }) => theme.font.size.xs};
+  font-family: inherit;
+  cursor: pointer;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.bg.elevated2};
+    color: ${({ theme }) => theme.colors.text.primary};
+  }
+`;
+
+export const LlmOverrideSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.space(2.5)};
+  padding: ${({ theme }) => theme.space(3)};
+  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
+  border-radius: ${({ theme }) => theme.radii.md};
+`;

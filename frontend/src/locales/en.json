@@ -199,7 +199,8 @@
       "exportFolder": "Export folder",
       "autoTags": "Auto tags",
       "makeDefault": "Make default profile",
-      "nameRequired": "Name is required"
+      "nameRequired": "Name is required",
+      "llmCorrectionEnabled": "Enable LLM correction"
     },
     "cleanup": {
       "None": "Keep everything",
@@ -526,6 +527,34 @@
       "placeholder": "Paste your template to preview…",
       "run": "Preview",
       "output": "Result"
+    }
+  },
+  "profileEditor": {
+    "llmOverride": {
+      "label": "LLM override (optional)",
+      "providerPlaceholder": "Provider (e.g. openai, ollama)",
+      "modelPlaceholder": "Model (e.g. gpt-4o)",
+      "hint": "Leave blank to use global LLM settings"
+    },
+    "glossary": {
+      "title": "Glossary",
+      "addLanguage": "Add language",
+      "addTerm": "Add term",
+      "suggest": "Suggest from notes",
+      "noSuggestions": "No new suggestions found",
+      "language": {
+        "en": "English",
+        "ru": "Russian",
+        "de": "German",
+        "fr": "French",
+        "es": "Spanish",
+        "zh": "Chinese",
+        "ja": "Japanese",
+        "ko": "Korean",
+        "pt": "Portuguese",
+        "it": "Italian",
+        "default": "Default (fallback)"
+      }
     }
   }
 }

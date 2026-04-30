@@ -14,6 +14,9 @@ import {
   LOAD_PROFILES_FAILURE,
   LOAD_PROFILES_SUCCESS,
   type ProfilesAction,
+  SUGGEST_GLOSSARY_TERMS,
+  SUGGEST_GLOSSARY_TERMS_FAILURE,
+  SUGGEST_GLOSSARY_TERMS_SUCCESS,
   UPDATE_PROFILE,
   UPDATE_PROFILE_FAILURE,
   UPDATE_PROFILE_SUCCESS,
@@ -61,6 +64,23 @@ export const profilesReducer: Reducer<ProfilesState> = (
       return { ...state, saving: true, error: null };
     case DUPLICATE_PROFILE_FAILURE:
       return { ...state, saving: false, error: typed.payload.error };
+
+    case SUGGEST_GLOSSARY_TERMS: {
+      const key = `${typed.payload.profileId}:${typed.payload.language}`;
+      return { ...state, suggestingKey: key };
+    }
+    case SUGGEST_GLOSSARY_TERMS_SUCCESS: {
+      const profileSuggestions = { ...(state.suggestions[typed.payload.profileId] ?? {}) };
+      profileSuggestions[typed.payload.language] = typed.payload.terms;
+      return {
+        ...state,
+        suggestingKey: null,
+        suggestions: { ...state.suggestions, [typed.payload.profileId]: profileSuggestions },
+      };
+    }
+    case SUGGEST_GLOSSARY_TERMS_FAILURE: {
+      return { ...state, suggestingKey: null };
+    }
 
     default:
       return state;

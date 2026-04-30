@@ -1,6 +1,10 @@
 import type { Profile } from "../../../domain/Profile";
 import type { ProfileDraft } from "./types";
 
+export const SUGGEST_GLOSSARY_TERMS = "profiles/SUGGEST_GLOSSARY_TERMS";
+export const SUGGEST_GLOSSARY_TERMS_SUCCESS = "profiles/SUGGEST_GLOSSARY_TERMS_SUCCESS";
+export const SUGGEST_GLOSSARY_TERMS_FAILURE = "profiles/SUGGEST_GLOSSARY_TERMS_FAILURE";
+
 export const LOAD_PROFILES = "profiles/LOAD";
 export const LOAD_PROFILES_SUCCESS = "profiles/LOAD_SUCCESS";
 export const LOAD_PROFILES_FAILURE = "profiles/LOAD_FAILURE";
@@ -95,6 +99,21 @@ export interface DuplicateProfileFailureAction {
   payload: { id: string; error: string };
 }
 
+export interface SuggestGlossaryTermsAction {
+  type: typeof SUGGEST_GLOSSARY_TERMS;
+  payload: { profileId: string; language: string };
+}
+
+export interface SuggestGlossaryTermsSuccessAction {
+  type: typeof SUGGEST_GLOSSARY_TERMS_SUCCESS;
+  payload: { profileId: string; language: string; terms: string[] };
+}
+
+export interface SuggestGlossaryTermsFailureAction {
+  type: typeof SUGGEST_GLOSSARY_TERMS_FAILURE;
+  payload: { profileId: string; language: string; error: string };
+}
+
 export type ProfilesAction =
   | LoadProfilesAction
   | LoadProfilesSuccessAction
@@ -110,7 +129,10 @@ export type ProfilesAction =
   | DeleteProfileFailureAction
   | DuplicateProfileAction
   | DuplicateProfileSuccessAction
-  | DuplicateProfileFailureAction;
+  | DuplicateProfileFailureAction
+  | SuggestGlossaryTermsAction
+  | SuggestGlossaryTermsSuccessAction
+  | SuggestGlossaryTermsFailureAction;
 
 export const loadProfiles = (): LoadProfilesAction => ({ type: LOAD_PROFILES });
 export const loadProfilesSuccess = (profiles: Profile[]): LoadProfilesSuccessAction => ({
@@ -175,6 +197,32 @@ export const duplicateProfileFailure = (
 ): DuplicateProfileFailureAction => ({
   type: DUPLICATE_PROFILE_FAILURE,
   payload: { id, error },
+});
+
+export const suggestGlossaryTerms = (
+  profileId: string,
+  language: string
+): SuggestGlossaryTermsAction => ({
+  type: SUGGEST_GLOSSARY_TERMS,
+  payload: { profileId, language },
+});
+
+export const suggestGlossaryTermsSuccess = (
+  profileId: string,
+  language: string,
+  terms: string[]
+): SuggestGlossaryTermsSuccessAction => ({
+  type: SUGGEST_GLOSSARY_TERMS_SUCCESS,
+  payload: { profileId, language, terms },
+});
+
+export const suggestGlossaryTermsFailure = (
+  profileId: string,
+  language: string,
+  error: string
+): SuggestGlossaryTermsFailureAction => ({
+  type: SUGGEST_GLOSSARY_TERMS_FAILURE,
+  payload: { profileId, language, error },
 });
 
 export type { ProfileDraft };

@@ -150,6 +150,7 @@ try
     builder.Services.AddScoped<ImportRecordingUseCase>();
     builder.Services.AddScoped<RecordingFinaliser>();
     builder.Services.AddScoped<ReprocessUseCase>();
+    builder.Services.AddScoped<SuggestGlossaryTermsUseCase>();
     builder.Services.AddScoped<ProcessQueueWorker>();
     builder.Services.AddSingleton<IProcessingJobScheduler, QuartzProcessingJobScheduler>();
     builder.Services.AddSingleton<IJobCancellationRegistry, JobCancellationRegistry>();

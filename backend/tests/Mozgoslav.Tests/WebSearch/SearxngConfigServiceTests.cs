@@ -39,7 +39,7 @@ public sealed class SearxngConfigServiceTests
     public async Task WriteEnginesAsync_WritesEngineFlags_AndEmitsRestartEvent()
     {
         var bundledPath = Path.Combine(_tempDir, "bundled-settings.yml");
-        File.WriteAllText(bundledPath, BuildMinimalYaml());
+        await File.WriteAllTextAsync(bundledPath, BuildMinimalYaml());
 
         var appSettings = Substitute.For<IAppSettings>();
         appSettings.WebCacheTtlHours.Returns(24);
@@ -70,7 +70,7 @@ public sealed class SearxngConfigServiceTests
     public async Task WriteEnginesAsync_UpdatesEngineDisabledFlag_InSettingsFile()
     {
         var bundledPath = Path.Combine(_tempDir, "bundled-settings.yml");
-        File.WriteAllText(bundledPath, BuildMinimalYaml());
+        await File.WriteAllTextAsync(bundledPath, BuildMinimalYaml());
 
         var appSettings = Substitute.For<IAppSettings>();
         appSettings.WebCacheTtlHours.Returns(24);

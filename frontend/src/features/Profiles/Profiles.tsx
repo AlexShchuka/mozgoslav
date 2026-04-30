@@ -16,11 +16,15 @@ const toMutation = (draft: ProfileDraft): ProfileMutation => ({
   name: draft.name,
   systemPrompt: draft.systemPrompt,
   transcriptionPromptOverride: draft.transcriptionPromptOverride,
-  outputTemplate: "",
+  outputTemplate: draft.outputTemplate,
   cleanupLevel: draft.cleanupLevel,
   exportFolder: draft.exportFolder,
   autoTags: draft.autoTags,
   isDefault: draft.isDefault,
+  glossaryByLanguage: draft.glossaryByLanguage,
+  llmCorrectionEnabled: draft.llmCorrectionEnabled,
+  llmProviderOverride: draft.llmProviderOverride,
+  llmModelOverride: draft.llmModelOverride,
 });
 
 const Profiles: FC<ProfilesProps> = ({
@@ -31,6 +35,9 @@ const Profiles: FC<ProfilesProps> = ({
   onUpdate,
   onDelete,
   onDuplicate,
+  onSuggest,
+  suggestions,
+  suggestingKey,
 }) => {
   const { t } = useTranslation();
   const [editing, setEditing] = useState<Profile | null>(null);
@@ -149,6 +156,9 @@ const Profiles: FC<ProfilesProps> = ({
         profile={editing}
         onClose={() => setEditorOpen(false)}
         onSave={handleSave}
+        onSuggest={onSuggest}
+        suggestions={suggestions}
+        suggestingKey={suggestingKey}
       />
     </PageRoot>
   );

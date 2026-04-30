@@ -48,6 +48,29 @@ const makeProfile = (overrides: Partial<Profile> = {}): Profile => ({
   autoTags: [],
   isDefault: false,
   isBuiltIn: false,
+  glossaryByLanguage: {},
+  llmCorrectionEnabled: false,
+  llmProviderOverride: "",
+  llmModelOverride: "",
+  ...overrides,
+});
+
+const makeDraft = (overrides: Partial<Omit<Profile, "id" | "isBuiltIn">> = {}): Omit<
+  Profile,
+  "id" | "isBuiltIn"
+> => ({
+  name: "Fresh",
+  systemPrompt: "",
+  transcriptionPromptOverride: "",
+  outputTemplate: "",
+  cleanupLevel: "Light",
+  exportFolder: "_inbox",
+  autoTags: [],
+  isDefault: false,
+  glossaryByLanguage: {},
+  llmCorrectionEnabled: false,
+  llmProviderOverride: "",
+  llmModelOverride: "",
   ...overrides,
 });
 
@@ -63,8 +86,10 @@ const gqlProfile = {
   autoTags: [],
   isDefault: false,
   isBuiltIn: false,
-  glossary: [],
+  glossaryByLanguage: [],
   llmCorrectionEnabled: false,
+  llmProviderOverride: "",
+  llmModelOverride: "",
 };
 
 beforeEach(() => {
@@ -94,16 +119,7 @@ describe("loadProfilesSaga", () => {
 
 describe("createProfileSaga", () => {
   it("dispatches CREATE_PROFILE_SUCCESS with mapped profile on success", async () => {
-    const draft = {
-      name: "Fresh",
-      systemPrompt: "",
-      transcriptionPromptOverride: "",
-      outputTemplate: "",
-      cleanupLevel: "Light" as const,
-      exportFolder: "_inbox",
-      autoTags: [],
-      isDefault: false,
-    };
+    const draft = makeDraft({ name: "Fresh" });
     mockedRequest.mockResolvedValueOnce({
       createProfile: { profile: { ...gqlProfile, name: "Fresh" }, errors: [] },
     });
@@ -115,16 +131,7 @@ describe("createProfileSaga", () => {
   });
 
   it("dispatches CREATE_PROFILE_FAILURE when API returns errors", async () => {
-    const draft = {
-      name: "",
-      systemPrompt: "",
-      transcriptionPromptOverride: "",
-      outputTemplate: "",
-      cleanupLevel: "Light" as const,
-      exportFolder: "_inbox",
-      autoTags: [],
-      isDefault: false,
-    };
+    const draft = makeDraft({ name: "" });
     mockedRequest.mockResolvedValueOnce({
       createProfile: { profile: null, errors: [{ message: "Name required" }] },
     });
@@ -136,16 +143,7 @@ describe("createProfileSaga", () => {
   });
 
   it("dispatches CREATE_PROFILE_FAILURE on network error", async () => {
-    const draft = {
-      name: "X",
-      systemPrompt: "",
-      transcriptionPromptOverride: "",
-      outputTemplate: "",
-      cleanupLevel: "Light" as const,
-      exportFolder: "_inbox",
-      autoTags: [],
-      isDefault: false,
-    };
+    const draft = makeDraft({ name: "X" });
     mockedRequest.mockRejectedValueOnce(new Error("timeout"));
 
     await expectSaga(createProfileSaga, createProfile(draft))
@@ -157,16 +155,7 @@ describe("createProfileSaga", () => {
 
 describe("updateProfileSaga", () => {
   it("dispatches UPDATE_PROFILE_SUCCESS with mapped profile on success", async () => {
-    const draft = {
-      name: "Renamed",
-      systemPrompt: "",
-      transcriptionPromptOverride: "",
-      outputTemplate: "",
-      cleanupLevel: "Light" as const,
-      exportFolder: "_inbox",
-      autoTags: [],
-      isDefault: false,
-    };
+    const draft = makeDraft({ name: "Renamed" });
     mockedRequest.mockResolvedValueOnce({
       updateProfile: { profile: { ...gqlProfile, name: "Renamed" }, errors: [] },
     });
@@ -178,16 +167,7 @@ describe("updateProfileSaga", () => {
   });
 
   it("dispatches UPDATE_PROFILE_FAILURE on error", async () => {
-    const draft = {
-      name: "X",
-      systemPrompt: "",
-      transcriptionPromptOverride: "",
-      outputTemplate: "",
-      cleanupLevel: "Light" as const,
-      exportFolder: "_inbox",
-      autoTags: [],
-      isDefault: false,
-    };
+    const draft = makeDraft({ name: "X" });
     mockedRequest.mockRejectedValueOnce(new Error("bad request"));
 
     await expectSaga(updateProfileSaga, updateProfile("p1", draft))
