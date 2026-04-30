@@ -223,6 +223,15 @@
   },
   "settings": {
     "title": "Settings",
+    "searchPlaceholder": "Search settings… (or @modified / @default)",
+    "searchEmpty": "No settings found for '{{query}}'",
+    "categories": {
+      "general": "General",
+      "voice": "Voice & Dictation",
+      "llm": "LLM",
+      "knowledge": "Knowledge",
+      "system": "System"
+    },
     "tabs": {
       "general": "General",
       "storage": "Storage",
@@ -236,21 +245,33 @@
     },
     "fields": {
       "language": "UI language",
+      "languageDesc": "Language in which the app interface is displayed.",
       "theme": "Theme",
+      "themeDesc": "Light, dark, or follow the system setting.",
       "vaultPath": "Obsidian vault path",
-      "llmEndpoint": "LLM endpoint",
+      "llmEndpoint": "LLM server URL",
+      "llmEndpointDesc": "URL of your local or remote LLM server (OpenAI-compatible API). Example: http://localhost:1234.",
       "llmModel": "LLM model",
+      "llmModelDesc": "The model used for cleaning up and enriching transcripts.",
       "llmApiKey": "LLM API key (if required)",
-      "whisperModelPath": "Whisper model path (.bin)",
-      "vadModelPath": "VAD model path",
+      "whisperModelPath": "Whisper model file",
+      "whisperModelPathDesc": "Path to a Whisper binary model file (.bin). Used for audio transcription.",
+      "vadModelPath": "VAD model file",
+      "vadModelPathDesc": "Path to the voice-activity detection model. Helps trim silence more accurately.",
       "whisperThreads": "Whisper threads (0 = auto)",
-      "dictationKeyboardHotkey": "Global dictation hotkey",
+      "whisperThreadsDesc": "Number of CPU threads for transcription. 0 means automatic selection.",
+      "dictationKeyboardHotkey": "Dictation hotkey",
+      "dictationKeyboardHotkeyDesc": "Global keyboard shortcut that starts dictation from any app.",
       "dictationPushToTalk": "Hold to record (release to stop)",
-      "dictationDumpEnabled": "Voice dump-mode (record into _inbox/ via global hotkey)",
-      "dictationDumpHotkeyToggle": "Dump-mode: tap-toggle hotkey",
-      "dictationDumpHotkeyHold": "Dump-mode: hold-to-record hotkey",
-      "obsidianApiHost": "Obsidian Local REST API host",
-      "obsidianApiToken": "Obsidian Local REST API token"
+      "dictationPushToTalkDesc": "While the hotkey is held, recording runs. Release to stop.",
+      "dictationDumpEnabled": "Record to folder mode (_inbox/)",
+      "dictationDumpEnabledDesc": "Enables recording directly into _inbox/ via a separate hotkey, bypassing the processing queue.",
+      "dictationDumpHotkeyToggle": "Dump-mode tap-toggle hotkey",
+      "dictationDumpHotkeyHold": "Dump-mode hold-to-record hotkey",
+      "obsidianApiHost": "Obsidian Local REST API address",
+      "obsidianApiHostDesc": "Host of the Local REST API plugin in Obsidian. Usually http://localhost:27123.",
+      "obsidianApiToken": "Obsidian Local REST API token",
+      "syncthingEnabledDesc": "Starts the Syncthing service to sync data across devices."
     },
     "hotkeyHint": "Click the field and hold the combination you want. Requires an app restart to take effect (hot-reload is tracked as H1).",
     "dumpHotkeyToggleHint": "Press — recording starts under the default profile. Press again — stop; the file goes through the pipeline and exports into _inbox/.",
@@ -294,7 +315,16 @@
       "dictationCore": "Dictation",
       "dictationDump": "Dictation dump",
       "obsidian": "Obsidian",
-      "advanced": "Advanced"
+      "advanced": "Advanced",
+      "sync": "Sync",
+      "systemLinks": "Sections",
+      "syncState": "Syncthing"
+    },
+    "systemLinks": {
+      "manageModels": "Manage Whisper models →",
+      "allModels": "All models →",
+      "viewBackups": "Backups →",
+      "viewRoutines": "Routines →"
     },
     "sidecarEnrichment": {
       "label": "Enable sidecar enrichment (experimental)",
