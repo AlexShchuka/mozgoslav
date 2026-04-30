@@ -1,5 +1,17 @@
 {
   "pipeline": {
+    "status": {
+      "Queued": "Queued",
+      "PreflightChecks": "Pre-flight checks…",
+      "Transcribing": "Transcribing…",
+      "Correcting": "Cleaning transcript…",
+      "Summarizing": "Summarizing…",
+      "Exporting": "Exporting…",
+      "Done": "Done",
+      "Failed": "Error",
+      "Cancelled": "Cancelled",
+      "Paused": "Paused"
+    },
     "timeline": {
       "stage": {
         "transcribing": "Transcribing",

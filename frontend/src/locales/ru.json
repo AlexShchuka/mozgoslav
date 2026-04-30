@@ -1,5 +1,17 @@
 {
   "pipeline": {
+    "status": {
+      "Queued": "В очереди",
+      "PreflightChecks": "Проверка ресурсов…",
+      "Transcribing": "Расшифровка…",
+      "Correcting": "Очистка текста…",
+      "Summarizing": "Саммари…",
+      "Exporting": "Экспорт…",
+      "Done": "Готово",
+      "Failed": "Ошибка",
+      "Cancelled": "Отменено",
+      "Paused": "Пауза"
+    },
     "timeline": {
       "stage": {
         "transcribing": "Транскрипция",

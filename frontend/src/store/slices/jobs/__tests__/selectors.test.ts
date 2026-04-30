@@ -38,9 +38,11 @@ describe("jobs selectors", () => {
   it("selectAllJobs returns array view of byId", () => {
     const state = makeState({
       byId: { a: makeJob({ id: "a" }), b: makeJob({ id: "b" }) },
+      stagesByJobId: {},
       pending: {},
       isStreaming: true,
       lastError: null,
+      errors: {},
     });
     expect(selectAllJobs(state).map((j) => j.id)).toEqual(["a", "b"]);
   });
@@ -54,9 +56,11 @@ describe("jobs selectors", () => {
         d: makeJob({ id: "d", status: "Cancelled" }),
         e: makeJob({ id: "e", status: "Queued" }),
       },
+      stagesByJobId: {},
       pending: { p: makePending({ tempId: "p" }) },
       isStreaming: true,
       lastError: null,
+      errors: {},
     });
     const active = selectActiveJobs(state);
     const ids = active.map((x) => ("id" in x ? x.id : x.tempId));
@@ -66,9 +70,11 @@ describe("jobs selectors", () => {
   it("selectJobById returns the job or null", () => {
     const state = makeState({
       byId: { a: makeJob({ id: "a" }) },
+      stagesByJobId: {},
       pending: {},
       isStreaming: false,
       lastError: null,
+      errors: {},
     });
     expect(selectJobById("a")(state)).toBeTruthy();
     expect(selectJobById("missing")(state)).toBeNull();
@@ -81,9 +87,11 @@ describe("jobs selectors", () => {
         b: makeJob({ id: "b", recordingId: "rec-1" }),
         c: makeJob({ id: "c", recordingId: "rec-other" }),
       },
+      stagesByJobId: {},
       pending: {},
       isStreaming: false,
       lastError: null,
+      errors: {},
     });
     const job = selectJobByRecordingId("rec-1")(state);
     expect(job?.id).toBe("b");
@@ -92,9 +100,11 @@ describe("jobs selectors", () => {
   it("selectPendingJobs returns pending values", () => {
     const state = makeState({
       byId: {},
+      stagesByJobId: {},
       pending: { p1: makePending({ tempId: "p1" }), p2: makePending({ tempId: "p2" }) },
       isStreaming: false,
       lastError: null,
+      errors: {},
     });
     expect(
       selectPendingJobs(state)

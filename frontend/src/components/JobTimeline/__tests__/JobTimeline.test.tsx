@@ -176,4 +176,31 @@ describe("JobTimeline", () => {
     fireEvent.click(screen.getByTestId("timeline-cancel"));
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
+
+  it("failed stage chip with non-null errorMessage shows ✗ icon and Retry+Skip buttons", () => {
+    renderTimeline(makeJob({ status: "Failed" }), [
+      makeStage({
+        stageName: "Transcribing",
+        finishedAt: "2026-04-19T20:01:00Z",
+        durationMs: 60000,
+      }),
+      makeStage({ id: "stage-2", stageName: "Correcting", errorMessage: "LLM timeout" }),
+    ]);
+    expect(screen.getByTestId("retry-stage-Correcting")).toBeInTheDocument();
+    expect(screen.getByTestId("skip-stage-Correcting")).toBeInTheDocument();
+  });
+
+  it("running stage chip when job.status matches stage name shows ▶ icon", () => {
+    renderTimeline(makeJob({ status: "Transcribing" }), []);
+    const chip = screen.getByTestId("stage-chip-Transcribing");
+    expect(chip.textContent).toContain("▶");
+  });
+
+  it("skipped chip when errorMessage is SKIPPED shows ⊘ icon", () => {
+    renderTimeline(makeJob({ status: "Failed" }), [
+      makeStage({ stageName: "Correcting", errorMessage: "SKIPPED" }),
+    ]);
+    const chip = screen.getByTestId("stage-chip-Correcting");
+    expect(chip.textContent).toContain("⊘");
+  });
 });

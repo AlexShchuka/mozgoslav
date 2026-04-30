@@ -1,5 +1,16 @@
 import type { ProcessingJob } from "../../../domain/ProcessingJob";
+import type { ProcessingJobStage } from "../../../domain/ProcessingJobStage";
 import { JobStatus as GqlJobStatus } from "../../../api/gql/graphql";
+
+type GqlStageNode = {
+  id: string;
+  jobId: string;
+  stageName: string;
+  startedAt: string;
+  finishedAt?: string | null;
+  durationMs?: number | null;
+  errorMessage?: string | null;
+};
 
 type GqlJobNode = {
   id: string;
@@ -13,7 +24,10 @@ type GqlJobNode = {
   createdAt: string;
   startedAt?: string | null;
   finishedAt?: string | null;
+  stages?: ReadonlyArray<Record<string, unknown>> | null;
 };
+
+export type MappedJob = ProcessingJob & { stages: ProcessingJobStage[] };
 
 function gqlJobStatusToDomain(s: GqlJobStatus): ProcessingJob["status"] {
   const map: Record<GqlJobStatus, ProcessingJob["status"]> = {
@@ -31,7 +45,20 @@ function gqlJobStatusToDomain(s: GqlJobStatus): ProcessingJob["status"] {
   return map[s] ?? "Queued";
 }
 
-export function mapGqlJob(j: GqlJobNode): ProcessingJob {
+function mapGqlStage(s: GqlStageNode): ProcessingJobStage {
+  return {
+    id: s.id,
+    jobId: s.jobId,
+    stageName: s.stageName,
+    startedAt: s.startedAt,
+    finishedAt: s.finishedAt ?? null,
+    durationMs: s.durationMs ?? null,
+    errorMessage: s.errorMessage ?? null,
+  };
+}
+
+export function mapGqlJob(j: GqlJobNode): MappedJob {
+  const stages = (j.stages ?? []).map((s) => mapGqlStage(s as unknown as GqlStageNode));
   return {
     id: j.id,
     recordingId: j.recordingId,
@@ -44,5 +71,6 @@ export function mapGqlJob(j: GqlJobNode): ProcessingJob {
     createdAt: j.createdAt,
     startedAt: j.startedAt ?? null,
     finishedAt: j.finishedAt ?? null,
+    stages,
   };
 }

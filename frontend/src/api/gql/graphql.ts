@@ -1913,6 +1913,17 @@ export type QueryMetaQuery = {
   };
 };
 
+export type JobStagesFieldsFragment = {
+  __typename?: "ProcessingJobStage";
+  id: string;
+  jobId: string;
+  stageName: string;
+  startedAt: string;
+  finishedAt?: string | null;
+  durationMs?: number | null;
+  errorMessage?: string | null;
+} & { " $fragmentName"?: "JobStagesFieldsFragment" };
+
 export type QueryJobsQueryVariables = Exact<{
   first?: InputMaybe<Scalars["Int"]["input"]>;
   after?: InputMaybe<Scalars["String"]["input"]>;
@@ -1935,6 +1946,11 @@ export type QueryJobsQuery = {
       createdAt: string;
       startedAt?: string | null;
       finishedAt?: string | null;
+      stages: Array<
+        { __typename?: "ProcessingJobStage" } & {
+          " $fragmentRefs"?: { JobStagesFieldsFragment: JobStagesFieldsFragment };
+        }
+      >;
     }> | null;
     pageInfo: { __typename?: "PageInfo"; hasNextPage: boolean; endCursor?: string | null };
   } | null;
@@ -1957,6 +1973,11 @@ export type QueryActiveJobsQuery = {
     createdAt: string;
     startedAt?: string | null;
     finishedAt?: string | null;
+    stages: Array<
+      { __typename?: "ProcessingJobStage" } & {
+        " $fragmentRefs"?: { JobStagesFieldsFragment: JobStagesFieldsFragment };
+      }
+    >;
   }>;
 };
 
@@ -1974,6 +1995,11 @@ export type MutationEnqueueJobMutation = {
       recordingId: string;
       profileId: string;
       status: JobStatus;
+      stages: Array<
+        { __typename?: "ProcessingJobStage" } & {
+          " $fragmentRefs"?: { JobStagesFieldsFragment: JobStagesFieldsFragment };
+        }
+      >;
     } | null;
     errors: Array<
       | { __typename?: "ConflictError"; code: string; message: string }
@@ -2039,6 +2065,11 @@ export type MutationResumeJobMutation = {
       createdAt: string;
       startedAt?: string | null;
       finishedAt?: string | null;
+      stages: Array<
+        { __typename?: "ProcessingJobStage" } & {
+          " $fragmentRefs"?: { JobStagesFieldsFragment: JobStagesFieldsFragment };
+        }
+      >;
     } | null;
     errors: Array<
       | { __typename?: "ConflictError"; code: string; message: string }
@@ -2070,6 +2101,11 @@ export type MutationRetryJobFromStageMutation = {
       createdAt: string;
       startedAt?: string | null;
       finishedAt?: string | null;
+      stages: Array<
+        { __typename?: "ProcessingJobStage" } & {
+          " $fragmentRefs"?: { JobStagesFieldsFragment: JobStagesFieldsFragment };
+        }
+      >;
     } | null;
     errors: Array<
       | { __typename?: "ConflictError"; code: string; message: string }
@@ -2097,6 +2133,11 @@ export type SubscriptionJobProgressSubscription = {
     createdAt: string;
     startedAt?: string | null;
     finishedAt?: string | null;
+    stages: Array<
+      { __typename?: "ProcessingJobStage" } & {
+        " $fragmentRefs"?: { JobStagesFieldsFragment: JobStagesFieldsFragment };
+      }
+    >;
   };
 };
 
@@ -3655,6 +3696,28 @@ export type MutationUpdateWebSearchConfigMutation = {
   };
 };
 
+export const JobStagesFieldsFragmentDoc = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "JobStagesFields" },
+      typeCondition: { kind: "NamedType", name: { kind: "Name", value: "ProcessingJobStage" } },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "jobId" } },
+          { kind: "Field", name: { kind: "Name", value: "stageName" } },
+          { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "durationMs" } },
+          { kind: "Field", name: { kind: "Name", value: "errorMessage" } },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<JobStagesFieldsFragment, unknown>;
 export const UnifiedSearchDocument = {
   kind: "Document",
   definitions: [
@@ -4307,6 +4370,19 @@ export const QueryJobsDocument = {
                       { kind: "Field", name: { kind: "Name", value: "createdAt" } },
                       { kind: "Field", name: { kind: "Name", value: "startedAt" } },
                       { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "stages" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "FragmentSpread",
+                              name: { kind: "Name", value: "JobStagesFields" },
+                            },
+                          ],
+                        },
+                      },
                     ],
                   },
                 },
@@ -4324,6 +4400,23 @@ export const QueryJobsDocument = {
               ],
             },
           },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "JobStagesFields" },
+      typeCondition: { kind: "NamedType", name: { kind: "Name", value: "ProcessingJobStage" } },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "jobId" } },
+          { kind: "Field", name: { kind: "Name", value: "stageName" } },
+          { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "durationMs" } },
+          { kind: "Field", name: { kind: "Name", value: "errorMessage" } },
         ],
       },
     },
@@ -4356,9 +4449,36 @@ export const QueryActiveJobsDocument = {
                 { kind: "Field", name: { kind: "Name", value: "createdAt" } },
                 { kind: "Field", name: { kind: "Name", value: "startedAt" } },
                 { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "stages" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "FragmentSpread", name: { kind: "Name", value: "JobStagesFields" } },
+                    ],
+                  },
+                },
               ],
             },
           },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "JobStagesFields" },
+      typeCondition: { kind: "NamedType", name: { kind: "Name", value: "ProcessingJobStage" } },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "jobId" } },
+          { kind: "Field", name: { kind: "Name", value: "stageName" } },
+          { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "durationMs" } },
+          { kind: "Field", name: { kind: "Name", value: "errorMessage" } },
         ],
       },
     },
@@ -4407,6 +4527,19 @@ export const MutationEnqueueJobDocument = {
                       { kind: "Field", name: { kind: "Name", value: "recordingId" } },
                       { kind: "Field", name: { kind: "Name", value: "profileId" } },
                       { kind: "Field", name: { kind: "Name", value: "status" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "stages" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "FragmentSpread",
+                              name: { kind: "Name", value: "JobStagesFields" },
+                            },
+                          ],
+                        },
+                      },
                     ],
                   },
                 },
@@ -4424,6 +4557,23 @@ export const MutationEnqueueJobDocument = {
               ],
             },
           },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "JobStagesFields" },
+      typeCondition: { kind: "NamedType", name: { kind: "Name", value: "ProcessingJobStage" } },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "jobId" } },
+          { kind: "Field", name: { kind: "Name", value: "stageName" } },
+          { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "durationMs" } },
+          { kind: "Field", name: { kind: "Name", value: "errorMessage" } },
         ],
       },
     },
@@ -4583,6 +4733,19 @@ export const MutationResumeJobDocument = {
                       { kind: "Field", name: { kind: "Name", value: "createdAt" } },
                       { kind: "Field", name: { kind: "Name", value: "startedAt" } },
                       { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "stages" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "FragmentSpread",
+                              name: { kind: "Name", value: "JobStagesFields" },
+                            },
+                          ],
+                        },
+                      },
                     ],
                   },
                 },
@@ -4600,6 +4763,23 @@ export const MutationResumeJobDocument = {
               ],
             },
           },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "JobStagesFields" },
+      typeCondition: { kind: "NamedType", name: { kind: "Name", value: "ProcessingJobStage" } },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "jobId" } },
+          { kind: "Field", name: { kind: "Name", value: "stageName" } },
+          { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "durationMs" } },
+          { kind: "Field", name: { kind: "Name", value: "errorMessage" } },
         ],
       },
     },
@@ -4655,6 +4835,19 @@ export const MutationRetryJobFromStageDocument = {
                       { kind: "Field", name: { kind: "Name", value: "createdAt" } },
                       { kind: "Field", name: { kind: "Name", value: "startedAt" } },
                       { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "stages" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "FragmentSpread",
+                              name: { kind: "Name", value: "JobStagesFields" },
+                            },
+                          ],
+                        },
+                      },
                     ],
                   },
                 },
@@ -4672,6 +4865,23 @@ export const MutationRetryJobFromStageDocument = {
               ],
             },
           },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "JobStagesFields" },
+      typeCondition: { kind: "NamedType", name: { kind: "Name", value: "ProcessingJobStage" } },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "jobId" } },
+          { kind: "Field", name: { kind: "Name", value: "stageName" } },
+          { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "durationMs" } },
+          { kind: "Field", name: { kind: "Name", value: "errorMessage" } },
         ],
       },
     },
@@ -4707,9 +4917,36 @@ export const SubscriptionJobProgressDocument = {
                 { kind: "Field", name: { kind: "Name", value: "createdAt" } },
                 { kind: "Field", name: { kind: "Name", value: "startedAt" } },
                 { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "stages" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "FragmentSpread", name: { kind: "Name", value: "JobStagesFields" } },
+                    ],
+                  },
+                },
               ],
             },
           },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "JobStagesFields" },
+      typeCondition: { kind: "NamedType", name: { kind: "Name", value: "ProcessingJobStage" } },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "jobId" } },
+          { kind: "Field", name: { kind: "Name", value: "stageName" } },
+          { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "durationMs" } },
+          { kind: "Field", name: { kind: "Name", value: "errorMessage" } },
         ],
       },
     },

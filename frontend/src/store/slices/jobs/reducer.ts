@@ -6,6 +6,8 @@ import {
   JOBS_STREAM_CLOSED,
   JOBS_STREAM_OPENED,
   JOB_UPDATED,
+  PAUSE_JOB_FAILED,
+  PAUSE_JOB_SUCCEEDED,
   PENDING_JOB_CREATED,
   PENDING_JOB_FAILED,
   PENDING_JOB_RESOLVED,
@@ -46,6 +48,23 @@ export const jobsReducer: Reducer<JobsState> = (
       return resolvePending(state, typed.payload.tempId, typed.payload.recordingId);
     case PENDING_JOB_FAILED:
       return failPending(state, typed.payload.tempId, typed.payload.error);
+    case PAUSE_JOB_SUCCEEDED: {
+      const { jobId } = typed.payload;
+      const existing = state.byId[jobId];
+      if (!existing) {
+        return state;
+      }
+      const { [jobId]: _removed, ...nextErrors } = state.errors;
+      return {
+        ...state,
+        byId: { ...state.byId, [jobId]: { ...existing, status: "Paused" } },
+        errors: nextErrors,
+      };
+    }
+    case PAUSE_JOB_FAILED: {
+      const { jobId, error } = typed.payload;
+      return { ...state, errors: { ...state.errors, [jobId]: error } };
+    }
     case RESUME_JOB_SUCCEEDED:
       return upsertJob(
         state,

@@ -1,3 +1,13 @@
+fragment JobStagesFields on ProcessingJobStage {
+  id
+  jobId
+  stageName
+  startedAt
+  finishedAt
+  durationMs
+  errorMessage
+}
+
 query QueryJobs($first: Int, $after: String) {
   jobs(first: $first, after: $after) {
     nodes {
@@ -12,6 +22,9 @@ query QueryJobs($first: Int, $after: String) {
       createdAt
       startedAt
       finishedAt
+      stages {
+        ...JobStagesFields
+      }
     }
     pageInfo {
       hasNextPage
@@ -33,6 +46,9 @@ query QueryActiveJobs {
     createdAt
     startedAt
     finishedAt
+    stages {
+      ...JobStagesFields
+    }
   }
 }
 
@@ -43,6 +59,9 @@ mutation MutationEnqueueJob($input: EnqueueJobInput!) {
       recordingId
       profileId
       status
+      stages {
+        ...JobStagesFields
+      }
     }
     errors {
       code
@@ -83,6 +102,9 @@ mutation MutationResumeJob($id: UUID!) {
       createdAt
       startedAt
       finishedAt
+      stages {
+        ...JobStagesFields
+      }
     }
     errors {
       code
@@ -105,6 +127,9 @@ mutation MutationRetryJobFromStage($input: RetryJobFromStageInput!) {
       createdAt
       startedAt
       finishedAt
+      stages {
+        ...JobStagesFields
+      }
     }
     errors {
       code
@@ -126,5 +151,8 @@ subscription SubscriptionJobProgress {
     createdAt
     startedAt
     finishedAt
+    stages {
+      ...JobStagesFields
+    }
   }
 }

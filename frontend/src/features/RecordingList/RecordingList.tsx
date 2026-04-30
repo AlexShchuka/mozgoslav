@@ -5,7 +5,14 @@ import GroupedList from "../../components/GroupedList";
 import { formatDuration } from "../../core/utils/format";
 import type { Recording } from "../../domain";
 import type { RecordingListProps } from "./types";
-import { EmptyState, ErrorText, ListHeader, Meta, Title } from "./RecordingList.style";
+import {
+  EmptyState,
+  ErrorText,
+  ListHeader,
+  Meta,
+  Title,
+  UserHintText,
+} from "./RecordingList.style";
 
 const BACKEND_UNAVAILABLE_MESSAGE = "Бэкенд не отвечает. Запусти backend.";
 
@@ -49,13 +56,18 @@ const RecordingList: FC<RecordingListProps> = ({
           items={recordings}
           getId={(r) => r.id}
           renderPrimary={(r) => r.fileName}
-          renderSecondary={(r) => (
-            <>
-              <Meta>{formatDuration(r.duration)}</Meta>
-              {" · "}
-              <Meta>{r.status}</Meta>
-            </>
-          )}
+          renderSecondary={(r) => {
+            const job = jobsByRecordingId[r.id];
+            const hint = job?.status === "Failed" ? (job.userHint ?? job.errorMessage) : null;
+            return (
+              <>
+                <Meta>{formatDuration(r.duration)}</Meta>
+                {" · "}
+                <Meta>{r.status}</Meta>
+                {hint && <UserHintText data-testid={`user-hint-${r.id}`}>{hint}</UserHintText>}
+              </>
+            );
+          }}
           renderActions={(r) => {
             const job = jobsByRecordingId[r.id];
             if (!expandedId || expandedId !== r.id || !job) {
