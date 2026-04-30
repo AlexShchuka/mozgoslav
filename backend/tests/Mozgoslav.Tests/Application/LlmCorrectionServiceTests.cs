@@ -18,19 +18,30 @@ namespace Mozgoslav.Tests.Application;
 [TestClass]
 public sealed class LlmCorrectionServiceTests
 {
-    [TestMethod]
-    public async Task CorrectAsync_WhenProviderReturnsCleanText_ReturnsCorrected()
+    private static (ILlmProvider Provider, ILlmProviderFactory Factory) MakeFactory()
     {
         var provider = Substitute.For<ILlmProvider>();
         provider.Kind.Returns("openai_compatible");
-        provider.ChatAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult("Иван встретился с Мариной в Москве."));
 
         var factory = Substitute.For<ILlmProviderFactory>();
         factory.GetCurrentAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult(provider));
+        factory.GetForProfileAsync(Arg.Any<Profile>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(provider));
+
+        return (provider, factory);
+    }
+
+    [TestMethod]
+    public async Task CorrectAsync_WhenProviderReturnsCleanText_ReturnsCorrected()
+    {
+        var (provider, factory) = MakeFactory();
+        provider.ChatAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult("Иван встретился с Мариной в Москве."));
 
         var service = new LlmCorrectionService(factory, new GlossaryApplicator(), NullLogger<LlmCorrectionService>.Instance);
-        var profile = new Profile { Glossary = { "Марина" } };
+        var profile = new Profile
+        {
+            GlossaryByLanguage = new() { ["ru"] = ["Марина"] },
+        };
         var result = await service.CorrectAsync("иван встретился с мариной в москве.", profile, CancellationToken.None);
 
         result.Should().Contain("Мариной");
@@ -40,13 +51,9 @@ public sealed class LlmCorrectionServiceTests
     [TestMethod]
     public async Task CorrectAsync_WhenProviderReturnsEmpty_FallsBackToRawChunk()
     {
-        var provider = Substitute.For<ILlmProvider>();
-        provider.Kind.Returns("openai_compatible");
+        var (provider, factory) = MakeFactory();
         provider.ChatAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(string.Empty));
-
-        var factory = Substitute.For<ILlmProviderFactory>();
-        factory.GetCurrentAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult(provider));
 
         var service = new LlmCorrectionService(factory, new GlossaryApplicator(), NullLogger<LlmCorrectionService>.Instance);
         var result = await service.CorrectAsync("raw transcript", new Profile(), CancellationToken.None);
@@ -57,13 +64,9 @@ public sealed class LlmCorrectionServiceTests
     [TestMethod]
     public async Task CorrectAsync_WhenProviderThrows_ReturnsRawTranscript()
     {
-        var provider = Substitute.For<ILlmProvider>();
-        provider.Kind.Returns("openai_compatible");
+        var (provider, factory) = MakeFactory();
         provider.ChatAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns<Task<string>>(_ => throw new HttpRequestException("connection refused"));
-
-        var factory = Substitute.For<ILlmProviderFactory>();
-        factory.GetCurrentAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult(provider));
 
         var service = new LlmCorrectionService(factory, new GlossaryApplicator(), NullLogger<LlmCorrectionService>.Instance);
         var result = await service.CorrectAsync("raw transcript", new Profile(), CancellationToken.None);
@@ -74,9 +77,7 @@ public sealed class LlmCorrectionServiceTests
     [TestMethod]
     public async Task CorrectAsync_EmptyInput_ReturnsEmptyWithoutInvokingLlm()
     {
-        var provider = Substitute.For<ILlmProvider>();
-        var factory = Substitute.For<ILlmProviderFactory>();
-        factory.GetCurrentAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult(provider));
+        var (provider, factory) = MakeFactory();
 
         var service = new LlmCorrectionService(factory, new GlossaryApplicator(), NullLogger<LlmCorrectionService>.Instance);
         var result = await service.CorrectAsync("   ", new Profile(), CancellationToken.None);

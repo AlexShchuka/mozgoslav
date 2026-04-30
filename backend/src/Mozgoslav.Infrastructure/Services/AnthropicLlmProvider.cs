@@ -39,14 +39,20 @@ public sealed class AnthropicLlmProvider : ILlmProvider
 
     public string Kind => "anthropic";
 
-    public async Task<string> ChatAsync(string systemPrompt, string userPrompt, CancellationToken ct)
+    public Task<string> ChatAsync(string systemPrompt, string userPrompt, CancellationToken ct)
+        => ChatWithModelAsync(systemPrompt, userPrompt, string.Empty, ct);
+
+    public async Task<string> ChatWithModelAsync(string systemPrompt, string userPrompt, string model, CancellationToken ct)
     {
         try
         {
             using var client = _httpClientFactory.CreateClient("llm");
 
             var endpoint = new Uri(new Uri(_settings.LlmEndpoint), "/v1/messages");
-            var model = string.IsNullOrWhiteSpace(_settings.LlmModel) ? "claude-3-5-sonnet-latest" : _settings.LlmModel;
+            var resolvedModel = !string.IsNullOrWhiteSpace(model)
+                ? model
+                : (string.IsNullOrWhiteSpace(_settings.LlmModel) ? "claude-3-5-sonnet-latest" : _settings.LlmModel);
+            model = resolvedModel;
 
             using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
             {

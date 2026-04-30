@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Domain.Entities;
 
 namespace Mozgoslav.Infrastructure.Services;
 
@@ -46,6 +47,26 @@ public sealed class LlmProviderFactory : ILlmProviderFactory
             "Unknown LlmProvider setting '{Kind}' — falling back to default '{Default}'",
             kind, DefaultKind);
         return Task.FromResult(GetDefaultOrThrow());
+    }
+
+    public Task<ILlmProvider> GetForProfileAsync(Profile profile, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+
+        var overrideKind = profile.LlmProviderOverride;
+        if (!string.IsNullOrWhiteSpace(overrideKind))
+        {
+            if (_providersByKind.TryGetValue(overrideKind, out var overrideProvider))
+            {
+                return Task.FromResult(overrideProvider);
+            }
+
+            _logger.LogWarning(
+                "Profile '{ProfileId}' specifies unknown LlmProviderOverride '{Kind}' — falling back to global setting",
+                profile.Id, overrideKind);
+        }
+
+        return GetCurrentAsync(ct);
     }
 
     private ILlmProvider GetDefaultOrThrow()
