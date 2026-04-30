@@ -91,6 +91,18 @@
     "liveTranscriptLabel": "Идёт расшифровка",
     "liveTranscriptWaiting": "Слушаю микрофон…"
   },
+  "recording": {
+    "listening": "Слушаю микрофон…",
+    "processing": {
+      "transcribing": "Превращаю в текст…",
+      "correcting": "Исправляю опечатки…",
+      "llmCleanup": "Уточняю через LLM…",
+      "summarizing": "Готовлю summary…",
+      "exporting": "Сохраняю в Obsidian…",
+      "paused": "На паузе",
+      "failed": "Не получилось — {{step}}"
+    }
+  },
   "dashboard": {
     "title": "Дашборд",
     "importTitle": "Добавить запись",
@@ -115,6 +127,7 @@
     "resumedFrom": "Возобновлено с {{time}}",
     "status": {
       "Queued": "В очереди",
+      "PreflightChecks": "Предпроверка",
       "Transcribing": "Транскрибация",
       "Correcting": "Коррекция",
       "Summarizing": "LLM-суммаризация",
@@ -337,7 +350,15 @@
     "installedButton": "Установлено",
     "notInstalled": "Не скачана",
     "download": "Скачать",
-    "sizeMb": "{{size}} МБ"
+    "sizeMb": "{{size}} МБ",
+    "filter": {
+      "all": "Все",
+      "STT": "Whisper",
+      "LLM": "LLM",
+      "VAD": "VAD",
+      "AUDIO_ML": "Embedding",
+      "NLP_ML": "NLP"
+    }
   },
   "obsidian": {
     "title": "Obsidian vault",

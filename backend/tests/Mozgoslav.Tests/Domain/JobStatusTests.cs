@@ -37,6 +37,7 @@ public sealed class JobStatusTests
         Enum.GetNames<JobStatus>().Should().BeEquivalentTo(
         [
             nameof(JobStatus.Queued),
+            nameof(JobStatus.PreflightChecks),
             nameof(JobStatus.Transcribing),
             nameof(JobStatus.Correcting),
             nameof(JobStatus.Summarizing),

@@ -2,6 +2,7 @@ export type CleanupLevel = "None" | "Light" | "Aggressive";
 export type ConversationType = "Meeting" | "OneOnOne" | "Idea" | "Personal" | "Other";
 export type JobStatus =
   | "Queued"
+  | "PreflightChecks"
   | "Transcribing"
   | "Correcting"
   | "Summarizing"

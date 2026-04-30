@@ -1,5 +1,6 @@
 import { type ChildProcess, execFile, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
+import { get as httpGet } from "node:http";
 import path from "node:path";
 
 import { restartSearxng } from "./searxngLauncher";
@@ -68,10 +69,28 @@ export interface BackendStartOptions {
   readonly extraEnv?: Readonly<Record<string, string>>;
 }
 
+const isBackendAlive = (): Promise<boolean> =>
+  new Promise((resolve) => {
+    const req = httpGet(`http://127.0.0.1:${BACKEND_PORT}/health`, (res) => {
+      res.resume();
+      resolve(res.statusCode === 200);
+    });
+    req.setTimeout(1500, () => {
+      req.destroy();
+      resolve(false);
+    });
+    req.on("error", () => resolve(false));
+  });
+
 export const tryStartBackend = async (
   userDataDir: string,
   options: BackendStartOptions = {}
 ): Promise<void> => {
+  if (process.env.MOZGOSLAV_BACKEND_ATTACH === "1" || (await isBackendAlive())) {
+    console.info("[backendLauncher] backend already running on :5050, attaching");
+    return;
+  }
+
   const candidatePaths: string[] = [];
   if (options.resourcesRoot) {
     candidatePaths.push(

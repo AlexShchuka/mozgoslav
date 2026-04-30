@@ -91,6 +91,18 @@
     "liveTranscriptLabel": "Live transcription",
     "liveTranscriptWaiting": "Listening…"
   },
+  "recording": {
+    "listening": "Listening…",
+    "processing": {
+      "transcribing": "Transcribing audio…",
+      "correcting": "Correcting…",
+      "llmCleanup": "LLM cleanup…",
+      "summarizing": "Summarizing…",
+      "exporting": "Exporting…",
+      "paused": "Paused",
+      "failed": "Failed at {{step}}"
+    }
+  },
   "dashboard": {
     "title": "Dashboard",
     "importTitle": "Add recording",
@@ -115,6 +127,7 @@
     "resumedFrom": "Resumed from {{time}}",
     "status": {
       "Queued": "Queued",
+      "PreflightChecks": "Preflight checks",
       "Transcribing": "Transcribing",
       "Correcting": "Correcting",
       "Summarizing": "Summarizing",
@@ -337,7 +350,15 @@
     "installedButton": "Installed",
     "notInstalled": "Not downloaded",
     "download": "Download",
-    "sizeMb": "{{size}} MB"
+    "sizeMb": "{{size}} MB",
+    "filter": {
+      "all": "All",
+      "STT": "Whisper",
+      "LLM": "LLM",
+      "VAD": "VAD",
+      "AUDIO_ML": "Embedding",
+      "NLP_ML": "NLP"
+    }
   },
   "obsidian": {
     "title": "Obsidian vault",

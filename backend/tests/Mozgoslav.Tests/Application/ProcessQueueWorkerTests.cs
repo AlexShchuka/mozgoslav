@@ -26,7 +26,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_UnknownJob_IsNoOp()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         fixture.Jobs.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((ProcessingJob?)null);
 
@@ -38,7 +38,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_AlreadyTerminal_IsNoOp()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob(JobStatus.Done);
 
         await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
@@ -49,7 +49,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_HappyPath_RunsFullPipelineAndMarksJobDone()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
 
@@ -70,7 +70,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_NoteVersion_StartsAtOne_WhenNoPriorNotesExist()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
         fixture.Notes.GetByTranscriptIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
@@ -89,7 +89,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_NoteVersion_IncrementsPastLatest_OnReprocessing()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
 
@@ -113,7 +113,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_LlmUnavailable_KeepsRawTranscriptAndStillProducesNote()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline(llmAvailable: false);
 
@@ -134,7 +134,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_HappyPath_PersistsNoteWithExportFlagFalse()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
 
@@ -154,7 +154,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_HappyPath_PublishesProcessedNoteSavedAfterAdd()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
 
@@ -177,7 +177,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_UnknownRecording_MarksJobFailed()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.Recordings.GetByIdAsync(job.RecordingId, Arg.Any<CancellationToken>())
             .Returns((Recording?)null);
@@ -192,7 +192,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_TranscriptionThrows_MarksJobFailedButDoesNotStallPipeline()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
         fixture.Transcription
@@ -209,7 +209,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_WhenHostStopping_RethrowsCancellation()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
         using var hostStopping = new CancellationTokenSource();
@@ -229,7 +229,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_WhenCancelRequestedBeforeTranscribe_MarksCancelled()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         job.CancelRequested = true;
         fixture.ArrangeHappyPipeline();
@@ -247,7 +247,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_WhenTokenCancelledDuringTranscribe_MarksCancelled()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
 
@@ -270,8 +270,136 @@ public sealed class ProcessQueueWorkerTests
         job.ErrorMessage.Should().BeNull();
     }
 
-    private sealed class Fixture
+    [TestMethod]
+    public async Task ProcessJobAsync_MissingWhisperModel_FailsAtPreflightWithUserHint()
     {
+        using var fixture = new Fixture();
+        var job = fixture.SeedJob();
+
+        fixture.Settings.VaultPath.Returns(fixture.VaultPath);
+        fixture.Settings.Language.Returns("ru");
+        fixture.Settings.WhisperModelPath.Returns("/nonexistent/path/ggml-small-q8_0.bin");
+
+        fixture.Recordings.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new Recording
+            {
+                FileName = "test.m4a",
+                FilePath = "/tmp/test.m4a",
+                Sha256 = "deadbeef",
+                Format = AudioFormat.M4A,
+                SourceType = SourceType.Imported
+            });
+
+        fixture.Profiles.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new Profile
+            {
+                Name = "Test",
+                CleanupLevel = CleanupLevel.Light,
+                SystemPrompt = "test prompt"
+            });
+
+        var started = DateTime.UtcNow;
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
+        var elapsed = DateTime.UtcNow - started;
+
+        job.Status.Should().Be(JobStatus.Failed);
+        job.UserHint.Should().Contain("ggml-small-q8_0.bin");
+        job.FinishedAt.Should().NotBeNull();
+        elapsed.Should().BeLessThan(TimeSpan.FromMilliseconds(100));
+        await fixture.Transcription.DidNotReceiveWithAnyArgs().TranscribeAsync(
+            default!, default!, default, default, default);
+    }
+
+    [TestMethod]
+    public async Task ProcessJobAsync_AllHealthy_ProgressesToTranscribing()
+    {
+        using var fixture = new Fixture();
+        var job = fixture.SeedJob();
+        fixture.ArrangeHappyPipeline();
+
+        JobStatus? statusAfterPreflight = null;
+        await fixture.Stages.AddAsync(
+            Arg.Do<ProcessingJobStage>(_ => { }),
+            Arg.Any<CancellationToken>());
+        await fixture.Jobs.UpdateAsync(
+            Arg.Do<ProcessingJob>(j =>
+            {
+                if (j.Status == JobStatus.Transcribing && statusAfterPreflight is null)
+                {
+                    statusAfterPreflight = j.Status;
+                }
+            }),
+            Arg.Any<CancellationToken>());
+
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
+
+        job.Status.Should().Be(JobStatus.Done);
+        statusAfterPreflight.Should().Be(JobStatus.Transcribing);
+    }
+
+    [TestMethod]
+    public async Task ProcessJobAsync_ResumesFromLastFailedStage()
+    {
+        using var fixture = new Fixture();
+        var job = fixture.SeedJob();
+        fixture.ArrangeHappyPipeline();
+
+        var existingTranscript = new Transcript
+        {
+            RecordingId = job.RecordingId,
+            ModelUsed = "ggml-small-q8_0.bin",
+            Language = "ru",
+            RawText = "previously transcribed text",
+            Segments = []
+        };
+
+        var transcribeStage = new ProcessingJobStage
+        {
+            JobId = job.Id,
+            StageName = "Transcribing audio",
+            StartedAt = DateTimeOffset.UtcNow.AddMinutes(-5),
+            FinishedAt = DateTimeOffset.UtcNow.AddMinutes(-4),
+            DurationMs = 60_000,
+            ErrorMessage = null
+        };
+
+        fixture.Stages.GetByJobIdAsync(job.Id, Arg.Any<CancellationToken>())
+            .Returns([transcribeStage]);
+        fixture.Transcripts.GetByRecordingIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(existingTranscript);
+
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
+
+        job.Status.Should().Be(JobStatus.Done);
+        await fixture.Transcription.DidNotReceiveWithAnyArgs().TranscribeAsync(
+            default!, default!, default, default, default);
+        await fixture.Transcripts.DidNotReceiveWithAnyArgs().AddAsync(
+            default!, default);
+    }
+
+    private sealed class Fixture : IDisposable
+    {
+        public Fixture()
+        {
+            System.IO.Directory.CreateDirectory(VaultPath);
+            Stages.GetByJobIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+                .Returns(Array.Empty<ProcessingJobStage>());
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                System.IO.Directory.Delete(VaultPath, true);
+            }
+            catch (System.IO.IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+
         public IProcessingJobRepository Jobs { get; } = Substitute.For<IProcessingJobRepository>();
         public IProcessingJobStageRepository Stages { get; } = Substitute.For<IProcessingJobStageRepository>();
         public IRecordingRepository Recordings { get; } = Substitute.For<IRecordingRepository>();
@@ -287,7 +415,15 @@ public sealed class ProcessQueueWorkerTests
         public IPythonSidecarClient SidecarClient { get; } = Substitute.For<IPythonSidecarClient>();
         public TestJobCancellationRegistry CancellationRegistry { get; } = new();
 
-        public string VaultPath { get; init; } = "/tmp/vault";
+        public string VaultPath { get; } = System.IO.Path.Combine(
+            System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
+
+        public string CreateModelFile(string name = "ggml-small-q8_0.bin")
+        {
+            var path = System.IO.Path.Combine(VaultPath, name);
+            System.IO.File.WriteAllText(path, "fake-model-data");
+            return path;
+        }
 
         public ProcessQueueWorker Worker => new(
             Jobs, Stages, Recordings, Transcripts, Notes, Profiles,
@@ -320,7 +456,7 @@ public sealed class ProcessQueueWorkerTests
         {
             Settings.VaultPath.Returns(VaultPath);
             Settings.Language.Returns("ru");
-            Settings.WhisperModelPath.Returns("/tmp/model.bin");
+            Settings.WhisperModelPath.Returns(CreateModelFile());
 
             Recordings.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
                 .Returns(new Recording

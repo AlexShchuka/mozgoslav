@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 
 import Models from "../Models";
@@ -89,5 +90,75 @@ describe("Models page — store-driven", () => {
     renderModels();
 
     expect(screen.queryByTestId(/^model-download-/)).toBeNull();
+  });
+});
+
+const fakeModelLlm = {
+  __typename: "ModelEntry" as const,
+  id: "llama-model",
+  name: "LLaMA 3",
+  description: "LLM model",
+  url: "u2",
+  sizeMb: 4000,
+  kind: ModelKind.Llm,
+  tier: ModelTier.Downloadable,
+  isDefault: false,
+  destinationPath: "/models/llama.bin",
+  installed: false,
+};
+
+const renderModelsWithFilter = (initialUrl: string) =>
+  renderWithStore(
+    <MemoryRouter initialEntries={[initialUrl]}>
+      <Models />
+    </MemoryRouter>,
+    {
+      theme: darkTheme,
+      preloadedState: mergeMockState(
+        mockModelsState({
+          byId: {
+            [fakeModel.id]: fakeModel,
+            [fakeModelLlm.id]: fakeModelLlm,
+          },
+        })
+      ),
+    }
+  );
+
+describe("Models page — type filter chips", () => {
+  it("chip click filters list to matching kind", async () => {
+    const user = userEvent.setup();
+    renderModelsWithFilter("/models");
+
+    await user.click(screen.getByTestId("model-filter-STT"));
+
+    expect(screen.getByText("Whisper Small")).toBeInTheDocument();
+    expect(screen.queryByText("LLaMA 3")).not.toBeInTheDocument();
+  });
+
+  it("deeplink ?type=LLM applies filter on mount", () => {
+    renderModelsWithFilter("/models?type=LLM");
+
+    expect(screen.getByText("LLaMA 3")).toBeInTheDocument();
+    expect(screen.queryByText("Whisper Small")).not.toBeInTheDocument();
+  });
+
+  it("All chip shows all models", async () => {
+    const user = userEvent.setup();
+    renderModelsWithFilter("/models?type=LLM");
+
+    await user.click(screen.getByTestId("model-filter-all"));
+
+    expect(screen.getByText("Whisper Small")).toBeInTheDocument();
+    expect(screen.getByText("LLaMA 3")).toBeInTheDocument();
+  });
+
+  it("empty groups are hidden from the list", async () => {
+    const user = userEvent.setup();
+    renderModelsWithFilter("/models");
+
+    await user.click(screen.getByTestId("model-filter-STT"));
+
+    expect(screen.queryByText("LLaMA 3")).not.toBeInTheDocument();
   });
 });
