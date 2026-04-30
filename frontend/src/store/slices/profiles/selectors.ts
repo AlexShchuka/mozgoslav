@@ -22,13 +22,7 @@ export const selectProfilesDeletingId = createSelector(
   (slice) => slice.deletingId
 );
 
-export const selectProfileById = (id: string) =>
-  createSelector(selectProfilesState, (slice) => slice.profiles[id] ?? null);
-
 export const selectSuggestingKey = createSelector(
   selectProfilesState,
   (slice) => slice.suggestingKey
 );
-
-export const selectSuggestionsForProfile = (profileId: string, language: string) =>
-  createSelector(selectProfilesState, (slice) => slice.suggestions[profileId]?.[language] ?? null);
