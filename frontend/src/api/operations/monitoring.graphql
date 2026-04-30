@@ -1,0 +1,114 @@
+query QueryRuntimeState {
+  runtimeState {
+    llm {
+      endpoint
+      online
+      lastProbedAt
+      model
+      contextLength
+      supportsToolCalling
+      supportsJsonMode
+      lastError
+    }
+    syncthing {
+      detection
+      binaryPath
+      apiUrl
+      version
+      hint
+    }
+    services {
+      name
+      state
+      lastError
+      restartCount
+      pid
+      port
+    }
+  }
+}
+
+subscription SubscriptionRuntimeStateChanged {
+  runtimeStateChanged {
+    llm {
+      endpoint
+      online
+      lastProbedAt
+      model
+      contextLength
+      supportsToolCalling
+      supportsJsonMode
+      lastError
+    }
+    syncthing {
+      detection
+      binaryPath
+      apiUrl
+      version
+      hint
+    }
+    services {
+      name
+      state
+      lastError
+      restartCount
+      pid
+      port
+    }
+  }
+}
+
+mutation MutationReprobeRuntimeState {
+  reprobeRuntimeState {
+    state {
+      llm {
+        endpoint
+        online
+        lastProbedAt
+        model
+        contextLength
+        supportsToolCalling
+        supportsJsonMode
+        lastError
+      }
+      syncthing {
+        detection
+        binaryPath
+        apiUrl
+        version
+        hint
+      }
+      services {
+        name
+        state
+        lastError
+        restartCount
+        pid
+        port
+      }
+    }
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationPublishElectronServices($input: PublishElectronServicesInput!) {
+  publishElectronServices(input: $input) {
+    state {
+      services {
+        name
+        state
+        lastError
+        restartCount
+        pid
+        port
+      }
+    }
+    errors {
+      code
+      message
+    }
+  }
+}

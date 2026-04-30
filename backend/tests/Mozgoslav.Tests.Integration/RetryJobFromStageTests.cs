@@ -72,7 +72,7 @@ public sealed class RetryJobFromStageTests
 
         var reloadedJob = await freshRepo.GetByIdAsync(job.Id, CancellationToken.None);
         reloadedJob.Should().NotBeNull();
-        reloadedJob!.Status.Should().Be(JobStatus.Queued);
+        reloadedJob.Status.Should().Be(JobStatus.Queued);
         reloadedJob.ErrorMessage.Should().BeNull();
         reloadedJob.StartedAt.Should().BeNull();
         reloadedJob.FinishedAt.Should().BeNull();
@@ -180,7 +180,7 @@ public sealed class RetryJobFromStageTests
         await using var freshCtx = db.CreateContext();
         var reloadedJob = await new EfProcessingJobRepository(freshCtx).GetByIdAsync(job.Id, CancellationToken.None);
         reloadedJob.Should().NotBeNull();
-        reloadedJob!.Status.Should().Be(JobStatus.Queued);
+        reloadedJob.Status.Should().Be(JobStatus.Queued);
         reloadedJob.FinishedAt.Should().BeNull();
 
         var stages = await new EfProcessingJobStageRepository(freshCtx).GetByJobIdAsync(job.Id, CancellationToken.None);

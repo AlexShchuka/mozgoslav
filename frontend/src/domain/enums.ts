@@ -5,7 +5,6 @@ export type JobStatus =
   | "PreflightChecks"
   | "Transcribing"
   | "Correcting"
-  | "LlmCorrection"
   | "Summarizing"
   | "Exporting"
   | "Done"

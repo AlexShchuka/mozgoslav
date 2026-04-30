@@ -45,7 +45,6 @@ const RUNNING_STATUSES: ReadonlySet<JobStatus> = new Set([
   "PreflightChecks",
   "Transcribing",
   "Correcting",
-  "LlmCorrection",
   "Summarizing",
   "Exporting",
 ]);
@@ -54,7 +53,6 @@ const PAUSEABLE_STATUSES: ReadonlySet<JobStatus> = new Set([
   "PreflightChecks",
   "Transcribing",
   "Correcting",
-  "LlmCorrection",
   "Summarizing",
   "Exporting",
 ]);
@@ -64,7 +62,6 @@ const CANCELABLE_STATUSES: ReadonlySet<JobStatus> = new Set([
   "PreflightChecks",
   "Transcribing",
   "Correcting",
-  "LlmCorrection",
   "Summarizing",
   "Exporting",
   "Paused",

@@ -112,14 +112,14 @@ public sealed class RuntimeStateQueryTests : IntegrationTestsBase
         var json = JsonNode.Parse(body);
         json.Should().NotBeNull();
 
-        var data = json!["data"];
+        var data = json["data"];
         data.Should().NotBeNull();
 
-        var reprobeResult = data!["reprobeRuntimeState"];
+        var reprobeResult = data["reprobeRuntimeState"];
         reprobeResult.Should().NotBeNull();
 
-        var state = reprobeResult!["state"];
+        var state = reprobeResult["state"];
         state.Should().NotBeNull();
-        state!["llm"].Should().NotBeNull();
+        state["llm"].Should().NotBeNull();
     }
 }

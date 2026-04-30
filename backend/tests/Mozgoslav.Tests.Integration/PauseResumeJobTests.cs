@@ -35,7 +35,7 @@ public sealed class PauseResumeJobTests
         await using var freshCtx = db.CreateContext();
         var reloaded = await new EfProcessingJobRepository(freshCtx).GetByIdAsync(job.Id, CancellationToken.None);
         reloaded.Should().NotBeNull();
-        reloaded!.PauseRequested.Should().BeTrue();
+        reloaded.PauseRequested.Should().BeTrue();
         reloaded.Status.Should().Be(JobStatus.Transcribing);
     }
 
@@ -64,7 +64,7 @@ public sealed class PauseResumeJobTests
         await using var freshCtx = db.CreateContext();
         var reloaded = await new EfProcessingJobRepository(freshCtx).GetByIdAsync(job.Id, CancellationToken.None);
         reloaded.Should().NotBeNull();
-        reloaded!.Status.Should().Be(JobStatus.Paused);
+        reloaded.Status.Should().Be(JobStatus.Paused);
         reloaded.FinishedAt.Should().NotBeNull();
         reloaded.FinishedAt.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
     }
@@ -92,7 +92,7 @@ public sealed class PauseResumeJobTests
         await using var freshCtx = db.CreateContext();
         var reloaded = await new EfProcessingJobRepository(freshCtx).GetByIdAsync(job.Id, CancellationToken.None);
         reloaded.Should().NotBeNull();
-        reloaded!.PauseRequested.Should().BeFalse();
+        reloaded.PauseRequested.Should().BeFalse();
     }
 
     [TestMethod]
@@ -112,7 +112,7 @@ public sealed class PauseResumeJobTests
 
         var reloaded = await repo.GetByIdAsync(job.Id, CancellationToken.None);
         reloaded.Should().NotBeNull();
-        reloaded!.Status.Should().Be(JobStatus.Queued);
+        reloaded.Status.Should().Be(JobStatus.Queued);
 
         var canPause = reloaded.Status is JobStatus.PreflightChecks or JobStatus.Transcribing
             or JobStatus.Correcting or JobStatus.Summarizing or JobStatus.Exporting;
@@ -136,7 +136,7 @@ public sealed class PauseResumeJobTests
 
         var reloaded = await repo.GetByIdAsync(job.Id, CancellationToken.None);
         reloaded.Should().NotBeNull();
-        reloaded!.Status.Should().NotBe(JobStatus.Paused);
+        reloaded.Status.Should().NotBe(JobStatus.Paused);
 
         var canResume = reloaded.Status == JobStatus.Paused;
         canResume.Should().BeFalse();
@@ -164,7 +164,7 @@ public sealed class PauseResumeJobTests
         await using var freshCtx = db.CreateContext();
         var reloaded = await new EfProcessingJobRepository(freshCtx).GetByIdAsync(job.Id, CancellationToken.None);
         reloaded.Should().NotBeNull();
-        reloaded!.Status.Should().Be(JobStatus.Cancelled);
+        reloaded.Status.Should().Be(JobStatus.Cancelled);
         reloaded.FinishedAt.Should().NotBeNull();
     }
 

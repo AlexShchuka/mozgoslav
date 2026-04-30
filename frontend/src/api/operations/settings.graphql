@@ -50,6 +50,14 @@ query QuerySettings {
     dictationDumpEnabled
     dictationDumpHotkeyToggle
     dictationDumpHotkeyHold
+    webCacheTtlHours
+    mcpServerEnabled
+    mcpServerPort
+    mcpServerToken
+    actionsSkillEnabled
+    remindersSkillEnabled
+    dictationClassifyIntentEnabled
+    claudeCliPath
     sidecarEnrichmentEnabled
   }
 }
@@ -97,6 +105,14 @@ mutation MutationUpdateSettings($input: UpdateSettingsInput!) {
       dictationDumpEnabled
       dictationDumpHotkeyToggle
       dictationDumpHotkeyHold
+      webCacheTtlHours
+      mcpServerEnabled
+      mcpServerPort
+      mcpServerToken
+      actionsSkillEnabled
+      remindersSkillEnabled
+      dictationClassifyIntentEnabled
+      claudeCliPath
       sidecarEnrichmentEnabled
     }
     errors {

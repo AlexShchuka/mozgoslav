@@ -63,6 +63,15 @@ type AppSettingsDto {
   dictationDumpEnabled: Boolean!
   dictationDumpHotkeyToggle: String!
   dictationDumpHotkeyHold: String!
+  webCacheTtlHours: Int!
+  mcpServerEnabled: Boolean!
+  mcpServerPort: Int!
+  mcpServerToken: String!
+  actionsSkillEnabled: Boolean!
+  remindersSkillEnabled: Boolean!
+  dictationClassifyIntentEnabled: Boolean!
+  claudeCliPath: String!
+  sidecarEnrichmentEnabled: Boolean!
   obsidianBootstrapPins: String!
 }
 
@@ -176,6 +185,11 @@ type FolderCompletionPayload {
   globalBytes: Long!
 }
 
+type GlossaryEntry {
+  language: String!
+  terms: [String!]!
+}
+
 type HealthStatus {
   status: String!
   time: String!
@@ -217,13 +231,45 @@ type JobsEdge {
   node: ProcessingJob!
 }
 
+type KeyValuePairOfStringAndListOfString {
+  key: String!
+  value: [String!]!
+}
+
 type KeyValuePairOfStringAndString {
   key: String!
   value: String!
 }
 
+type LlmCapabilities {
+  supportsToolCalling: Boolean!
+  supportsJsonMode: Boolean!
+  ctxLength: Int!
+  tokensPerSecond: Float!
+  probedAt: DateTime!
+}
+
 type LlmHealthStatus {
   available: Boolean!
+}
+
+type LlmModelDescriptor {
+  id: String!
+  ownedBy: String
+  contextLength: Int
+  supportsToolCalling: Boolean
+  supportsJsonMode: Boolean
+}
+
+type LlmRuntimeState {
+  endpoint: String!
+  online: Boolean!
+  lastProbedAt: DateTime!
+  model: String!
+  contextLength: Int!
+  supportsToolCalling: Boolean!
+  supportsJsonMode: Boolean!
+  lastError: String
 }
 
 type LmStudioCheck {
@@ -311,6 +357,8 @@ type MutationType {
   buildPrompt(template: String!): String! @cost(weight: "10")
   toggleRoutine(key: String! enabled: Boolean!): RoutineDefinitionDto! @cost(weight: "10")
   runRoutineNow(key: String!): RoutineRunDto! @cost(weight: "10")
+  reprobeRuntimeState: RuntimeStatePayload! @cost(weight: "10")
+  publishElectronServices(input: PublishElectronServicesInput!): RuntimeStatePayload! @cost(weight: "10")
 }
 
 type NotFoundError implements IUserError {
@@ -460,7 +508,8 @@ type ProcessingJob implements Node {
   startedAt: DateTime
   finishedAt: DateTime
   cancelRequested: Boolean!
-  stages: [ProcessingJobStage!]!
+  pauseRequested: Boolean!
+  stages: [ProcessingJobStage!]! @cost(weight: "10")
 }
 
 type ProcessingJobStage {
@@ -471,22 +520,6 @@ type ProcessingJobStage {
   finishedAt: DateTime
   durationMs: Int
   errorMessage: String
-}
-
-type LlmCapabilities {
-  supportsToolCalling: Boolean!
-  supportsJsonMode: Boolean!
-  ctxLength: Int!
-  tokensPerSecond: Float!
-  probedAt: DateTime!
-}
-
-type LlmModelDescriptor {
-  id: String!
-  ownedBy: String
-  contextLength: Int
-  supportsToolCalling: Boolean
-  supportsJsonMode: Boolean
 }
 
 type Profile implements Node {
@@ -500,8 +533,10 @@ type Profile implements Node {
   autoTags: [String!]!
   isDefault: Boolean!
   isBuiltIn: Boolean!
-  glossary: [String!]!
+  glossaryByLanguage: [GlossaryEntry!]!
   llmCorrectionEnabled: Boolean!
+  llmProviderOverride: String!
+  llmModelOverride: String!
 }
 
 type ProfilePayload {
@@ -516,24 +551,6 @@ type PromptTemplateDto {
   createdAt: DateTime!
 }
 
-type RoutineDefinitionDto {
-  key: String!
-  displayName: String!
-  description: String!
-  isEnabled: Boolean!
-  lastRun: RoutineRunDto
-}
-
-type RoutineRunDto {
-  id: UUID!
-  routineKey: String!
-  startedAt: DateTime!
-  finishedAt: DateTime
-  status: String!
-  errorMessage: String
-  payloadSummary: String
-}
-
 type QueryType {
   "Fetches an object given its ID."
   node("ID of the object." id: ID!): Node @cost(weight: "10")
@@ -543,10 +560,12 @@ type QueryType {
   llmHealth: LlmHealthStatus! @cost(weight: "10")
   meta: MetaInfo!
   settings: AppSettingsDto! @cost(weight: "10")
-  llmCapabilities: LlmCapabilities @cost(weight: "10")
+  llmCapabilities: LlmCapabilities
   llmModels: [LlmModelDescriptor!]! @cost(weight: "10")
+  runtimeState: RuntimeState! @cost(weight: "10")
   profiles: [Profile!]! @cost(weight: "10")
   profile(id: UUID!): Profile @cost(weight: "10")
+  suggestGlossaryTerms(profileId: UUID! language: String!): [String!]! @cost(weight: "10")
   models: [ModelEntry!]!
   recordings("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: RecordingFilterInput @cost(weight: "10") order: [RecordingSortInput!] @cost(weight: "10")): RecordingsConnection @listSize(assumedSize: 200, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 25, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
   recording(id: UUID!): Recording @cost(weight: "10")
@@ -566,7 +585,7 @@ type QueryType {
   syncHealth: Boolean! @cost(weight: "10")
   syncPairingPayload: SyncPairingPayloadResult @cost(weight: "10")
   webSearchConfig: WebSearchConfigDto! @cost(weight: "10")
-  systemActionTemplates: [SystemActionTemplateDto!]! @cost(weight: "10")
+  systemActionTemplates: [SystemActionTemplateDto!]!
   promptTemplates: [PromptTemplateDto!]! @cost(weight: "10")
   promptTemplate(id: UUID!): PromptTemplateDto @cost(weight: "10")
   previewPrompt(templateBody: String!): String! @cost(weight: "10")
@@ -657,6 +676,35 @@ type RestApiCheck {
   version: String
 }
 
+type RoutineDefinitionDto {
+  key: String!
+  displayName: String!
+  description: String!
+  isEnabled: Boolean!
+  lastRun: RoutineRunDto
+}
+
+type RoutineRunDto {
+  id: UUID!
+  routineKey: String!
+  startedAt: DateTime!
+  finishedAt: DateTime
+  status: String!
+  errorMessage: String
+  payloadSummary: String
+}
+
+type RuntimeState {
+  llm: LlmRuntimeState!
+  syncthing: SyncthingRuntimeState!
+  services: [SupervisorServiceState!]!
+}
+
+type RuntimeStatePayload {
+  state: RuntimeState
+  errors: [IUserError!]!
+}
+
 type SetupObsidianPayload {
   report: ObsidianSetupReport
   errors: [IUserError!]!
@@ -676,12 +724,6 @@ type StopRecordingPayload {
   errors: [IUserError!]!
 }
 
-type SystemActionTemplateDto {
-  name: String!
-  description: String!
-  deeplinkUrl: String!
-}
-
 type SubscriptionType {
   modelDownloadProgress(downloadId: String!): ModelDownloadProgressEvent!
   jobProgress: ProcessingJob!
@@ -690,6 +732,16 @@ type SubscriptionType {
   hotkeyEvents: HotkeyEventMessage!
   recordingPartials(recordingId: UUID!): RecordingPartialPayload!
   syncEvents: SyncEventMessage!
+  runtimeStateChanged: RuntimeState!
+}
+
+type SupervisorServiceState {
+  name: String!
+  state: String!
+  lastError: String
+  restartCount: Int!
+  pid: Int
+  port: Int
 }
 
 type SyncDeviceEntry {
@@ -725,6 +777,20 @@ type SyncPairingPayloadResult {
 type SyncStatusResult {
   folders: [SyncFolderEntry!]!
   devices: [SyncDeviceEntry!]!
+}
+
+type SyncthingRuntimeState {
+  detection: String!
+  binaryPath: String
+  apiUrl: String
+  version: String
+  hint: String
+}
+
+type SystemActionTemplateDto {
+  name: String!
+  description: String!
+  deeplinkUrl: String!
 }
 
 type TemplaterSettingsCheck {
@@ -838,9 +904,11 @@ input CreateProfileInput {
   cleanupLevel: CleanupLevel!
   exportFolder: String!
   autoTags: [String!]!
-  glossary: [String!]!
+  glossaryByLanguage: [GlossaryEntryInput!]!
   llmCorrectionEnabled: Boolean!
   isDefault: Boolean!
+  llmProviderOverride: String! = ""
+  llmModelOverride: String! = ""
 }
 
 input DateTimeOperationFilterInput {
@@ -861,6 +929,11 @@ input DateTimeOperationFilterInput {
 input EnqueueJobInput {
   recordingId: UUID!
   profileId: UUID!
+}
+
+input GlossaryEntryInput {
+  language: String!
+  terms: [String!]!
 }
 
 input ImportRecordingsInput {
@@ -975,6 +1048,7 @@ input ProcessingJobFilterInput {
   startedAt: DateTimeOperationFilterInput
   finishedAt: DateTimeOperationFilterInput
   cancelRequested: BooleanOperationFilterInput
+  pauseRequested: BooleanOperationFilterInput
 }
 
 input ProcessingJobSortInput {
@@ -990,6 +1064,11 @@ input ProcessingJobSortInput {
   startedAt: SortEnumType @cost(weight: "10")
   finishedAt: SortEnumType @cost(weight: "10")
   cancelRequested: SortEnumType @cost(weight: "10")
+  pauseRequested: SortEnumType @cost(weight: "10")
+}
+
+input PublishElectronServicesInput {
+  services: [SupervisorServiceStateInput!]!
 }
 
 input RecordingFilterInput {
@@ -1025,6 +1104,12 @@ input RecordingStatusOperationFilterInput {
   nin: [RecordingStatus!] @cost(weight: "10")
 }
 
+input RetryJobFromStageInput {
+  jobId: UUID!
+  fromStage: JobStage!
+  skipFailed: Boolean!
+}
+
 input SourceTypeOperationFilterInput {
   eq: SourceType @cost(weight: "10")
   neq: SourceType @cost(weight: "10")
@@ -1045,6 +1130,15 @@ input StringOperationFilterInput {
   nstartsWith: String @cost(weight: "20")
   endsWith: String @cost(weight: "20")
   nendsWith: String @cost(weight: "20")
+}
+
+input SupervisorServiceStateInput {
+  name: String!
+  state: String!
+  lastError: String
+  restartCount: Int!
+  pid: Int
+  port: Int
 }
 
 input TimeSpanOperationFilterInput {
@@ -1100,6 +1194,15 @@ input UpdateSettingsInput {
   dictationDumpEnabled: Boolean! = false
   dictationDumpHotkeyToggle: String! = ""
   dictationDumpHotkeyHold: String! = ""
+  webCacheTtlHours: Int! = 24
+  mcpServerEnabled: Boolean! = false
+  mcpServerPort: Int! = 51051
+  mcpServerToken: String! = ""
+  actionsSkillEnabled: Boolean! = false
+  remindersSkillEnabled: Boolean! = false
+  dictationClassifyIntentEnabled: Boolean! = false
+  claudeCliPath: String! = ""
+  sidecarEnrichmentEnabled: Boolean! = false
 }
 
 input UploadRecordingsInput {
@@ -1178,20 +1281,6 @@ enum DiagnosticAction {
   OPEN_SETTINGS
 }
 
-enum JobStatus {
-  QUEUED
-  TRANSCRIBING
-  CORRECTING
-  LLM_CORRECTION
-  SUMMARIZING
-  EXPORTING
-  DONE
-  FAILED
-  CANCELLED
-  PREFLIGHT_CHECKS
-  PAUSED
-}
-
 enum JobStage {
   TRANSCRIBING
   CORRECTING
@@ -1200,10 +1289,17 @@ enum JobStage {
   EXPORTING
 }
 
-input RetryJobFromStageInput {
-  jobId: UUID!
-  fromStage: JobStage!
-  skipFailed: Boolean!
+enum JobStatus {
+  QUEUED
+  PREFLIGHT_CHECKS
+  TRANSCRIBING
+  CORRECTING
+  SUMMARIZING
+  EXPORTING
+  DONE
+  FAILED
+  CANCELLED
+  PAUSED
 }
 
 enum ModelKind {

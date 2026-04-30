@@ -21,7 +21,6 @@ function gqlJobStatusToDomain(s: GqlJobStatus): ProcessingJob["status"] {
     [GqlJobStatus.PreflightChecks]: "PreflightChecks",
     [GqlJobStatus.Transcribing]: "Transcribing",
     [GqlJobStatus.Correcting]: "Correcting",
-    [GqlJobStatus.LlmCorrection]: "LlmCorrection",
     [GqlJobStatus.Summarizing]: "Summarizing",
     [GqlJobStatus.Exporting]: "Exporting",
     [GqlJobStatus.Done]: "Done",

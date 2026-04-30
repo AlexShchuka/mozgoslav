@@ -1194,6 +1194,7 @@ input UpdateSettingsInput {
   dictationDumpEnabled: Boolean! = false
   dictationDumpHotkeyToggle: String! = ""
   dictationDumpHotkeyHold: String! = ""
+  webCacheTtlHours: Int! = 24
   mcpServerEnabled: Boolean! = false
   mcpServerPort: Int! = 51051
   mcpServerToken: String! = ""
