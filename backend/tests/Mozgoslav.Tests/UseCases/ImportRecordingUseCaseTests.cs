@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Application.Services;
 using Mozgoslav.Application.UseCases;
 using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.Enums;
@@ -26,7 +27,8 @@ public sealed class ImportRecordingUseCaseTests
         profiles.TryGetDefaultAsync(Arg.Any<CancellationToken>()).Returns(CreateDefaultProfile());
 
         var scheduler = Substitute.For<IProcessingJobScheduler>();
-        var useCase = new ImportRecordingUseCase(recordings, jobs, profiles, scheduler);
+        var finaliser = new RecordingFinaliser(jobs, scheduler);
+        var useCase = new ImportRecordingUseCase(recordings, finaliser, profiles, metadataProbe: null, Microsoft.Extensions.Logging.Abstractions.NullLogger<ImportRecordingUseCase>.Instance);
 
         var missingPath = Path.Combine(Path.GetTempPath(), $"missing-{Guid.NewGuid():N}.mp3");
 
@@ -62,8 +64,9 @@ public sealed class ImportRecordingUseCaseTests
                 .Returns(call => call.Arg<ProcessingJob>());
 
             var scheduler = Substitute.For<IProcessingJobScheduler>();
+            var finaliser = new RecordingFinaliser(jobs, scheduler);
             var useCase = new ImportRecordingUseCase(
-                recordings, jobs, profiles, scheduler, probe,
+                recordings, finaliser, profiles, probe,
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<ImportRecordingUseCase>.Instance);
 
             var result = await useCase.ExecuteAsync([path], profileId: null, CancellationToken.None);
@@ -95,7 +98,8 @@ public sealed class ImportRecordingUseCaseTests
                 .Returns(call => call.Arg<ProcessingJob>());
 
             var scheduler = Substitute.For<IProcessingJobScheduler>();
-            var useCase = new ImportRecordingUseCase(recordings, jobs, profiles, scheduler);
+            var finaliser = new RecordingFinaliser(jobs, scheduler);
+            var useCase = new ImportRecordingUseCase(recordings, finaliser, profiles, metadataProbe: null, Microsoft.Extensions.Logging.Abstractions.NullLogger<ImportRecordingUseCase>.Instance);
 
             var result = await useCase.ExecuteAsync([path], profileId: null, CancellationToken.None);
 
@@ -129,7 +133,8 @@ public sealed class ImportRecordingUseCaseTests
                 .Returns(call => call.Arg<ProcessingJob>());
 
             var scheduler = Substitute.For<IProcessingJobScheduler>();
-            var useCase = new ImportRecordingUseCase(recordings, jobs, profiles, scheduler);
+            var finaliser = new RecordingFinaliser(jobs, scheduler);
+            var useCase = new ImportRecordingUseCase(recordings, finaliser, profiles, metadataProbe: null, Microsoft.Extensions.Logging.Abstractions.NullLogger<ImportRecordingUseCase>.Instance);
 
             var result = await useCase.ExecuteAsync([path], profileId: null, CancellationToken.None);
 
@@ -168,7 +173,8 @@ public sealed class ImportRecordingUseCaseTests
                 .Returns(call => call.Arg<ProcessingJob>());
 
             var scheduler = Substitute.For<IProcessingJobScheduler>();
-            var useCase = new ImportRecordingUseCase(recordings, jobs, profiles, scheduler);
+            var finaliser = new RecordingFinaliser(jobs, scheduler);
+            var useCase = new ImportRecordingUseCase(recordings, finaliser, profiles, metadataProbe: null, Microsoft.Extensions.Logging.Abstractions.NullLogger<ImportRecordingUseCase>.Instance);
 
             var first = await useCase.ExecuteAsync([path], profileId: null, CancellationToken.None);
             var second = await useCase.ExecuteAsync([path], profileId: null, CancellationToken.None);
@@ -201,7 +207,8 @@ public sealed class ImportRecordingUseCaseTests
             var profiles = Substitute.For<IProfileRepository>();
             profiles.TryGetDefaultAsync(Arg.Any<CancellationToken>()).Returns(CreateDefaultProfile());
             var scheduler = Substitute.For<IProcessingJobScheduler>();
-            var useCase = new ImportRecordingUseCase(recordings, jobs, profiles, scheduler);
+            var finaliser = new RecordingFinaliser(jobs, scheduler);
+            var useCase = new ImportRecordingUseCase(recordings, finaliser, profiles, metadataProbe: null, Microsoft.Extensions.Logging.Abstractions.NullLogger<ImportRecordingUseCase>.Instance);
 
             var result = await useCase.ExecuteAsync([path], profileId: null, CancellationToken.None);
 

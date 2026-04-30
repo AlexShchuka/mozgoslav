@@ -25,36 +25,6 @@ public sealed class ImportRecordingUseCase
 
     public ImportRecordingUseCase(
         IRecordingRepository recordings,
-        IProcessingJobRepository jobs,
-        IProfileRepository profiles,
-        IProcessingJobScheduler scheduler)
-        : this(recordings, jobs, profiles, scheduler, metadataProbe: null, NullLogger<ImportRecordingUseCase>.Instance)
-    {
-    }
-
-    public ImportRecordingUseCase(
-        IRecordingRepository recordings,
-        IProcessingJobRepository jobs,
-        IProfileRepository profiles,
-        IProcessingJobScheduler scheduler,
-        ILogger<ImportRecordingUseCase> logger)
-        : this(recordings, jobs, profiles, scheduler, metadataProbe: null, logger)
-    {
-    }
-
-    public ImportRecordingUseCase(
-        IRecordingRepository recordings,
-        IProcessingJobRepository jobs,
-        IProfileRepository profiles,
-        IProcessingJobScheduler scheduler,
-        IAudioMetadataProbe? metadataProbe,
-        ILogger<ImportRecordingUseCase> logger)
-        : this(recordings, new RecordingFinaliser(jobs, scheduler), profiles, metadataProbe, logger)
-    {
-    }
-
-    public ImportRecordingUseCase(
-        IRecordingRepository recordings,
         RecordingFinaliser finaliser,
         IProfileRepository profiles,
         IAudioMetadataProbe? metadataProbe,
