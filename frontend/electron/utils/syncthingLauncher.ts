@@ -116,8 +116,12 @@ const resolveBinaryPath = (resourcesRoot: string): string | null => {
     );
   }
   candidates.push(path.join(resourcesRoot, "syncthing", platformDir, binaryName));
-  candidates.push(path.join(resourcesRoot, "..", "resources", "syncthing", platformDir, binaryName));
-  candidates.push(path.join(process.cwd(), "frontend", "resources", "syncthing", platformDir, binaryName));
+  candidates.push(
+    path.join(resourcesRoot, "..", "resources", "syncthing", platformDir, binaryName)
+  );
+  candidates.push(
+    path.join(process.cwd(), "frontend", "resources", "syncthing", platformDir, binaryName)
+  );
   return candidates.find((candidate) => existsSync(candidate)) ?? null;
 };
 

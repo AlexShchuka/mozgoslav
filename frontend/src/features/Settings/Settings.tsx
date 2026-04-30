@@ -451,9 +451,7 @@ const Badges: FC<BadgesProps> = ({ model }) => {
         <Badge tone="neutral">{t("settings.llmModels.ownedBy", { owner: model.ownedBy })}</Badge>
       )}
       {model.contextLength != null && (
-        <Badge tone="info">
-          {t("settings.llmModels.ctxLength", { n: model.contextLength })}
-        </Badge>
+        <Badge tone="info">{t("settings.llmModels.ctxLength", { n: model.contextLength })}</Badge>
       )}
       {model.supportsToolCalling === true && (
         <Badge tone="success">{t("settings.llmModels.supportsToolCalling")}</Badge>

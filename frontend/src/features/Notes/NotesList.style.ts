@@ -44,7 +44,6 @@ export const FieldLabel = styled.label`
   }
 `;
 
-
 export const BodyField = styled.textarea`
   width: 100%;
   padding: ${({ theme }) => theme.space(2)} ${({ theme }) => theme.space(3)};

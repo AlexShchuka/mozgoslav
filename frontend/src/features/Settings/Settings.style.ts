@@ -79,8 +79,7 @@ export const SelectBox = styled.select<{ $hasError?: boolean }>`
   background: ${({ theme }) => theme.colors.bg.elevated2};
   color: ${({ theme }) => theme.colors.text.primary};
   border: 1px solid
-    ${({ theme, $hasError }) =>
-      $hasError ? theme.colors.error : theme.colors.border.subtle};
+    ${({ theme, $hasError }) => ($hasError ? theme.colors.error : theme.colors.border.subtle)};
   border-radius: ${({ theme }) => theme.radii.md};
   font-family: inherit;
   font-size: ${({ theme }) => theme.font.size.md};

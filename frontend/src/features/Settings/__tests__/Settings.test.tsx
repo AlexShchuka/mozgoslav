@@ -1,17 +1,10 @@
 import { fireEvent, screen } from "@testing-library/react";
 
 import Settings from "../Settings.container";
-import {
-  renderWithStore,
-  mockSettingsState,
-  mergeMockState,
-} from "../../../testUtils";
+import { renderWithStore, mockSettingsState, mergeMockState } from "../../../testUtils";
 import { darkTheme } from "../../../styles/theme";
 import "../../../i18n";
-import {
-  LOAD_LLM_MODELS_REQUESTED,
-  LOAD_SETTINGS,
-} from "../../../store/slices/settings";
+import { LOAD_LLM_MODELS_REQUESTED, LOAD_SETTINGS } from "../../../store/slices/settings";
 import type { LlmModelDescriptor } from "../../../api/gql/graphql";
 
 const baseSettings = {
@@ -69,9 +62,7 @@ const fakeModels: readonly LlmModelDescriptor[] = [
   },
 ];
 
-const renderSettings = (
-  patch: Parameters<typeof mockSettingsState>[0] = {}
-) =>
+const renderSettings = (patch: Parameters<typeof mockSettingsState>[0] = {}) =>
   renderWithStore(<Settings />, {
     theme: darkTheme,
     preloadedState: mergeMockState(

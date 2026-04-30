@@ -98,7 +98,6 @@ export const FieldLabel = styled.label`
   color: ${({ theme }) => theme.colors.text.secondary};
 `;
 
-
 export const FieldTextarea = styled.textarea`
   width: 100%;
   padding: ${({ theme }) => `${theme.space(2)} ${theme.space(3)}`};
