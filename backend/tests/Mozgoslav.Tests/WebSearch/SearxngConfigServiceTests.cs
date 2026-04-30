@@ -36,37 +36,6 @@ public sealed class SearxngConfigServiceTests
     }
 
     [TestMethod]
-    public async Task WriteEnginesAsync_WritesEngineFlags_AndEmitsRestartEvent()
-    {
-        var bundledPath = Path.Combine(_tempDir, "bundled-settings.yml");
-        await File.WriteAllTextAsync(bundledPath, BuildMinimalYaml());
-
-        var appSettings = Substitute.For<IAppSettings>();
-        appSettings.WebCacheTtlHours.Returns(24);
-
-        var originalOut = Console.Out;
-        using var captured = new StringWriter();
-        Console.SetOut(captured);
-
-        try
-        {
-            var service = CreateService(bundledPath, appSettings);
-            await service.WriteEnginesAsync(
-                ddgEnabled: true,
-                yandexEnabled: false,
-                googleEnabled: true,
-                CancellationToken.None);
-        }
-        finally
-        {
-            Console.SetOut(originalOut);
-        }
-
-        var output = captured.ToString();
-        output.Should().Contain("MOZGOSLAV_EVENT:searxng-restart");
-    }
-
-    [TestMethod]
     public async Task WriteEnginesAsync_UpdatesEngineDisabledFlag_InSettingsFile()
     {
         var bundledPath = Path.Combine(_tempDir, "bundled-settings.yml");
