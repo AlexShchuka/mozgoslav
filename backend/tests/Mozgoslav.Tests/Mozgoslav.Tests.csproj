@@ -22,6 +22,7 @@
         <ProjectReference Include="..\..\src\Mozgoslav.Domain\Mozgoslav.Domain.csproj"/>
         <ProjectReference Include="..\..\src\Mozgoslav.Application\Mozgoslav.Application.csproj"/>
         <ProjectReference Include="..\..\src\Mozgoslav.Infrastructure\Mozgoslav.Infrastructure.csproj"/>
+        <ProjectReference Include="..\..\src\Mozgoslav.Api\Mozgoslav.Api.csproj"/>
     </ItemGroup>
     <ItemGroup>
         <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting"/>
