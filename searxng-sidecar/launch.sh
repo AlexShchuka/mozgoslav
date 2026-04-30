@@ -13,10 +13,16 @@ if [ ! -f "$USER_SETTINGS" ]; then
 fi
 
 VENV_DIR="$SCRIPT_DIR/.venv"
+HASH_FILE="$VENV_DIR/.installed-hash"
+REQUIREMENTS="$SCRIPT_DIR/requirements.txt"
 
-if [ ! -d "$VENV_DIR" ]; then
+current_hash="$(sha256sum "$REQUIREMENTS" | awk '{print $1}')"
+
+if [ ! -d "$VENV_DIR" ] || [ ! -f "$HASH_FILE" ] || [ "$(cat "$HASH_FILE")" != "$current_hash" ]; then
+  rm -rf "$VENV_DIR"
   python3 -m venv "$VENV_DIR"
-  "$VENV_DIR/bin/pip" install --quiet -r "$SCRIPT_DIR/requirements.txt"
+  "$VENV_DIR/bin/pip" install --quiet -r "$REQUIREMENTS"
+  echo "$current_hash" > "$HASH_FILE"
 fi
 
 SEARXNG_SETTINGS_PATH="$USER_SETTINGS" exec "$VENV_DIR/bin/python" -m searx.webapp
