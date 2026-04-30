@@ -337,6 +337,46 @@ public sealed class ProcessQueueWorkerTests
         statusAfterPreflight.Should().Be(JobStatus.Transcribing);
     }
 
+    [TestMethod]
+    public async Task ProcessJobAsync_ResumesFromLastFailedStage()
+    {
+        using var fixture = new Fixture();
+        var job = fixture.SeedJob();
+        fixture.ArrangeHappyPipeline();
+
+        var existingTranscript = new Transcript
+        {
+            RecordingId = job.RecordingId,
+            ModelUsed = "ggml-small-q8_0.bin",
+            Language = "ru",
+            RawText = "previously transcribed text",
+            Segments = []
+        };
+
+        var transcribeStage = new ProcessingJobStage
+        {
+            JobId = job.Id,
+            StageName = "Transcribing audio",
+            StartedAt = DateTimeOffset.UtcNow.AddMinutes(-5),
+            FinishedAt = DateTimeOffset.UtcNow.AddMinutes(-4),
+            DurationMs = 60_000,
+            ErrorMessage = null
+        };
+
+        fixture.Stages.GetByJobIdAsync(job.Id, Arg.Any<CancellationToken>())
+            .Returns([transcribeStage]);
+        fixture.Transcripts.GetByRecordingIdAsync(job.RecordingId, Arg.Any<CancellationToken>())
+            .Returns(existingTranscript);
+
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
+
+        job.Status.Should().Be(JobStatus.Done);
+        await fixture.Transcription.DidNotReceiveWithAnyArgs().TranscribeAsync(
+            default!, default!, default, default, default);
+        await fixture.Transcripts.DidNotReceiveWithAnyArgs().AddAsync(
+            default!, default);
+    }
+
     private sealed class Fixture : IDisposable
     {
         private readonly string _tempDir = System.IO.Path.Combine(
@@ -345,6 +385,8 @@ public sealed class ProcessQueueWorkerTests
         public Fixture()
         {
             System.IO.Directory.CreateDirectory(_tempDir);
+            Stages.GetByJobIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+                .Returns(Array.Empty<ProcessingJobStage>());
         }
 
         public void Dispose()

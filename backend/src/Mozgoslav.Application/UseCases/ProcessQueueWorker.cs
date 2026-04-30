@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -167,9 +168,20 @@ public sealed class ProcessQueueWorker
     }
 
     private bool _preflightPassed;
+    private HashSet<string>? _completedStageNames;
+
+    private bool IsStageAlreadyCompleted(string stageName)
+        => _completedStageNames?.Contains(stageName) == true;
 
     private async Task RunPipelineAsync(ProcessingJob job, CancellationToken ct)
     {
+        var completedStages = await _stages.GetByJobIdAsync(job.Id, ct);
+        _completedStageNames = new HashSet<string>(
+            completedStages
+                .Where(s => s.FinishedAt.HasValue && s.ErrorMessage == null)
+                .Select(s => s.StageName),
+            StringComparer.Ordinal);
+
         var recording = await _recordings.GetByIdAsync(job.RecordingId, ct)
             ?? throw new InvalidOperationException($"Recording {job.RecordingId} not found");
         var profile = await _profiles.GetByIdAsync(job.ProfileId, ct)
@@ -181,39 +193,57 @@ public sealed class ProcessQueueWorker
             return;
         }
 
-        await TransitionAsync(job, JobStatus.Transcribing, 0, "Transcribing audio", ct);
-        job.StartedAt = DateTime.UtcNow;
-        await _jobs.UpdateAsync(job, ct);
-
-        var wavPath = await _audioConverter.ConvertToWavAsync(recording.FilePath, ct);
-
-        var segmentProgress = new Progress<int>(p => _ = NotifyProgressAsync(job, ScaleProgress(p, 0, TranscribeEnd), ct));
-        var whisperInitialPrompt = _glossary.TryBuildInitialPrompt(profile, _settings.Language);
-        var segments = await _transcriptionService.TranscribeAsync(
-            wavPath, _settings.Language, whisperInitialPrompt, segmentProgress, ct);
-
-        var transcript = new Transcript
+        Transcript transcript;
+        if (IsStageAlreadyCompleted("Transcribing audio"))
         {
-            RecordingId = recording.Id,
-            ModelUsed = string.IsNullOrEmpty(_settings.WhisperModelPath)
-                ? "unknown"
-                : Path.GetFileName(_settings.WhisperModelPath),
-            Language = _settings.Language,
-            RawText = string.Join(" ", segments.Select(s => s.Text)).Trim(),
-            Segments = segments.ToList()
-        };
-        await _transcripts.AddAsync(transcript, ct);
+            transcript = await _transcripts.GetByRecordingIdAsync(recording.Id, ct)
+                ?? throw new InvalidOperationException($"Transcript for recording {recording.Id} not found on resume");
+        }
+        else
+        {
+            await TransitionAsync(job, JobStatus.Transcribing, 0, "Transcribing audio", ct);
+            job.StartedAt ??= DateTime.UtcNow;
+            await _jobs.UpdateAsync(job, ct);
 
-        await TransitionAsync(job, JobStatus.Correcting, CorrectionEnd, "Cleaning transcript", ct);
+            var wavPath = await _audioConverter.ConvertToWavAsync(recording.FilePath, ct);
+
+            var segmentProgress = new Progress<int>(p => _ = NotifyProgressAsync(job, ScaleProgress(p, 0, TranscribeEnd), ct));
+            var whisperInitialPrompt = _glossary.TryBuildInitialPrompt(profile, _settings.Language);
+            var segments = await _transcriptionService.TranscribeAsync(
+                wavPath, _settings.Language, whisperInitialPrompt, segmentProgress, ct);
+
+            transcript = new Transcript
+            {
+                RecordingId = recording.Id,
+                ModelUsed = string.IsNullOrEmpty(_settings.WhisperModelPath)
+                    ? "unknown"
+                    : Path.GetFileName(_settings.WhisperModelPath),
+                Language = _settings.Language,
+                RawText = string.Join(" ", segments.Select(s => s.Text)).Trim(),
+                Segments = segments.ToList()
+            };
+            await _transcripts.AddAsync(transcript, ct);
+        }
+
+        if (!IsStageAlreadyCompleted("Cleaning transcript"))
+        {
+            await TransitionAsync(job, JobStatus.Correcting, CorrectionEnd, "Cleaning transcript", ct);
+        }
         var cleanText = _correctionService.Correct(transcript.RawText, profile);
 
         if (profile.LlmCorrectionEnabled && await _llmService.IsAvailableAsync(ct))
         {
-            await TransitionAsync(job, JobStatus.Correcting, LlmCorrectionEnd, "LLM correction", ct);
+            if (!IsStageAlreadyCompleted("LLM correction"))
+            {
+                await TransitionAsync(job, JobStatus.Correcting, LlmCorrectionEnd, "LLM correction", ct);
+            }
             cleanText = await _llmCorrection.CorrectAsync(cleanText, profile, ct, _settings.Language);
         }
 
-        await TransitionAsync(job, JobStatus.Summarizing, LlmCorrectionEnd, "Summarizing via LLM", ct);
+        if (!IsStageAlreadyCompleted("Summarizing via LLM"))
+        {
+            await TransitionAsync(job, JobStatus.Summarizing, LlmCorrectionEnd, "Summarizing via LLM", ct);
+        }
         LlmProcessingResult? llmResult = null;
         if (await _llmService.IsAvailableAsync(ct))
         {
@@ -231,23 +261,27 @@ public sealed class ProcessQueueWorker
         var note = BuildNote(transcript, profile, recording, cleanText, llmResult, version);
         note.MarkdownContent = MarkdownGenerator.Generate(note, profile, recording, transcript.Segments);
 
-        await TransitionAsync(job, JobStatus.Exporting, SummarizeEnd, "Exporting to vault", ct);
-        note.ExportedToVault = false;
-        note.VaultPath = null;
-        await _notes.AddAsync(note, ct);
-        await _eventBus.PublishAsync(new ProcessedNoteSaved(note.Id, profile.Id, DateTimeOffset.UtcNow), ct);
-
-        recording.Status = RecordingStatus.Transcribed;
-        if (segments.Count > 0)
+        if (!IsStageAlreadyCompleted("Exporting to vault"))
         {
-            recording.Duration = segments[^1].End;
+            await TransitionAsync(job, JobStatus.Exporting, SummarizeEnd, "Exporting to vault", ct);
+            note.ExportedToVault = false;
+            note.VaultPath = null;
+            await _notes.AddAsync(note, ct);
+            await _eventBus.PublishAsync(new ProcessedNoteSaved(note.Id, profile.Id, DateTimeOffset.UtcNow), ct);
+
+            recording.Status = RecordingStatus.Transcribed;
+            if (transcript.Segments.Count > 0)
+            {
+                recording.Duration = transcript.Segments[^1].End;
+            }
+            await _recordings.UpdateAsync(recording, ct);
         }
-        await _recordings.UpdateAsync(recording, ct);
 
         if (_settings.SidecarEnrichmentEnabled)
         {
             try
             {
+                var wavPath = await _audioConverter.ConvertToWavAsync(recording.FilePath, ct);
                 var enrichment = await _sidecarClient.ProcessAllAsync(wavPath, steps: null, ct);
                 _logger.LogInformation(
                     "Sidecar enrichment completed for job {JobId}: cleanedText={Len}ch embedding={Dim}d",
