@@ -68,7 +68,7 @@ public sealed class GlossaryApplicatorTests
         var profile = new Profile { GlossaryByLanguage = new() { ["ru"] = longTerms } };
         var prompt = applicator.TryBuildInitialPrompt(profile, "ru");
         prompt.Should().NotBeNull();
-        prompt!.Length.Should().BeLessThanOrEqualTo(200);
+        prompt.Length.Should().BeLessThanOrEqualTo(200);
     }
 
     [TestMethod]

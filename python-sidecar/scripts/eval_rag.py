@@ -63,7 +63,9 @@ def hybrid_retrieve(query: str, corpus: list[dict], top_k: int = 20) -> list[str
     query_tokens = query.lower().split()
     bm25 = bm25_scores(query_tokens, corpus)
     q_vec = bow_embed(query)
-    embed_sc: dict[str, float] = {c["id"]: cosine(q_vec, bow_embed(c["text"])) for c in corpus}
+    embed_sc: dict[str, float] = {
+        c["id"]: cosine(q_vec, bow_embed(c["text"])) for c in corpus
+    }
     bm25_max = max(bm25.values()) or 1.0
     embed_max = max(embed_sc.values()) or 1.0
     hybrid: dict[str, float] = {
@@ -75,15 +77,9 @@ def hybrid_retrieve(query: str, corpus: list[dict], top_k: int = 20) -> list[str
 
 
 def ndcg_at_k(ranked: list[str], rels: dict[str, int], k: int = 5) -> float:
-    dcg = sum(
-        rels.get(cid, 0) / math.log2(i + 2)
-        for i, cid in enumerate(ranked[:k])
-    )
+    dcg = sum(rels.get(cid, 0) / math.log2(i + 2) for i, cid in enumerate(ranked[:k]))
     ideal_rels = sorted(rels.values(), reverse=True)[:k]
-    idcg = sum(
-        r / math.log2(i + 2)
-        for i, r in enumerate(ideal_rels)
-    )
+    idcg = sum(r / math.log2(i + 2) for i, r in enumerate(ideal_rels))
     return dcg / idcg if idcg > 0 else 0.0
 
 
