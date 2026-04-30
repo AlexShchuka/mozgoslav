@@ -58,6 +58,7 @@ function mapSettingsToInput(s: AppSettings): MutationUpdateSettingsMutationVaria
     dictationDumpEnabled: s.dictationDumpEnabled,
     dictationDumpHotkeyToggle: s.dictationDumpHotkeyToggle,
     dictationDumpHotkeyHold: s.dictationDumpHotkeyHold,
+    sidecarEnrichmentEnabled: s.sidecarEnrichmentEnabled,
   };
 }
 
@@ -101,6 +102,7 @@ function mapSavedToSettings(
     dictationDumpEnabled: dto.dictationDumpEnabled,
     dictationDumpHotkeyToggle: dto.dictationDumpHotkeyToggle,
     dictationDumpHotkeyHold: dto.dictationDumpHotkeyHold,
+    sidecarEnrichmentEnabled: dto.sidecarEnrichmentEnabled ?? false,
   };
 }
 

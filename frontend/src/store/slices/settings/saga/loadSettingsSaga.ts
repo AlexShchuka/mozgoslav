@@ -46,6 +46,7 @@ function mapDtoToSettings(dto: QuerySettingsQuery["settings"]): AppSettings {
     dictationDumpEnabled: dto.dictationDumpEnabled,
     dictationDumpHotkeyToggle: dto.dictationDumpHotkeyToggle,
     dictationDumpHotkeyHold: dto.dictationDumpHotkeyHold,
+    sidecarEnrichmentEnabled: dto.sidecarEnrichmentEnabled ?? false,
   };
 }
 

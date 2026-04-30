@@ -281,6 +281,10 @@
       "dictationDump": "Dictation dump",
       "obsidian": "Obsidian",
       "advanced": "Advanced"
+    },
+    "sidecarEnrichment": {
+      "label": "Enable sidecar enrichment (experimental)",
+      "description": "After transcription, runs diarisation, gender, emotion, NER, cleanup, and embedding via the python sidecar. Default off."
     }
   },
   "sync": {

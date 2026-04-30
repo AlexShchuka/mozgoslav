@@ -425,7 +425,18 @@ const Settings: FC<SettingsProps> = ({
           </SectionHeader>
           {advancedOpen && (
             <Card>
-              <FieldHint>{t("settings.tokenHint")}</FieldHint>
+              <FormGrid>
+                <CheckboxRow>
+                  <input
+                    type="checkbox"
+                    data-testid="settings-sidecar-enrichment-enabled"
+                    checked={draft.sidecarEnrichmentEnabled}
+                    onChange={(e) => update("sidecarEnrichmentEnabled", e.target.checked)}
+                  />
+                  <span>{t("settings.sidecarEnrichment.label")}</span>
+                </CheckboxRow>
+                <FieldHint>{t("settings.sidecarEnrichment.description")}</FieldHint>
+              </FormGrid>
             </Card>
           )}
         </Section>

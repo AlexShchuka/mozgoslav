@@ -70,6 +70,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
     public bool RemindersSkillEnabled => Snapshot.RemindersSkillEnabled;
     public bool DictationClassifyIntentEnabled => Snapshot.DictationClassifyIntentEnabled;
     public string ClaudeCliPath => Snapshot.ClaudeCliPath;
+    public bool SidecarEnrichmentEnabled => Snapshot.SidecarEnrichmentEnabled;
     public AppSettingsDto Snapshot { get; private set; } = AppSettingsDto.Defaults;
 
     public async Task<AppSettingsDto> LoadAsync(CancellationToken ct)
@@ -123,7 +124,8 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             ActionsSkillEnabled: ParseBool(map, Keys.ActionsSkillEnabled, defaults.ActionsSkillEnabled),
             RemindersSkillEnabled: ParseBool(map, Keys.RemindersSkillEnabled, defaults.RemindersSkillEnabled),
             DictationClassifyIntentEnabled: ParseBool(map, Keys.DictationClassifyIntentEnabled, defaults.DictationClassifyIntentEnabled),
-            ClaudeCliPath: map.GetValueOrDefault(Keys.ClaudeCliPath, defaults.ClaudeCliPath));
+            ClaudeCliPath: map.GetValueOrDefault(Keys.ClaudeCliPath, defaults.ClaudeCliPath),
+            SidecarEnrichmentEnabled: ParseBool(map, Keys.SidecarEnrichmentEnabled, defaults.SidecarEnrichmentEnabled));
 
         await _lock.WaitAsync(ct);
         try { Snapshot = dto; }
@@ -183,6 +185,7 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
             (Keys.RemindersSkillEnabled, BoolToString(dto.RemindersSkillEnabled)),
             (Keys.DictationClassifyIntentEnabled, BoolToString(dto.DictationClassifyIntentEnabled)),
             (Keys.ClaudeCliPath, dto.ClaudeCliPath),
+            (Keys.SidecarEnrichmentEnabled, BoolToString(dto.SidecarEnrichmentEnabled)),
         };
 
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
@@ -325,5 +328,6 @@ public sealed class EfAppSettings : IAppSettings, IDisposable
         public const string RemindersSkillEnabled = "reminders_skill_enabled";
         public const string DictationClassifyIntentEnabled = "dictation_classify_intent_enabled";
         public const string ClaudeCliPath = "claude_cli_path";
+        public const string SidecarEnrichmentEnabled = "sidecar_enrichment_enabled";
     }
 }

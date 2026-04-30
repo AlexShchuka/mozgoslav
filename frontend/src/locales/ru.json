@@ -281,6 +281,10 @@
       "dictationDump": "Диктовка-дамп",
       "obsidian": "Obsidian",
       "advanced": "Продвинутое"
+    },
+    "sidecarEnrichment": {
+      "label": "Включить обогащение через sidecar (экспериментально)",
+      "description": "После транскрипции запускает диаризацию, пол, эмоцию, NER, очистку и embedding через python-sidecar. По умолчанию выключено."
     }
   },
   "sync": {

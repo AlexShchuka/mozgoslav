@@ -62,7 +62,8 @@ public sealed class SettingsMutationType
             ActionsSkillEnabled: input.ActionsSkillEnabled,
             RemindersSkillEnabled: input.RemindersSkillEnabled,
             DictationClassifyIntentEnabled: input.DictationClassifyIntentEnabled,
-            ClaudeCliPath: input.ClaudeCliPath);
+            ClaudeCliPath: input.ClaudeCliPath,
+            SidecarEnrichmentEnabled: input.SidecarEnrichmentEnabled);
 
         await appSettings.SaveAsync(dto, ct);
         var saved = await appSettings.LoadAsync(ct);

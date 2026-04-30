@@ -79,6 +79,7 @@ export type AppSettingsDto = {
   obsidianApiToken: Scalars["String"]["output"];
   obsidianBootstrapPins: Scalars["String"]["output"];
   obsidianFeatureEnabled: Scalars["Boolean"]["output"];
+  sidecarEnrichmentEnabled: Scalars["Boolean"]["output"];
   syncthingApiKey: Scalars["String"]["output"];
   syncthingBaseUrl: Scalars["String"]["output"];
   syncthingEnabled: Scalars["Boolean"]["output"];
@@ -1470,6 +1471,7 @@ export type UpdateSettingsInput = {
   obsidianApiHost: Scalars["String"]["input"];
   obsidianApiToken: Scalars["String"]["input"];
   obsidianFeatureEnabled?: Scalars["Boolean"]["input"];
+  sidecarEnrichmentEnabled?: Scalars["Boolean"]["input"];
   syncthingApiKey: Scalars["String"]["input"];
   syncthingBaseUrl: Scalars["String"]["input"];
   syncthingEnabled: Scalars["Boolean"]["input"];
@@ -3014,6 +3016,7 @@ export type QuerySettingsQuery = {
     dictationDumpEnabled: boolean;
     dictationDumpHotkeyToggle: string;
     dictationDumpHotkeyHold: string;
+    sidecarEnrichmentEnabled: boolean;
     dictationAppProfiles: Array<{
       __typename?: "KeyValuePairOfStringAndString";
       key: string;
@@ -3068,6 +3071,7 @@ export type MutationUpdateSettingsMutation = {
       dictationDumpEnabled: boolean;
       dictationDumpHotkeyToggle: string;
       dictationDumpHotkeyHold: string;
+      sidecarEnrichmentEnabled: boolean;
       dictationAppProfiles: Array<{
         __typename?: "KeyValuePairOfStringAndString";
         key: string;
@@ -7011,6 +7015,7 @@ export const QuerySettingsDocument = {
                 { kind: "Field", name: { kind: "Name", value: "dictationDumpEnabled" } },
                 { kind: "Field", name: { kind: "Name", value: "dictationDumpHotkeyToggle" } },
                 { kind: "Field", name: { kind: "Name", value: "dictationDumpHotkeyHold" } },
+                { kind: "Field", name: { kind: "Name", value: "sidecarEnrichmentEnabled" } },
               ],
             },
           },
@@ -7114,6 +7119,7 @@ export const MutationUpdateSettingsDocument = {
                       { kind: "Field", name: { kind: "Name", value: "dictationDumpEnabled" } },
                       { kind: "Field", name: { kind: "Name", value: "dictationDumpHotkeyToggle" } },
                       { kind: "Field", name: { kind: "Name", value: "dictationDumpHotkeyHold" } },
+                      { kind: "Field", name: { kind: "Name", value: "sidecarEnrichmentEnabled" } },
                     ],
                   },
                 },

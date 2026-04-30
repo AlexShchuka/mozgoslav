@@ -47,7 +47,8 @@ public sealed record AppSettingsDto(
     bool ActionsSkillEnabled = false,
     bool RemindersSkillEnabled = false,
     bool DictationClassifyIntentEnabled = false,
-    string ClaudeCliPath = "")
+    string ClaudeCliPath = "",
+    bool SidecarEnrichmentEnabled = false)
 {
     public const string ObsidianBootstrapPinsResource = "Mozgoslav.Infrastructure.Resources.ObsidianBootstrap.pinned-plugins.json";
 
@@ -101,5 +102,6 @@ public sealed record AppSettingsDto(
         ActionsSkillEnabled: false,
         RemindersSkillEnabled: false,
         DictationClassifyIntentEnabled: false,
-        ClaudeCliPath: string.Empty);
+        ClaudeCliPath: string.Empty,
+        SidecarEnrichmentEnabled: false);
 }
