@@ -350,7 +350,15 @@
     "installedButton": "Installed",
     "notInstalled": "Not downloaded",
     "download": "Download",
-    "sizeMb": "{{size}} MB"
+    "sizeMb": "{{size}} MB",
+    "filter": {
+      "all": "All",
+      "STT": "Whisper",
+      "LLM": "LLM",
+      "VAD": "VAD",
+      "AUDIO_ML": "Embedding",
+      "NLP_ML": "NLP"
+    }
   },
   "obsidian": {
     "title": "Obsidian vault",

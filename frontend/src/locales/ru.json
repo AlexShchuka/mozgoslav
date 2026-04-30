@@ -350,7 +350,15 @@
     "installedButton": "Установлено",
     "notInstalled": "Не скачана",
     "download": "Скачать",
-    "sizeMb": "{{size}} МБ"
+    "sizeMb": "{{size}} МБ",
+    "filter": {
+      "all": "Все",
+      "STT": "Whisper",
+      "LLM": "LLM",
+      "VAD": "VAD",
+      "AUDIO_ML": "Embedding",
+      "NLP_ML": "NLP"
+    }
   },
   "obsidian": {
     "title": "Obsidian vault",
