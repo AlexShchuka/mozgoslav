@@ -10,7 +10,6 @@ import {
   FolderCog,
   FolderTree,
   HelpCircle,
-  ListTree,
   MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
@@ -106,14 +105,6 @@ const Layout: FC<LayoutProps> = ({ children }) => {
           </SidebarGroup>
 
           <SidebarGroup>
-            <NavItem
-              to={ROUTES.profiles}
-              icon={<ListTree size={16} />}
-              collapsed={collapsed}
-              onClick={onNavClick}
-            >
-              {t("nav.profiles")}
-            </NavItem>
             <NavItem
               to={ROUTES.models}
               icon={<Database size={16} />}
