@@ -64,7 +64,6 @@ EOF
 
 - Close related Issues via `closes #N` in the PR body, or manually after merge.
 - If the change ships architecture that deserves a robot-style decision record → open a new Issue via `.github/ISSUE_TEMPLATE/decision.yml`.
-- If the change retires a markdown artefact → `git mv` it into `.archive/` in the same PR; never delete.
 
 ## Session failure modes
 
@@ -357,7 +356,6 @@ After CI green:
 19. **Triage scope explosion** (e.g. zero-failures fix-all): if surveying reveals far more work than budgeted, STOP and report before fixing all. Cap to a fraction of total time budget (~25%).
 20. **Visual progress tracking** via task tools for multi-step work — this is how the human watches the run from afar.
 21. **GitHub access via `gh`** — the token belongs to the human; comments / labels / closures appear under their account. No service account; act accordingly.
-22. **`.archive/`, never delete.** `git mv` to `.archive/` even for retired tests/code. Audit trail matters more than cleanliness.
 
 ## When the autonomous run is wrong
 

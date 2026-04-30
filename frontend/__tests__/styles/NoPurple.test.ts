@@ -11,7 +11,7 @@ const walk = (dir: string, acc: string[] = []): string[] => {
     for (const entry of fs.readdirSync(dir, {withFileTypes: true})) {
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) {
-            if (entry.name === "node_modules" || entry.name === ".archive") continue;
+            if (entry.name === "node_modules") continue;
             walk(full, acc);
         } else if (WALK_EXT.has(path.extname(entry.name))) {
             acc.push(full);
