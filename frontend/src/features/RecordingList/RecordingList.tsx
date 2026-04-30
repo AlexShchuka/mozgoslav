@@ -1,7 +1,9 @@
-import { type FC, useEffect } from "react";
+import { type FC, useEffect, useState } from "react";
 
+import JobTimeline from "../../components/JobTimeline";
 import GroupedList from "../../components/GroupedList";
 import { formatDuration } from "../../core/utils/format";
+import type { Recording } from "../../domain";
 import type { RecordingListProps } from "./types";
 import { EmptyState, ErrorText, ListHeader, Meta, Title } from "./RecordingList.style";
 
@@ -12,11 +14,23 @@ const RecordingList: FC<RecordingListProps> = ({
   isLoading,
   isBackendUnavailable,
   error,
+  jobsByRecordingId,
+  stagesByJobId,
   onLoad,
+  onPauseJob,
+  onResumeJob,
+  onCancelJob,
+  onRetryJobFromStage,
 }) => {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
   useEffect(() => {
     onLoad();
   }, [onLoad]);
+
+  const handleItemClick = (recording: Recording) => {
+    setExpandedId((prev) => (prev === recording.id ? null : recording.id));
+  };
 
   return (
     <section>
@@ -42,6 +56,26 @@ const RecordingList: FC<RecordingListProps> = ({
               <Meta>{r.status}</Meta>
             </>
           )}
+          renderActions={(r) => {
+            const job = jobsByRecordingId[r.id];
+            if (!expandedId || expandedId !== r.id || !job) {
+              return null;
+            }
+            const stages = stagesByJobId[job.id] ?? [];
+            return (
+              <JobTimeline
+                job={job}
+                stages={stages}
+                onPause={() => onPauseJob(job.id)}
+                onResume={() => onResumeJob(job.id)}
+                onCancel={() => onCancelJob(job.id)}
+                onRetryFromStage={(stage, skipFailed) =>
+                  onRetryJobFromStage(job.id, stage, skipFailed)
+                }
+              />
+            );
+          }}
+          onItemClick={handleItemClick}
           data-testid="recording-list"
         />
       )}

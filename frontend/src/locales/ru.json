@@ -1,4 +1,33 @@
 {
+  "pipeline": {
+    "timeline": {
+      "stage": {
+        "transcribing": "Транскрипция",
+        "correcting": "Коррекция",
+        "llmCorrection": "LLM",
+        "summarizing": "Summary",
+        "exporting": "Экспорт"
+      },
+      "state": {
+        "done": "Готово",
+        "failed": "Ошибка",
+        "paused": "Пауза",
+        "pending": "Ожидание",
+        "running": "Идёт",
+        "skipped": "Пропущено"
+      },
+      "action": {
+        "retry": "Retry",
+        "skip": "Пропустить",
+        "pause": "Пауза",
+        "resume": "Возобновить",
+        "cancel": "Отменить"
+      },
+      "tooltip": {
+        "duration": "{{seconds}} сек"
+      }
+    }
+  },
   "app": {
     "name": "Мозгослав",
     "tagline": "Локальный второй мозг для разговоров"
@@ -134,7 +163,9 @@
       "Exporting": "Экспорт",
       "Done": "Готово",
       "Failed": "Ошибка",
-      "Cancelled": "Отменено"
+      "Cancelled": "Отменено",
+      "Paused": "На паузе",
+      "LlmCorrection": "LLM-коррекция"
     },
     "stages": {
       "title": "Разбивка по стадиям",

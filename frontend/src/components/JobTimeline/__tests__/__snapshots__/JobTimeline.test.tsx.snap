@@ -1,0 +1,584 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`JobTimeline renders all 5 stage chips (all-pending state) 1`] = `
+<div>
+  <div
+    class="sc-gsTDHW jETMiP"
+    data-testid="job-timeline"
+  >
+    <div
+      class="sc-dlfnOL dzsZfE"
+    >
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-Transcribing"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Transcribing
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-Correcting"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Correcting
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-LlmCorrection"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          LLM
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-Summarizing"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Summary
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-Exporting"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Exporting
+        </span>
+      </div>
+    </div>
+    <div
+      class="sc-pGbXd kapnHN"
+    >
+      <button
+        class="sc-bdfDLd fWFzgC"
+        data-testid="timeline-cancel"
+      >
+        <span>
+          Cancel
+        </span>
+      </button>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`JobTimeline shows Pause and Cancel buttons when job is running 1`] = `
+<div>
+  <div
+    class="sc-gsTDHW jETMiP"
+    data-testid="job-timeline"
+  >
+    <div
+      class="sc-dlfnOL dzsZfE"
+    >
+      <div
+        class="sc-eCsseJ iOeVzi"
+        data-testid="stage-chip-Transcribing"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ▶
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Transcribing
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-Correcting"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Correcting
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-LlmCorrection"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          LLM
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-Summarizing"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Summary
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-Exporting"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Exporting
+        </span>
+      </div>
+    </div>
+    <div
+      class="sc-pGbXd kapnHN"
+    >
+      <button
+        class="sc-bdfDLd jSlXKd"
+        data-testid="timeline-pause"
+      >
+        <span>
+          Pause
+        </span>
+      </button>
+      <button
+        class="sc-bdfDLd fWFzgC"
+        data-testid="timeline-cancel"
+      >
+        <span>
+          Cancel
+        </span>
+      </button>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`JobTimeline shows Resume button (not Pause) when job is Paused 1`] = `
+<div>
+  <div
+    class="sc-gsTDHW jETMiP"
+    data-testid="job-timeline"
+  >
+    <div
+      class="sc-dlfnOL dzsZfE"
+    >
+      <div
+        class="sc-eCsseJ cJYiCD"
+        data-testid="stage-chip-Transcribing"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ✓
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Transcribing
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-Correcting"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Correcting
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-LlmCorrection"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          LLM
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-Summarizing"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Summary
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-Exporting"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Exporting
+        </span>
+      </div>
+    </div>
+    <div
+      class="sc-pGbXd kapnHN"
+    >
+      <button
+        class="sc-bdfDLd bulSss"
+        data-testid="timeline-resume"
+      >
+        <span>
+          Resume
+        </span>
+      </button>
+      <button
+        class="sc-bdfDLd fWFzgC"
+        data-testid="timeline-cancel"
+      >
+        <span>
+          Cancel
+        </span>
+      </button>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`JobTimeline shows Retry and Skip buttons on failed stage 1`] = `
+<div>
+  <div
+    class="sc-gsTDHW jETMiP"
+    data-testid="job-timeline"
+  >
+    <div
+      class="sc-dlfnOL dzsZfE"
+    >
+      <div
+        class="sc-eCsseJ cJYiCD"
+        data-testid="stage-chip-Transcribing"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ✓
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Transcribing
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ kkCIee"
+        data-testid="stage-chip-Correcting"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ✗
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Correcting
+        </span>
+        <div
+          class="sc-iBPUmU iutMDB"
+        >
+          <button
+            class="sc-bdfDLd fWFzgC"
+            data-testid="retry-stage-Correcting"
+          >
+            <span>
+              Retry
+            </span>
+          </button>
+          <button
+            class="sc-bdfDLd jSlXKd"
+            data-testid="skip-stage-Correcting"
+          >
+            <span>
+              Skip
+            </span>
+          </button>
+        </div>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-LlmCorrection"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          LLM
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-Summarizing"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Summary
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-Exporting"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Exporting
+        </span>
+      </div>
+    </div>
+    <div
+      class="sc-pGbXd kapnHN"
+    />
+  </div>
+</div>
+`;
+
+exports[`JobTimeline shows no job controls when job is Done 1`] = `
+<div>
+  <div
+    class="sc-gsTDHW jETMiP"
+    data-testid="job-timeline"
+  >
+    <div
+      class="sc-dlfnOL dzsZfE"
+    >
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-Transcribing"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Transcribing
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-Correcting"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Correcting
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-LlmCorrection"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          LLM
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-Summarizing"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Summary
+        </span>
+      </div>
+      <div
+        class="sc-hKgHXU ljKUBL"
+      />
+      <div
+        class="sc-eCsseJ fiEfVi"
+        data-testid="stage-chip-Exporting"
+      >
+        <span
+          class="sc-jSgsbC caojtY"
+        >
+          ⏳
+        </span>
+        <span
+          class="sc-gKscir eVlPZk"
+        >
+          Exporting
+        </span>
+      </div>
+    </div>
+    <div
+      class="sc-pGbXd kapnHN"
+    />
+  </div>
+</div>
+`;

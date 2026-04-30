@@ -1,4 +1,33 @@
 {
+  "pipeline": {
+    "timeline": {
+      "stage": {
+        "transcribing": "Transcribing",
+        "correcting": "Correcting",
+        "llmCorrection": "LLM",
+        "summarizing": "Summary",
+        "exporting": "Exporting"
+      },
+      "state": {
+        "done": "Done",
+        "failed": "Failed",
+        "paused": "Paused",
+        "pending": "Pending",
+        "running": "Running",
+        "skipped": "Skipped"
+      },
+      "action": {
+        "retry": "Retry",
+        "skip": "Skip",
+        "pause": "Pause",
+        "resume": "Resume",
+        "cancel": "Cancel"
+      },
+      "tooltip": {
+        "duration": "{{seconds}} s"
+      }
+    }
+  },
   "app": {
     "name": "Mozgoslav",
     "tagline": "Local second brain for conversations"
@@ -134,7 +163,9 @@
       "Exporting": "Exporting",
       "Done": "Done",
       "Failed": "Failed",
-      "Cancelled": "Cancelled"
+      "Cancelled": "Cancelled",
+      "Paused": "Paused",
+      "LlmCorrection": "LLM correction"
     },
     "stages": {
       "title": "Stage breakdown",

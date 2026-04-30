@@ -387,10 +387,27 @@ export enum JobStatus {
   Done = "DONE",
   Exporting = "EXPORTING",
   Failed = "FAILED",
+  LlmCorrection = "LLM_CORRECTION",
+  Paused = "PAUSED",
+  PreflightChecks = "PREFLIGHT_CHECKS",
   Queued = "QUEUED",
   Summarizing = "SUMMARIZING",
   Transcribing = "TRANSCRIBING",
 }
+
+export enum JobStage {
+  Correcting = "CORRECTING",
+  Exporting = "EXPORTING",
+  LlmCorrection = "LLM_CORRECTION",
+  Summarizing = "SUMMARIZING",
+  Transcribing = "TRANSCRIBING",
+}
+
+export type RetryJobFromStageInput = {
+  fromStage: JobStage;
+  jobId: Scalars["UUID"]["input"];
+  skipFailed: Scalars["Boolean"]["input"];
+};
 
 export type JobStatusOperationFilterInput = {
   eq?: InputMaybe<JobStatus>;
@@ -1865,6 +1882,85 @@ export type MutationCancelJobMutation = {
   __typename?: "MutationType";
   cancelJob: {
     __typename?: "CancelJobPayload";
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationPauseJobMutationVariables = Exact<{
+  id: Scalars["UUID"]["input"];
+}>;
+
+export type MutationPauseJobMutation = {
+  __typename?: "MutationType";
+  pauseJob: {
+    __typename?: "CancelJobPayload";
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationResumeJobMutationVariables = Exact<{
+  id: Scalars["UUID"]["input"];
+}>;
+
+export type MutationResumeJobMutation = {
+  __typename?: "MutationType";
+  resumeJob: {
+    __typename?: "JobPayload";
+    job?: {
+      __typename?: "ProcessingJob";
+      id: string;
+      recordingId: string;
+      profileId: string;
+      status: JobStatus;
+      progress: number;
+      currentStep?: string | null;
+      errorMessage?: string | null;
+      userHint?: string | null;
+      createdAt: string;
+      startedAt?: string | null;
+      finishedAt?: string | null;
+    } | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationRetryJobFromStageMutationVariables = Exact<{
+  input: RetryJobFromStageInput;
+}>;
+
+export type MutationRetryJobFromStageMutation = {
+  __typename?: "MutationType";
+  retryJobFromStage: {
+    __typename?: "JobPayload";
+    job?: {
+      __typename?: "ProcessingJob";
+      id: string;
+      recordingId: string;
+      profileId: string;
+      status: JobStatus;
+      progress: number;
+      currentStep?: string | null;
+      errorMessage?: string | null;
+      userHint?: string | null;
+      createdAt: string;
+      startedAt?: string | null;
+      finishedAt?: string | null;
+    } | null;
     errors: Array<
       | { __typename?: "ConflictError"; code: string; message: string }
       | { __typename?: "NotFoundError"; code: string; message: string }
@@ -4110,6 +4206,205 @@ export const MutationCancelJobDocument = {
     },
   ],
 } as unknown as DocumentNode<MutationCancelJobMutation, MutationCancelJobMutationVariables>;
+export const MutationPauseJobDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationPauseJob" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "pauseJob" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationPauseJobMutation, MutationPauseJobMutationVariables>;
+export const MutationResumeJobDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationResumeJob" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "resumeJob" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: { kind: "Variable", name: { kind: "Name", value: "id" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "job" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "recordingId" } },
+                      { kind: "Field", name: { kind: "Name", value: "profileId" } },
+                      { kind: "Field", name: { kind: "Name", value: "status" } },
+                      { kind: "Field", name: { kind: "Name", value: "progress" } },
+                      { kind: "Field", name: { kind: "Name", value: "currentStep" } },
+                      { kind: "Field", name: { kind: "Name", value: "errorMessage" } },
+                      { kind: "Field", name: { kind: "Name", value: "userHint" } },
+                      { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                      { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+                      { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MutationResumeJobMutation, MutationResumeJobMutationVariables>;
+export const MutationRetryJobFromStageDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationRetryJobFromStage" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "input" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "RetryJobFromStageInput" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "retryJobFromStage" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: { kind: "Variable", name: { kind: "Name", value: "input" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "job" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "recordingId" } },
+                      { kind: "Field", name: { kind: "Name", value: "profileId" } },
+                      { kind: "Field", name: { kind: "Name", value: "status" } },
+                      { kind: "Field", name: { kind: "Name", value: "progress" } },
+                      { kind: "Field", name: { kind: "Name", value: "currentStep" } },
+                      { kind: "Field", name: { kind: "Name", value: "errorMessage" } },
+                      { kind: "Field", name: { kind: "Name", value: "userHint" } },
+                      { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                      { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+                      { kind: "Field", name: { kind: "Name", value: "finishedAt" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationRetryJobFromStageMutation,
+  MutationRetryJobFromStageMutationVariables
+>;
 export const SubscriptionJobProgressDocument = {
   kind: "Document",
   definitions: [

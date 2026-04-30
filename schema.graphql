@@ -289,6 +289,9 @@ type MutationType {
   exportNote(id: UUID!): NotePayload! @cost(weight: "10")
   enqueueJob(input: EnqueueJobInput!): JobPayload! @cost(weight: "10")
   cancelJob(id: UUID!): CancelJobPayload! @cost(weight: "10")
+  pauseJob(id: UUID!): CancelJobPayload! @cost(weight: "10")
+  resumeJob(id: UUID!): JobPayload! @cost(weight: "10")
+  retryJobFromStage(input: RetryJobFromStageInput!): JobPayload! @cost(weight: "10")
   dictationStart(source: String recordingId: UUID): DictationStartPayload! @cost(weight: "10")
   dictationStop(sessionId: UUID! bundleId: String): DictationStopPayload! @cost(weight: "10")
   dictationCancel(sessionId: UUID!): DictationCancelPayload! @cost(weight: "10")
@@ -1179,12 +1182,28 @@ enum JobStatus {
   QUEUED
   TRANSCRIBING
   CORRECTING
+  LLM_CORRECTION
   SUMMARIZING
   EXPORTING
   DONE
   FAILED
   CANCELLED
   PREFLIGHT_CHECKS
+  PAUSED
+}
+
+enum JobStage {
+  TRANSCRIBING
+  CORRECTING
+  LLM_CORRECTION
+  SUMMARIZING
+  EXPORTING
+}
+
+input RetryJobFromStageInput {
+  jobId: UUID!
+  fromStage: JobStage!
+  skipFailed: Boolean!
 }
 
 enum ModelKind {

@@ -18,13 +18,16 @@ type GqlJobNode = {
 function gqlJobStatusToDomain(s: GqlJobStatus): ProcessingJob["status"] {
   const map: Record<GqlJobStatus, ProcessingJob["status"]> = {
     [GqlJobStatus.Queued]: "Queued",
+    [GqlJobStatus.PreflightChecks]: "PreflightChecks",
     [GqlJobStatus.Transcribing]: "Transcribing",
     [GqlJobStatus.Correcting]: "Correcting",
+    [GqlJobStatus.LlmCorrection]: "LlmCorrection",
     [GqlJobStatus.Summarizing]: "Summarizing",
     [GqlJobStatus.Exporting]: "Exporting",
     [GqlJobStatus.Done]: "Done",
     [GqlJobStatus.Failed]: "Failed",
     [GqlJobStatus.Cancelled]: "Cancelled",
+    [GqlJobStatus.Paused]: "Paused",
   };
   return map[s] ?? "Queued";
 }
