@@ -39,6 +39,21 @@ Contract between this repo and any coding agent. Only things you cannot infer fr
 - Magic colour literals in `.style.ts` (`rgb(…)`, `#abcdef`) — banned. Add a token in `frontend/src/styles/theme.ts`.
 - Hand-written frontend feature scaffolds — banned. Run `npm run plop`.
 
+## Bootstrap (mandatory, first action in a fresh checkout / worktree)
+
+CI failed pushes happen when local hooks are absent — every agent MUST run this
+once per fresh checkout BEFORE editing or committing:
+
+```bash
+sudo npm install -g lefthook   # if `which lefthook` is empty
+lefthook install               # writes .git/hooks/{pre-commit,commit-msg,pre-push}
+```
+
+Without `lefthook install`, pre-commit prettier/eslint/dotnet-format auto-fix
+does NOT run, and CI rejects the push for cosmetic drift. New `git worktree
+add` directories share `.git/hooks` with the main repo, so a single install
+covers all worktrees.
+
 ## Non-obvious commands
 
 ```bash
