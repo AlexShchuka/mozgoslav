@@ -115,6 +115,7 @@
     "resumedFrom": "Возобновлено с {{time}}",
     "status": {
       "Queued": "В очереди",
+      "PreflightChecks": "Предпроверка",
       "Transcribing": "Транскрибация",
       "Correcting": "Коррекция",
       "Summarizing": "LLM-суммаризация",

@@ -1184,6 +1184,7 @@ enum JobStatus {
   DONE
   FAILED
   CANCELLED
+  PREFLIGHT_CHECKS
 }
 
 enum ModelKind {

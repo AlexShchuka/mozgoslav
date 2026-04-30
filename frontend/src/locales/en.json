@@ -115,6 +115,7 @@
     "resumedFrom": "Resumed from {{time}}",
     "status": {
       "Queued": "Queued",
+      "PreflightChecks": "Preflight checks",
       "Transcribing": "Transcribing",
       "Correcting": "Correcting",
       "Summarizing": "Summarizing",

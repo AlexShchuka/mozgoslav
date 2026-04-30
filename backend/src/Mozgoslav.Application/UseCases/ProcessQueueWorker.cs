@@ -127,12 +127,59 @@ public sealed class ProcessQueueWorker
         }
     }
 
+    private async Task RunPreflightChecksAsync(ProcessingJob job, CancellationToken ct)
+    {
+        await TransitionAsync(job, JobStatus.PreflightChecks, 0, "Preflight checks", ct);
+
+        var whisperPath = _settings.WhisperModelPath;
+        if (string.IsNullOrWhiteSpace(whisperPath) || !File.Exists(whisperPath))
+        {
+            var modelName = string.IsNullOrWhiteSpace(whisperPath)
+                ? "not configured"
+                : Path.GetFileName(whisperPath);
+            job.UserHint = $"Whisper model '{modelName}' missing. Settings → Models";
+            await MarkFailedAsync(job, $"Whisper model not found: {whisperPath}", ct);
+            return;
+        }
+
+        var vaultPath = _settings.VaultPath;
+        if (!string.IsNullOrWhiteSpace(vaultPath))
+        {
+            try
+            {
+                if (!Directory.Exists(vaultPath))
+                {
+                    Directory.CreateDirectory(vaultPath);
+                }
+                var probe = Path.Combine(vaultPath, ".mozgoslav-write-probe");
+                await File.WriteAllTextAsync(probe, string.Empty, ct);
+                File.Delete(probe);
+            }
+            catch (Exception ex)
+            {
+                job.UserHint = $"Vault path not writable: {vaultPath}";
+                await MarkFailedAsync(job, $"Vault path check failed: {ex.Message}", ct);
+                return;
+            }
+        }
+
+        _preflightPassed = true;
+    }
+
+    private bool _preflightPassed;
+
     private async Task RunPipelineAsync(ProcessingJob job, CancellationToken ct)
     {
         var recording = await _recordings.GetByIdAsync(job.RecordingId, ct)
             ?? throw new InvalidOperationException($"Recording {job.RecordingId} not found");
         var profile = await _profiles.GetByIdAsync(job.ProfileId, ct)
             ?? throw new InvalidOperationException($"Profile {job.ProfileId} not found");
+
+        await RunPreflightChecksAsync(job, ct);
+        if (!_preflightPassed)
+        {
+            return;
+        }
 
         await TransitionAsync(job, JobStatus.Transcribing, 0, "Transcribing audio", ct);
         job.StartedAt = DateTime.UtcNow;
