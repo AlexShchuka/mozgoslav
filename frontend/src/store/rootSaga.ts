@@ -22,6 +22,7 @@ import { systemActionsSaga } from "./slices/systemActions";
 import { watchRoutinesSagas } from "./slices/routines";
 import { watchPromptsSagas } from "./slices/prompts";
 import { webSearchSaga } from "./slices/webSearch/saga";
+import { monitoringSubscribe, watchMonitoringSagas } from "./slices/monitoring";
 
 function* bootstrapJobsSubscription(): SagaIterator {
   yield put(subscribeJobs());
@@ -37,6 +38,10 @@ function* bootstrapHotkeysSubscription(): SagaIterator {
 
 function* bootstrapHealthProbe(): SagaIterator {
   yield put(healthProbeRequested());
+}
+
+function* bootstrapMonitoringSubscription(): SagaIterator {
+  yield put(monitoringSubscribe());
 }
 
 export function* rootSaga(): SagaIterator {
@@ -67,5 +72,7 @@ export function* rootSaga(): SagaIterator {
     fork(watchRoutinesSagas),
     fork(watchPromptsSagas),
     fork(webSearchSaga),
+    fork(watchMonitoringSagas),
+    fork(bootstrapMonitoringSubscription),
   ]);
 }

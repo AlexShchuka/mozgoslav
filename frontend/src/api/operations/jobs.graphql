@@ -60,6 +60,59 @@ mutation MutationCancelJob($id: UUID!) {
   }
 }
 
+mutation MutationPauseJob($id: UUID!) {
+  pauseJob(id: $id) {
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationResumeJob($id: UUID!) {
+  resumeJob(id: $id) {
+    job {
+      id
+      recordingId
+      profileId
+      status
+      progress
+      currentStep
+      errorMessage
+      userHint
+      createdAt
+      startedAt
+      finishedAt
+    }
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationRetryJobFromStage($input: RetryJobFromStageInput!) {
+  retryJobFromStage(input: $input) {
+    job {
+      id
+      recordingId
+      profileId
+      status
+      progress
+      currentStep
+      errorMessage
+      userHint
+      createdAt
+      startedAt
+      finishedAt
+    }
+    errors {
+      code
+      message
+    }
+  }
+}
+
 subscription SubscriptionJobProgress {
   jobProgress {
     id

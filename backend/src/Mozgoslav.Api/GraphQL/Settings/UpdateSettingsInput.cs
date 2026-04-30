@@ -40,6 +40,7 @@ public sealed record UpdateSettingsInput(
     bool DictationDumpEnabled = false,
     string DictationDumpHotkeyToggle = "",
     string DictationDumpHotkeyHold = "",
+    int WebCacheTtlHours = 24,
     bool McpServerEnabled = false,
     int McpServerPort = 51051,
     string McpServerToken = "",

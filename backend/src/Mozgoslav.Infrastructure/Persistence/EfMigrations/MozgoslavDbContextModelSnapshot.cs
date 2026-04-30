@@ -138,6 +138,12 @@ namespace Mozgoslav.Infrastructure.Persistence.EfMigrations
                         .HasDefaultValue(false)
                         .HasColumnName("cancel_requested");
 
+                    b.Property<bool>("PauseRequested")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false)
+                        .HasColumnName("pause_requested");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT")
                         .HasColumnName("created_at");

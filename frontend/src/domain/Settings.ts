@@ -2,12 +2,16 @@ export type ThemeMode = "system" | "light" | "dark";
 export type HotkeyType = "mouse" | "keyboard";
 export type InjectMode = "auto" | "accessibility" | "cgevent" | "clipboard";
 export type OverlayPosition = "bottom-center" | "top-right" | "cursor";
+export type DictationLanguage = "ru" | "en" | "auto";
 
 export interface AppSettings {
   vaultPath: string;
+  obsidianFeatureEnabled: boolean;
+  llmProvider: string;
   llmEndpoint: string;
   llmModel: string;
   llmApiKey: string;
+  webCacheTtlHours: number;
   obsidianApiHost: string;
   obsidianApiToken: string;
   whisperModelPath: string;
@@ -20,7 +24,7 @@ export interface AppSettings {
   dictationMouseButton: number;
   dictationKeyboardHotkey: string;
   dictationPushToTalk: boolean;
-  dictationLanguage: string;
+  dictationLanguage: DictationLanguage;
   dictationWhisperModelId: string;
   dictationCaptureSampleRate: number;
   dictationLlmPolish: boolean;
@@ -32,8 +36,17 @@ export interface AppSettings {
   dictationModelUnloadMinutes: number;
   dictationTempAudioPath: string;
   dictationAppProfiles: Record<string, string>;
+  dictationClassifyIntentEnabled: boolean;
   syncthingEnabled: boolean;
   syncthingObsidianVaultPath: string;
+  syncthingApiKey: string;
+  syncthingBaseUrl: string;
+  mcpServerEnabled: boolean;
+  mcpServerPort: number;
+  mcpServerToken: string;
+  actionsSkillEnabled: boolean;
+  remindersSkillEnabled: boolean;
+  claudeCliPath: string;
   dictationDumpEnabled: boolean;
   dictationDumpHotkeyToggle: string;
   dictationDumpHotkeyHold: string;
@@ -42,9 +55,12 @@ export interface AppSettings {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   vaultPath: "",
+  obsidianFeatureEnabled: false,
+  llmProvider: "openai_compatible",
   llmEndpoint: "",
   llmModel: "",
   llmApiKey: "",
+  webCacheTtlHours: 24,
   obsidianApiHost: "",
   obsidianApiToken: "",
   whisperModelPath: "",
@@ -69,8 +85,17 @@ export const DEFAULT_SETTINGS: AppSettings = {
   dictationModelUnloadMinutes: 10,
   dictationTempAudioPath: "",
   dictationAppProfiles: {},
+  dictationClassifyIntentEnabled: false,
   syncthingEnabled: false,
   syncthingObsidianVaultPath: "",
+  syncthingApiKey: "",
+  syncthingBaseUrl: "",
+  mcpServerEnabled: false,
+  mcpServerPort: 51051,
+  mcpServerToken: "",
+  actionsSkillEnabled: false,
+  remindersSkillEnabled: false,
+  claudeCliPath: "",
   dictationDumpEnabled: false,
   dictationDumpHotkeyToggle: "",
   dictationDumpHotkeyHold: "",

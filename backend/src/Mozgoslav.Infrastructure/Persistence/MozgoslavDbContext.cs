@@ -179,6 +179,7 @@ public sealed class MozgoslavDbContext : DbContext
             e.Property(x => x.StartedAt).HasColumnName("started_at");
             e.Property(x => x.FinishedAt).HasColumnName("finished_at");
             e.Property(x => x.CancelRequested).HasColumnName("cancel_requested").HasDefaultValue(false);
+            e.Property(x => x.PauseRequested).HasColumnName("pause_requested").HasDefaultValue(false);
             e.HasIndex(x => x.Status);
             e.HasIndex(x => x.RecordingId);
         });

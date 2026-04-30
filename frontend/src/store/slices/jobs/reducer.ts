@@ -9,6 +9,8 @@ import {
   PENDING_JOB_CREATED,
   PENDING_JOB_FAILED,
   PENDING_JOB_RESOLVED,
+  RESUME_JOB_SUCCEEDED,
+  RETRY_JOB_FROM_STAGE_SUCCEEDED,
   type JobsAction,
 } from "./actions";
 import {
@@ -44,6 +46,16 @@ export const jobsReducer: Reducer<JobsState> = (
       return resolvePending(state, typed.payload.tempId, typed.payload.recordingId);
     case PENDING_JOB_FAILED:
       return failPending(state, typed.payload.tempId, typed.payload.error);
+    case RESUME_JOB_SUCCEEDED:
+      return upsertJob(
+        state,
+        (typed as { payload: { job: Parameters<typeof upsertJob>[1] } }).payload.job
+      );
+    case RETRY_JOB_FROM_STAGE_SUCCEEDED:
+      return upsertJob(
+        state,
+        (typed as { payload: { job: Parameters<typeof upsertJob>[1] } }).payload.job
+      );
     default:
       return state;
   }

@@ -1,4 +1,33 @@
 {
+  "pipeline": {
+    "timeline": {
+      "stage": {
+        "transcribing": "Транскрипция",
+        "correcting": "Коррекция",
+        "llmCorrection": "LLM",
+        "summarizing": "Summary",
+        "exporting": "Экспорт"
+      },
+      "state": {
+        "done": "Готово",
+        "failed": "Ошибка",
+        "paused": "Пауза",
+        "pending": "Ожидание",
+        "running": "Идёт",
+        "skipped": "Пропущено"
+      },
+      "action": {
+        "retry": "Retry",
+        "skip": "Пропустить",
+        "pause": "Пауза",
+        "resume": "Возобновить",
+        "cancel": "Отменить"
+      },
+      "tooltip": {
+        "duration": "{{seconds}} сек"
+      }
+    }
+  },
   "app": {
     "name": "Мозгослав",
     "tagline": "Локальный второй мозг для разговоров"
@@ -16,7 +45,8 @@
     "obsidian": "Obsidian",
     "sync": "Синхронизация",
     "routines": "Рутины",
-    "prompts": "Шаблоны промптов"
+    "prompts": "Шаблоны промптов",
+    "monitoring": "Мониторинг"
   },
   "rag": {
     "title": "Q&A по заметкам",
@@ -134,7 +164,9 @@
       "Exporting": "Экспорт",
       "Done": "Готово",
       "Failed": "Ошибка",
-      "Cancelled": "Отменено"
+      "Cancelled": "Отменено",
+      "Paused": "На паузе",
+      "LlmCorrection": "LLM-коррекция"
     },
     "stages": {
       "title": "Разбивка по стадиям",
@@ -271,7 +303,60 @@
       "obsidianApiHost": "Адрес Obsidian Local REST API",
       "obsidianApiHostDesc": "Хост плагина Local REST API в Obsidian. Обычно http://localhost:27123.",
       "obsidianApiToken": "Токен Obsidian Local REST API",
-      "syncthingEnabledDesc": "Запускает Syncthing-сервис для синхронизации данных между устройствами."
+      "syncthingEnabledDesc": "Запускает Syncthing-сервис для синхронизации данных между устройствами.",
+      "vaultPathDesc": "Абсолютный путь к папке Obsidian vault на диске.",
+      "obsidianFeatureEnabled": "Интеграция с Obsidian",
+      "obsidianFeatureEnabledDesc": "Включает экспорт заметок и кнопку «Obsidian» в интерфейсе.",
+      "dictationEnabled": "Включить диктовку",
+      "dictationEnabledDesc": "Активирует глобальный режим диктовки через хоткей.",
+      "dictationHotkeyType": "Тип хоткея",
+      "dictationHotkeyTypeDesc": "Мышь или клавиатура — что используется для запуска диктовки.",
+      "dictationMouseButton": "Кнопка мыши (номер)",
+      "dictationMouseButtonDesc": "Номер кнопки мыши: 1 = левая, 2 = правая, 3 = средняя, 4 = боковая назад, 5 = боковая вперёд.",
+      "dictationLanguage": "Язык диктовки",
+      "dictationLanguageDesc": "Язык распознавания речи: ru / en / auto.",
+      "dictationWhisperModelId": "ID модели Whisper для диктовки",
+      "dictationWhisperModelIdDesc": "Имя модели, которую использует сервис диктовки (например, whisper-small-ru).",
+      "dictationCaptureSampleRate": "Частота дискретизации (Гц)",
+      "dictationCaptureSampleRateDesc": "Частота записи микрофона. По умолчанию 16000 Гц (стандарт для Whisper).",
+      "dictationLlmPolish": "Полировка LLM",
+      "dictationLlmPolishDesc": "Прогоняет распознанный текст через LLM для исправления опечаток и знаков препинания.",
+      "dictationInjectMode": "Режим вставки текста",
+      "dictationInjectModeDesc": "Как текст вставляется в активное поле: auto / accessibility / cgevent / clipboard.",
+      "dictationOverlayEnabled": "Показывать оверлей диктовки",
+      "dictationOverlayEnabledDesc": "Отображает индикатор состояния при активной диктовке.",
+      "dictationOverlayPosition": "Позиция оверлея",
+      "dictationOverlayPositionDesc": "Где появляется оверлей: у курсора, внизу по центру или вверху справа.",
+      "dictationSoundFeedback": "Звуковой сигнал",
+      "dictationSoundFeedbackDesc": "Воспроизводит звук при начале и окончании диктовки.",
+      "dictationModelUnloadMinutes": "Выгружать модель через (мин)",
+      "dictationModelUnloadMinutesDesc": "Минуты бездействия, после которых модель Whisper выгружается из памяти. 0 = никогда.",
+      "dictationTempAudioPath": "Папка для временных аудиофайлов",
+      "dictationTempAudioPathDesc": "Путь, куда сохраняются временные файлы во время диктовки.",
+      "dictationClassifyIntentEnabled": "Классификация намерений",
+      "dictationClassifyIntentEnabledDesc": "Распознаёт команды в тексте диктовки (например, «открой заметки»).",
+      "llmProvider": "Провайдер LLM",
+      "llmProviderDesc": "Протокол LLM-сервера. Сейчас поддерживается только OpenAI-compatible.",
+      "webCacheTtlHours": "TTL кэша веб-поиска (часы)",
+      "webCacheTtlHoursDesc": "Как долго (в часах) кэшируются результаты веб-поиска.",
+      "syncthingObsidianVaultPath": "Путь к vault для Syncthing",
+      "syncthingObsidianVaultPathDesc": "Локальный путь к папке vault, которая синхронизируется через Syncthing.",
+      "syncthingApiKey": "API-ключ Syncthing",
+      "syncthingApiKeyDesc": "Ключ авторизации GUI Syncthing API.",
+      "syncthingBaseUrl": "URL Syncthing GUI",
+      "syncthingBaseUrlDesc": "Базовый URL веб-интерфейса Syncthing. Обычно http://127.0.0.1:8384.",
+      "mcpServerEnabled": "Включить MCP-сервер",
+      "mcpServerEnabledDesc": "Запускает встроенный MCP-сервер для подключения внешних инструментов.",
+      "mcpServerPort": "Порт MCP-сервера",
+      "mcpServerPortDesc": "TCP-порт, на котором слушает MCP-сервер.",
+      "mcpServerToken": "Токен MCP-сервера",
+      "mcpServerTokenDesc": "Bearer-токен для аутентификации подключений к MCP-серверу.",
+      "actionsSkillEnabled": "Skill: системные действия",
+      "actionsSkillEnabledDesc": "Включает навык выполнения системных действий через Claude CLI.",
+      "remindersSkillEnabled": "Skill: напоминания",
+      "remindersSkillEnabledDesc": "Включает навык работы с напоминаниями через Claude CLI.",
+      "claudeCliPath": "Путь к Claude CLI",
+      "claudeCliPathDesc": "Путь к исполняемому файлу claude. Оставь пустым для автоопределения через PATH."
     },
     "hotkeyHint": "Нажми на поле и зажми желаемую комбинацию. Для активации требуется перезапуск приложения (hot-reload — в H1).",
     "dumpHotkeyToggleHint": "Нажал — пошла запись в дефолт-профиль. Нажал ещё раз — стоп, файл уезжает в pipeline и экспорт в _inbox/.",
@@ -318,7 +403,30 @@
       "advanced": "Продвинутое",
       "sync": "Синхронизация",
       "systemLinks": "Разделы",
-      "syncState": "Syncthing"
+      "syncState": "Syncthing",
+      "vault": "Vault",
+      "mcpServer": "MCP-сервер",
+      "skills": "Навыки Claude"
+    },
+    "dictationHotkeyType": {
+      "mouse": "Мышь",
+      "keyboard": "Клавиатура"
+    },
+    "dictationLanguage": {
+      "ru": "Русский",
+      "en": "Английский",
+      "auto": "Авто"
+    },
+    "dictationInjectMode": {
+      "auto": "Авто",
+      "accessibility": "Accessibility API",
+      "cgevent": "CGEvent",
+      "clipboard": "Буфер обмена"
+    },
+    "dictationOverlayPosition": {
+      "cursor": "У курсора",
+      "bottom": "Внизу по центру",
+      "top": "Вверху справа"
     },
     "systemLinks": {
       "manageModels": "Управление моделями Whisper →",
@@ -329,6 +437,56 @@
     "sidecarEnrichment": {
       "label": "Включить обогащение через sidecar (экспериментально)",
       "description": "После транскрипции запускает диаризацию, пол, эмоцию, NER, очистку и embedding через python-sidecar. По умолчанию выключено."
+    }
+  },
+  "monitoring": {
+    "title": "Мониторинг",
+    "actions": {
+      "reprobe": "Переопросить"
+    },
+    "reprobe": "Переопросить",
+    "reprobing": "Опрашиваю…",
+    "loading": "Загружаю состояние…",
+    "empty": "Данные о состоянии недоступны. Нажми «Переопросить».",
+    "error": "Ошибка загрузки: {{message}}",
+    "llm": {
+      "title": "LLM",
+      "endpoint": "Endpoint",
+      "model": "Модель",
+      "online": "Онлайн",
+      "offline": "Офлайн",
+      "status": "Статус",
+      "contextLength": "Контекст",
+      "capabilities": "Возможности",
+      "toolCalling": "Вызов инструментов",
+      "jsonMode": "JSON-режим",
+      "lastError": "Последняя ошибка",
+      "lastProbedAt": "Последний опрос"
+    },
+    "syncthing": {
+      "title": "Syncthing",
+      "detection": "Статус",
+      "binaryPath": "Путь к бинарнику",
+      "apiUrl": "API URL",
+      "version": "Версия",
+      "hint": "Подсказка",
+      "running": "Запущен",
+      "notRunning": "Не запущен"
+    },
+    "services": {
+      "title": "Supervisor-сервисы",
+      "name": "Сервис",
+      "state": "Состояние",
+      "pid": "PID",
+      "port": "Порт",
+      "restartCount": "Перезапусков",
+      "lastError": "Ошибка",
+      "running": "Запущен",
+      "stopped": "Остановлен",
+      "failed": "Ошибка",
+      "starting": "Запускается",
+      "empty": "Нет данных о сервисах.",
+      "restarts": "перезапусков: {{n}}"
     }
   },
   "sync": {

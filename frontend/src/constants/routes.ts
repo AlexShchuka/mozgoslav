@@ -15,6 +15,7 @@ export const ROUTES = {
   sync: "/sync",
   routines: "/routines",
   prompts: "/prompts",
+  monitoring: "/monitoring",
 } as const;
 
 export const noteRoute = (id: string) => `/notes/${id}`;

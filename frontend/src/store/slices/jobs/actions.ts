@@ -1,4 +1,4 @@
-import type { ProcessingJob } from "../../../domain/ProcessingJob";
+import type { JobStage, ProcessingJob } from "../../../domain";
 import type { PendingJob } from "./types";
 
 export const SUBSCRIBE_JOBS = "jobs/SUBSCRIBE";
@@ -15,6 +15,18 @@ export const PENDING_JOB_FAILED = "jobs/PENDING_FAILED";
 
 export const CANCEL_JOB = "jobs/CANCEL";
 export const RETRY_RECORDING = "jobs/RETRY_RECORDING";
+
+export const PAUSE_JOB_REQUESTED = "jobs/PAUSE_REQUESTED";
+export const PAUSE_JOB_SUCCEEDED = "jobs/PAUSE_SUCCEEDED";
+export const PAUSE_JOB_FAILED = "jobs/PAUSE_FAILED";
+
+export const RESUME_JOB_REQUESTED = "jobs/RESUME_REQUESTED";
+export const RESUME_JOB_SUCCEEDED = "jobs/RESUME_SUCCEEDED";
+export const RESUME_JOB_FAILED = "jobs/RESUME_FAILED";
+
+export const RETRY_JOB_FROM_STAGE_REQUESTED = "jobs/RETRY_FROM_STAGE_REQUESTED";
+export const RETRY_JOB_FROM_STAGE_SUCCEEDED = "jobs/RETRY_FROM_STAGE_SUCCEEDED";
+export const RETRY_JOB_FROM_STAGE_FAILED = "jobs/RETRY_FROM_STAGE_FAILED";
 
 export interface SubscribeJobsAction {
   type: typeof SUBSCRIBE_JOBS;
@@ -72,6 +84,51 @@ export interface RetryRecordingAction {
   payload: { recordingId: string; profileId: string };
 }
 
+export interface PauseJobRequestedAction {
+  type: typeof PAUSE_JOB_REQUESTED;
+  payload: { jobId: string };
+}
+
+export interface PauseJobSucceededAction {
+  type: typeof PAUSE_JOB_SUCCEEDED;
+  payload: { jobId: string };
+}
+
+export interface PauseJobFailedAction {
+  type: typeof PAUSE_JOB_FAILED;
+  payload: { jobId: string; error: string };
+}
+
+export interface ResumeJobRequestedAction {
+  type: typeof RESUME_JOB_REQUESTED;
+  payload: { jobId: string };
+}
+
+export interface ResumeJobSucceededAction {
+  type: typeof RESUME_JOB_SUCCEEDED;
+  payload: { job: ProcessingJob };
+}
+
+export interface ResumeJobFailedAction {
+  type: typeof RESUME_JOB_FAILED;
+  payload: { jobId: string; error: string };
+}
+
+export interface RetryJobFromStageRequestedAction {
+  type: typeof RETRY_JOB_FROM_STAGE_REQUESTED;
+  payload: { jobId: string; fromStage: JobStage; skipFailed: boolean };
+}
+
+export interface RetryJobFromStageSucceededAction {
+  type: typeof RETRY_JOB_FROM_STAGE_SUCCEEDED;
+  payload: { job: ProcessingJob };
+}
+
+export interface RetryJobFromStageFailedAction {
+  type: typeof RETRY_JOB_FROM_STAGE_FAILED;
+  payload: { jobId: string; error: string };
+}
+
 export type JobsAction =
   | SubscribeJobsAction
   | UnsubscribeJobsAction
@@ -84,7 +141,16 @@ export type JobsAction =
   | PendingJobResolvedAction
   | PendingJobFailedAction
   | CancelJobAction
-  | RetryRecordingAction;
+  | RetryRecordingAction
+  | PauseJobRequestedAction
+  | PauseJobSucceededAction
+  | PauseJobFailedAction
+  | ResumeJobRequestedAction
+  | ResumeJobSucceededAction
+  | ResumeJobFailedAction
+  | RetryJobFromStageRequestedAction
+  | RetryJobFromStageSucceededAction
+  | RetryJobFromStageFailedAction;
 
 export const subscribeJobs = (): SubscribeJobsAction => ({ type: SUBSCRIBE_JOBS });
 export const unsubscribeJobs = (): UnsubscribeJobsAction => ({ type: UNSUBSCRIBE_JOBS });
@@ -121,4 +187,58 @@ export const cancelJob = (jobId: string): CancelJobAction => ({
 export const retryRecording = (recordingId: string, profileId: string): RetryRecordingAction => ({
   type: RETRY_RECORDING,
   payload: { recordingId, profileId },
+});
+
+export const pauseJobRequested = (jobId: string): PauseJobRequestedAction => ({
+  type: PAUSE_JOB_REQUESTED,
+  payload: { jobId },
+});
+
+export const pauseJobSucceeded = (jobId: string): PauseJobSucceededAction => ({
+  type: PAUSE_JOB_SUCCEEDED,
+  payload: { jobId },
+});
+
+export const pauseJobFailed = (jobId: string, error: string): PauseJobFailedAction => ({
+  type: PAUSE_JOB_FAILED,
+  payload: { jobId, error },
+});
+
+export const resumeJobRequested = (jobId: string): ResumeJobRequestedAction => ({
+  type: RESUME_JOB_REQUESTED,
+  payload: { jobId },
+});
+
+export const resumeJobSucceeded = (job: ProcessingJob): ResumeJobSucceededAction => ({
+  type: RESUME_JOB_SUCCEEDED,
+  payload: { job },
+});
+
+export const resumeJobFailed = (jobId: string, error: string): ResumeJobFailedAction => ({
+  type: RESUME_JOB_FAILED,
+  payload: { jobId, error },
+});
+
+export const retryJobFromStageRequested = (
+  jobId: string,
+  fromStage: JobStage,
+  skipFailed: boolean
+): RetryJobFromStageRequestedAction => ({
+  type: RETRY_JOB_FROM_STAGE_REQUESTED,
+  payload: { jobId, fromStage, skipFailed },
+});
+
+export const retryJobFromStageSucceeded = (
+  job: ProcessingJob
+): RetryJobFromStageSucceededAction => ({
+  type: RETRY_JOB_FROM_STAGE_SUCCEEDED,
+  payload: { job },
+});
+
+export const retryJobFromStageFailed = (
+  jobId: string,
+  error: string
+): RetryJobFromStageFailedAction => ({
+  type: RETRY_JOB_FROM_STAGE_FAILED,
+  payload: { jobId, error },
 });

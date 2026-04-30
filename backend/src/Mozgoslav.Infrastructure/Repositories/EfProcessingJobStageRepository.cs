@@ -35,10 +35,12 @@ public sealed class EfProcessingJobStageRepository : IProcessingJobStageReposito
         await _db.SaveChangesAsync(ct);
     }
 
-    public async Task<IReadOnlyList<ProcessingJobStage>> GetByJobIdAsync(Guid jobId, CancellationToken ct) =>
-        await _db.ProcessingJobStages
+    public async Task<IReadOnlyList<ProcessingJobStage>> GetByJobIdAsync(Guid jobId, CancellationToken ct)
+    {
+        var stages = await _db.ProcessingJobStages
             .AsNoTracking()
             .Where(s => s.JobId == jobId)
-            .OrderBy(s => s.StartedAt)
             .ToListAsync(ct);
+        return stages.OrderBy(s => s.StartedAt).ToList();
+    }
 }

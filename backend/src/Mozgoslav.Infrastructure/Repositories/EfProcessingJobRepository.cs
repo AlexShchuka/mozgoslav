@@ -61,7 +61,8 @@ public sealed class EfProcessingJobRepository : IProcessingJobRepository
         await _db.ProcessingJobs.AsNoTracking()
             .Where(j => j.Status != JobStatus.Done
                 && j.Status != JobStatus.Failed
-                && j.Status != JobStatus.Cancelled)
+                && j.Status != JobStatus.Cancelled
+                && j.Status != JobStatus.Paused)
             .OrderByDescending(j => j.CreatedAt)
             .ToListAsync(ct);
 
@@ -82,4 +83,111 @@ public sealed class EfProcessingJobRepository : IProcessingJobRepository
         await _db.SaveChangesAsync(ct);
         return true;
     }
+
+    public async Task<bool> SetPauseRequestedAsync(Guid id, CancellationToken ct)
+    {
+        var existing = await _db.ProcessingJobs.FirstOrDefaultAsync(j => j.Id == id, ct);
+        if (existing is null)
+        {
+            return false;
+        }
+        existing.PauseRequested = true;
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    public async Task<bool> ClearPauseRequestedAsync(Guid id, CancellationToken ct)
+    {
+        var existing = await _db.ProcessingJobs.FirstOrDefaultAsync(j => j.Id == id, ct);
+        if (existing is null)
+        {
+            return false;
+        }
+        existing.PauseRequested = false;
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    public async Task<bool> MarkPausedAsync(Guid id, CancellationToken ct)
+    {
+        var existing = await _db.ProcessingJobs.FirstOrDefaultAsync(j => j.Id == id, ct);
+        if (existing is null)
+        {
+            return false;
+        }
+        existing.Status = JobStatus.Paused;
+        existing.FinishedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    public async Task<bool> RequestRetryFromStageAsync(Guid jobId, JobStage fromStage, bool skipFailed, CancellationToken ct)
+    {
+        var job = await _db.ProcessingJobs.FirstOrDefaultAsync(j => j.Id == jobId, ct);
+        if (job is null)
+        {
+            return false;
+        }
+
+        job.Status = JobStatus.Queued;
+        job.ErrorMessage = null;
+        job.UserHint = null;
+        job.StartedAt = null;
+        job.FinishedAt = null;
+        job.Progress = 0;
+        job.CurrentStep = null;
+        job.CancelRequested = false;
+        job.PauseRequested = false;
+
+        var stages = await _db.ProcessingJobStages
+            .Where(s => s.JobId == jobId)
+            .ToListAsync(ct);
+
+        var fromStageName = StageNameFor(fromStage);
+        var stageOrder = StageOrder();
+        var fromIndex = stageOrder.IndexOf(fromStageName);
+
+        foreach (var stage in stages)
+        {
+            var stageIndex = stageOrder.IndexOf(stage.StageName);
+            if (stageIndex < fromIndex)
+            {
+                continue;
+            }
+
+            if (stageIndex == fromIndex && skipFailed)
+            {
+                stage.FinishedAt = DateTimeOffset.UtcNow;
+                stage.ErrorMessage = "SKIPPED";
+            }
+            else
+            {
+                stage.FinishedAt = null;
+                stage.DurationMs = null;
+                stage.ErrorMessage = null;
+            }
+        }
+
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    private static string StageNameFor(JobStage stage) => stage switch
+    {
+        JobStage.Transcribing => "Transcribing audio",
+        JobStage.Correcting => "Cleaning transcript",
+        JobStage.LlmCorrection => "LLM correction",
+        JobStage.Summarizing => "Summarizing via LLM",
+        JobStage.Exporting => "Exporting to vault",
+        _ => throw new ArgumentOutOfRangeException(nameof(stage), stage, null)
+    };
+
+    private static List<string> StageOrder() =>
+    [
+        "Transcribing audio",
+        "Cleaning transcript",
+        "LLM correction",
+        "Summarizing via LLM",
+        "Exporting to vault"
+    ];
 }

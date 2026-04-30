@@ -86,6 +86,7 @@ public sealed class ChannelJobProgressNotifier : IJobProgressNotifier, IDisposab
         CreatedAt = src.CreatedAt,
         StartedAt = src.StartedAt,
         FinishedAt = src.FinishedAt,
-        CancelRequested = src.CancelRequested
+        CancelRequested = src.CancelRequested,
+        PauseRequested = src.PauseRequested
     };
 }

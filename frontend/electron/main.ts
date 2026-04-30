@@ -207,6 +207,22 @@ app.whenReady().then(async () => {
   supervisor.register(backendSpec);
   await backendSpec.startFn();
 
+  supervisor.setPublishCallback((states) => {
+    void (async () => {
+      try {
+        await fetch(`${BACKEND_ORIGIN}/graphql`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query: `mutation PublishElectronServices($input: PublishElectronServicesInput!) { publishElectronServices(input: $input) { llm { endpoint online } } }`,
+            variables: { input: { services: states } },
+          }),
+          signal: AbortSignal.timeout(5000),
+        });
+      } catch {}
+    })();
+  });
+
   ipcMain.handle("dialog:openAudioFiles", async () => {
     if (!mainWindow) return { filePaths: [] };
     return dialog.showOpenDialog(mainWindow, {

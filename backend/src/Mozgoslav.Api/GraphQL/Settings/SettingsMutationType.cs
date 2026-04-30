@@ -55,7 +55,7 @@ public sealed class SettingsMutationType
             input.DictationDumpEnabled,
             input.DictationDumpHotkeyToggle,
             input.DictationDumpHotkeyHold,
-            WebCacheTtlHours: 24,
+            WebCacheTtlHours: input.WebCacheTtlHours,
             McpServerEnabled: input.McpServerEnabled,
             McpServerPort: input.McpServerPort,
             McpServerToken: input.McpServerToken,

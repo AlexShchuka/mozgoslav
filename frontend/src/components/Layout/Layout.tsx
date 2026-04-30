@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import type { Action, Dispatch } from "redux";
 import { useTranslation } from "react-i18next";
 import {
+  Activity,
   Archive,
   Brain,
   Database,
@@ -148,6 +149,14 @@ const Layout: FC<LayoutProps> = ({ children }) => {
           </SidebarGroup>
 
           <SidebarGroup>
+            <NavItem
+              to={ROUTES.monitoring}
+              icon={<Activity size={16} />}
+              collapsed={collapsed}
+              onClick={onNavClick}
+            >
+              {t("nav.monitoring")}
+            </NavItem>
             <NavItem
               to={ROUTES.settings}
               icon={<Settings size={16} />}

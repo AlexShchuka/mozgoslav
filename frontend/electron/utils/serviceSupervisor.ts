@@ -13,11 +13,25 @@ export interface ServiceSpec {
   readonly maxRestarts?: number;
 }
 
+export interface ServiceStateSnapshot {
+  readonly name: string;
+  readonly state: "running" | "stopped" | "starting" | "failed";
+  readonly pid: number | null;
+  readonly port: number | null;
+  readonly restartCount: number;
+  readonly lastError: string | null;
+}
+
+export type PublishServicesCallback = (states: ServiceStateSnapshot[]) => void;
+
 interface ManagedService {
   readonly spec: ServiceSpec;
   restartCount: number;
   healthTimer: ReturnType<typeof setInterval> | null;
   stopped: boolean;
+  lastError: string | null;
+  pid: number | null;
+  running: boolean;
 }
 
 const findPidsOnPort = (port: number): Promise<number[]> =>
@@ -56,6 +70,11 @@ const sleep = (ms: number): Promise<void> =>
 export class ServiceSupervisor {
   private readonly services: ManagedService[] = [];
   private globalStopped = false;
+  private publishCallback: PublishServicesCallback | null = null;
+
+  setPublishCallback(cb: PublishServicesCallback): void {
+    this.publishCallback = cb;
+  }
 
   register(spec: ServiceSpec): void {
     this.services.push({
@@ -63,7 +82,28 @@ export class ServiceSupervisor {
       restartCount: 0,
       healthTimer: null,
       stopped: false,
+      lastError: null,
+      pid: null,
+      running: false,
     });
+  }
+
+  getServiceStates(): ServiceStateSnapshot[] {
+    return this.services.map((m) => ({
+      name: m.spec.name,
+      state: m.stopped ? "stopped" : m.running ? "running" : "starting",
+      pid: m.pid,
+      port: m.spec.port ?? null,
+      restartCount: m.restartCount,
+      lastError: m.lastError,
+    }));
+  }
+
+  private publishStates(): void {
+    if (!this.publishCallback) return;
+    try {
+      this.publishCallback(this.getServiceStates());
+    } catch {}
   }
 
   async cleanupZombies(): Promise<void> {
@@ -107,22 +147,29 @@ export class ServiceSupervisor {
     const reversed = [...this.services].reverse();
     for (const managed of reversed) {
       managed.stopped = true;
+      managed.running = false;
       if (managed.healthTimer !== null) {
         clearInterval(managed.healthTimer);
         managed.healthTimer = null;
       }
     }
     await Promise.allSettled(reversed.map((m) => m.spec.stopFn()));
+    this.publishStates();
   }
 
   private async startService(managed: ManagedService): Promise<void> {
     const { spec } = managed;
     try {
       await spec.startFn();
+      managed.running = true;
+      managed.lastError = null;
       console.info(`[supervisor] started: ${spec.name}`);
     } catch (err) {
+      managed.running = false;
+      managed.lastError = err instanceof Error ? err.message : String(err);
       console.error(`[supervisor] failed to start ${spec.name}:`, err);
     }
+    this.publishStates();
     if (spec.healthCheck && spec.healthIntervalMs) {
       this.scheduleHealthLoop(managed);
     }
@@ -165,14 +212,20 @@ export class ServiceSupervisor {
       console.warn(
         `[supervisor] ${spec.name} is unhealthy and restart policy is 'never'. Skipping.`
       );
+      managed.running = false;
+      this.publishStates();
       return;
     }
     if (spec.restartPolicy === "on-failure" && managed.restartCount >= maxRestarts) {
       console.error(`[supervisor] ${spec.name} exceeded max restarts (${maxRestarts}). Giving up.`);
       managed.stopped = true;
+      managed.running = false;
+      this.publishStates();
       return;
     }
     managed.restartCount += 1;
+    managed.running = false;
+    this.publishStates();
     console.info(
       `[supervisor] restarting ${spec.name} (attempt ${managed.restartCount}/${maxRestarts})`
     );

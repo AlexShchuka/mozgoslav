@@ -5,6 +5,7 @@ using Mozgoslav.Api.GraphQL.Dictation;
 using Mozgoslav.Api.GraphQL.Health;
 using Mozgoslav.Api.GraphQL.Jobs;
 using Mozgoslav.Api.GraphQL.Models;
+using Mozgoslav.Api.GraphQL.Monitoring;
 using Mozgoslav.Api.GraphQL.Notes;
 using Mozgoslav.Api.GraphQL.Obsidian;
 using Mozgoslav.Api.GraphQL.Profiles;
@@ -31,6 +32,7 @@ internal static class QueryRegistration
             .AddTypeExtension<SettingsQueryType>()
             .AddTypeExtension<LlmCapabilitiesQueryType>()
             .AddTypeExtension<LlmCatalogQueryType>()
+            .AddTypeExtension<MonitoringQueryType>()
             .AddTypeExtension<ProfileQueryType>()
             .AddTypeExtension<ModelQueryType>()
             .AddTypeExtension<RecordingQueryType>()

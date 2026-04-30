@@ -1,0 +1,287 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Monitoring matches snapshot with runtime state 1`] = `
+<div>
+  <div
+    class="sc-dlfnOL eYjyDG"
+    data-testid="monitoring-root"
+  >
+    <div
+      class="sc-hKgHXU cIciHU"
+    >
+      <h1
+        class="sc-eCsseJ cxHPPa"
+      >
+        Мониторинг
+      </h1>
+      <button
+        class="sc-gsTDHW dVsTKE"
+        data-testid="monitoring-reprobe-btn"
+      >
+        <span
+          class="mg-icon"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-refresh-cw"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"
+            />
+            <path
+              d="M21 3v5h-5"
+            />
+            <path
+              d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"
+            />
+            <path
+              d="M8 16H3v5"
+            />
+          </svg>
+        </span>
+        <span>
+          Переопросить
+        </span>
+      </button>
+    </div>
+    <div
+      class="sc-jSgsbC ktvhET"
+    >
+      <div
+        class="sc-gKscir bzBqJk"
+        data-testid="monitoring-llm-panel"
+      >
+        <h2
+          class="sc-iBPUmU ePOobI"
+        >
+          <span
+            class="sc-kEjckD jZkbei"
+          />
+           
+          LLM
+        </h2>
+        <div
+          class="sc-fubEtJ iNfigY"
+        >
+          <span
+            class="sc-pGbXd dlrBos"
+          >
+            Endpoint
+          </span>
+          <span
+            class="sc-jrAIFA jPMPUS"
+          >
+            http://localhost:1234
+          </span>
+        </div>
+        <div
+          class="sc-fubEtJ iNfigY"
+        >
+          <span
+            class="sc-pGbXd dlrBos"
+          >
+            Статус
+          </span>
+          <span
+            class="sc-jrAIFA jPMPUS"
+          >
+            <span
+              class="sc-bdfDLd ezRRIL"
+            >
+              Онлайн
+            </span>
+          </span>
+        </div>
+        <div
+          class="sc-fubEtJ iNfigY"
+        >
+          <span
+            class="sc-pGbXd dlrBos"
+          >
+            Модель
+          </span>
+          <span
+            class="sc-jrAIFA jPMPUS"
+          >
+            test-model
+          </span>
+        </div>
+        <div
+          class="sc-fubEtJ iNfigY"
+        >
+          <span
+            class="sc-pGbXd dlrBos"
+          >
+            Контекст
+          </span>
+          <span
+            class="sc-jrAIFA jPMPUS"
+          >
+            4,096
+          </span>
+        </div>
+        <div
+          class="sc-fubEtJ iNfigY"
+        >
+          <span
+            class="sc-pGbXd dlrBos"
+          >
+            Возможности
+          </span>
+          <span
+            class="sc-jrAIFA jPMPUS"
+          >
+            <span
+              class="sc-bdfDLd kFnFYK"
+            >
+              Вызов инструментов
+            </span>
+             
+          </span>
+        </div>
+      </div>
+      <div
+        class="sc-gKscir bzBqJk"
+        data-testid="monitoring-syncthing-panel"
+      >
+        <h2
+          class="sc-iBPUmU ePOobI"
+        >
+          <span
+            class="sc-kEjckD jZkbei"
+          />
+           
+          Syncthing
+        </h2>
+        <div
+          class="sc-fubEtJ iNfigY"
+        >
+          <span
+            class="sc-pGbXd dlrBos"
+          >
+            Статус
+          </span>
+          <span
+            class="sc-jrAIFA jPMPUS"
+          >
+            <span
+              class="sc-bdfDLd ezRRIL"
+            >
+              running
+            </span>
+          </span>
+        </div>
+        <div
+          class="sc-fubEtJ iNfigY"
+        >
+          <span
+            class="sc-pGbXd dlrBos"
+          >
+            Версия
+          </span>
+          <span
+            class="sc-jrAIFA jPMPUS"
+          >
+            v1.27.0
+          </span>
+        </div>
+        <div
+          class="sc-fubEtJ iNfigY"
+        >
+          <span
+            class="sc-pGbXd dlrBos"
+          >
+            Путь к бинарнику
+          </span>
+          <span
+            class="sc-jrAIFA jPMPUS"
+          >
+            /usr/local/bin/syncthing
+          </span>
+        </div>
+        <div
+          class="sc-fubEtJ iNfigY"
+        >
+          <span
+            class="sc-pGbXd dlrBos"
+          >
+            API URL
+          </span>
+          <span
+            class="sc-jrAIFA jPMPUS"
+          >
+            http://localhost:8384
+          </span>
+        </div>
+      </div>
+      <div
+        class="sc-gKscir bzBqJk"
+        data-testid="monitoring-services-panel"
+      >
+        <h2
+          class="sc-iBPUmU ePOobI"
+        >
+          Supervisor-сервисы
+        </h2>
+        <div
+          class="sc-iqHZue bcQdxy"
+          data-testid="monitoring-service-backend"
+        >
+          <span
+            class="sc-kEjckD jZkbei"
+          />
+          <span
+            class="sc-crrrsl fTcUce"
+          >
+            backend
+          </span>
+          <span
+            class="sc-bdfDLd ezRRIL"
+          >
+            running
+          </span>
+          <span
+            class="sc-dQoBM fShfaH"
+          >
+            PID 12345
+             :5050
+          </span>
+        </div>
+        <div
+          class="sc-iqHZue bcQdxy"
+          data-testid="monitoring-service-python-sidecar"
+        >
+          <span
+            class="sc-kEjckD gNcDdc"
+          />
+          <span
+            class="sc-crrrsl fTcUce"
+          >
+            python-sidecar
+          </span>
+          <span
+            class="sc-bdfDLd kA-dNpP"
+          >
+            stopped
+          </span>
+          <span
+            class="sc-dQoBM fShfaH"
+          >
+             :5060
+             (перезапусков: 1)
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;

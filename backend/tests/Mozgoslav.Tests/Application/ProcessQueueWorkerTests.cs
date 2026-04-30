@@ -377,6 +377,92 @@ public sealed class ProcessQueueWorkerTests
             default!, default);
     }
 
+    [TestMethod]
+    public async Task ProcessJobAsync_PauseRequestedBeforeStart_SetsPausedWithoutRunningPipeline()
+    {
+        using var fixture = new Fixture();
+        var job = fixture.SeedJob();
+        job.PauseRequested = true;
+        fixture.ArrangeHappyPipeline();
+
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
+
+        job.Status.Should().Be(JobStatus.Paused);
+        job.FinishedAt.Should().NotBeNull();
+        await fixture.Transcription.DidNotReceiveWithAnyArgs().TranscribeAsync(
+            default!, default!, default, default, default);
+    }
+
+    [TestMethod]
+    public async Task ProcessJobAsync_PauseRequestedAfterTranscribing_PausesAtStageBoundary()
+    {
+        using var fixture = new Fixture();
+        var job = fixture.SeedJob();
+        fixture.ArrangeHappyPipeline();
+
+        fixture.Jobs.GetByIdAsync(job.Id, Arg.Any<CancellationToken>())
+            .Returns(ci => job, ci => new ProcessingJob
+            {
+                Id = job.Id,
+                RecordingId = job.RecordingId,
+                ProfileId = job.ProfileId,
+                Status = JobStatus.Transcribing,
+                PauseRequested = true
+            });
+
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
+
+        job.Status.Should().Be(JobStatus.Paused);
+        job.FinishedAt.Should().NotBeNull();
+    }
+
+    [TestMethod]
+    public async Task ProcessJobAsync_ResumesFromSkippedStage()
+    {
+        using var fixture = new Fixture();
+        var job = fixture.SeedJob();
+        fixture.ArrangeHappyPipeline();
+
+        var transcribeStage = new ProcessingJobStage
+        {
+            JobId = job.Id,
+            StageName = "Transcribing audio",
+            StartedAt = DateTimeOffset.UtcNow.AddMinutes(-5),
+            FinishedAt = DateTimeOffset.UtcNow.AddMinutes(-4),
+            DurationMs = 60_000,
+            ErrorMessage = null
+        };
+        var llmStage = new ProcessingJobStage
+        {
+            JobId = job.Id,
+            StageName = "LLM correction",
+            StartedAt = DateTimeOffset.UtcNow.AddMinutes(-4),
+            FinishedAt = DateTimeOffset.UtcNow.AddMinutes(-3),
+            DurationMs = 1000,
+            ErrorMessage = "SKIPPED"
+        };
+
+        fixture.Stages.GetByJobIdAsync(job.Id, Arg.Any<CancellationToken>())
+            .Returns([transcribeStage, llmStage]);
+
+        var existingTranscript = new Transcript
+        {
+            RecordingId = job.RecordingId,
+            ModelUsed = "ggml-small-q8_0.bin",
+            Language = "ru",
+            RawText = "previously transcribed text",
+            Segments = []
+        };
+        fixture.Transcripts.GetByRecordingIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(existingTranscript);
+
+        await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
+
+        job.Status.Should().Be(JobStatus.Done);
+        await fixture.Transcription.DidNotReceiveWithAnyArgs().TranscribeAsync(
+            default!, default!, default, default, default);
+    }
+
     private sealed class Fixture : IDisposable
     {
         public Fixture()

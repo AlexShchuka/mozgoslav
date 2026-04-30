@@ -90,7 +90,7 @@ public sealed class ProcessQueueWorker
             _logger.LogWarning("Quartz trigger fired for unknown job {JobId} — skipping", jobId);
             return;
         }
-        if (job.Status is JobStatus.Done or JobStatus.Failed or JobStatus.Cancelled)
+        if (job.Status is JobStatus.Done or JobStatus.Failed or JobStatus.Cancelled or JobStatus.Paused)
         {
             _logger.LogInformation("Quartz trigger fired for already-terminal job {JobId} — skipping", jobId);
             return;
@@ -103,6 +103,15 @@ public sealed class ProcessQueueWorker
             if (job.CancelRequested)
             {
                 await MarkCancelledAsync(job);
+                return;
+            }
+
+            if (job.PauseRequested)
+            {
+                job.Status = JobStatus.Paused;
+                job.FinishedAt = DateTime.UtcNow;
+                await _jobs.UpdateAsync(job, CancellationToken.None);
+                await _progressNotifier.PublishAsync(job, CancellationToken.None);
                 return;
             }
 
@@ -177,12 +186,14 @@ public sealed class ProcessQueueWorker
     private bool IsStageAlreadyCompleted(string stageName)
         => _completedStageNames?.Contains(stageName) == true;
 
+    private bool _pauseSignaled;
+
     private async Task RunPipelineAsync(ProcessingJob job, CancellationToken ct)
     {
         var completedStages = await _stages.GetByJobIdAsync(job.Id, ct);
         _completedStageNames = new HashSet<string>(
             completedStages
-                .Where(s => s.FinishedAt.HasValue && s.ErrorMessage == null)
+                .Where(s => s.FinishedAt.HasValue && (s.ErrorMessage == null || s.ErrorMessage == "SKIPPED"))
                 .Select(s => s.StageName),
             StringComparer.Ordinal);
 
@@ -206,6 +217,10 @@ public sealed class ProcessQueueWorker
         else
         {
             await TransitionAsync(job, JobStatus.Transcribing, 0, "Transcribing audio", ct);
+            if (_pauseSignaled)
+            {
+                return;
+            }
             job.StartedAt ??= DateTime.UtcNow;
             await _jobs.UpdateAsync(job, ct);
 
@@ -232,6 +247,10 @@ public sealed class ProcessQueueWorker
         if (!IsStageAlreadyCompleted("Cleaning transcript"))
         {
             await TransitionAsync(job, JobStatus.Correcting, CorrectionEnd, "Cleaning transcript", ct);
+            if (_pauseSignaled)
+            {
+                return;
+            }
         }
         var cleanText = _correctionService.Correct(transcript.RawText, profile);
 
@@ -240,6 +259,10 @@ public sealed class ProcessQueueWorker
             if (!IsStageAlreadyCompleted("LLM correction"))
             {
                 await TransitionAsync(job, JobStatus.Correcting, LlmCorrectionEnd, "LLM correction", ct);
+                if (_pauseSignaled)
+                {
+                    return;
+                }
             }
             cleanText = await _llmCorrection.CorrectAsync(cleanText, profile, ct, _settings.Language);
         }
@@ -247,6 +270,10 @@ public sealed class ProcessQueueWorker
         if (!IsStageAlreadyCompleted("Summarizing via LLM"))
         {
             await TransitionAsync(job, JobStatus.Summarizing, LlmCorrectionEnd, "Summarizing via LLM", ct);
+            if (_pauseSignaled)
+            {
+                return;
+            }
         }
         LlmProcessingResult? llmResult = null;
         if (await _llmService.IsAvailableAsync(ct))
@@ -268,6 +295,10 @@ public sealed class ProcessQueueWorker
         if (!IsStageAlreadyCompleted("Exporting to vault"))
         {
             await TransitionAsync(job, JobStatus.Exporting, SummarizeEnd, "Exporting to vault", ct);
+            if (_pauseSignaled)
+            {
+                return;
+            }
             note.ExportedToVault = false;
             note.VaultPath = null;
             await _notes.AddAsync(note, ct);
@@ -338,6 +369,19 @@ public sealed class ProcessQueueWorker
             _currentStage.FinishedAt = now;
             _currentStage.DurationMs = (int)(now - _currentStage.StartedAt).TotalMilliseconds;
             await _stages.UpdateAsync(_currentStage, ct);
+            _currentStage = null;
+
+            var reloaded = await _jobs.GetByIdAsync(job.Id, ct);
+            if (reloaded is not null && reloaded.PauseRequested)
+            {
+                _pauseSignaled = true;
+                job.Status = JobStatus.Paused;
+                job.PauseRequested = true;
+                job.FinishedAt = DateTime.UtcNow;
+                await _jobs.UpdateAsync(job, ct);
+                await _progressNotifier.PublishAsync(job, ct);
+                return;
+            }
         }
 
         job.Status = status;

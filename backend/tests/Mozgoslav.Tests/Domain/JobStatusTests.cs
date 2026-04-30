@@ -11,10 +11,10 @@ namespace Mozgoslav.Tests.Domain;
 public sealed class JobStatusTests
 {
     [TestMethod]
-    public void Cancelled_IsLastEnumMember_SoIntOrderingIsSafe()
+    public void Paused_IsLastEnumMember_SoIntOrderingIsSafe()
     {
         var all = Enum.GetValues<JobStatus>();
-        all.Last().Should().Be(JobStatus.Cancelled);
+        all.Last().Should().Be(JobStatus.Paused);
     }
 
     [TestMethod]
@@ -32,6 +32,13 @@ public sealed class JobStatusTests
     }
 
     [TestMethod]
+    public void Paused_ParsesFromItsName()
+    {
+        Enum.TryParse<JobStatus>("Paused", out var parsed).Should().BeTrue();
+        parsed.Should().Be(JobStatus.Paused);
+    }
+
+    [TestMethod]
     public void EnumContainsAllExpectedMembers()
     {
         Enum.GetNames<JobStatus>().Should().BeEquivalentTo(
@@ -44,7 +51,8 @@ public sealed class JobStatusTests
             nameof(JobStatus.Exporting),
             nameof(JobStatus.Done),
             nameof(JobStatus.Failed),
-            nameof(JobStatus.Cancelled)
+            nameof(JobStatus.Cancelled),
+            nameof(JobStatus.Paused)
         ]);
     }
 }

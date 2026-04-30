@@ -2,6 +2,7 @@ export type { ActionItem } from "./ActionItem";
 export type { ModelEntry, ModelTier } from "./Model";
 export type { ProcessedNote } from "./ProcessedNote";
 export type { ProcessingJob } from "./ProcessingJob";
+export type { ProcessingJobStage } from "./ProcessingJobStage";
 export type { Profile } from "./Profile";
 export type { RagAnswer, RagCitation } from "./Rag";
 export type { Recording } from "./Recording";
@@ -11,6 +12,7 @@ export type {
   AudioFormat,
   CleanupLevel,
   ConversationType,
+  JobStage,
   JobStatus,
   ModelKind,
   RecordingStatus,

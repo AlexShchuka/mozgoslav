@@ -71,6 +71,7 @@ type AppSettingsDto {
   remindersSkillEnabled: Boolean!
   dictationClassifyIntentEnabled: Boolean!
   claudeCliPath: String!
+  sidecarEnrichmentEnabled: Boolean!
   obsidianBootstrapPins: String!
 }
 
@@ -184,6 +185,11 @@ type FolderCompletionPayload {
   globalBytes: Long!
 }
 
+type GlossaryEntry {
+  language: String!
+  terms: [String!]!
+}
+
 type HealthStatus {
   status: String!
   time: String!
@@ -225,9 +231,9 @@ type JobsEdge {
   node: ProcessingJob!
 }
 
-type GlossaryEntry {
-  language: String!
-  terms: [String!]!
+type KeyValuePairOfStringAndListOfString {
+  key: String!
+  value: [String!]!
 }
 
 type KeyValuePairOfStringAndString {
@@ -253,6 +259,17 @@ type LlmModelDescriptor {
   contextLength: Int
   supportsToolCalling: Boolean
   supportsJsonMode: Boolean
+}
+
+type LlmRuntimeState {
+  endpoint: String!
+  online: Boolean!
+  lastProbedAt: DateTime!
+  model: String!
+  contextLength: Int!
+  supportsToolCalling: Boolean!
+  supportsJsonMode: Boolean!
+  lastError: String
 }
 
 type LmStudioCheck {
@@ -318,6 +335,9 @@ type MutationType {
   exportNote(id: UUID!): NotePayload! @cost(weight: "10")
   enqueueJob(input: EnqueueJobInput!): JobPayload! @cost(weight: "10")
   cancelJob(id: UUID!): CancelJobPayload! @cost(weight: "10")
+  pauseJob(id: UUID!): CancelJobPayload! @cost(weight: "10")
+  resumeJob(id: UUID!): JobPayload! @cost(weight: "10")
+  retryJobFromStage(input: RetryJobFromStageInput!): JobPayload! @cost(weight: "10")
   dictationStart(source: String recordingId: UUID): DictationStartPayload! @cost(weight: "10")
   dictationStop(sessionId: UUID! bundleId: String): DictationStopPayload! @cost(weight: "10")
   dictationCancel(sessionId: UUID!): DictationCancelPayload! @cost(weight: "10")
@@ -337,6 +357,8 @@ type MutationType {
   buildPrompt(template: String!): String! @cost(weight: "10")
   toggleRoutine(key: String! enabled: Boolean!): RoutineDefinitionDto! @cost(weight: "10")
   runRoutineNow(key: String!): RoutineRunDto! @cost(weight: "10")
+  reprobeRuntimeState: RuntimeStatePayload! @cost(weight: "10")
+  publishElectronServices(input: PublishElectronServicesInput!): RuntimeStatePayload! @cost(weight: "10")
 }
 
 type NotFoundError implements IUserError {
@@ -486,6 +508,7 @@ type ProcessingJob implements Node {
   startedAt: DateTime
   finishedAt: DateTime
   cancelRequested: Boolean!
+  pauseRequested: Boolean!
   stages: [ProcessingJobStage!]! @cost(weight: "10")
 }
 
@@ -510,10 +533,10 @@ type Profile implements Node {
   autoTags: [String!]!
   isDefault: Boolean!
   isBuiltIn: Boolean!
+  glossaryByLanguage: [GlossaryEntry!]!
   llmCorrectionEnabled: Boolean!
   llmProviderOverride: String!
   llmModelOverride: String!
-  glossaryByLanguage: [GlossaryEntry!]!
 }
 
 type ProfilePayload {
@@ -539,6 +562,7 @@ type QueryType {
   settings: AppSettingsDto! @cost(weight: "10")
   llmCapabilities: LlmCapabilities
   llmModels: [LlmModelDescriptor!]! @cost(weight: "10")
+  runtimeState: RuntimeState! @cost(weight: "10")
   profiles: [Profile!]! @cost(weight: "10")
   profile(id: UUID!): Profile @cost(weight: "10")
   suggestGlossaryTerms(profileId: UUID! language: String!): [String!]! @cost(weight: "10")
@@ -670,6 +694,17 @@ type RoutineRunDto {
   payloadSummary: String
 }
 
+type RuntimeState {
+  llm: LlmRuntimeState!
+  syncthing: SyncthingRuntimeState!
+  services: [SupervisorServiceState!]!
+}
+
+type RuntimeStatePayload {
+  state: RuntimeState
+  errors: [IUserError!]!
+}
+
 type SetupObsidianPayload {
   report: ObsidianSetupReport
   errors: [IUserError!]!
@@ -697,6 +732,16 @@ type SubscriptionType {
   hotkeyEvents: HotkeyEventMessage!
   recordingPartials(recordingId: UUID!): RecordingPartialPayload!
   syncEvents: SyncEventMessage!
+  runtimeStateChanged: RuntimeState!
+}
+
+type SupervisorServiceState {
+  name: String!
+  state: String!
+  lastError: String
+  restartCount: Int!
+  pid: Int
+  port: Int
 }
 
 type SyncDeviceEntry {
@@ -732,6 +777,14 @@ type SyncPairingPayloadResult {
 type SyncStatusResult {
   folders: [SyncFolderEntry!]!
   devices: [SyncDeviceEntry!]!
+}
+
+type SyncthingRuntimeState {
+  detection: String!
+  binaryPath: String
+  apiUrl: String
+  version: String
+  hint: String
 }
 
 type SystemActionTemplateDto {
@@ -878,6 +931,11 @@ input EnqueueJobInput {
   profileId: UUID!
 }
 
+input GlossaryEntryInput {
+  language: String!
+  terms: [String!]!
+}
+
 input ImportRecordingsInput {
   filePaths: [String!]!
   profileId: UUID
@@ -903,11 +961,6 @@ input JobStatusOperationFilterInput {
   neq: JobStatus @cost(weight: "10")
   in: [JobStatus!] @cost(weight: "10")
   nin: [JobStatus!] @cost(weight: "10")
-}
-
-input GlossaryEntryInput {
-  language: String!
-  terms: [String!]!
 }
 
 input KeyValuePairOfStringAndStringInput {
@@ -995,6 +1048,7 @@ input ProcessingJobFilterInput {
   startedAt: DateTimeOperationFilterInput
   finishedAt: DateTimeOperationFilterInput
   cancelRequested: BooleanOperationFilterInput
+  pauseRequested: BooleanOperationFilterInput
 }
 
 input ProcessingJobSortInput {
@@ -1010,6 +1064,11 @@ input ProcessingJobSortInput {
   startedAt: SortEnumType @cost(weight: "10")
   finishedAt: SortEnumType @cost(weight: "10")
   cancelRequested: SortEnumType @cost(weight: "10")
+  pauseRequested: SortEnumType @cost(weight: "10")
+}
+
+input PublishElectronServicesInput {
+  services: [SupervisorServiceStateInput!]!
 }
 
 input RecordingFilterInput {
@@ -1045,6 +1104,12 @@ input RecordingStatusOperationFilterInput {
   nin: [RecordingStatus!] @cost(weight: "10")
 }
 
+input RetryJobFromStageInput {
+  jobId: UUID!
+  fromStage: JobStage!
+  skipFailed: Boolean!
+}
+
 input SourceTypeOperationFilterInput {
   eq: SourceType @cost(weight: "10")
   neq: SourceType @cost(weight: "10")
@@ -1065,6 +1130,15 @@ input StringOperationFilterInput {
   nstartsWith: String @cost(weight: "20")
   endsWith: String @cost(weight: "20")
   nendsWith: String @cost(weight: "20")
+}
+
+input SupervisorServiceStateInput {
+  name: String!
+  state: String!
+  lastError: String
+  restartCount: Int!
+  pid: Int
+  port: Int
 }
 
 input TimeSpanOperationFilterInput {
@@ -1120,6 +1194,7 @@ input UpdateSettingsInput {
   dictationDumpEnabled: Boolean! = false
   dictationDumpHotkeyToggle: String! = ""
   dictationDumpHotkeyHold: String! = ""
+  webCacheTtlHours: Int! = 24
   mcpServerEnabled: Boolean! = false
   mcpServerPort: Int! = 51051
   mcpServerToken: String! = ""
@@ -1127,6 +1202,7 @@ input UpdateSettingsInput {
   remindersSkillEnabled: Boolean! = false
   dictationClassifyIntentEnabled: Boolean! = false
   claudeCliPath: String! = ""
+  sidecarEnrichmentEnabled: Boolean! = false
 }
 
 input UploadRecordingsInput {
@@ -1205,8 +1281,17 @@ enum DiagnosticAction {
   OPEN_SETTINGS
 }
 
+enum JobStage {
+  TRANSCRIBING
+  CORRECTING
+  LLM_CORRECTION
+  SUMMARIZING
+  EXPORTING
+}
+
 enum JobStatus {
   QUEUED
+  PREFLIGHT_CHECKS
   TRANSCRIBING
   CORRECTING
   SUMMARIZING
@@ -1214,7 +1299,7 @@ enum JobStatus {
   DONE
   FAILED
   CANCELLED
-  PREFLIGHT_CHECKS
+  PAUSED
 }
 
 enum ModelKind {
