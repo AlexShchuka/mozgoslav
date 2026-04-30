@@ -2,6 +2,21 @@
 
 End-to-end flow for a session where an AI agent (Claude Code, Codex, Cursor, …) does implementation work. Humans run this; agents follow the rules in `AGENTS.md`.
 
+## Bootstrap (mandatory, first action)
+
+A fresh checkout has empty `.git/hooks/`. Without lefthook installed, pre-commit auto-format (prettier / eslint / dotnet-format) does NOT run, and CI rejects the push for cosmetic drift. This is the single biggest source of "agent-gate.sh green locally, CI red remotely" mismatches.
+
+```bash
+which lefthook                                  # if empty:
+sudo npm install -g lefthook
+lefthook install                                # writes .git/hooks/{pre-commit,commit-msg,pre-push}
+ls .git/hooks/pre-commit && echo "✓ ready"      # verify
+```
+
+`git worktree add` directories share `.git/hooks` with the main repo — install once, all worktrees covered.
+
+If hook permissions fail (`open .git/info/lefthook.checksum: permission denied` on Coder/multi-user environments), `sudo chown -R $USER:$USER .git/info .git/hooks` and retry.
+
 ## Pre-session
 
 - Confirm the task: one logical change per session. Split ambiguous asks into separate sessions.
@@ -280,7 +295,7 @@ For each block:
 
 ## CI dance
 
-After push, CI may fail on auto-format gates. Fix iteratively, separate commits with conventional `chore:` messages:
+After push, CI may fail on auto-format gates. Fix iteratively, separate commits with conventional `chore:` / `style:` messages:
 
 | Gate | Fix |
 |---|---|
@@ -288,12 +303,23 @@ After push, CI may fail on auto-format gates. Fix iteratively, separate commits 
 | `npx prettier --check` | `cd frontend && npx prettier --write "src/**/*.{ts,tsx,css}" "electron/**/*.ts"` |
 | `npm run check-styles` | `cd frontend && npm run check-styles -- --fix` |
 | `npm run lint` | `cd frontend && npm run lint -- --fix` |
+| `npm run typecheck` | Read `error TSxxxx` from logs; fix imports / signatures; rerun |
 | `ruff check .` | `cd python-sidecar && source .venv/bin/activate && ruff check --fix . && ruff format .` |
 | `black --check .` | `cd python-sidecar && source .venv/bin/activate && black .` |
 | `check-encoding.sh` (BOM) | `sed -i '1s/^\xEF\xBB\xBF//' <file>` |
 | Test failures | Read failing test + tested file; fix root cause; targeted `dotnet test --filter "FullyQualifiedName~<Class>"` to verify |
 
-Cap CI-fix cycles at 4. After that, escalate to the human — silent retry-loops mask root causes.
+Cap CI-fix cycles at 4. After that, escalate to the human — silent retry-loops mask root causes (this is best practice 2026: agentic CI catches ~15 % of bugs but masks the rest if you let it loop).
+
+**Triage workflow** when red CI:
+
+```bash
+RUN=$(gh run list --repo <owner>/<repo> --branch <branch> --limit 1 --json databaseId --jq '.[0].databaseId')
+gh run view $RUN --repo <owner>/<repo> --json jobs --jq '.jobs[] | select(.conclusion=="failure") | "\(.name) \(.databaseId)"'
+gh run view $RUN --repo <owner>/<repo> --job <jobId> --log-failed | grep -E "##\[error\]|FAIL|error TS|expected" | head -30
+```
+
+GitHub auth from sandbox often fails on log-redirect to Azure blob storage (`Could not resolve host: productionresultssa*.blob.core.windows.net`). Fall back to `gh run view --log-failed` which uses the API path, not the blob redirect.
 
 ## PR creation
 
@@ -356,6 +382,31 @@ After CI green:
 19. **Triage scope explosion** (e.g. zero-failures fix-all): if surveying reveals far more work than budgeted, STOP and report before fixing all. Cap to a fraction of total time budget (~25%).
 20. **Visual progress tracking** via task tools for multi-step work — this is how the human watches the run from afar.
 21. **GitHub access via `gh`** — the token belongs to the human; comments / labels / closures appear under their account. No service account; act accordingly.
+22. **Hooks in fresh checkout/worktree are EMPTY.** `lefthook.yml` in the repo doesn't auto-activate — `lefthook install` is mandatory. Without it, prettier/eslint/dotnet-format pre-commit auto-fix is dead silent and CI rejects on cosmetic drift. See Bootstrap section.
+23. **`agent-gate.sh` after rebase / cherry-pick is suspect.** A green gate before rebase ≠ green after. Re-run `npx prettier --write` and the full gate after every history rewrite. Cherry-pick preserves stale formatting verbatim.
+24. **`Closes #N #M` in PR body does NOT close #M.** GitHub's auto-close parser only honors `Closes #N` per occurrence — bare `#M` after the first ID is just a mention. Use one `Closes #X` per line, or close manually post-merge.
+25. **`gh run view --log-failed` redirects to Azure blob storage**, which is often unreachable from sandboxes (`Could not resolve host: productionresultssa*.blob.core.windows.net`). Stick to the streaming API path (`gh run view <run> --json jobs` then `--job <id> --log-failed`); avoid raw `curl` to the storage URL.
+26. **Issue body of `type/decision` is the spec.** When implementing children of a parent decision issue (#240 → #241–247), the parent's body is the contract — diverging silently is a defect. Quote the parent's "Proposal" section in agent prompts.
+
+## Stacked PR pattern (rebase recipe)
+
+When you split work into PR1 (`shuka/<branchA>`) → PR2 (`shuka/<branchB>` stacked off PR1):
+
+1. After PR1 merges into `main`:
+   ```bash
+   git fetch origin
+   git checkout main && git pull --ff-only origin main
+   ```
+2. Rebase PR2 on fresh `main` — but `git rebase origin/main` from PR2 branch may fail with `CONFLICT (content)` on commits that were squashed-merged (their content survives in `main` but their SHAs don't match).
+3. Cleaner alternative: **fresh branch + cherry-pick** only the PR2-specific commits:
+   ```bash
+   git checkout -b <branch>-v2 origin/main
+   git cherry-pick <sha1> <sha2> ...        # only PR2 commits, skip the PR1 ones
+   git push -f origin HEAD:<original-branch-ref>   # GitHub updates the same PR
+   ```
+4. **CRITICAL: re-run `npx prettier --write` on the rebased branch BEFORE force-push.** Cherry-pick preserves commit content one-for-one, including stale formatting from earlier in the day, and the local `agent-gate.sh` you ran on the old branch state is no longer authoritative.
+5. Re-run `bash scripts/agent-gate.sh` on the cherry-picked branch. Force-push only when green.
+6. `--force-with-lease` is safer than `-f` — refuses if upstream advanced (someone else pushed).
 
 ## When the autonomous run is wrong
 
