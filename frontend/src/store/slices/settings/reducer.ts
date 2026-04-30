@@ -4,6 +4,9 @@ import {
   CHECK_LLM,
   CHECK_LLM_DONE,
   LOAD_LLM_CAPABILITIES_SUCCESS,
+  LOAD_LLM_MODELS_FAILED,
+  LOAD_LLM_MODELS_REQUESTED,
+  LOAD_LLM_MODELS_SUCCEEDED,
   LOAD_SETTINGS,
   LOAD_SETTINGS_FAILURE,
   LOAD_SETTINGS_SUCCESS,
@@ -13,9 +16,12 @@ import {
   type SettingsAction,
 } from "./actions";
 import {
-  applyLoaded,
   applyLlmCapabilities,
+  applyLlmModelsLoaded,
+  applyLoaded,
   applySaved,
+  markLlmModelsFailed,
+  markLlmModelsLoading,
   markLlmProbing,
   settleLlmProbing,
 } from "./mutations";
@@ -48,6 +54,13 @@ export const settingsReducer: Reducer<SettingsState> = (
 
     case LOAD_LLM_CAPABILITIES_SUCCESS:
       return applyLlmCapabilities(state, typed.payload);
+
+    case LOAD_LLM_MODELS_REQUESTED:
+      return markLlmModelsLoading(state);
+    case LOAD_LLM_MODELS_SUCCEEDED:
+      return applyLlmModelsLoaded(state, typed.payload);
+    case LOAD_LLM_MODELS_FAILED:
+      return markLlmModelsFailed(state);
 
     default:
       return state;

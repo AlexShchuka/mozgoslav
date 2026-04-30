@@ -1,3 +1,9 @@
 query QueryLlmModels {
-  llmModels
+  llmModels {
+    id
+    ownedBy
+    contextLength
+    supportsToolCalling
+    supportsJsonMode
+  }
 }

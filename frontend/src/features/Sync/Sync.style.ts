@@ -68,7 +68,7 @@ export const ConflictBadge = styled.span`
   padding: 2px ${({ theme }) => theme.space(1.5)};
   border-radius: ${({ theme }) => theme.radii.full};
   background: ${({ theme }) => theme.colors.warning};
-  color: #fff;
+  color: ${({ theme }) => theme.colors.onWarning};
   font-size: ${({ theme }) => theme.font.size.xs};
 `;
 

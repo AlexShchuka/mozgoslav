@@ -5,6 +5,7 @@ FastAPI ML sidecar: diarize, gender, emotion, NER, cleanup, embedding.
 ## commands
 
 ```bash
+bash launch.sh
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
 uvicorn app.main:app --host 127.0.0.1 --port 5060 --reload
@@ -12,6 +13,10 @@ pytest
 ruff check .
 black --check .
 ```
+
+`launch.sh` is the canonical dev/bundled entry point: idempotent venv bootstrap
++ production-flavoured `uvicorn` (no `--reload`). The Electron supervisor
+resolves it by walking up to the repo root in dev mode.
 
 ## endpoints
 

@@ -1,11 +1,10 @@
-using System;
 using System.Net.Http;
 
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Mozgoslav.Tests.Integration;
 
-public abstract class IntegrationTestsBase : IDisposable
+public abstract class IntegrationTestsBase
 {
     public TestContext TestContext { get; set; } = null!;
 
@@ -16,20 +15,6 @@ public abstract class IntegrationTestsBase : IDisposable
 
     [TestCleanup]
     public void BaseCleanup() => Factory.Dispose();
-
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            Factory.Dispose();
-        }
-    }
 
     protected HttpClient CreateClient() => Factory.CreateClient();
 

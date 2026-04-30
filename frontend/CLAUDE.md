@@ -14,6 +14,22 @@ npm test -- --watchAll=false
 npx prettier --check "src/**/*.{ts,tsx,css}" "electron/**/*.ts"
 ```
 
+## Local dev quick-start
+
+`npm run dev` launches Electron with `cwd=frontend/`, so `process.cwd()` does not
+point at the repo root. Sidecar launchers walk up via `electron/utils/repoRoot.ts`
+(sentinel: `frontend/package.json` name `mozgoslav` + sibling `python-sidecar/`).
+Set `MOZGOSLAV_REPO_ROOT=/abs/path/to/repo` to override.
+
+Bring up the supporting processes once per machine, then start the app:
+
+```bash
+bash python-sidecar/launch.sh
+bash searxng-sidecar/launch.sh
+bash scripts/fetch-syncthing.sh
+npm run dev
+```
+
 ## conventions
 
 - Container + Presentational: `Foo.tsx` (props only) + `Foo.container.ts` (`connect(...)`).

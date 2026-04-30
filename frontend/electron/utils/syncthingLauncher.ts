@@ -1,6 +1,7 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { resolveRepoRoot } from "./repoRoot";
 
 const DEFAULT_READY_TIMEOUT_MS = 15_000;
 const POLL_INTERVAL_MS = 100;
@@ -103,11 +104,24 @@ const resolveBinaryPath = (resourcesRoot: string): string | null => {
   }
 
   const binaryName = process.platform === "win32" ? "syncthing.exe" : "syncthing";
-  const candidates = [
-    path.join(resourcesRoot, "syncthing", platformDir, binaryName),
-    path.join(resourcesRoot, "..", "resources", "syncthing", platformDir, binaryName),
-    path.join(process.cwd(), "frontend", "resources", "syncthing", platformDir, binaryName),
-  ];
+  const candidates: string[] = [];
+  const repoRoot = resolveRepoRoot({
+    dirname: __dirname,
+    cwd: process.cwd(),
+    env: process.env,
+  });
+  if (repoRoot) {
+    candidates.push(
+      path.join(repoRoot, "frontend", "resources", "syncthing", platformDir, binaryName)
+    );
+  }
+  candidates.push(path.join(resourcesRoot, "syncthing", platformDir, binaryName));
+  candidates.push(
+    path.join(resourcesRoot, "..", "resources", "syncthing", platformDir, binaryName)
+  );
+  candidates.push(
+    path.join(process.cwd(), "frontend", "resources", "syncthing", platformDir, binaryName)
+  );
   return candidates.find((candidate) => existsSync(candidate)) ?? null;
 };
 

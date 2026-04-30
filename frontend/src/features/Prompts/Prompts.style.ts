@@ -98,23 +98,6 @@ export const FieldLabel = styled.label`
   color: ${({ theme }) => theme.colors.text.secondary};
 `;
 
-export const FieldInput = styled.input`
-  width: 100%;
-  padding: ${({ theme }) => `${theme.space(2)} ${theme.space(3)}`};
-  background: ${({ theme }) => theme.colors.bg.elevated2};
-  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
-  border-radius: ${({ theme }) => theme.radii.md};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-family: ${({ theme }) => theme.font.family};
-  font-size: ${({ theme }) => theme.font.size.sm};
-  outline: none;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: ${({ theme }) => theme.colors.accent.primary};
-  }
-`;
-
 export const FieldTextarea = styled.textarea`
   width: 100%;
   padding: ${({ theme }) => `${theme.space(2)} ${theme.space(3)}`};

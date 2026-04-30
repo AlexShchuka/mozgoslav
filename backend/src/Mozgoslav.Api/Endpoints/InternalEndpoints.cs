@@ -15,11 +15,6 @@ namespace Mozgoslav.Api.Endpoints;
 
 public static class InternalEndpoints
 {
-    public sealed record PushChunkRequest(
-        IReadOnlyList<float> Samples,
-        int SampleRate,
-        double OffsetSeconds);
-
     public static IEndpointRouteBuilder MapInternalEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/_internal/devices/changed", async (
@@ -50,36 +45,6 @@ public static class InternalEndpoints
             }
             await notifier.PublishAsync(payload, ct);
             return Results.Ok(new { accepted = true });
-        });
-
-        endpoints.MapPost("/api/dictation/push/{sessionId:guid}", async (
-            Guid sessionId,
-            [FromBody] PushChunkRequest request,
-            IDictationSessionManager manager,
-            CancellationToken ct) =>
-        {
-            if (request is null || request.Samples is null || request.Samples.Count == 0)
-            {
-                return Results.BadRequest(new { error = "samples is required" });
-            }
-
-            try
-            {
-                var chunk = new AudioChunk(
-                    Samples: [.. request.Samples],
-                    SampleRate: request.SampleRate,
-                    Offset: TimeSpan.FromSeconds(request.OffsetSeconds));
-                await manager.PushAudioAsync(sessionId, chunk, ct);
-                return Results.Ok(new { accepted = true });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return Results.NotFound(new { error = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.BadRequest(new { error = ex.Message });
-            }
         });
 
         endpoints.MapPost("/api/dictation/{sessionId:guid}/push", async (

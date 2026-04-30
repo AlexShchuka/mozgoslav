@@ -5,9 +5,13 @@ import type { GlobalState } from "../../store";
 import {
   checkLlm,
   loadLlmCapabilities,
+  loadLlmModelsRequested,
   loadSettings,
   saveSettings,
   selectLlmCapabilities,
+  selectLlmModels,
+  selectLlmModelsError,
+  selectLlmModelsLoading,
   selectLlmProbing,
   selectSettings,
   selectSettingsLoading,
@@ -22,6 +26,9 @@ const mapStateToProps = (state: GlobalState): SettingsStateProps => ({
   isSaving: selectSettingsSaving(state),
   isLlmProbing: selectLlmProbing(state),
   llmCapabilities: selectLlmCapabilities(state),
+  llmModels: selectLlmModels(state),
+  llmModelsLoading: selectLlmModelsLoading(state),
+  llmModelsError: selectLlmModelsError(state),
 });
 
 const mapDispatchToProps = (dispatch: Dispatch): SettingsDispatchProps =>
@@ -31,6 +38,7 @@ const mapDispatchToProps = (dispatch: Dispatch): SettingsDispatchProps =>
       onSave: saveSettings,
       onCheckLlm: checkLlm,
       onLoadCapabilities: loadLlmCapabilities,
+      onLoadModels: loadLlmModelsRequested,
     },
     dispatch
   );

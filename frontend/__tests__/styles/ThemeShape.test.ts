@@ -8,12 +8,15 @@ describe("theme — ADR-013 nested shape snapshot", () => {
             "border",
             "error",
             "errorSoft",
+            "errorStrong",
             "focusRing",
             "info",
             "infoSoft",
+            "onWarning",
             "overlayBackdrop",
             "success",
             "successSoft",
+            "surfaceInverse",
             "text",
             "warning",
             "warningBorder",
@@ -55,11 +58,12 @@ describe("theme — ADR-013 nested shape snapshot", () => {
         ]);
     });
 
-    it("shadow exposes xs/sm/md/lg/accent", () => {
+    it("shadow exposes xs/sm/md/lg/accent/overlay", () => {
         expect(Object.keys(darkTheme.shadow).sort()).toEqual([
             "accent",
             "lg",
             "md",
+            "overlay",
             "sm",
             "xs",
         ]);

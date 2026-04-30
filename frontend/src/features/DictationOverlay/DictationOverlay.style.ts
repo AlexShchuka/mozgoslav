@@ -10,7 +10,7 @@ export const OverlayRoot = styled.div`
   background: ${({ theme }) => theme.colors.bg.elevated2};
   border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   border-radius: ${({ theme }) => theme.radii.lg};
-  box-shadow: 0 12px 40px rgb(0, 0, 0, 0.25);
+  box-shadow: ${({ theme }) => theme.shadow.overlay};
   overflow: hidden;
   box-sizing: border-box;
 `;
@@ -36,7 +36,7 @@ export const PhaseLabel = styled.span<{ $phase: string }>`
   letter-spacing: 0.08em;
   color: ${({ theme, $phase }) =>
     $phase === "recording"
-      ? "#d94848"
+      ? theme.colors.errorStrong
       : $phase === "processing"
         ? theme.colors.accent.primary
         : theme.colors.text.secondary};

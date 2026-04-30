@@ -7,7 +7,13 @@ import { ProcessedNote } from "../../../domain/ProcessedNote";
 import { watchNotesSagas } from "../../../store/slices/notes";
 import { watchNotificationsSagas } from "../../../store/slices/notifications";
 import { watchSettingsSagas } from "../../../store/slices/settings";
-import { renderWithStore, mockNotesState, notesById, mergeMockState } from "../../../testUtils";
+import {
+  renderWithStore,
+  mockNotesState,
+  notesById,
+  mergeMockState,
+  mockSettingsState,
+} from "../../../testUtils";
 import { CREATE_NOTE, DELETE_NOTE, LOAD_NOTES } from "../../../store/slices/notes";
 import "../../../i18n";
 
@@ -118,15 +124,10 @@ describe("NotesList — grouping by vault path folder", () => {
     ];
 
     renderNotes(
-      mergeMockState(mockNotesState({ byId: notesById(notes) }), {
-        settings: {
-          settings: { vaultPath: "/vault" } as never,
-          isLoading: false,
-          isSaving: false,
-          llmProbe: { probing: false },
-          llmCapabilities: null,
-        },
-      })
+      mergeMockState(
+        mockNotesState({ byId: notesById(notes) }),
+        mockSettingsState({ settings: { vaultPath: "/vault" } as never })
+      )
     );
 
     await screen.findByText(/Alpha/);

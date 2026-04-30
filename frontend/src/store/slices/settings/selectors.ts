@@ -19,3 +19,18 @@ export const selectLlmCapabilities = createSelector(
   selectSettingsState,
   (slice) => slice.llmCapabilities
 );
+
+export const selectLlmModels = createSelector(
+  selectSettingsState,
+  (slice) => slice.llmModels.available
+);
+
+export const selectLlmModelsLoading = createSelector(
+  selectSettingsState,
+  (slice) => slice.llmModels.loading
+);
+
+export const selectLlmModelsError = createSelector(
+  selectSettingsState,
+  (slice) => slice.llmModels.error
+);

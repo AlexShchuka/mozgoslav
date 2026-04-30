@@ -8,6 +8,7 @@ import Badge from "../../components/Badge";
 import Button from "../../components/Button";
 import EmptyState from "../../components/EmptyState";
 import GroupedList from "../../components/GroupedList";
+import Input from "../../components/Input";
 import Modal from "../../components/Modal";
 import { ProcessedNote } from "../../domain/ProcessedNote";
 import { noteRoute } from "../../constants/routes";
@@ -26,7 +27,6 @@ import {
   MetaLine,
   PageRoot,
   PageTitle,
-  TitleField,
   Toolbar,
   ToolbarActions,
 } from "./NotesList.style";
@@ -187,7 +187,7 @@ const NotesList: FC = () => {
         }
       >
         <FieldLabel htmlFor="notes-add-title">{t("notes.titleLabel")}</FieldLabel>
-        <TitleField
+        <Input
           id="notes-add-title"
           data-testid="notes-add-title"
           value={title}

@@ -2,6 +2,7 @@ import { type ChildProcess, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { get as httpGet } from "node:http";
 import path from "node:path";
+import { resolveRepoRoot } from "../repoRoot";
 import type { ServiceSpec } from "../serviceSupervisor";
 
 const PYTHON_SIDECAR_PORT = 5060;
@@ -10,10 +11,17 @@ const HEALTH_INTERVAL_MS = 15_000;
 let pythonProcess: ChildProcess | null = null;
 
 const resolveLaunchScript = (resourcesRoot: string): string | null => {
-  const candidates = [
-    path.join(resourcesRoot, "python-sidecar", "launch.sh"),
-    path.join(process.cwd(), "python-sidecar", "launch.sh"),
-  ];
+  const candidates: string[] = [];
+  const repoRoot = resolveRepoRoot({
+    dirname: __dirname,
+    cwd: process.cwd(),
+    env: process.env,
+  });
+  if (repoRoot) {
+    candidates.push(path.join(repoRoot, "python-sidecar", "launch.sh"));
+  }
+  candidates.push(path.join(resourcesRoot, "python-sidecar", "launch.sh"));
+  candidates.push(path.join(process.cwd(), "python-sidecar", "launch.sh"));
   return candidates.find((p) => existsSync(p)) ?? null;
 };
 

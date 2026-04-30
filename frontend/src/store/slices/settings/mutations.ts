@@ -1,4 +1,4 @@
-import type { LlmCapabilities } from "../../../api/gql/graphql";
+import type { LlmCapabilities, LlmModelDescriptor } from "../../../api/gql/graphql";
 import type { AppSettings } from "../../../domain/Settings";
 import type { SettingsState } from "./types";
 
@@ -30,4 +30,22 @@ export const applyLlmCapabilities = (
 ): SettingsState => ({
   ...state,
   llmCapabilities: capabilities,
+});
+
+export const markLlmModelsLoading = (state: SettingsState): SettingsState => ({
+  ...state,
+  llmModels: { ...state.llmModels, loading: true, error: false },
+});
+
+export const applyLlmModelsLoaded = (
+  state: SettingsState,
+  models: readonly LlmModelDescriptor[]
+): SettingsState => ({
+  ...state,
+  llmModels: { loading: false, available: models, error: false },
+});
+
+export const markLlmModelsFailed = (state: SettingsState): SettingsState => ({
+  ...state,
+  llmModels: { loading: false, available: [], error: true },
 });

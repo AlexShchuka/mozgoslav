@@ -1,4 +1,3 @@
-using System;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -9,7 +8,7 @@ using FluentAssertions;
 
 namespace Mozgoslav.Tests.Graph;
 
-public abstract class GraphTestsBase : IDisposable
+public abstract class GraphTestsBase
 {
     public TestContext TestContext { get; set; } = null!;
 
@@ -22,17 +21,6 @@ public abstract class GraphTestsBase : IDisposable
 
     [TestCleanup]
     public void BaseCleanup() => Factory.Dispose();
-
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (disposing) Factory.Dispose();
-    }
 
     protected async Task<JsonNode> ExecuteAsync(string query, object? variables = null)
     {

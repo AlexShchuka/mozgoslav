@@ -2,10 +2,10 @@ import { type FC, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import Button from "../../components/Button";
+import Input from "../../components/Input";
 import type { PromptTemplate } from "../../domain/prompts";
 import {
   FieldGroup,
-  FieldInput,
   FieldLabel,
   FieldTextarea,
   Modal,
@@ -45,7 +45,7 @@ const PromptEditor: FC<PromptEditorProps> = ({ template, onSave, onClose }) => {
         </ModalTitle>
         <FieldGroup>
           <FieldLabel htmlFor="prompt-name">{t("prompts.editor.name")}</FieldLabel>
-          <FieldInput
+          <Input
             id="prompt-name"
             value={name}
             onChange={(e) => setName(e.target.value)}

@@ -1,4 +1,4 @@
-import type { LlmCapabilities } from "../../../api/gql/graphql";
+import type { LlmCapabilities, LlmModelDescriptor } from "../../../api/gql/graphql";
 import type { AppSettings } from "../../../domain/Settings";
 
 export const LOAD_SETTINGS = "settings/LOAD";
@@ -14,6 +14,10 @@ export const CHECK_LLM_DONE = "settings/CHECK_LLM_DONE";
 
 export const LOAD_LLM_CAPABILITIES = "settings/LOAD_LLM_CAPABILITIES";
 export const LOAD_LLM_CAPABILITIES_SUCCESS = "settings/LOAD_LLM_CAPABILITIES_SUCCESS";
+
+export const LOAD_LLM_MODELS_REQUESTED = "settings/LOAD_LLM_MODELS_REQUESTED";
+export const LOAD_LLM_MODELS_SUCCEEDED = "settings/LOAD_LLM_MODELS_SUCCEEDED";
+export const LOAD_LLM_MODELS_FAILED = "settings/LOAD_LLM_MODELS_FAILED";
 
 export interface LoadSettingsAction {
   type: typeof LOAD_SETTINGS;
@@ -59,6 +63,19 @@ export interface LoadLlmCapabilitiesSuccessAction {
   payload: LlmCapabilities | null;
 }
 
+export interface LoadLlmModelsRequestedAction {
+  type: typeof LOAD_LLM_MODELS_REQUESTED;
+}
+
+export interface LoadLlmModelsSucceededAction {
+  type: typeof LOAD_LLM_MODELS_SUCCEEDED;
+  payload: readonly LlmModelDescriptor[];
+}
+
+export interface LoadLlmModelsFailedAction {
+  type: typeof LOAD_LLM_MODELS_FAILED;
+}
+
 export type SettingsAction =
   | LoadSettingsAction
   | LoadSettingsSuccessAction
@@ -69,7 +86,10 @@ export type SettingsAction =
   | CheckLlmAction
   | CheckLlmDoneAction
   | LoadLlmCapabilitiesAction
-  | LoadLlmCapabilitiesSuccessAction;
+  | LoadLlmCapabilitiesSuccessAction
+  | LoadLlmModelsRequestedAction
+  | LoadLlmModelsSucceededAction
+  | LoadLlmModelsFailedAction;
 
 export const loadSettings = (): LoadSettingsAction => ({ type: LOAD_SETTINGS });
 export const loadSettingsSuccess = (settings: AppSettings): LoadSettingsSuccessAction => ({
@@ -103,4 +123,17 @@ export const loadLlmCapabilitiesSuccess = (
 ): LoadLlmCapabilitiesSuccessAction => ({
   type: LOAD_LLM_CAPABILITIES_SUCCESS,
   payload: capabilities,
+});
+
+export const loadLlmModelsRequested = (): LoadLlmModelsRequestedAction => ({
+  type: LOAD_LLM_MODELS_REQUESTED,
+});
+export const loadLlmModelsSucceeded = (
+  models: readonly LlmModelDescriptor[]
+): LoadLlmModelsSucceededAction => ({
+  type: LOAD_LLM_MODELS_SUCCEEDED,
+  payload: models,
+});
+export const loadLlmModelsFailed = (): LoadLlmModelsFailedAction => ({
+  type: LOAD_LLM_MODELS_FAILED,
 });

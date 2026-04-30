@@ -258,6 +258,29 @@
       "jsonMode": "JSON-режим",
       "ctxLength": "Контекст: {{n}} токенов",
       "tokensPerSec": "{{n}} tok/s"
+    },
+    "llmModels": {
+      "label": "Доступные модели",
+      "placeholder": "— выбери модель —",
+      "loading": "Загружаем список моделей…",
+      "empty": "LLM endpoint недоступен. Настрой или запусти LLM-сервер.",
+      "ctxLength": "ctx {{n}}",
+      "supportsToolCalling": "tools",
+      "supportsJsonMode": "JSON",
+      "ownedBy": "от {{owner}}"
+    },
+    "validation": {
+      "required": "Обязательное поле",
+      "invalidUrl": "Должно начинаться с http:// или https://"
+    },
+    "sections": {
+      "uiAndLanguage": "Интерфейс и язык",
+      "llmCore": "LLM",
+      "transcription": "Транскрипция",
+      "dictationCore": "Диктовка",
+      "dictationDump": "Диктовка-дамп",
+      "obsidian": "Obsidian",
+      "advanced": "Продвинутое"
     }
   },
   "sync": {

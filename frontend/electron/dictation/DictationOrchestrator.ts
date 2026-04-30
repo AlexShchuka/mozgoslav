@@ -223,14 +223,14 @@ export class DictationOrchestrator {
   private async pushAudioToBackend(chunk: AudioChunkPayload): Promise<void> {
     if (!this.sessionId) return;
     try {
-      await this.backendFetch(`/api/dictation/push/${this.sessionId}`, {
+      const buffer = Buffer.alloc(chunk.samples.length * 4);
+      for (let i = 0; i < chunk.samples.length; i++) {
+        buffer.writeFloatLE(chunk.samples[i], i * 4);
+      }
+      await this.backendFetch(`/api/dictation/${this.sessionId}/push`, {
         method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          samples: chunk.samples,
-          sampleRate: chunk.sampleRate,
-          offsetSeconds: chunk.offsetMs / 1000,
-        }),
+        headers: { "content-type": "audio/pcm" },
+        body: buffer,
       });
     } catch (error) {
       console.error("[dictation] push failed:", error);
@@ -239,7 +239,7 @@ export class DictationOrchestrator {
 
   private async backendFetch(
     path: string,
-    init: { method: string; headers?: Record<string, string>; body?: string }
+    init: { method: string; headers?: Record<string, string>; body?: string | Buffer }
   ): Promise<{ json: () => Promise<unknown> }> {
     return new Promise((resolve, reject) => {
       const request = net.request({
@@ -259,7 +259,7 @@ export class DictationOrchestrator {
         response.on("error", (error) => reject(error));
       });
       request.on("error", (error) => reject(error));
-      if (init.body) request.write(init.body);
+      if (init.body !== undefined) request.write(init.body);
       request.end();
     });
   }

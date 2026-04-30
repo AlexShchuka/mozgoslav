@@ -258,6 +258,29 @@
       "jsonMode": "JSON mode",
       "ctxLength": "Context: {{n}} tokens",
       "tokensPerSec": "{{n}} tok/s"
+    },
+    "llmModels": {
+      "label": "Available models",
+      "placeholder": "— pick a model —",
+      "loading": "Loading models…",
+      "empty": "LLM endpoint unreachable. Configure or start your LLM server.",
+      "ctxLength": "ctx {{n}}",
+      "supportsToolCalling": "tools",
+      "supportsJsonMode": "JSON",
+      "ownedBy": "by {{owner}}"
+    },
+    "validation": {
+      "required": "Required",
+      "invalidUrl": "Must start with http:// or https://"
+    },
+    "sections": {
+      "uiAndLanguage": "UI and language",
+      "llmCore": "LLM",
+      "transcription": "Transcription",
+      "dictationCore": "Dictation",
+      "dictationDump": "Dictation dump",
+      "obsidian": "Obsidian",
+      "advanced": "Advanced"
     }
   },
   "sync": {

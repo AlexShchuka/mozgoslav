@@ -2,6 +2,7 @@ import { type ChildProcess, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { get as httpGet } from "node:http";
 import path from "node:path";
+import { resolveRepoRoot } from "./repoRoot";
 
 const SEARXNG_PORT = 8888;
 const HEALTH_PATH = "/";
@@ -47,6 +48,14 @@ export interface SearxngStartOptions {
 
 export const tryStartSearxng = async (options: SearxngStartOptions): Promise<void> => {
   const candidatePaths: string[] = [];
+  const repoRoot = resolveRepoRoot({
+    dirname: __dirname,
+    cwd: process.cwd(),
+    env: process.env,
+  });
+  if (repoRoot) {
+    candidatePaths.push(path.join(repoRoot, "searxng-sidecar", "launch.sh"));
+  }
   if (options.resourcesRoot) {
     candidatePaths.push(path.join(options.resourcesRoot, "searxng-sidecar", "launch.sh"));
   }

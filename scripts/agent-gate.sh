@@ -19,10 +19,12 @@ STAGE="${1:-all}"
 section() { printf '\n\033[1;36m▶ %s\033[0m\n' "$1"; }
 
 run_verify() {
-  section "verify — encoding + comments"
+  section "verify — encoding + comments + grep guards + ADR discipline"
   bash scripts/check-encoding.sh
   uncomment --dry-run --remove-todo --remove-fixme --remove-doc \
     backend frontend/src frontend/electron python-sidecar native scripts
+  bash scripts/check-grep-guards.sh
+  bash scripts/check-adr-discipline.sh
 }
 
 run_backend() {

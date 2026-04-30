@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Application.Llm;
 
 namespace Mozgoslav.Infrastructure.Services;
 
@@ -17,6 +18,8 @@ public sealed class OpenAiCompatibleLlmProvider : ILlmProvider
 {
     private const float Temperature = 0.1f;
     private const int MaxTokens = 4096;
+    private const int ErrorBodyExcerptLength = 256;
+    private const string DefaultModelLiteral = "default";
 
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
@@ -26,15 +29,20 @@ public sealed class OpenAiCompatibleLlmProvider : ILlmProvider
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IAppSettings _settings;
+    private readonly ILlmCapabilitiesCache _capabilitiesCache;
     private readonly ILogger<OpenAiCompatibleLlmProvider> _logger;
+
+    private Task<string>? _resolveModelTask;
 
     public OpenAiCompatibleLlmProvider(
         IHttpClientFactory httpClientFactory,
         IAppSettings settings,
+        ILlmCapabilitiesCache capabilitiesCache,
         ILogger<OpenAiCompatibleLlmProvider> logger)
     {
         _httpClientFactory = httpClientFactory;
         _settings = settings;
+        _capabilitiesCache = capabilitiesCache;
         _logger = logger;
     }
 
@@ -49,16 +57,26 @@ public sealed class OpenAiCompatibleLlmProvider : ILlmProvider
             return string.Empty;
         }
 
-        var model = string.IsNullOrWhiteSpace(_settings.LlmModel) ? "default" : _settings.LlmModel;
         var apiKey = string.IsNullOrWhiteSpace(_settings.LlmApiKey) ? "lm-studio" : _settings.LlmApiKey;
+        var model = await ResolveModelOnceAsync(endpoint, apiKey, ct);
+        if (string.IsNullOrWhiteSpace(model))
+        {
+            _logger.LogWarning("LLM model could not be resolved from settings or /v1/models");
+            return string.Empty;
+        }
+
         var chatUri = new Uri(new Uri(endpoint.TrimEnd('/')), "/v1/chat/completions");
+        var capabilities = _capabilitiesCache.TryGetCurrent();
+        var responseFormat = capabilities?.SupportsJsonMode == true
+            ? new ResponseFormat { Type = "json_object" }
+            : null;
 
         var requestBody = new ChatCompletionRequest
         {
             Model = model,
             Temperature = Temperature,
             MaxTokens = MaxTokens,
-            ResponseFormat = new ResponseFormat { Type = "json_object" },
+            ResponseFormat = responseFormat,
             Messages =
             [
                 new ChatMessage { Role = "system", Content = systemPrompt },
@@ -77,7 +95,11 @@ public sealed class OpenAiCompatibleLlmProvider : ILlmProvider
             using var response = await client.SendAsync(request, ct);
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("LLM returned {StatusCode}", response.StatusCode);
+                var body = await response.Content.ReadAsStringAsync(ct);
+                var bodyExcerpt = body.Length <= ErrorBodyExcerptLength
+                    ? body
+                    : body[..ErrorBodyExcerptLength];
+                _logger.LogWarning("LLM returned {StatusCode}: {BodyExcerpt}", response.StatusCode, bodyExcerpt);
                 return string.Empty;
             }
 
@@ -100,6 +122,72 @@ public sealed class OpenAiCompatibleLlmProvider : ILlmProvider
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "OpenAI-compatible LLM call failed");
+            return string.Empty;
+        }
+    }
+
+    private Task<string> ResolveModelOnceAsync(string endpoint, string apiKey, CancellationToken ct)
+    {
+        var configured = _settings.LlmModel;
+        if (!string.IsNullOrWhiteSpace(configured) &&
+            !string.Equals(configured, DefaultModelLiteral, StringComparison.OrdinalIgnoreCase))
+        {
+            return Task.FromResult(configured);
+        }
+
+        var existing = Volatile.Read(ref _resolveModelTask);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var fresh = FetchFirstModelIdAsync(endpoint, apiKey, ct);
+        var winner = Interlocked.CompareExchange(ref _resolveModelTask, fresh, null);
+        return winner ?? fresh;
+    }
+
+    private async Task<string> FetchFirstModelIdAsync(string endpoint, string apiKey, CancellationToken ct)
+    {
+        try
+        {
+            using var client = _httpClientFactory.CreateClient("llm");
+            var modelsUri = new Uri(new Uri(endpoint.TrimEnd('/')), "/v1/models");
+            using var request = new HttpRequestMessage(HttpMethod.Get, modelsUri);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+            using var response = await client.SendAsync(request, ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning(
+                    "LLM /v1/models returned {StatusCode} during model resolution",
+                    response.StatusCode);
+                return string.Empty;
+            }
+
+            var json = await response.Content.ReadAsStringAsync(ct);
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("data", out var data) &&
+                data.ValueKind == JsonValueKind.Array &&
+                data.GetArrayLength() > 0 &&
+                data[0].TryGetProperty("id", out var id))
+            {
+                var modelId = id.GetString();
+                if (!string.IsNullOrWhiteSpace(modelId))
+                {
+                    return modelId;
+                }
+            }
+
+            _logger.LogWarning("LLM /v1/models returned no usable model id");
+            return string.Empty;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "LLM /v1/models call failed during model resolution");
             return string.Empty;
         }
     }
