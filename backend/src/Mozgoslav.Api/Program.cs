@@ -148,6 +148,7 @@ try
     builder.Services.AddSingleton<GlossaryApplicator>();
     builder.Services.AddScoped<LlmCorrectionService>();
     builder.Services.AddScoped<ImportRecordingUseCase>();
+    builder.Services.AddScoped<RecordingFinaliser>();
     builder.Services.AddScoped<ReprocessUseCase>();
     builder.Services.AddScoped<ProcessQueueWorker>();
     builder.Services.AddSingleton<IProcessingJobScheduler, QuartzProcessingJobScheduler>();
