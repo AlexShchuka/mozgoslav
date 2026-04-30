@@ -10,7 +10,6 @@ import NotesList from "./features/Notes/NotesList";
 import NoteViewer from "./features/Notes/NoteViewer";
 import Ask from "./features/Ask";
 import AskOverlay from "./features/AskOverlay";
-import Profiles from "./features/Profiles";
 import Models from "./features/Models";
 import SettingsPage from "./features/Settings";
 import Backups from "./features/Backups";
@@ -104,11 +103,7 @@ const AppShell: FC = () => {
           />
           <Route
             path={ROUTES.profiles}
-            element={
-              <OnboardingCompleteGuard>
-                <Profiles />
-              </OnboardingCompleteGuard>
-            }
+            element={<Navigate to="/settings?focus=profiles&category=knowledge" replace />}
           />
           <Route
             path={ROUTES.models}
