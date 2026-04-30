@@ -1,0 +1,8 @@
+{"qid": "q1", "query": "how to cook pasta carbonara", "rels": {"c01": 3, "c54": 1, "c09": 1, "c59": 1, "c07": 0}}
+{"qid": "q2", "query": "programming async python", "rels": {"c13": 3, "c50": 2, "c55": 2, "c10": 1, "c19": 1, "c60": 1, "c11": 0}}
+{"qid": "q3", "query": "how to build muscle strength training", "rels": {"c21": 3, "c20": 3, "c23": 2, "c24": 2, "c56": 2, "c22": 1, "c25": 1, "c28": 1, "c27": 1, "c26": 1}}
+{"qid": "q4", "query": "music theory scales and chords", "rels": {"c29": 3, "c30": 3, "c35": 2, "c31": 2, "c32": 2, "c52": 2, "c34": 1, "c33": 0}}
+{"qid": "q5", "query": "travel tips for international trips", "rels": {"c45": 3, "c43": 3, "c44": 2, "c41": 2, "c46": 2, "c47": 1, "c48": 1, "c42": 1, "c53": 1, "c39": 1}}
+{"qid": "q6", "query": "audio production mixing and effects", "rels": {"c36": 3, "c37": 3, "c38": 2, "c33": 2, "c57": 1, "c29": 0}}
+{"qid": "q7", "query": "bread baking sourdough", "rels": {"c02": 3, "c54": 1, "c09": 1, "c01": 0}}
+{"qid": "q8", "query": "database and SQL fundamentals", "rels": {"c15": 3, "c14": 2, "c17": 1, "c10": 0}}
