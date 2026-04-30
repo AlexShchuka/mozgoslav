@@ -16,7 +16,7 @@ namespace Mozgoslav.Infrastructure.Services;
 public sealed class ObsidianRestApiClient : IObsidianRestClient
 {
     public const string HttpClientName = "Mozgoslav.Obsidian";
-    private static readonly TimeSpan ProbeTimeout = TimeSpan.FromMilliseconds(500);
+    private static readonly TimeSpan ProbeTimeout = TimeSpan.FromMilliseconds(2000);
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IAppSettings _settings;
