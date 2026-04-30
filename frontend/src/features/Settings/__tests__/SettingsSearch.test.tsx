@@ -1,7 +1,12 @@
 import { fireEvent, screen, act } from "@testing-library/react";
 
 import Settings from "../Settings.container";
-import { renderWithStore, mockSettingsState, mergeMockState, mockProfilesState } from "../../../testUtils";
+import {
+  renderWithStore,
+  mockSettingsState,
+  mergeMockState,
+  mockProfilesState,
+} from "../../../testUtils";
 import { darkTheme } from "../../../styles/theme";
 import "../../../i18n";
 

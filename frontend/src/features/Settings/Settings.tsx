@@ -139,7 +139,10 @@ const Settings: FC<SettingsProps> = ({
 
   useEffect(() => {
     const categoryParam = searchParams.get("category") as CategoryKey | null;
-    if (categoryParam && ["general", "voice", "llm", "knowledge", "system"].includes(categoryParam)) {
+    if (
+      categoryParam &&
+      ["general", "voice", "llm", "knowledge", "system"].includes(categoryParam)
+    ) {
       setActiveCategory(categoryParam);
     }
   }, [searchParams]);
@@ -183,12 +186,9 @@ const Settings: FC<SettingsProps> = ({
     return () => window.clearTimeout(handle);
   }, [rawSearchQuery]);
 
-  const update = useCallback(
-    <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-      setDraft((prev) => ({ ...prev, [key]: value }));
-    },
-    []
-  );
+  const update = useCallback(<K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
+    setDraft((prev) => ({ ...prev, [key]: value }));
+  }, []);
 
   const saveField = useCallback(
     <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
@@ -250,23 +250,142 @@ const Settings: FC<SettingsProps> = ({
 
   const allFields = useMemo((): SettingField[] => {
     return [
-      { key: "language", label: t("settings.fields.language"), description: t("settings.fields.languageDesc"), category: "general", value: draft.language, defaultValue: DEFAULT_SETTINGS.language },
-      { key: "themeMode", label: t("settings.fields.theme"), description: t("settings.fields.themeDesc"), category: "general", value: draft.themeMode, defaultValue: DEFAULT_SETTINGS.themeMode },
-      { key: "sidecarEnrichmentEnabled", label: t("settings.sidecarEnrichment.label"), description: t("settings.sidecarEnrichment.description"), category: "general", value: draft.sidecarEnrichmentEnabled, defaultValue: DEFAULT_SETTINGS.sidecarEnrichmentEnabled },
-      { key: "whisperModelPath", label: t("settings.fields.whisperModelPath"), description: t("settings.fields.whisperModelPathDesc"), category: "voice", value: draft.whisperModelPath, defaultValue: DEFAULT_SETTINGS.whisperModelPath },
-      { key: "vadModelPath", label: t("settings.fields.vadModelPath"), description: t("settings.fields.vadModelPathDesc"), category: "voice", value: draft.vadModelPath, defaultValue: DEFAULT_SETTINGS.vadModelPath },
-      { key: "whisperThreads", label: t("settings.fields.whisperThreads"), description: t("settings.fields.whisperThreadsDesc"), category: "voice", value: draft.whisperThreads, defaultValue: DEFAULT_SETTINGS.whisperThreads },
-      { key: "dictationKeyboardHotkey", label: t("settings.fields.dictationKeyboardHotkey"), description: t("settings.fields.dictationKeyboardHotkeyDesc"), category: "voice", value: draft.dictationKeyboardHotkey, defaultValue: DEFAULT_SETTINGS.dictationKeyboardHotkey },
-      { key: "dictationPushToTalk", label: t("settings.fields.dictationPushToTalk"), description: t("settings.fields.dictationPushToTalkDesc"), category: "voice", value: draft.dictationPushToTalk, defaultValue: DEFAULT_SETTINGS.dictationPushToTalk },
-      { key: "dictationDumpEnabled", label: t("settings.fields.dictationDumpEnabled"), description: t("settings.fields.dictationDumpEnabledDesc"), category: "voice", value: draft.dictationDumpEnabled, defaultValue: DEFAULT_SETTINGS.dictationDumpEnabled },
-      { key: "dictationDumpHotkeyToggle", label: t("settings.fields.dictationDumpHotkeyToggle"), description: t("settings.dumpHotkeyToggleHint"), category: "voice", value: draft.dictationDumpHotkeyToggle, defaultValue: DEFAULT_SETTINGS.dictationDumpHotkeyToggle },
-      { key: "dictationDumpHotkeyHold", label: t("settings.fields.dictationDumpHotkeyHold"), description: t("settings.dumpHotkeyHoldHint"), category: "voice", value: draft.dictationDumpHotkeyHold, defaultValue: DEFAULT_SETTINGS.dictationDumpHotkeyHold },
-      { key: "llmEndpoint", label: t("settings.fields.llmEndpoint"), description: t("settings.fields.llmEndpointDesc"), category: "llm", value: draft.llmEndpoint, defaultValue: DEFAULT_SETTINGS.llmEndpoint },
-      { key: "llmModel", label: t("settings.llmModels.label"), description: t("settings.fields.llmModelDesc"), category: "llm", value: draft.llmModel, defaultValue: DEFAULT_SETTINGS.llmModel },
-      { key: "llmApiKey", label: t("settings.fields.llmApiKey"), description: t("settings.tokenHint"), category: "llm", value: draft.llmApiKey, defaultValue: DEFAULT_SETTINGS.llmApiKey },
-      { key: "obsidianApiHost", label: t("settings.fields.obsidianApiHost"), description: t("settings.fields.obsidianApiHostDesc"), category: "knowledge", value: draft.obsidianApiHost, defaultValue: DEFAULT_SETTINGS.obsidianApiHost },
-      { key: "obsidianApiToken", label: t("settings.fields.obsidianApiToken"), description: t("settings.tokenHint"), category: "knowledge", value: draft.obsidianApiToken, defaultValue: DEFAULT_SETTINGS.obsidianApiToken },
-      { key: "syncthingEnabled", label: t("sync.settings.enableSyncthing"), description: t("settings.fields.syncthingEnabledDesc"), category: "system", value: draft.syncthingEnabled, defaultValue: DEFAULT_SETTINGS.syncthingEnabled },
+      {
+        key: "language",
+        label: t("settings.fields.language"),
+        description: t("settings.fields.languageDesc"),
+        category: "general",
+        value: draft.language,
+        defaultValue: DEFAULT_SETTINGS.language,
+      },
+      {
+        key: "themeMode",
+        label: t("settings.fields.theme"),
+        description: t("settings.fields.themeDesc"),
+        category: "general",
+        value: draft.themeMode,
+        defaultValue: DEFAULT_SETTINGS.themeMode,
+      },
+      {
+        key: "sidecarEnrichmentEnabled",
+        label: t("settings.sidecarEnrichment.label"),
+        description: t("settings.sidecarEnrichment.description"),
+        category: "general",
+        value: draft.sidecarEnrichmentEnabled,
+        defaultValue: DEFAULT_SETTINGS.sidecarEnrichmentEnabled,
+      },
+      {
+        key: "whisperModelPath",
+        label: t("settings.fields.whisperModelPath"),
+        description: t("settings.fields.whisperModelPathDesc"),
+        category: "voice",
+        value: draft.whisperModelPath,
+        defaultValue: DEFAULT_SETTINGS.whisperModelPath,
+      },
+      {
+        key: "vadModelPath",
+        label: t("settings.fields.vadModelPath"),
+        description: t("settings.fields.vadModelPathDesc"),
+        category: "voice",
+        value: draft.vadModelPath,
+        defaultValue: DEFAULT_SETTINGS.vadModelPath,
+      },
+      {
+        key: "whisperThreads",
+        label: t("settings.fields.whisperThreads"),
+        description: t("settings.fields.whisperThreadsDesc"),
+        category: "voice",
+        value: draft.whisperThreads,
+        defaultValue: DEFAULT_SETTINGS.whisperThreads,
+      },
+      {
+        key: "dictationKeyboardHotkey",
+        label: t("settings.fields.dictationKeyboardHotkey"),
+        description: t("settings.fields.dictationKeyboardHotkeyDesc"),
+        category: "voice",
+        value: draft.dictationKeyboardHotkey,
+        defaultValue: DEFAULT_SETTINGS.dictationKeyboardHotkey,
+      },
+      {
+        key: "dictationPushToTalk",
+        label: t("settings.fields.dictationPushToTalk"),
+        description: t("settings.fields.dictationPushToTalkDesc"),
+        category: "voice",
+        value: draft.dictationPushToTalk,
+        defaultValue: DEFAULT_SETTINGS.dictationPushToTalk,
+      },
+      {
+        key: "dictationDumpEnabled",
+        label: t("settings.fields.dictationDumpEnabled"),
+        description: t("settings.fields.dictationDumpEnabledDesc"),
+        category: "voice",
+        value: draft.dictationDumpEnabled,
+        defaultValue: DEFAULT_SETTINGS.dictationDumpEnabled,
+      },
+      {
+        key: "dictationDumpHotkeyToggle",
+        label: t("settings.fields.dictationDumpHotkeyToggle"),
+        description: t("settings.dumpHotkeyToggleHint"),
+        category: "voice",
+        value: draft.dictationDumpHotkeyToggle,
+        defaultValue: DEFAULT_SETTINGS.dictationDumpHotkeyToggle,
+      },
+      {
+        key: "dictationDumpHotkeyHold",
+        label: t("settings.fields.dictationDumpHotkeyHold"),
+        description: t("settings.dumpHotkeyHoldHint"),
+        category: "voice",
+        value: draft.dictationDumpHotkeyHold,
+        defaultValue: DEFAULT_SETTINGS.dictationDumpHotkeyHold,
+      },
+      {
+        key: "llmEndpoint",
+        label: t("settings.fields.llmEndpoint"),
+        description: t("settings.fields.llmEndpointDesc"),
+        category: "llm",
+        value: draft.llmEndpoint,
+        defaultValue: DEFAULT_SETTINGS.llmEndpoint,
+      },
+      {
+        key: "llmModel",
+        label: t("settings.llmModels.label"),
+        description: t("settings.fields.llmModelDesc"),
+        category: "llm",
+        value: draft.llmModel,
+        defaultValue: DEFAULT_SETTINGS.llmModel,
+      },
+      {
+        key: "llmApiKey",
+        label: t("settings.fields.llmApiKey"),
+        description: t("settings.tokenHint"),
+        category: "llm",
+        value: draft.llmApiKey,
+        defaultValue: DEFAULT_SETTINGS.llmApiKey,
+      },
+      {
+        key: "obsidianApiHost",
+        label: t("settings.fields.obsidianApiHost"),
+        description: t("settings.fields.obsidianApiHostDesc"),
+        category: "knowledge",
+        value: draft.obsidianApiHost,
+        defaultValue: DEFAULT_SETTINGS.obsidianApiHost,
+      },
+      {
+        key: "obsidianApiToken",
+        label: t("settings.fields.obsidianApiToken"),
+        description: t("settings.tokenHint"),
+        category: "knowledge",
+        value: draft.obsidianApiToken,
+        defaultValue: DEFAULT_SETTINGS.obsidianApiToken,
+      },
+      {
+        key: "syncthingEnabled",
+        label: t("sync.settings.enableSyncthing"),
+        description: t("settings.fields.syncthingEnabledDesc"),
+        category: "system",
+        value: draft.syncthingEnabled,
+        defaultValue: DEFAULT_SETTINGS.syncthingEnabled,
+      },
     ];
   }, [draft, t]);
 
@@ -278,8 +397,7 @@ const Settings: FC<SettingsProps> = ({
     const lower = q.toLowerCase();
     return allFields.filter(
       (f) =>
-        f.label.toLowerCase().includes(lower) ||
-        (f.description ?? "").toLowerCase().includes(lower)
+        f.label.toLowerCase().includes(lower) || (f.description ?? "").toLowerCase().includes(lower)
     );
   }, [allFields, searchQuery]);
 
@@ -296,8 +414,7 @@ const Settings: FC<SettingsProps> = ({
     [t]
   );
 
-  const activeCategoryLabel =
-    categories.find((c) => c.key === activeCategory)?.label ?? "";
+  const activeCategoryLabel = categories.find((c) => c.key === activeCategory)?.label ?? "";
 
   const checkLlm = () => {
     onCheckLlm();
@@ -476,7 +593,9 @@ const GeneralCategory: FC<
                 const v = e.target.value as AppSettings["themeMode"];
                 update("themeMode", v);
               }}
-              onBlur={(e) => handleBlurSave("themeMode", e.target.value as AppSettings["themeMode"])}
+              onBlur={(e) =>
+                handleBlurSave("themeMode", e.target.value as AppSettings["themeMode"])
+              }
             >
               <SelectOption value="system">{t("settings.theme.system")}</SelectOption>
               <SelectOption value="light">{t("settings.theme.light")}</SelectOption>
@@ -500,7 +619,10 @@ const GeneralCategory: FC<
       {advancedOpen && (
         <Card>
           <FormGrid>
-            <FieldRing $active={focusedKey === "sidecarEnrichmentEnabled"} data-testid="field-sidecarEnrichmentEnabled">
+            <FieldRing
+              $active={focusedKey === "sidecarEnrichmentEnabled"}
+              data-testid="field-sidecarEnrichmentEnabled"
+            >
               <CheckboxRow>
                 <input
                   type="checkbox"
@@ -528,7 +650,17 @@ const VoiceCategory: FC<
     dictationDumpOpen: boolean;
     setDictationDumpOpen: (v: boolean) => void;
   }
-> = ({ draft, update, handleBlurSave, scheduleAutosave, pickWhisperFile, dictationDumpOpen, setDictationDumpOpen, focusedKey, t }) => (
+> = ({
+  draft,
+  update,
+  handleBlurSave,
+  scheduleAutosave,
+  pickWhisperFile,
+  dictationDumpOpen,
+  setDictationDumpOpen,
+  focusedKey,
+  t,
+}) => (
   <CategorySection id="settings-category-voice" data-testid="settings-category-voice">
     <CategoryTitle>{t("settings.categories.voice")}</CategoryTitle>
 
@@ -536,7 +668,10 @@ const VoiceCategory: FC<
       <SubSectionTitle>{t("settings.sections.transcription")}</SubSectionTitle>
       <Card>
         <FormGrid>
-          <FieldRing $active={focusedKey === "whisperModelPath"} data-testid="field-whisperModelPath">
+          <FieldRing
+            $active={focusedKey === "whisperModelPath"}
+            data-testid="field-whisperModelPath"
+          >
             <Row>
               <Input
                 label={t("settings.fields.whisperModelPath")}
@@ -585,7 +720,10 @@ const VoiceCategory: FC<
       <SubSectionTitle>{t("settings.sections.dictationCore")}</SubSectionTitle>
       <Card>
         <FormGrid>
-          <FieldRing $active={focusedKey === "dictationKeyboardHotkey"} data-testid="field-dictationKeyboardHotkey">
+          <FieldRing
+            $active={focusedKey === "dictationKeyboardHotkey"}
+            data-testid="field-dictationKeyboardHotkey"
+          >
             <label>{t("settings.fields.dictationKeyboardHotkey")}</label>
             <FieldHint>{t("settings.fields.dictationKeyboardHotkeyDesc")}</FieldHint>
             <HotkeyRecorder
@@ -598,7 +736,10 @@ const VoiceCategory: FC<
               testId="dictation"
             />
           </FieldRing>
-          <FieldRing $active={focusedKey === "dictationPushToTalk"} data-testid="field-dictationPushToTalk">
+          <FieldRing
+            $active={focusedKey === "dictationPushToTalk"}
+            data-testid="field-dictationPushToTalk"
+          >
             <CheckboxRow>
               <input
                 type="checkbox"
@@ -630,7 +771,10 @@ const VoiceCategory: FC<
       {dictationDumpOpen && (
         <Card>
           <FormGrid>
-            <FieldRing $active={focusedKey === "dictationDumpEnabled"} data-testid="field-dictationDumpEnabled">
+            <FieldRing
+              $active={focusedKey === "dictationDumpEnabled"}
+              data-testid="field-dictationDumpEnabled"
+            >
               <CheckboxRow>
                 <input
                   type="checkbox"
@@ -645,7 +789,10 @@ const VoiceCategory: FC<
               </CheckboxRow>
               <FieldHint>{t("settings.fields.dictationDumpEnabledDesc")}</FieldHint>
             </FieldRing>
-            <FieldRing $active={focusedKey === "dictationDumpHotkeyToggle"} data-testid="field-dictationDumpHotkeyToggle">
+            <FieldRing
+              $active={focusedKey === "dictationDumpHotkeyToggle"}
+              data-testid="field-dictationDumpHotkeyToggle"
+            >
               <label>{t("settings.fields.dictationDumpHotkeyToggle")}</label>
               <HotkeyRecorder
                 value={draft.dictationDumpHotkeyToggle}
@@ -657,7 +804,10 @@ const VoiceCategory: FC<
                 testId="dictation-dump-toggle"
               />
             </FieldRing>
-            <FieldRing $active={focusedKey === "dictationDumpHotkeyHold"} data-testid="field-dictationDumpHotkeyHold">
+            <FieldRing
+              $active={focusedKey === "dictationDumpHotkeyHold"}
+              data-testid="field-dictationDumpHotkeyHold"
+            >
               <label>{t("settings.fields.dictationDumpHotkeyHold")}</label>
               <HotkeyRecorder
                 value={draft.dictationDumpHotkeyHold}
@@ -849,7 +999,10 @@ const KnowledgeCategory: FC<KnowledgeCategoryProps> = ({
             />
             <FieldHint>{t("settings.fields.obsidianApiHostDesc")}</FieldHint>
           </FieldRing>
-          <FieldRing $active={focusedKey === "obsidianApiToken"} data-testid="field-obsidianApiToken">
+          <FieldRing
+            $active={focusedKey === "obsidianApiToken"}
+            data-testid="field-obsidianApiToken"
+          >
             <Input
               label={t("settings.fields.obsidianApiToken")}
               value={draft.obsidianApiToken}
@@ -880,7 +1033,13 @@ const KnowledgeCategory: FC<KnowledgeCategoryProps> = ({
 
 interface SystemCategoryProps extends CategoryProps {}
 
-const SystemCategory: FC<SystemCategoryProps> = ({ draft, update, handleBlurSave, focusedKey, t }) => (
+const SystemCategory: FC<SystemCategoryProps> = ({
+  draft,
+  update,
+  handleBlurSave,
+  focusedKey,
+  t,
+}) => (
   <CategorySection id="settings-category-system" data-testid="settings-category-system">
     <CategoryTitle>{t("settings.categories.system")}</CategoryTitle>
 
@@ -910,7 +1069,10 @@ const SystemCategory: FC<SystemCategoryProps> = ({ draft, update, handleBlurSave
       <SubSectionTitle>{t("settings.sections.syncState")}</SubSectionTitle>
       <Card>
         <FormGrid>
-          <FieldRing $active={focusedKey === "syncthingEnabled"} data-testid="field-syncthingEnabled">
+          <FieldRing
+            $active={focusedKey === "syncthingEnabled"}
+            data-testid="field-syncthingEnabled"
+          >
             <CheckboxRow>
               <input
                 type="checkbox"
