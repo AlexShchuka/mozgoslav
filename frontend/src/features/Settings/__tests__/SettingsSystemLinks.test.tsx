@@ -1,4 +1,5 @@
 import { fireEvent, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 
 import Settings from "../Settings.container";
 import {
@@ -48,13 +49,18 @@ const baseSettings = {
 };
 
 const renderSettings = () =>
-  renderWithStore(<Settings />, {
-    theme: darkTheme,
-    preloadedState: mergeMockState({
-      ...mockSettingsState({ settings: baseSettings }),
-      ...mockProfilesState({}),
-    }),
-  });
+  renderWithStore(
+    <MemoryRouter>
+      <Settings />
+    </MemoryRouter>,
+    {
+      theme: darkTheme,
+      preloadedState: mergeMockState({
+        ...mockSettingsState({ settings: baseSettings }),
+        ...mockProfilesState({}),
+      }),
+    }
+  );
 
 describe("Settings → System links to Models/Backups/Routines", () => {
   it("System category renders link cards grid", () => {

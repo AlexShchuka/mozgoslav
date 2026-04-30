@@ -1,4 +1,5 @@
 import { fireEvent, screen, act } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 
 import Settings from "../Settings.container";
 import {
@@ -69,16 +70,21 @@ const fakeModels: readonly LlmModelDescriptor[] = [
 ];
 
 const renderSettings = (patch: Parameters<typeof mockSettingsState>[0] = {}) =>
-  renderWithStore(<Settings />, {
-    theme: darkTheme,
-    preloadedState: mergeMockState({
-      ...mockSettingsState({
-        settings: baseSettings,
-        ...patch,
+  renderWithStore(
+    <MemoryRouter>
+      <Settings />
+    </MemoryRouter>,
+    {
+      theme: darkTheme,
+      preloadedState: mergeMockState({
+        ...mockSettingsState({
+          settings: baseSettings,
+          ...patch,
+        }),
+        ...mockProfilesState({}),
       }),
-      ...mockProfilesState({}),
-    }),
-  });
+    }
+  );
 
 describe("Settings — store-driven", () => {
   it("dispatches LOAD_SETTINGS on mount", () => {

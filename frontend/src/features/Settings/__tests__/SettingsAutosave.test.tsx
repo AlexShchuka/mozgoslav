@@ -1,4 +1,5 @@
 import { fireEvent, screen, act } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 
 import Settings from "../Settings.container";
 import {
@@ -49,13 +50,18 @@ const baseSettings = {
 };
 
 const renderSettings = (patch: Parameters<typeof mockSettingsState>[0] = {}) =>
-  renderWithStore(<Settings />, {
-    theme: darkTheme,
-    preloadedState: mergeMockState({
-      ...mockSettingsState({ settings: baseSettings, ...patch }),
-      ...mockProfilesState({}),
-    }),
-  });
+  renderWithStore(
+    <MemoryRouter>
+      <Settings />
+    </MemoryRouter>,
+    {
+      theme: darkTheme,
+      preloadedState: mergeMockState({
+        ...mockSettingsState({ settings: baseSettings, ...patch }),
+        ...mockProfilesState({}),
+      }),
+    }
+  );
 
 describe("Settings autosave on blur", () => {
   it("no Save button is rendered in any category", () => {
