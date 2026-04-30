@@ -31,7 +31,4 @@ export const selectSuggestingKey = createSelector(
 );
 
 export const selectSuggestionsForProfile = (profileId: string, language: string) =>
-  createSelector(
-    selectProfilesState,
-    (slice) => slice.suggestions[profileId]?.[language] ?? null
-  );
+  createSelector(selectProfilesState, (slice) => slice.suggestions[profileId]?.[language] ?? null);

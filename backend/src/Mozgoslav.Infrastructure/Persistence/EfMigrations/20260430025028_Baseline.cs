@@ -11,6 +11,7 @@ public partial class Baseline : Migration
     protected override void Up(MigrationBuilder migrationBuilder)
     {
         ArgumentNullException.ThrowIfNull(migrationBuilder);
+
         migrationBuilder.CreateTable(
             name: "processed_notes",
             columns: table => new
@@ -35,11 +36,28 @@ public partial class Baseline : Migration
                 markdown_content = table.Column<string>(type: "TEXT", nullable: false),
                 exported_to_vault = table.Column<bool>(type: "INTEGER", nullable: false),
                 vault_path = table.Column<string>(type: "TEXT", nullable: true),
-                created_at = table.Column<DateTime>(type: "TEXT", nullable: false),
+                created_at = table.Column<DateTime>(type: "TEXT", nullable: false)
             },
             constraints: table =>
             {
                 table.PrimaryKey("PK_processed_notes", x => x.id);
+            });
+
+        migrationBuilder.CreateTable(
+            name: "processing_job_stages",
+            columns: table => new
+            {
+                id = table.Column<Guid>(type: "TEXT", nullable: false),
+                job_id = table.Column<Guid>(type: "TEXT", nullable: false),
+                stage_name = table.Column<string>(type: "TEXT", nullable: false),
+                started_at = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
+                finished_at = table.Column<DateTimeOffset>(type: "TEXT", nullable: true),
+                duration_ms = table.Column<int>(type: "INTEGER", nullable: true),
+                error_message = table.Column<string>(type: "TEXT", nullable: true)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_processing_job_stages", x => x.id);
             });
 
         migrationBuilder.CreateTable(
@@ -57,6 +75,7 @@ public partial class Baseline : Migration
                 created_at = table.Column<DateTime>(type: "TEXT", nullable: false),
                 started_at = table.Column<DateTime>(type: "TEXT", nullable: true),
                 finished_at = table.Column<DateTime>(type: "TEXT", nullable: true),
+                cancel_requested = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false)
             },
             constraints: table =>
             {
@@ -77,10 +96,47 @@ public partial class Baseline : Migration
                 auto_tags_json = table.Column<string>(type: "TEXT", nullable: false),
                 is_default = table.Column<bool>(type: "INTEGER", nullable: false),
                 is_built_in = table.Column<bool>(type: "INTEGER", nullable: false),
+                glossary_by_language_json = table.Column<string>(type: "TEXT", nullable: false),
+                llm_correction_enabled = table.Column<bool>(type: "INTEGER", nullable: false),
+                llm_provider_override = table.Column<string>(type: "TEXT", nullable: false, defaultValue: ""),
+                llm_model_override = table.Column<string>(type: "TEXT", nullable: false, defaultValue: "")
             },
             constraints: table =>
             {
                 table.PrimaryKey("PK_profiles", x => x.id);
+            });
+
+        migrationBuilder.CreateTable(
+            name: "prompt_templates",
+            columns: table => new
+            {
+                id = table.Column<Guid>(type: "TEXT", nullable: false),
+                name = table.Column<string>(type: "TEXT", nullable: false),
+                body = table.Column<string>(type: "TEXT", nullable: false),
+                created_at = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_prompt_templates", x => x.id);
+            });
+
+        migrationBuilder.CreateTable(
+            name: "rag_chunks",
+            columns: table => new
+            {
+                id = table.Column<string>(type: "TEXT", nullable: false),
+                note_id = table.Column<string>(type: "TEXT", nullable: false),
+                text = table.Column<string>(type: "TEXT", nullable: false),
+                embedding = table.Column<byte[]>(type: "BLOB", nullable: false),
+                dimensions = table.Column<int>(type: "INTEGER", nullable: false),
+                schema = table.Column<string>(type: "TEXT", nullable: false, defaultValue: "v1"),
+                created_at = table.Column<DateTimeOffset>(type: "TEXT", nullable: false, defaultValue: new DateTimeOffset(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))),
+                profile_id = table.Column<string>(type: "TEXT", nullable: true),
+                speaker = table.Column<string>(type: "TEXT", nullable: true)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_rag_chunks", x => x.id);
             });
 
         migrationBuilder.CreateTable(
@@ -95,7 +151,7 @@ public partial class Baseline : Migration
                 format = table.Column<string>(type: "TEXT", nullable: false),
                 source_type = table.Column<string>(type: "TEXT", nullable: false),
                 status = table.Column<string>(type: "TEXT", nullable: false),
-                created_at = table.Column<DateTime>(type: "TEXT", nullable: false),
+                created_at = table.Column<DateTime>(type: "TEXT", nullable: false)
             },
             constraints: table =>
             {
@@ -103,11 +159,28 @@ public partial class Baseline : Migration
             });
 
         migrationBuilder.CreateTable(
+            name: "routine_runs",
+            columns: table => new
+            {
+                id = table.Column<Guid>(type: "TEXT", nullable: false),
+                routine_key = table.Column<string>(type: "TEXT", nullable: false),
+                started_at = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
+                finished_at = table.Column<DateTimeOffset>(type: "TEXT", nullable: true),
+                status = table.Column<string>(type: "TEXT", nullable: false),
+                error_message = table.Column<string>(type: "TEXT", nullable: true),
+                payload_summary = table.Column<string>(type: "TEXT", nullable: true)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_routine_runs", x => x.id);
+            });
+
+        migrationBuilder.CreateTable(
             name: "settings",
             columns: table => new
             {
                 key = table.Column<string>(type: "TEXT", nullable: false),
-                value = table.Column<string>(type: "TEXT", nullable: false),
+                value = table.Column<string>(type: "TEXT", nullable: false)
             },
             constraints: table =>
             {
@@ -124,7 +197,7 @@ public partial class Baseline : Migration
                 language = table.Column<string>(type: "TEXT", nullable: false),
                 raw_text = table.Column<string>(type: "TEXT", nullable: false),
                 segments_json = table.Column<string>(type: "TEXT", nullable: false),
-                created_at = table.Column<DateTime>(type: "TEXT", nullable: false),
+                created_at = table.Column<DateTime>(type: "TEXT", nullable: false)
             },
             constraints: table =>
             {
@@ -137,6 +210,11 @@ public partial class Baseline : Migration
             column: "transcript_id");
 
         migrationBuilder.CreateIndex(
+            name: "ix_processing_job_stages_job_id",
+            table: "processing_job_stages",
+            column: "job_id");
+
+        migrationBuilder.CreateIndex(
             name: "IX_processing_jobs_recording_id",
             table: "processing_jobs",
             column: "recording_id");
@@ -147,6 +225,21 @@ public partial class Baseline : Migration
             column: "status");
 
         migrationBuilder.CreateIndex(
+            name: "ix_prompt_templates_name",
+            table: "prompt_templates",
+            column: "name");
+
+        migrationBuilder.CreateIndex(
+            name: "ix_rag_chunks_created_at",
+            table: "rag_chunks",
+            column: "created_at");
+
+        migrationBuilder.CreateIndex(
+            name: "ix_rag_chunks_note_id",
+            table: "rag_chunks",
+            column: "note_id");
+
+        migrationBuilder.CreateIndex(
             name: "IX_recordings_created_at",
             table: "recordings",
             column: "created_at");
@@ -154,8 +247,17 @@ public partial class Baseline : Migration
         migrationBuilder.CreateIndex(
             name: "IX_recordings_sha256",
             table: "recordings",
-            column: "sha256",
-            unique: true);
+            column: "sha256");
+
+        migrationBuilder.CreateIndex(
+            name: "ix_routine_runs_routine_key",
+            table: "routine_runs",
+            column: "routine_key");
+
+        migrationBuilder.CreateIndex(
+            name: "ix_routine_runs_started_at",
+            table: "routine_runs",
+            column: "started_at");
 
         migrationBuilder.CreateIndex(
             name: "IX_transcripts_recording_id",
@@ -165,12 +267,5 @@ public partial class Baseline : Migration
 
     protected override void Down(MigrationBuilder migrationBuilder)
     {
-        ArgumentNullException.ThrowIfNull(migrationBuilder);
-        migrationBuilder.DropTable(name: "processed_notes");
-        migrationBuilder.DropTable(name: "processing_jobs");
-        migrationBuilder.DropTable(name: "profiles");
-        migrationBuilder.DropTable(name: "recordings");
-        migrationBuilder.DropTable(name: "settings");
-        migrationBuilder.DropTable(name: "transcripts");
     }
 }

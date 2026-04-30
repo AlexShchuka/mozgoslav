@@ -316,10 +316,7 @@ const ProfileEditor: FC<ProfileEditorProps> = ({
                 <GlossaryLanguageBlock key={lang}>
                   <GlossaryLanguageHeader>
                     <strong>{lang.toUpperCase()}</strong>
-                    <Button
-                      variant="ghost"
-                      onClick={() => removeLanguage(lang)}
-                    >
+                    <Button variant="ghost" onClick={() => removeLanguage(lang)}>
                       {t("common.delete")}
                     </Button>
                   </GlossaryLanguageHeader>
@@ -369,18 +366,15 @@ const ProfileEditor: FC<ProfileEditorProps> = ({
             })}
 
             <div>
-              <SelectBox
-                value={newLang}
-                onChange={(e) => setNewLang(e.target.value)}
-              >
+              <SelectBox value={newLang} onChange={(e) => setNewLang(e.target.value)}>
                 <SelectOption value="">{t("profileEditor.glossary.addLanguage")}</SelectOption>
-                {COMMON_LANGUAGES.filter(
-                  (l) => draft.glossaryByLanguage[l] === undefined
-                ).map((l) => (
-                  <SelectOption key={l} value={l}>
-                    {t(`profileEditor.glossary.language.${l}`, { defaultValue: l.toUpperCase() })}
-                  </SelectOption>
-                ))}
+                {COMMON_LANGUAGES.filter((l) => draft.glossaryByLanguage[l] === undefined).map(
+                  (l) => (
+                    <SelectOption key={l} value={l}>
+                      {t(`profileEditor.glossary.language.${l}`, { defaultValue: l.toUpperCase() })}
+                    </SelectOption>
+                  )
+                )}
               </SelectBox>
               <Button variant="ghost" onClick={addLanguage} disabled={!newLang}>
                 {t("profileEditor.glossary.addLanguage")}

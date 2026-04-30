@@ -2412,7 +2412,11 @@ export type QueryProfilesQuery = {
     autoTags: Array<string>;
     isDefault: boolean;
     isBuiltIn: boolean;
-    glossaryByLanguage: Array<{ __typename?: "GlossaryEntry"; language: string; terms: Array<string> }>;
+    glossaryByLanguage: Array<{
+      __typename?: "GlossaryEntry";
+      language: string;
+      terms: Array<string>;
+    }>;
     llmCorrectionEnabled: boolean;
     llmProviderOverride: string;
     llmModelOverride: string;
@@ -2439,7 +2443,11 @@ export type MutationCreateProfileMutation = {
       autoTags: Array<string>;
       isDefault: boolean;
       isBuiltIn: boolean;
-      glossaryByLanguage: Array<{ __typename?: "GlossaryEntry"; language: string; terms: Array<string> }>;
+      glossaryByLanguage: Array<{
+        __typename?: "GlossaryEntry";
+        language: string;
+        terms: Array<string>;
+      }>;
       llmCorrectionEnabled: boolean;
       llmProviderOverride: string;
       llmModelOverride: string;
@@ -2474,7 +2482,11 @@ export type MutationUpdateProfileMutation = {
       autoTags: Array<string>;
       isDefault: boolean;
       isBuiltIn: boolean;
-      glossaryByLanguage: Array<{ __typename?: "GlossaryEntry"; language: string; terms: Array<string> }>;
+      glossaryByLanguage: Array<{
+        __typename?: "GlossaryEntry";
+        language: string;
+        terms: Array<string>;
+      }>;
       llmCorrectionEnabled: boolean;
       llmProviderOverride: string;
       llmModelOverride: string;
@@ -2526,7 +2538,11 @@ export type MutationDuplicateProfileMutation = {
       autoTags: Array<string>;
       isDefault: boolean;
       isBuiltIn: boolean;
-      glossaryByLanguage: Array<{ __typename?: "GlossaryEntry"; language: string; terms: Array<string> }>;
+      glossaryByLanguage: Array<{
+        __typename?: "GlossaryEntry";
+        language: string;
+        terms: Array<string>;
+      }>;
       llmCorrectionEnabled: boolean;
       llmProviderOverride: string;
       llmModelOverride: string;

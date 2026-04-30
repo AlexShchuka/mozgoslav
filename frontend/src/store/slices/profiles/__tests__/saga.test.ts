@@ -55,10 +55,9 @@ const makeProfile = (overrides: Partial<Profile> = {}): Profile => ({
   ...overrides,
 });
 
-const makeDraft = (overrides: Partial<Omit<Profile, "id" | "isBuiltIn">> = {}): Omit<
-  Profile,
-  "id" | "isBuiltIn"
-> => ({
+const makeDraft = (
+  overrides: Partial<Omit<Profile, "id" | "isBuiltIn">> = {}
+): Omit<Profile, "id" | "isBuiltIn"> => ({
   name: "Fresh",
   systemPrompt: "",
   transcriptionPromptOverride: "",
