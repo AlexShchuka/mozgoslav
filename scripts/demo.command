@@ -119,9 +119,9 @@ echo "→ starting backend (dotnet)..."
 (cd backend && dotnet run --project src/Mozgoslav.Api -c Release --no-launch-profile) &
 BACKEND_PID=$!
 
-# Wait for backend /api/health
+# Wait for backend /health
 for i in {1..30}; do
-  if curl -sf http://localhost:5050/api/health >/dev/null 2>&1; then
+  if curl -sf http://localhost:5050/health >/dev/null 2>&1; then
     echo "  ✓ backend up"
     break
   fi
