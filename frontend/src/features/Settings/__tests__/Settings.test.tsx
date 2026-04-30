@@ -1,7 +1,7 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, act } from "@testing-library/react";
 
 import Settings from "../Settings.container";
-import { renderWithStore, mockSettingsState, mergeMockState } from "../../../testUtils";
+import { renderWithStore, mockSettingsState, mergeMockState, mockProfilesState } from "../../../testUtils";
 import { darkTheme } from "../../../styles/theme";
 import "../../../i18n";
 import { LOAD_LLM_MODELS_REQUESTED, LOAD_SETTINGS } from "../../../store/slices/settings";
@@ -66,12 +66,13 @@ const fakeModels: readonly LlmModelDescriptor[] = [
 const renderSettings = (patch: Parameters<typeof mockSettingsState>[0] = {}) =>
   renderWithStore(<Settings />, {
     theme: darkTheme,
-    preloadedState: mergeMockState(
-      mockSettingsState({
+    preloadedState: mergeMockState({
+      ...mockSettingsState({
         settings: baseSettings,
         ...patch,
-      })
-    ),
+      }),
+      ...mockProfilesState({}),
+    }),
   });
 
 describe("Settings — store-driven", () => {
@@ -80,18 +81,33 @@ describe("Settings — store-driven", () => {
     expect(getActions().some((a) => a.type === LOAD_SETTINGS)).toBe(true);
   });
 
-  it("dispatches LOAD_LLM_MODELS_REQUESTED when LLM tab is opened", () => {
+  it("sidebar renders 5 categories", () => {
+    renderSettings();
+    const sidebar = screen.getByRole("navigation");
+    const buttons = sidebar.querySelectorAll("button");
+    expect(buttons.length).toBe(5);
+  });
+
+  it("clicking a sidebar category changes active state", () => {
+    renderSettings();
+    const voiceBtn = screen.getByTestId("settings-sidebar-voice");
+    fireEvent.click(voiceBtn);
+    expect(voiceBtn).toHaveStyle("font-weight: 600");
+  });
+
+  it("clicking LLM category dispatches LOAD_LLM_MODELS_REQUESTED", () => {
     const { getActions } = renderSettings();
-    fireEvent.click(screen.getByText(/^LLM$/i));
+    const llmBtn = screen.getByTestId("settings-sidebar-llm");
+    fireEvent.click(llmBtn);
     expect(getActions().some((a) => a.type === LOAD_LLM_MODELS_REQUESTED)).toBe(true);
   });
 
-  it("renders models in dropdown when state holds llmModels", () => {
+  it("renders models in dropdown when LLM category active", () => {
     renderSettings({
       settings: baseSettings,
       llmModels: { loading: false, available: fakeModels, error: false },
     });
-    fireEvent.click(screen.getByText(/^LLM$/i));
+    fireEvent.click(screen.getByTestId("settings-sidebar-llm"));
 
     const select = screen.getByTestId("settings-llm-model-select") as HTMLSelectElement;
     expect(select).toBeInTheDocument();
@@ -103,8 +119,36 @@ describe("Settings — store-driven", () => {
     renderSettings({
       settings: { ...baseSettings, llmEndpoint: "not-a-url" },
     });
-    fireEvent.click(screen.getByText(/^LLM$/i));
-
+    fireEvent.click(screen.getByTestId("settings-sidebar-llm"));
     expect(screen.getByText(/http:\/\/ или https:\/\//i)).toBeInTheDocument();
+  });
+
+  it("General category renders language and theme controls", () => {
+    renderSettings();
+    expect(screen.getByTestId("settings-category-general")).toBeInTheDocument();
+  });
+
+  it("search empty state shown when no fields match query", async () => {
+    renderSettings();
+    const searchInput = screen.getByTestId("settings-search");
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: "xyznonexistentfield999" } });
+      await new Promise((r) => setTimeout(r, 200));
+    });
+    expect(screen.getByTestId("settings-search-empty")).toBeInTheDocument();
+  });
+
+  it("System category renders links to Models, Backups, Routines", () => {
+    renderSettings();
+    fireEvent.click(screen.getByTestId("settings-sidebar-system"));
+    expect(screen.getByTestId("settings-system-links")).toBeInTheDocument();
+    expect(screen.getByTestId("settings-system-link-backups")).toBeInTheDocument();
+    expect(screen.getByTestId("settings-system-link-routines")).toBeInTheDocument();
+  });
+
+  it("Knowledge category renders Profiles section", () => {
+    renderSettings();
+    fireEvent.click(screen.getByTestId("settings-sidebar-knowledge"));
+    expect(screen.getByTestId("settings-knowledge-profiles")).toBeInTheDocument();
   });
 });
