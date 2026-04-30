@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FC, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { FolderOpen, Play } from "lucide-react";
@@ -65,7 +65,7 @@ const AUTOSAVE_DEBOUNCE_MS = 500;
 
 const isValidUrl = (value: string): boolean => URL_RE.test(value.trim());
 
-const highlightMatch = (text: string, query: string): JSX.Element => {
+const highlightMatch = (text: string, query: string): ReactElement => {
   if (!query) return <>{text}</>;
   const idx = text.toLowerCase().indexOf(query.toLowerCase());
   if (idx === -1) return <>{text}</>;
@@ -80,7 +80,6 @@ const highlightMatch = (text: string, query: string): JSX.Element => {
 
 const Settings: FC<SettingsProps> = ({
   settings: loadedSettings,
-  isSaving,
   isLlmProbing,
   llmCapabilities,
   llmModels,
@@ -206,7 +205,7 @@ const Settings: FC<SettingsProps> = ({
     <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
       const existing = autosaveTimers.current.get(key);
       if (existing !== undefined) clearTimeout(existing);
-      const handle = window.setTimeout(() => {
+      const handle = setTimeout(() => {
         autosaveTimers.current.delete(key);
         saveField(key, value);
       }, AUTOSAVE_DEBOUNCE_MS);
@@ -421,6 +420,7 @@ const Settings: FC<SettingsProps> = ({
                   draft={draft}
                   update={update}
                   handleBlurSave={handleBlurSave}
+                  scheduleAutosave={scheduleAutosave}
                   focusedKey={focusedKey}
                   t={t}
                 />
@@ -447,7 +447,7 @@ const GeneralCategory: FC<
     advancedOpen: boolean;
     setAdvancedOpen: (v: boolean) => void;
   }
-> = ({ draft, update, handleBlurSave, scheduleAutosave, advancedOpen, setAdvancedOpen, focusedKey, t }) => (
+> = ({ draft, update, handleBlurSave, advancedOpen, setAdvancedOpen, focusedKey, t }) => (
   <CategorySection id="settings-category-general" data-testid="settings-category-general">
     <CategoryTitle>{t("settings.categories.general")}</CategoryTitle>
 
