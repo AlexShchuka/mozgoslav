@@ -114,6 +114,15 @@ fi
 
 echo ""
 
+# --- Release ports :5050 and :5060 from stale processes ---
+for port in 5050 5060; do
+  pid="$(lsof -ti tcp:$port 2>/dev/null || true)"
+  if [ -n "$pid" ]; then
+    echo "→ releasing port :$port (PID $pid)..."
+    kill -9 $pid 2>/dev/null || true
+  fi
+done
+
 # Backend
 echo "→ starting backend (dotnet)..."
 (cd backend && dotnet run --project src/Mozgoslav.Api -c Release --no-launch-profile) &

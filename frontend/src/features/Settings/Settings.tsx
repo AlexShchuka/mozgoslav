@@ -154,9 +154,13 @@ const Settings: FC<SettingsProps> = ({
       language: "general",
       themeMode: "general",
       sidecarEnrichmentEnabled: "general",
+      vaultPath: "general",
+      obsidianFeatureEnabled: "general",
       llmEndpoint: "llm",
       llmModel: "llm",
       llmApiKey: "llm",
+      llmProvider: "llm",
+      webCacheTtlHours: "llm",
       whisperModelPath: "voice",
       vadModelPath: "voice",
       whisperThreads: "voice",
@@ -165,11 +169,32 @@ const Settings: FC<SettingsProps> = ({
       dictationDumpEnabled: "voice",
       dictationDumpHotkeyToggle: "voice",
       dictationDumpHotkeyHold: "voice",
+      dictationEnabled: "voice",
+      dictationHotkeyType: "voice",
+      dictationMouseButton: "voice",
+      dictationLanguage: "voice",
+      dictationWhisperModelId: "voice",
+      dictationCaptureSampleRate: "voice",
+      dictationLlmPolish: "voice",
+      dictationInjectMode: "voice",
+      dictationOverlayEnabled: "voice",
+      dictationOverlayPosition: "voice",
+      dictationSoundFeedback: "voice",
+      dictationModelUnloadMinutes: "voice",
+      dictationTempAudioPath: "voice",
+      dictationClassifyIntentEnabled: "voice",
       obsidianApiHost: "knowledge",
       obsidianApiToken: "knowledge",
-      vaultPath: "knowledge",
       syncthingEnabled: "system",
       syncthingObsidianVaultPath: "system",
+      syncthingApiKey: "system",
+      syncthingBaseUrl: "system",
+      mcpServerEnabled: "system",
+      mcpServerPort: "system",
+      mcpServerToken: "system",
+      actionsSkillEnabled: "system",
+      remindersSkillEnabled: "system",
+      claudeCliPath: "system",
     };
     const cat = categoryMap[focusParam];
     if (cat) {
@@ -379,12 +404,228 @@ const Settings: FC<SettingsProps> = ({
         defaultValue: DEFAULT_SETTINGS.obsidianApiToken,
       },
       {
+        key: "vaultPath",
+        label: t("settings.fields.vaultPath"),
+        description: t("settings.fields.vaultPathDesc"),
+        category: "general",
+        value: draft.vaultPath,
+        defaultValue: DEFAULT_SETTINGS.vaultPath,
+      },
+      {
+        key: "obsidianFeatureEnabled",
+        label: t("settings.fields.obsidianFeatureEnabled"),
+        description: t("settings.fields.obsidianFeatureEnabledDesc"),
+        category: "general",
+        value: draft.obsidianFeatureEnabled,
+        defaultValue: DEFAULT_SETTINGS.obsidianFeatureEnabled,
+      },
+      {
+        key: "dictationEnabled",
+        label: t("settings.fields.dictationEnabled"),
+        description: t("settings.fields.dictationEnabledDesc"),
+        category: "voice",
+        value: draft.dictationEnabled,
+        defaultValue: DEFAULT_SETTINGS.dictationEnabled,
+      },
+      {
+        key: "dictationHotkeyType",
+        label: t("settings.fields.dictationHotkeyType"),
+        description: t("settings.fields.dictationHotkeyTypeDesc"),
+        category: "voice",
+        value: draft.dictationHotkeyType,
+        defaultValue: DEFAULT_SETTINGS.dictationHotkeyType,
+      },
+      {
+        key: "dictationMouseButton",
+        label: t("settings.fields.dictationMouseButton"),
+        description: t("settings.fields.dictationMouseButtonDesc"),
+        category: "voice",
+        value: draft.dictationMouseButton,
+        defaultValue: DEFAULT_SETTINGS.dictationMouseButton,
+      },
+      {
+        key: "dictationLanguage",
+        label: t("settings.fields.dictationLanguage"),
+        description: t("settings.fields.dictationLanguageDesc"),
+        category: "voice",
+        value: draft.dictationLanguage,
+        defaultValue: DEFAULT_SETTINGS.dictationLanguage,
+      },
+      {
+        key: "dictationWhisperModelId",
+        label: t("settings.fields.dictationWhisperModelId"),
+        description: t("settings.fields.dictationWhisperModelIdDesc"),
+        category: "voice",
+        value: draft.dictationWhisperModelId,
+        defaultValue: DEFAULT_SETTINGS.dictationWhisperModelId,
+      },
+      {
+        key: "dictationCaptureSampleRate",
+        label: t("settings.fields.dictationCaptureSampleRate"),
+        description: t("settings.fields.dictationCaptureSampleRateDesc"),
+        category: "voice",
+        value: draft.dictationCaptureSampleRate,
+        defaultValue: DEFAULT_SETTINGS.dictationCaptureSampleRate,
+      },
+      {
+        key: "dictationLlmPolish",
+        label: t("settings.fields.dictationLlmPolish"),
+        description: t("settings.fields.dictationLlmPolishDesc"),
+        category: "voice",
+        value: draft.dictationLlmPolish,
+        defaultValue: DEFAULT_SETTINGS.dictationLlmPolish,
+      },
+      {
+        key: "dictationInjectMode",
+        label: t("settings.fields.dictationInjectMode"),
+        description: t("settings.fields.dictationInjectModeDesc"),
+        category: "voice",
+        value: draft.dictationInjectMode,
+        defaultValue: DEFAULT_SETTINGS.dictationInjectMode,
+      },
+      {
+        key: "dictationOverlayEnabled",
+        label: t("settings.fields.dictationOverlayEnabled"),
+        description: t("settings.fields.dictationOverlayEnabledDesc"),
+        category: "voice",
+        value: draft.dictationOverlayEnabled,
+        defaultValue: DEFAULT_SETTINGS.dictationOverlayEnabled,
+      },
+      {
+        key: "dictationOverlayPosition",
+        label: t("settings.fields.dictationOverlayPosition"),
+        description: t("settings.fields.dictationOverlayPositionDesc"),
+        category: "voice",
+        value: draft.dictationOverlayPosition,
+        defaultValue: DEFAULT_SETTINGS.dictationOverlayPosition,
+      },
+      {
+        key: "dictationSoundFeedback",
+        label: t("settings.fields.dictationSoundFeedback"),
+        description: t("settings.fields.dictationSoundFeedbackDesc"),
+        category: "voice",
+        value: draft.dictationSoundFeedback,
+        defaultValue: DEFAULT_SETTINGS.dictationSoundFeedback,
+      },
+      {
+        key: "dictationModelUnloadMinutes",
+        label: t("settings.fields.dictationModelUnloadMinutes"),
+        description: t("settings.fields.dictationModelUnloadMinutesDesc"),
+        category: "voice",
+        value: draft.dictationModelUnloadMinutes,
+        defaultValue: DEFAULT_SETTINGS.dictationModelUnloadMinutes,
+      },
+      {
+        key: "dictationTempAudioPath",
+        label: t("settings.fields.dictationTempAudioPath"),
+        description: t("settings.fields.dictationTempAudioPathDesc"),
+        category: "voice",
+        value: draft.dictationTempAudioPath,
+        defaultValue: DEFAULT_SETTINGS.dictationTempAudioPath,
+      },
+      {
+        key: "dictationClassifyIntentEnabled",
+        label: t("settings.fields.dictationClassifyIntentEnabled"),
+        description: t("settings.fields.dictationClassifyIntentEnabledDesc"),
+        category: "voice",
+        value: draft.dictationClassifyIntentEnabled,
+        defaultValue: DEFAULT_SETTINGS.dictationClassifyIntentEnabled,
+      },
+      {
+        key: "llmProvider",
+        label: t("settings.fields.llmProvider"),
+        description: t("settings.fields.llmProviderDesc"),
+        category: "llm",
+        value: draft.llmProvider,
+        defaultValue: DEFAULT_SETTINGS.llmProvider,
+      },
+      {
+        key: "webCacheTtlHours",
+        label: t("settings.fields.webCacheTtlHours"),
+        description: t("settings.fields.webCacheTtlHoursDesc"),
+        category: "llm",
+        value: draft.webCacheTtlHours,
+        defaultValue: DEFAULT_SETTINGS.webCacheTtlHours,
+      },
+      {
         key: "syncthingEnabled",
         label: t("sync.settings.enableSyncthing"),
         description: t("settings.fields.syncthingEnabledDesc"),
         category: "system",
         value: draft.syncthingEnabled,
         defaultValue: DEFAULT_SETTINGS.syncthingEnabled,
+      },
+      {
+        key: "syncthingObsidianVaultPath",
+        label: t("settings.fields.syncthingObsidianVaultPath"),
+        description: t("settings.fields.syncthingObsidianVaultPathDesc"),
+        category: "system",
+        value: draft.syncthingObsidianVaultPath,
+        defaultValue: DEFAULT_SETTINGS.syncthingObsidianVaultPath,
+      },
+      {
+        key: "syncthingApiKey",
+        label: t("settings.fields.syncthingApiKey"),
+        description: t("settings.fields.syncthingApiKeyDesc"),
+        category: "system",
+        value: draft.syncthingApiKey,
+        defaultValue: DEFAULT_SETTINGS.syncthingApiKey,
+      },
+      {
+        key: "syncthingBaseUrl",
+        label: t("settings.fields.syncthingBaseUrl"),
+        description: t("settings.fields.syncthingBaseUrlDesc"),
+        category: "system",
+        value: draft.syncthingBaseUrl,
+        defaultValue: DEFAULT_SETTINGS.syncthingBaseUrl,
+      },
+      {
+        key: "mcpServerEnabled",
+        label: t("settings.fields.mcpServerEnabled"),
+        description: t("settings.fields.mcpServerEnabledDesc"),
+        category: "system",
+        value: draft.mcpServerEnabled,
+        defaultValue: DEFAULT_SETTINGS.mcpServerEnabled,
+      },
+      {
+        key: "mcpServerPort",
+        label: t("settings.fields.mcpServerPort"),
+        description: t("settings.fields.mcpServerPortDesc"),
+        category: "system",
+        value: draft.mcpServerPort,
+        defaultValue: DEFAULT_SETTINGS.mcpServerPort,
+      },
+      {
+        key: "mcpServerToken",
+        label: t("settings.fields.mcpServerToken"),
+        description: t("settings.fields.mcpServerTokenDesc"),
+        category: "system",
+        value: draft.mcpServerToken,
+        defaultValue: DEFAULT_SETTINGS.mcpServerToken,
+      },
+      {
+        key: "actionsSkillEnabled",
+        label: t("settings.fields.actionsSkillEnabled"),
+        description: t("settings.fields.actionsSkillEnabledDesc"),
+        category: "system",
+        value: draft.actionsSkillEnabled,
+        defaultValue: DEFAULT_SETTINGS.actionsSkillEnabled,
+      },
+      {
+        key: "remindersSkillEnabled",
+        label: t("settings.fields.remindersSkillEnabled"),
+        description: t("settings.fields.remindersSkillEnabledDesc"),
+        category: "system",
+        value: draft.remindersSkillEnabled,
+        defaultValue: DEFAULT_SETTINGS.remindersSkillEnabled,
+      },
+      {
+        key: "claudeCliPath",
+        label: t("settings.fields.claudeCliPath"),
+        description: t("settings.fields.claudeCliPathDesc"),
+        category: "system",
+        value: draft.claudeCliPath,
+        defaultValue: DEFAULT_SETTINGS.claudeCliPath,
       },
     ];
   }, [draft, t]);
@@ -564,7 +805,16 @@ const GeneralCategory: FC<
     advancedOpen: boolean;
     setAdvancedOpen: (v: boolean) => void;
   }
-> = ({ draft, update, handleBlurSave, advancedOpen, setAdvancedOpen, focusedKey, t }) => (
+> = ({
+  draft,
+  update,
+  handleBlurSave,
+  scheduleAutosave,
+  advancedOpen,
+  setAdvancedOpen,
+  focusedKey,
+  t,
+}) => (
   <CategorySection id="settings-category-general" data-testid="settings-category-general">
     <CategoryTitle>{t("settings.categories.general")}</CategoryTitle>
 
@@ -601,6 +851,44 @@ const GeneralCategory: FC<
               <SelectOption value="light">{t("settings.theme.light")}</SelectOption>
               <SelectOption value="dark">{t("settings.theme.dark")}</SelectOption>
             </SelectBox>
+          </FieldRing>
+        </FormGrid>
+      </Card>
+    </SubSection>
+
+    <SubSection>
+      <SubSectionTitle>{t("settings.sections.vault")}</SubSectionTitle>
+      <Card>
+        <FormGrid>
+          <FieldRing $active={focusedKey === "vaultPath"} data-testid="field-vaultPath">
+            <Input
+              label={t("settings.fields.vaultPath")}
+              value={draft.vaultPath}
+              onChange={(e) => {
+                update("vaultPath", e.target.value);
+                scheduleAutosave("vaultPath", e.target.value);
+              }}
+              onBlur={(e) => handleBlurSave("vaultPath", e.target.value)}
+            />
+            <FieldHint>{t("settings.fields.vaultPathDesc")}</FieldHint>
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "obsidianFeatureEnabled"}
+            data-testid="field-obsidianFeatureEnabled"
+          >
+            <CheckboxRow>
+              <input
+                type="checkbox"
+                data-testid="settings-obsidian-feature-enabled"
+                checked={draft.obsidianFeatureEnabled}
+                onChange={(e) => {
+                  update("obsidianFeatureEnabled", e.target.checked);
+                  handleBlurSave("obsidianFeatureEnabled", e.target.checked);
+                }}
+              />
+              <span>{t("settings.fields.obsidianFeatureEnabled")}</span>
+            </CheckboxRow>
+            <FieldHint>{t("settings.fields.obsidianFeatureEnabledDesc")}</FieldHint>
           </FieldRing>
         </FormGrid>
       </Card>
@@ -721,6 +1009,63 @@ const VoiceCategory: FC<
       <Card>
         <FormGrid>
           <FieldRing
+            $active={focusedKey === "dictationEnabled"}
+            data-testid="field-dictationEnabled"
+          >
+            <CheckboxRow>
+              <input
+                type="checkbox"
+                data-testid="settings-dictation-enabled"
+                checked={draft.dictationEnabled}
+                onChange={(e) => {
+                  update("dictationEnabled", e.target.checked);
+                  handleBlurSave("dictationEnabled", e.target.checked);
+                }}
+              />
+              <span>{t("settings.fields.dictationEnabled")}</span>
+            </CheckboxRow>
+            <FieldHint>{t("settings.fields.dictationEnabledDesc")}</FieldHint>
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "dictationHotkeyType"}
+            data-testid="field-dictationHotkeyType"
+          >
+            <label>{t("settings.fields.dictationHotkeyType")}</label>
+            <FieldHint>{t("settings.fields.dictationHotkeyTypeDesc")}</FieldHint>
+            <SelectBox
+              value={draft.dictationHotkeyType}
+              onChange={(e) => {
+                update("dictationHotkeyType", e.target.value as AppSettings["dictationHotkeyType"]);
+                handleBlurSave(
+                  "dictationHotkeyType",
+                  e.target.value as AppSettings["dictationHotkeyType"]
+                );
+              }}
+            >
+              <SelectOption value="mouse">{t("settings.dictationHotkeyType.mouse")}</SelectOption>
+              <SelectOption value="keyboard">
+                {t("settings.dictationHotkeyType.keyboard")}
+              </SelectOption>
+            </SelectBox>
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "dictationMouseButton"}
+            data-testid="field-dictationMouseButton"
+          >
+            <Input
+              type="number"
+              label={t("settings.fields.dictationMouseButton")}
+              value={draft.dictationMouseButton}
+              onChange={(e) => {
+                const v = Number(e.target.value) || 0;
+                update("dictationMouseButton", v);
+                scheduleAutosave("dictationMouseButton", v);
+              }}
+              onBlur={(e) => handleBlurSave("dictationMouseButton", Number(e.target.value) || 0)}
+            />
+            <FieldHint>{t("settings.fields.dictationMouseButtonDesc")}</FieldHint>
+          </FieldRing>
+          <FieldRing
             $active={focusedKey === "dictationKeyboardHotkey"}
             data-testid="field-dictationKeyboardHotkey"
           >
@@ -753,6 +1098,225 @@ const VoiceCategory: FC<
               <span>{t("settings.fields.dictationPushToTalk")}</span>
             </CheckboxRow>
             <FieldHint>{t("settings.fields.dictationPushToTalkDesc")}</FieldHint>
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "dictationLanguage"}
+            data-testid="field-dictationLanguage"
+          >
+            <label>{t("settings.fields.dictationLanguage")}</label>
+            <FieldHint>{t("settings.fields.dictationLanguageDesc")}</FieldHint>
+            <SelectBox
+              value={draft.dictationLanguage}
+              onChange={(e) => {
+                update("dictationLanguage", e.target.value as AppSettings["dictationLanguage"]);
+                handleBlurSave(
+                  "dictationLanguage",
+                  e.target.value as AppSettings["dictationLanguage"]
+                );
+              }}
+            >
+              <SelectOption value="ru">{t("settings.dictationLanguage.ru")}</SelectOption>
+              <SelectOption value="en">{t("settings.dictationLanguage.en")}</SelectOption>
+              <SelectOption value="auto">{t("settings.dictationLanguage.auto")}</SelectOption>
+            </SelectBox>
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "dictationWhisperModelId"}
+            data-testid="field-dictationWhisperModelId"
+          >
+            <Input
+              label={t("settings.fields.dictationWhisperModelId")}
+              value={draft.dictationWhisperModelId}
+              onChange={(e) => {
+                update("dictationWhisperModelId", e.target.value);
+                scheduleAutosave("dictationWhisperModelId", e.target.value);
+              }}
+              onBlur={(e) => handleBlurSave("dictationWhisperModelId", e.target.value)}
+            />
+            <FieldHint>{t("settings.fields.dictationWhisperModelIdDesc")}</FieldHint>
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "dictationCaptureSampleRate"}
+            data-testid="field-dictationCaptureSampleRate"
+          >
+            <Input
+              type="number"
+              label={t("settings.fields.dictationCaptureSampleRate")}
+              value={draft.dictationCaptureSampleRate}
+              onChange={(e) => {
+                const v = Number(e.target.value) || 16000;
+                update("dictationCaptureSampleRate", v);
+                scheduleAutosave("dictationCaptureSampleRate", v);
+              }}
+              onBlur={(e) =>
+                handleBlurSave("dictationCaptureSampleRate", Number(e.target.value) || 16000)
+              }
+            />
+            <FieldHint>{t("settings.fields.dictationCaptureSampleRateDesc")}</FieldHint>
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "dictationLlmPolish"}
+            data-testid="field-dictationLlmPolish"
+          >
+            <CheckboxRow>
+              <input
+                type="checkbox"
+                data-testid="settings-dictation-llm-polish"
+                checked={draft.dictationLlmPolish}
+                onChange={(e) => {
+                  update("dictationLlmPolish", e.target.checked);
+                  handleBlurSave("dictationLlmPolish", e.target.checked);
+                }}
+              />
+              <span>{t("settings.fields.dictationLlmPolish")}</span>
+            </CheckboxRow>
+            <FieldHint>{t("settings.fields.dictationLlmPolishDesc")}</FieldHint>
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "dictationInjectMode"}
+            data-testid="field-dictationInjectMode"
+          >
+            <label>{t("settings.fields.dictationInjectMode")}</label>
+            <FieldHint>{t("settings.fields.dictationInjectModeDesc")}</FieldHint>
+            <SelectBox
+              value={draft.dictationInjectMode}
+              onChange={(e) => {
+                update("dictationInjectMode", e.target.value as AppSettings["dictationInjectMode"]);
+                handleBlurSave(
+                  "dictationInjectMode",
+                  e.target.value as AppSettings["dictationInjectMode"]
+                );
+              }}
+            >
+              <SelectOption value="auto">{t("settings.dictationInjectMode.auto")}</SelectOption>
+              <SelectOption value="accessibility">
+                {t("settings.dictationInjectMode.accessibility")}
+              </SelectOption>
+              <SelectOption value="cgevent">
+                {t("settings.dictationInjectMode.cgevent")}
+              </SelectOption>
+              <SelectOption value="clipboard">
+                {t("settings.dictationInjectMode.clipboard")}
+              </SelectOption>
+            </SelectBox>
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "dictationOverlayEnabled"}
+            data-testid="field-dictationOverlayEnabled"
+          >
+            <CheckboxRow>
+              <input
+                type="checkbox"
+                data-testid="settings-dictation-overlay-enabled"
+                checked={draft.dictationOverlayEnabled}
+                onChange={(e) => {
+                  update("dictationOverlayEnabled", e.target.checked);
+                  handleBlurSave("dictationOverlayEnabled", e.target.checked);
+                }}
+              />
+              <span>{t("settings.fields.dictationOverlayEnabled")}</span>
+            </CheckboxRow>
+            <FieldHint>{t("settings.fields.dictationOverlayEnabledDesc")}</FieldHint>
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "dictationOverlayPosition"}
+            data-testid="field-dictationOverlayPosition"
+          >
+            <label>{t("settings.fields.dictationOverlayPosition")}</label>
+            <FieldHint>{t("settings.fields.dictationOverlayPositionDesc")}</FieldHint>
+            <SelectBox
+              value={draft.dictationOverlayPosition}
+              onChange={(e) => {
+                update(
+                  "dictationOverlayPosition",
+                  e.target.value as AppSettings["dictationOverlayPosition"]
+                );
+                handleBlurSave(
+                  "dictationOverlayPosition",
+                  e.target.value as AppSettings["dictationOverlayPosition"]
+                );
+              }}
+            >
+              <SelectOption value="cursor">
+                {t("settings.dictationOverlayPosition.cursor")}
+              </SelectOption>
+              <SelectOption value="bottom-center">
+                {t("settings.dictationOverlayPosition.bottom")}
+              </SelectOption>
+              <SelectOption value="top-right">
+                {t("settings.dictationOverlayPosition.top")}
+              </SelectOption>
+            </SelectBox>
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "dictationSoundFeedback"}
+            data-testid="field-dictationSoundFeedback"
+          >
+            <CheckboxRow>
+              <input
+                type="checkbox"
+                data-testid="settings-dictation-sound-feedback"
+                checked={draft.dictationSoundFeedback}
+                onChange={(e) => {
+                  update("dictationSoundFeedback", e.target.checked);
+                  handleBlurSave("dictationSoundFeedback", e.target.checked);
+                }}
+              />
+              <span>{t("settings.fields.dictationSoundFeedback")}</span>
+            </CheckboxRow>
+            <FieldHint>{t("settings.fields.dictationSoundFeedbackDesc")}</FieldHint>
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "dictationModelUnloadMinutes"}
+            data-testid="field-dictationModelUnloadMinutes"
+          >
+            <Input
+              type="number"
+              label={t("settings.fields.dictationModelUnloadMinutes")}
+              value={draft.dictationModelUnloadMinutes}
+              onChange={(e) => {
+                const v = Number(e.target.value) || 0;
+                update("dictationModelUnloadMinutes", v);
+                scheduleAutosave("dictationModelUnloadMinutes", v);
+              }}
+              onBlur={(e) =>
+                handleBlurSave("dictationModelUnloadMinutes", Number(e.target.value) || 0)
+              }
+            />
+            <FieldHint>{t("settings.fields.dictationModelUnloadMinutesDesc")}</FieldHint>
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "dictationTempAudioPath"}
+            data-testid="field-dictationTempAudioPath"
+          >
+            <Input
+              label={t("settings.fields.dictationTempAudioPath")}
+              value={draft.dictationTempAudioPath}
+              onChange={(e) => {
+                update("dictationTempAudioPath", e.target.value);
+                scheduleAutosave("dictationTempAudioPath", e.target.value);
+              }}
+              onBlur={(e) => handleBlurSave("dictationTempAudioPath", e.target.value)}
+            />
+            <FieldHint>{t("settings.fields.dictationTempAudioPathDesc")}</FieldHint>
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "dictationClassifyIntentEnabled"}
+            data-testid="field-dictationClassifyIntentEnabled"
+          >
+            <CheckboxRow>
+              <input
+                type="checkbox"
+                data-testid="settings-dictation-classify-intent"
+                checked={draft.dictationClassifyIntentEnabled}
+                onChange={(e) => {
+                  update("dictationClassifyIntentEnabled", e.target.checked);
+                  handleBlurSave("dictationClassifyIntentEnabled", e.target.checked);
+                }}
+              />
+              <span>{t("settings.fields.dictationClassifyIntentEnabled")}</span>
+            </CheckboxRow>
+            <FieldHint>{t("settings.fields.dictationClassifyIntentEnabledDesc")}</FieldHint>
           </FieldRing>
         </FormGrid>
       </Card>
@@ -910,6 +1474,19 @@ const LlmCategory: FC<LlmCategoryProps> = ({
               </ModelOption>
             )}
           </FieldRing>
+          <FieldRing $active={focusedKey === "llmProvider"} data-testid="field-llmProvider">
+            <label>{t("settings.fields.llmProvider")}</label>
+            <FieldHint>{t("settings.fields.llmProviderDesc")}</FieldHint>
+            <SelectBox
+              value={draft.llmProvider}
+              onChange={(e) => {
+                update("llmProvider", e.target.value);
+                handleBlurSave("llmProvider", e.target.value);
+              }}
+            >
+              <SelectOption value="openai_compatible">OpenAI-compatible</SelectOption>
+            </SelectBox>
+          </FieldRing>
           <FieldRing $active={focusedKey === "llmApiKey"} data-testid="field-llmApiKey">
             <Input
               label={t("settings.fields.llmApiKey")}
@@ -922,6 +1499,23 @@ const LlmCategory: FC<LlmCategoryProps> = ({
               sensitive
               hint={t("settings.tokenHint")}
             />
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "webCacheTtlHours"}
+            data-testid="field-webCacheTtlHours"
+          >
+            <Input
+              type="number"
+              label={t("settings.fields.webCacheTtlHours")}
+              value={draft.webCacheTtlHours}
+              onChange={(e) => {
+                const v = Number(e.target.value) || 0;
+                update("webCacheTtlHours", v);
+                scheduleAutosave("webCacheTtlHours", v);
+              }}
+              onBlur={(e) => handleBlurSave("webCacheTtlHours", Number(e.target.value) || 0)}
+            />
+            <FieldHint>{t("settings.fields.webCacheTtlHoursDesc")}</FieldHint>
           </FieldRing>
           <Button
             variant="secondary"
@@ -1037,6 +1631,7 @@ const SystemCategory: FC<SystemCategoryProps> = ({
   draft,
   update,
   handleBlurSave,
+  scheduleAutosave,
   focusedKey,
   t,
 }) => (
@@ -1086,6 +1681,159 @@ const SystemCategory: FC<SystemCategoryProps> = ({
               <span>{t("sync.settings.enableSyncthing")}</span>
             </CheckboxRow>
             <FieldHint>{t("settings.fields.syncthingEnabledDesc")}</FieldHint>
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "syncthingObsidianVaultPath"}
+            data-testid="field-syncthingObsidianVaultPath"
+          >
+            <Input
+              label={t("settings.fields.syncthingObsidianVaultPath")}
+              value={draft.syncthingObsidianVaultPath}
+              onChange={(e) => {
+                update("syncthingObsidianVaultPath", e.target.value);
+                scheduleAutosave("syncthingObsidianVaultPath", e.target.value);
+              }}
+              onBlur={(e) => handleBlurSave("syncthingObsidianVaultPath", e.target.value)}
+            />
+            <FieldHint>{t("settings.fields.syncthingObsidianVaultPathDesc")}</FieldHint>
+          </FieldRing>
+          <FieldRing $active={focusedKey === "syncthingApiKey"} data-testid="field-syncthingApiKey">
+            <Input
+              label={t("settings.fields.syncthingApiKey")}
+              value={draft.syncthingApiKey}
+              onChange={(e) => {
+                update("syncthingApiKey", e.target.value);
+                scheduleAutosave("syncthingApiKey", e.target.value);
+              }}
+              onBlur={(e) => handleBlurSave("syncthingApiKey", e.target.value)}
+              sensitive
+              hint={t("settings.tokenHint")}
+            />
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "syncthingBaseUrl"}
+            data-testid="field-syncthingBaseUrl"
+          >
+            <Input
+              label={t("settings.fields.syncthingBaseUrl")}
+              value={draft.syncthingBaseUrl}
+              onChange={(e) => {
+                update("syncthingBaseUrl", e.target.value);
+                scheduleAutosave("syncthingBaseUrl", e.target.value);
+              }}
+              onBlur={(e) => handleBlurSave("syncthingBaseUrl", e.target.value)}
+              placeholder="http://"
+            />
+            <FieldHint>{t("settings.fields.syncthingBaseUrlDesc")}</FieldHint>
+          </FieldRing>
+        </FormGrid>
+      </Card>
+    </SubSection>
+
+    <SubSection>
+      <SubSectionTitle>{t("settings.sections.mcpServer")}</SubSectionTitle>
+      <Card>
+        <FormGrid>
+          <FieldRing
+            $active={focusedKey === "mcpServerEnabled"}
+            data-testid="field-mcpServerEnabled"
+          >
+            <CheckboxRow>
+              <input
+                type="checkbox"
+                data-testid="settings-mcp-server-enabled"
+                checked={draft.mcpServerEnabled}
+                onChange={(e) => {
+                  update("mcpServerEnabled", e.target.checked);
+                  handleBlurSave("mcpServerEnabled", e.target.checked);
+                }}
+              />
+              <span>{t("settings.fields.mcpServerEnabled")}</span>
+            </CheckboxRow>
+            <FieldHint>{t("settings.fields.mcpServerEnabledDesc")}</FieldHint>
+          </FieldRing>
+          <FieldRing $active={focusedKey === "mcpServerPort"} data-testid="field-mcpServerPort">
+            <Input
+              type="number"
+              label={t("settings.fields.mcpServerPort")}
+              value={draft.mcpServerPort}
+              onChange={(e) => {
+                const v = Number(e.target.value) || 0;
+                update("mcpServerPort", v);
+                scheduleAutosave("mcpServerPort", v);
+              }}
+              onBlur={(e) => handleBlurSave("mcpServerPort", Number(e.target.value) || 0)}
+            />
+            <FieldHint>{t("settings.fields.mcpServerPortDesc")}</FieldHint>
+          </FieldRing>
+          <FieldRing $active={focusedKey === "mcpServerToken"} data-testid="field-mcpServerToken">
+            <Input
+              label={t("settings.fields.mcpServerToken")}
+              value={draft.mcpServerToken}
+              onChange={(e) => {
+                update("mcpServerToken", e.target.value);
+                scheduleAutosave("mcpServerToken", e.target.value);
+              }}
+              onBlur={(e) => handleBlurSave("mcpServerToken", e.target.value)}
+              sensitive
+              hint={t("settings.tokenHint")}
+            />
+          </FieldRing>
+        </FormGrid>
+      </Card>
+    </SubSection>
+
+    <SubSection>
+      <SubSectionTitle>{t("settings.sections.skills")}</SubSectionTitle>
+      <Card>
+        <FormGrid>
+          <FieldRing
+            $active={focusedKey === "actionsSkillEnabled"}
+            data-testid="field-actionsSkillEnabled"
+          >
+            <CheckboxRow>
+              <input
+                type="checkbox"
+                data-testid="settings-actions-skill-enabled"
+                checked={draft.actionsSkillEnabled}
+                onChange={(e) => {
+                  update("actionsSkillEnabled", e.target.checked);
+                  handleBlurSave("actionsSkillEnabled", e.target.checked);
+                }}
+              />
+              <span>{t("settings.fields.actionsSkillEnabled")}</span>
+            </CheckboxRow>
+            <FieldHint>{t("settings.fields.actionsSkillEnabledDesc")}</FieldHint>
+          </FieldRing>
+          <FieldRing
+            $active={focusedKey === "remindersSkillEnabled"}
+            data-testid="field-remindersSkillEnabled"
+          >
+            <CheckboxRow>
+              <input
+                type="checkbox"
+                data-testid="settings-reminders-skill-enabled"
+                checked={draft.remindersSkillEnabled}
+                onChange={(e) => {
+                  update("remindersSkillEnabled", e.target.checked);
+                  handleBlurSave("remindersSkillEnabled", e.target.checked);
+                }}
+              />
+              <span>{t("settings.fields.remindersSkillEnabled")}</span>
+            </CheckboxRow>
+            <FieldHint>{t("settings.fields.remindersSkillEnabledDesc")}</FieldHint>
+          </FieldRing>
+          <FieldRing $active={focusedKey === "claudeCliPath"} data-testid="field-claudeCliPath">
+            <Input
+              label={t("settings.fields.claudeCliPath")}
+              value={draft.claudeCliPath}
+              onChange={(e) => {
+                update("claudeCliPath", e.target.value);
+                scheduleAutosave("claudeCliPath", e.target.value);
+              }}
+              onBlur={(e) => handleBlurSave("claudeCliPath", e.target.value)}
+            />
+            <FieldHint>{t("settings.fields.claudeCliPathDesc")}</FieldHint>
           </FieldRing>
         </FormGrid>
       </Card>

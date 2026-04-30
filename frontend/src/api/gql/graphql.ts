@@ -1475,8 +1475,11 @@ export type UnifiedSearchPayload = {
 };
 
 export type UpdateSettingsInput = {
+  actionsSkillEnabled?: Scalars["Boolean"]["input"];
+  claudeCliPath?: Scalars["String"]["input"];
   dictationAppProfiles: Array<KeyValuePairOfStringAndStringInput>;
   dictationCaptureSampleRate: Scalars["Int"]["input"];
+  dictationClassifyIntentEnabled?: Scalars["Boolean"]["input"];
   dictationDumpEnabled?: Scalars["Boolean"]["input"];
   dictationDumpHotkeyHold?: Scalars["String"]["input"];
   dictationDumpHotkeyToggle?: Scalars["String"]["input"];
@@ -1500,9 +1503,13 @@ export type UpdateSettingsInput = {
   llmEndpoint: Scalars["String"]["input"];
   llmModel: Scalars["String"]["input"];
   llmProvider: Scalars["String"]["input"];
+  mcpServerEnabled?: Scalars["Boolean"]["input"];
+  mcpServerPort?: Scalars["Int"]["input"];
+  mcpServerToken?: Scalars["String"]["input"];
   obsidianApiHost: Scalars["String"]["input"];
   obsidianApiToken: Scalars["String"]["input"];
   obsidianFeatureEnabled?: Scalars["Boolean"]["input"];
+  remindersSkillEnabled?: Scalars["Boolean"]["input"];
   sidecarEnrichmentEnabled?: Scalars["Boolean"]["input"];
   syncthingApiKey: Scalars["String"]["input"];
   syncthingBaseUrl: Scalars["String"]["input"];
@@ -3162,6 +3169,14 @@ export type QuerySettingsQuery = {
     dictationDumpHotkeyToggle: string;
     dictationDumpHotkeyHold: string;
     sidecarEnrichmentEnabled: boolean;
+    mcpServerEnabled: boolean;
+    mcpServerPort: number;
+    mcpServerToken: string;
+    actionsSkillEnabled: boolean;
+    remindersSkillEnabled: boolean;
+    dictationClassifyIntentEnabled: boolean;
+    claudeCliPath: string;
+    webCacheTtlHours: number;
     dictationAppProfiles: Array<{
       __typename?: "KeyValuePairOfStringAndString";
       key: string;
@@ -3217,6 +3232,14 @@ export type MutationUpdateSettingsMutation = {
       dictationDumpHotkeyToggle: string;
       dictationDumpHotkeyHold: string;
       sidecarEnrichmentEnabled: boolean;
+      mcpServerEnabled: boolean;
+      mcpServerPort: number;
+      mcpServerToken: string;
+      actionsSkillEnabled: boolean;
+      remindersSkillEnabled: boolean;
+      dictationClassifyIntentEnabled: boolean;
+      claudeCliPath: string;
+      webCacheTtlHours: number;
       dictationAppProfiles: Array<{
         __typename?: "KeyValuePairOfStringAndString";
         key: string;
@@ -7457,6 +7480,14 @@ export const QuerySettingsDocument = {
                 { kind: "Field", name: { kind: "Name", value: "dictationDumpHotkeyToggle" } },
                 { kind: "Field", name: { kind: "Name", value: "dictationDumpHotkeyHold" } },
                 { kind: "Field", name: { kind: "Name", value: "sidecarEnrichmentEnabled" } },
+                { kind: "Field", name: { kind: "Name", value: "mcpServerEnabled" } },
+                { kind: "Field", name: { kind: "Name", value: "mcpServerPort" } },
+                { kind: "Field", name: { kind: "Name", value: "mcpServerToken" } },
+                { kind: "Field", name: { kind: "Name", value: "actionsSkillEnabled" } },
+                { kind: "Field", name: { kind: "Name", value: "remindersSkillEnabled" } },
+                { kind: "Field", name: { kind: "Name", value: "dictationClassifyIntentEnabled" } },
+                { kind: "Field", name: { kind: "Name", value: "claudeCliPath" } },
+                { kind: "Field", name: { kind: "Name", value: "webCacheTtlHours" } },
               ],
             },
           },
@@ -7561,6 +7592,17 @@ export const MutationUpdateSettingsDocument = {
                       { kind: "Field", name: { kind: "Name", value: "dictationDumpHotkeyToggle" } },
                       { kind: "Field", name: { kind: "Name", value: "dictationDumpHotkeyHold" } },
                       { kind: "Field", name: { kind: "Name", value: "sidecarEnrichmentEnabled" } },
+                      { kind: "Field", name: { kind: "Name", value: "mcpServerEnabled" } },
+                      { kind: "Field", name: { kind: "Name", value: "mcpServerPort" } },
+                      { kind: "Field", name: { kind: "Name", value: "mcpServerToken" } },
+                      { kind: "Field", name: { kind: "Name", value: "actionsSkillEnabled" } },
+                      { kind: "Field", name: { kind: "Name", value: "remindersSkillEnabled" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "dictationClassifyIntentEnabled" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "claudeCliPath" } },
+                      { kind: "Field", name: { kind: "Name", value: "webCacheTtlHours" } },
                     ],
                   },
                 },
@@ -7976,4 +8018,384 @@ export const MutationUpdateWebSearchConfigDocument = {
 } as unknown as DocumentNode<
   MutationUpdateWebSearchConfigMutation,
   MutationUpdateWebSearchConfigMutationVariables
+>;
+
+export type LlmRuntimeState = {
+  __typename?: "LlmRuntimeState";
+  endpoint: string;
+  online: boolean;
+  lastProbedAt: string;
+  model: string;
+  contextLength: number;
+  supportsToolCalling: boolean;
+  supportsJsonMode: boolean;
+  lastError?: string | null;
+};
+
+export type SyncthingRuntimeState = {
+  __typename?: "SyncthingRuntimeState";
+  detection: string;
+  binaryPath?: string | null;
+  apiUrl?: string | null;
+  version?: string | null;
+  hint?: string | null;
+};
+
+export type SupervisorServiceState = {
+  __typename?: "SupervisorServiceState";
+  name: string;
+  state: string;
+  lastError?: string | null;
+  restartCount: number;
+  pid?: number | null;
+  port?: number | null;
+};
+
+export type RuntimeState = {
+  __typename?: "RuntimeState";
+  llm: LlmRuntimeState;
+  syncthing: SyncthingRuntimeState;
+  services: Array<SupervisorServiceState>;
+};
+
+export type RuntimeStatePayload = {
+  __typename?: "RuntimeStatePayload";
+  state?: RuntimeState | null;
+  errors: Array<{ __typename?: "UnavailableError"; code: string; message: string }>;
+};
+
+export type QueryRuntimeStateQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QueryRuntimeStateQuery = {
+  __typename?: "QueryType";
+  runtimeState: RuntimeState;
+};
+
+export type SubscriptionRuntimeStateChangedSubscriptionVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type SubscriptionRuntimeStateChangedSubscription = {
+  __typename?: "SubscriptionType";
+  runtimeStateChanged: RuntimeState;
+};
+
+export type MutationReprobeRuntimeStateMutationVariables = Exact<{ [key: string]: never }>;
+
+export type MutationReprobeRuntimeStateMutation = {
+  __typename?: "MutationType";
+  reprobeRuntimeState: RuntimeStatePayload;
+};
+
+export type MutationPublishElectronServicesMutationVariables = Exact<{
+  input: PublishElectronServicesInput;
+}>;
+
+export type PublishElectronServicesInput = {
+  services: Array<SupervisorServiceState>;
+};
+
+export type MutationPublishElectronServicesMutation = {
+  __typename?: "MutationType";
+  publishElectronServices: RuntimeStatePayload;
+};
+
+export const QueryRuntimeStateDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryRuntimeState" },
+      variableDefinitions: [],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "runtimeState" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "llm" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "endpoint" } },
+                      { kind: "Field", name: { kind: "Name", value: "online" } },
+                      { kind: "Field", name: { kind: "Name", value: "lastProbedAt" } },
+                      { kind: "Field", name: { kind: "Name", value: "model" } },
+                      { kind: "Field", name: { kind: "Name", value: "contextLength" } },
+                      { kind: "Field", name: { kind: "Name", value: "supportsToolCalling" } },
+                      { kind: "Field", name: { kind: "Name", value: "supportsJsonMode" } },
+                      { kind: "Field", name: { kind: "Name", value: "lastError" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "syncthing" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "detection" } },
+                      { kind: "Field", name: { kind: "Name", value: "binaryPath" } },
+                      { kind: "Field", name: { kind: "Name", value: "apiUrl" } },
+                      { kind: "Field", name: { kind: "Name", value: "version" } },
+                      { kind: "Field", name: { kind: "Name", value: "hint" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "services" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      { kind: "Field", name: { kind: "Name", value: "state" } },
+                      { kind: "Field", name: { kind: "Name", value: "lastError" } },
+                      { kind: "Field", name: { kind: "Name", value: "restartCount" } },
+                      { kind: "Field", name: { kind: "Name", value: "pid" } },
+                      { kind: "Field", name: { kind: "Name", value: "port" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryRuntimeStateQuery, QueryRuntimeStateQueryVariables>;
+
+export const SubscriptionRuntimeStateChangedDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "subscription",
+      name: { kind: "Name", value: "SubscriptionRuntimeStateChanged" },
+      variableDefinitions: [],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "runtimeStateChanged" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "llm" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "endpoint" } },
+                      { kind: "Field", name: { kind: "Name", value: "online" } },
+                      { kind: "Field", name: { kind: "Name", value: "lastProbedAt" } },
+                      { kind: "Field", name: { kind: "Name", value: "model" } },
+                      { kind: "Field", name: { kind: "Name", value: "contextLength" } },
+                      { kind: "Field", name: { kind: "Name", value: "supportsToolCalling" } },
+                      { kind: "Field", name: { kind: "Name", value: "supportsJsonMode" } },
+                      { kind: "Field", name: { kind: "Name", value: "lastError" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "syncthing" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "detection" } },
+                      { kind: "Field", name: { kind: "Name", value: "binaryPath" } },
+                      { kind: "Field", name: { kind: "Name", value: "apiUrl" } },
+                      { kind: "Field", name: { kind: "Name", value: "version" } },
+                      { kind: "Field", name: { kind: "Name", value: "hint" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "services" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      { kind: "Field", name: { kind: "Name", value: "state" } },
+                      { kind: "Field", name: { kind: "Name", value: "lastError" } },
+                      { kind: "Field", name: { kind: "Name", value: "restartCount" } },
+                      { kind: "Field", name: { kind: "Name", value: "pid" } },
+                      { kind: "Field", name: { kind: "Name", value: "port" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  SubscriptionRuntimeStateChangedSubscription,
+  SubscriptionRuntimeStateChangedSubscriptionVariables
+>;
+
+export const MutationReprobeRuntimeStateDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationReprobeRuntimeState" },
+      variableDefinitions: [],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "reprobeRuntimeState" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "state" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "llm" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "endpoint" } },
+                            { kind: "Field", name: { kind: "Name", value: "online" } },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "syncthing" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "detection" } },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationReprobeRuntimeStateMutation,
+  MutationReprobeRuntimeStateMutationVariables
+>;
+
+export const MutationPublishElectronServicesDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationPublishElectronServices" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "input" } },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "PublishElectronServicesInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "publishElectronServices" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: { kind: "Variable", name: { kind: "Name", value: "input" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "state" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "services" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "name" } },
+                            { kind: "Field", name: { kind: "Name", value: "state" } },
+                            { kind: "Field", name: { kind: "Name", value: "lastError" } },
+                            { kind: "Field", name: { kind: "Name", value: "restartCount" } },
+                            { kind: "Field", name: { kind: "Name", value: "pid" } },
+                            { kind: "Field", name: { kind: "Name", value: "port" } },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationPublishElectronServicesMutation,
+  MutationPublishElectronServicesMutationVariables
 >;

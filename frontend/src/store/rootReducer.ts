@@ -43,6 +43,8 @@ import type { RoutinesState } from "./slices/routines";
 import { routinesReducer } from "./slices/routines";
 import type { PromptsState } from "./slices/prompts";
 import { promptsReducer } from "./slices/prompts";
+import type { MonitoringState } from "./slices/monitoring";
+import { monitoringReducer } from "./slices/monitoring";
 
 export const rootReducer = combineReducers({
   recording: recordingReducer,
@@ -67,6 +69,7 @@ export const rootReducer = combineReducers({
   systemActions: systemActionsReducer,
   routines: routinesReducer,
   prompts: promptsReducer,
+  monitoring: monitoringReducer,
 });
 
 export interface GlobalState {
@@ -92,4 +95,5 @@ export interface GlobalState {
   systemActions: SystemActionsState;
   routines: RoutinesState;
   prompts: PromptsState;
+  monitoring: MonitoringState;
 }

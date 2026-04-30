@@ -45,7 +45,8 @@
     "obsidian": "Obsidian",
     "sync": "Sync",
     "routines": "Routines",
-    "prompts": "Prompt Templates"
+    "prompts": "Prompt Templates",
+    "monitoring": "Monitoring"
   },
   "rag": {
     "title": "Q&A over notes",
@@ -302,7 +303,60 @@
       "obsidianApiHost": "Obsidian Local REST API address",
       "obsidianApiHostDesc": "Host of the Local REST API plugin in Obsidian. Usually http://localhost:27123.",
       "obsidianApiToken": "Obsidian Local REST API token",
-      "syncthingEnabledDesc": "Starts the Syncthing service to sync data across devices."
+      "syncthingEnabledDesc": "Starts the Syncthing service to sync data across devices.",
+      "vaultPathDesc": "Absolute path to the Obsidian vault folder on disk.",
+      "obsidianFeatureEnabled": "Obsidian integration",
+      "obsidianFeatureEnabledDesc": "Enables note export and the Obsidian button in the UI.",
+      "dictationEnabled": "Enable dictation",
+      "dictationEnabledDesc": "Activates the global dictation mode via hotkey.",
+      "dictationHotkeyType": "Hotkey type",
+      "dictationHotkeyTypeDesc": "Mouse or keyboard — what triggers dictation.",
+      "dictationMouseButton": "Mouse button (number)",
+      "dictationMouseButtonDesc": "Mouse button index: 1 = left, 2 = right, 3 = middle, 4 = back, 5 = forward.",
+      "dictationLanguage": "Dictation language",
+      "dictationLanguageDesc": "Speech recognition language: ru / en / auto.",
+      "dictationWhisperModelId": "Whisper model ID for dictation",
+      "dictationWhisperModelIdDesc": "Name of the model used by the dictation service (e.g. whisper-small-ru).",
+      "dictationCaptureSampleRate": "Capture sample rate (Hz)",
+      "dictationCaptureSampleRateDesc": "Microphone recording sample rate. Default 16000 Hz (Whisper standard).",
+      "dictationLlmPolish": "LLM polishing",
+      "dictationLlmPolishDesc": "Runs the recognised text through the LLM to fix typos and punctuation.",
+      "dictationInjectMode": "Text injection mode",
+      "dictationInjectModeDesc": "How text is inserted into the active field: auto / accessibility / cgevent / clipboard.",
+      "dictationOverlayEnabled": "Show dictation overlay",
+      "dictationOverlayEnabledDesc": "Displays a status indicator while dictation is active.",
+      "dictationOverlayPosition": "Overlay position",
+      "dictationOverlayPositionDesc": "Where the overlay appears: at cursor, bottom-centre, or top-right.",
+      "dictationSoundFeedback": "Sound feedback",
+      "dictationSoundFeedbackDesc": "Plays a sound when dictation starts and stops.",
+      "dictationModelUnloadMinutes": "Unload model after (min)",
+      "dictationModelUnloadMinutesDesc": "Minutes of inactivity before the Whisper model is unloaded. 0 = never.",
+      "dictationTempAudioPath": "Temporary audio folder",
+      "dictationTempAudioPathDesc": "Path where temporary files are stored during dictation.",
+      "dictationClassifyIntentEnabled": "Intent classification",
+      "dictationClassifyIntentEnabledDesc": "Detects commands in dictated text (e.g. 'open notes').",
+      "llmProvider": "LLM provider",
+      "llmProviderDesc": "LLM server protocol. Currently only OpenAI-compatible is supported.",
+      "webCacheTtlHours": "Web search cache TTL (hours)",
+      "webCacheTtlHoursDesc": "How long (in hours) web search results are cached.",
+      "syncthingObsidianVaultPath": "Vault path for Syncthing",
+      "syncthingObsidianVaultPathDesc": "Local path to the vault folder that Syncthing synchronises.",
+      "syncthingApiKey": "Syncthing API key",
+      "syncthingApiKeyDesc": "Authorisation key for the Syncthing GUI API.",
+      "syncthingBaseUrl": "Syncthing GUI URL",
+      "syncthingBaseUrlDesc": "Base URL of the Syncthing web interface. Usually http://127.0.0.1:8384.",
+      "mcpServerEnabled": "Enable MCP server",
+      "mcpServerEnabledDesc": "Starts the built-in MCP server for connecting external tools.",
+      "mcpServerPort": "MCP server port",
+      "mcpServerPortDesc": "TCP port the MCP server listens on.",
+      "mcpServerToken": "MCP server token",
+      "mcpServerTokenDesc": "Bearer token for authenticating connections to the MCP server.",
+      "actionsSkillEnabled": "Skill: system actions",
+      "actionsSkillEnabledDesc": "Enables the system actions skill via Claude CLI.",
+      "remindersSkillEnabled": "Skill: reminders",
+      "remindersSkillEnabledDesc": "Enables the reminders skill via Claude CLI.",
+      "claudeCliPath": "Claude CLI path",
+      "claudeCliPathDesc": "Path to the claude executable. Leave blank for auto-discovery via PATH."
     },
     "hotkeyHint": "Click the field and hold the combination you want. Requires an app restart to take effect (hot-reload is tracked as H1).",
     "dumpHotkeyToggleHint": "Press — recording starts under the default profile. Press again — stop; the file goes through the pipeline and exports into _inbox/.",
@@ -349,7 +403,30 @@
       "advanced": "Advanced",
       "sync": "Sync",
       "systemLinks": "Sections",
-      "syncState": "Syncthing"
+      "syncState": "Syncthing",
+      "vault": "Vault",
+      "mcpServer": "MCP Server",
+      "skills": "Claude Skills"
+    },
+    "dictationHotkeyType": {
+      "mouse": "Mouse",
+      "keyboard": "Keyboard"
+    },
+    "dictationLanguage": {
+      "ru": "Russian",
+      "en": "English",
+      "auto": "Auto"
+    },
+    "dictationInjectMode": {
+      "auto": "Auto",
+      "accessibility": "Accessibility API",
+      "cgevent": "CGEvent",
+      "clipboard": "Clipboard"
+    },
+    "dictationOverlayPosition": {
+      "cursor": "At cursor",
+      "bottom": "Bottom centre",
+      "top": "Top right"
     },
     "systemLinks": {
       "manageModels": "Manage Whisper models →",
@@ -360,6 +437,56 @@
     "sidecarEnrichment": {
       "label": "Enable sidecar enrichment (experimental)",
       "description": "After transcription, runs diarisation, gender, emotion, NER, cleanup, and embedding via the python sidecar. Default off."
+    }
+  },
+  "monitoring": {
+    "title": "Monitoring",
+    "actions": {
+      "reprobe": "Re-probe"
+    },
+    "reprobe": "Re-probe",
+    "reprobing": "Probing…",
+    "loading": "Loading runtime state…",
+    "empty": "Runtime state unavailable. Click Re-probe to fetch.",
+    "error": "Load error: {{message}}",
+    "llm": {
+      "title": "LLM",
+      "endpoint": "Endpoint",
+      "model": "Model",
+      "online": "Online",
+      "offline": "Offline",
+      "status": "Status",
+      "contextLength": "Context",
+      "capabilities": "Capabilities",
+      "toolCalling": "Tool calling",
+      "jsonMode": "JSON mode",
+      "lastError": "Last error",
+      "lastProbedAt": "Last probed"
+    },
+    "syncthing": {
+      "title": "Syncthing",
+      "detection": "Status",
+      "binaryPath": "Binary path",
+      "apiUrl": "API URL",
+      "version": "Version",
+      "hint": "Hint",
+      "running": "Running",
+      "notRunning": "Not running"
+    },
+    "services": {
+      "title": "Supervisor services",
+      "name": "Service",
+      "state": "State",
+      "pid": "PID",
+      "port": "Port",
+      "restartCount": "Restarts",
+      "lastError": "Error",
+      "running": "Running",
+      "stopped": "Stopped",
+      "failed": "Failed",
+      "starting": "Starting",
+      "empty": "No service data available.",
+      "restarts": "restarts: {{n}}"
     }
   },
   "sync": {
