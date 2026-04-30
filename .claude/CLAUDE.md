@@ -10,7 +10,6 @@ Contract between this repo and any coding agent. Only things you cannot infer fr
 - Open outbound network calls from the app to anything other than: configured LLM endpoint, configured Obsidian endpoint, loopback sidecars (`python-sidecar`, `searxng-sidecar`), and web-fetch URLs that originated from the local SearXNG aggregator. Anything else is denied.
 - Put secrets in env vars or logs. Secrets live in the SQLite `settings` store and render through `<Input sensitive />`.
 - Use `--no-verify`, `--force`, `--amend` on pushed commits, `git reset --hard`, or any other destructive git without explicit user approval.
-- Push commits as an agent. Pre-push hook refuses unless `MOZGOSLAV_HUMAN_PUSH=1` env is set — humans only.
 
 **Ask first:**
 
