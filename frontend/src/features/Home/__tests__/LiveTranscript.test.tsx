@@ -9,7 +9,15 @@ import {
   jobsById,
 } from "../../../testUtils";
 import type { ProcessingJob } from "../../../domain/ProcessingJob";
-import "../../../i18n";
+import i18n from "../../../i18n";
+
+beforeAll(async () => {
+  await i18n.changeLanguage("en");
+});
+
+afterAll(async () => {
+  await i18n.changeLanguage("ru");
+});
 
 jest.mock("../../../store/slices/recording/saga", () => ({
   watchRecordingSagas: function* () {},

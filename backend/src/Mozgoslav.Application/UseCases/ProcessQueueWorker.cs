@@ -156,6 +156,10 @@ public sealed class ProcessQueueWorker
                 await File.WriteAllTextAsync(probe, string.Empty, ct);
                 File.Delete(probe);
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 job.UserHint = $"Vault path not writable: {vaultPath}";

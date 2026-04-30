@@ -365,7 +365,7 @@ public sealed class ProcessQueueWorkerTests
 
         fixture.Stages.GetByJobIdAsync(job.Id, Arg.Any<CancellationToken>())
             .Returns([transcribeStage]);
-        fixture.Transcripts.GetByRecordingIdAsync(job.RecordingId, Arg.Any<CancellationToken>())
+        fixture.Transcripts.GetByRecordingIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(existingTranscript);
 
         await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
