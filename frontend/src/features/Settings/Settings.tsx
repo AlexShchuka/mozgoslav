@@ -31,7 +31,7 @@ import {
   ModelOption,
   Row,
   SearchEmptyState,
-  SearchInput,
+  SearchInputContainer,
   Section,
   SectionHeader,
   SelectBox,
@@ -324,13 +324,15 @@ const Settings: FC<SettingsProps> = ({
           <Breadcrumb>
             {t("settings.title")} / {activeCategoryLabel}
           </Breadcrumb>
-          <SearchInput
-            data-testid="settings-search"
-            placeholder={t("settings.searchPlaceholder")}
-            value={rawSearchQuery}
-            onChange={(e) => setRawSearchQuery(e.target.value)}
-            aria-label={t("settings.searchPlaceholder")}
-          />
+          <SearchInputContainer>
+            <Input
+              data-testid="settings-search"
+              placeholder={t("settings.searchPlaceholder")}
+              value={rawSearchQuery}
+              onChange={(e) => setRawSearchQuery(e.target.value)}
+              aria-label={t("settings.searchPlaceholder")}
+            />
+          </SearchInputContainer>
         </StickyHeader>
 
         <ContentScroll ref={contentRef}>

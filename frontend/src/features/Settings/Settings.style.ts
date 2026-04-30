@@ -76,27 +76,9 @@ export const Breadcrumb = styled.p`
   color: ${({ theme }) => theme.colors.text.muted};
 `;
 
-export const SearchInput = styled.input`
+export const SearchInputContainer = styled.div`
   width: 100%;
   max-width: 480px;
-  height: 36px;
-  padding: 0 ${({ theme }) => theme.space(3)};
-  background: ${({ theme }) => theme.colors.bg.elevated2};
-  color: ${({ theme }) => theme.colors.text.primary};
-  border: 1px solid ${({ theme }) => theme.colors.border.subtle};
-  border-radius: ${({ theme }) => theme.radii.md};
-  font-family: inherit;
-  font-size: ${({ theme }) => theme.font.size.sm};
-
-  &::placeholder {
-    color: ${({ theme }) => theme.colors.text.muted};
-  }
-
-  &:focus-visible {
-    outline: 2px solid ${({ theme }) => theme.colors.focusRing};
-    outline-offset: 2px;
-    border-color: ${({ theme }) => theme.colors.accent.primary};
-  }
 `;
 
 export const ContentScroll = styled.div`
