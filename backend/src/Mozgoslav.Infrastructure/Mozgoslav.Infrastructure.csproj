@@ -2,6 +2,7 @@
     <PropertyGroup>
         <RootNamespace>Mozgoslav.Infrastructure</RootNamespace>
         <AssemblyName>Mozgoslav.Infrastructure</AssemblyName>
+        <NoWarn>$(NoWarn);CA1303</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="Mozgoslav.Tests"/>

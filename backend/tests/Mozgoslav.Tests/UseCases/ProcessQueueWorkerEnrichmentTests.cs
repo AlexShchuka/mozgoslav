@@ -4,8 +4,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-using FluentAssertions;
-
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Mozgoslav.Application.Interfaces;
@@ -27,6 +25,16 @@ public sealed class ProcessQueueWorkerEnrichmentTests
     private static readonly Guid RecordingId = Guid.NewGuid();
     private static readonly Guid JobId = Guid.NewGuid();
 
+    private sealed class SimpleCancellationRegistry : IJobCancellationRegistry
+    {
+        public CancellationTokenSource Register(Guid jobId, CancellationToken hostToken)
+            => CancellationTokenSource.CreateLinkedTokenSource(hostToken);
+
+        public void Unregister(Guid jobId) { }
+
+        public bool TryCancel(Guid jobId) => false;
+    }
+
     private static SidecarProcessAllResult FakeEnrichment() => new(
         Diarize: new SidecarDiarizeResult([], 0),
         Gender: new SidecarGenderResult("unknown", 0),
@@ -37,22 +45,7 @@ public sealed class ProcessQueueWorkerEnrichmentTests
 
     private static (
         IProcessingJobRepository Jobs,
-        IProcessingJobStageRepository Stages,
-        IRecordingRepository Recordings,
-        ITranscriptRepository Transcripts,
-        IProcessedNoteRepository Notes,
-        IProfileRepository Profiles,
-        IAudioConverter AudioConverter,
-        ITranscriptionService Transcription,
-        ILlmService Llm,
-        CorrectionService Correction,
-        GlossaryApplicator Glossary,
-        LlmCorrectionService LlmCorrection,
-        IAppSettings Settings,
-        IJobProgressNotifier Progress,
-        IJobCancellationRegistry CancellationRegistry,
         IPythonSidecarClient Sidecar,
-        IDomainEventBus EventBus,
         ProcessQueueWorker Sut) BuildWorker(bool enrichmentEnabled)
     {
         var jobs = Substitute.For<IProcessingJobRepository>();
@@ -64,11 +57,12 @@ public sealed class ProcessQueueWorkerEnrichmentTests
         var audioConverter = Substitute.For<IAudioConverter>();
         var transcription = Substitute.For<ITranscriptionService>();
         var llm = Substitute.For<ILlmService>();
+        var llmProviderFactory = Substitute.For<ILlmProviderFactory>();
         var llmProvider = Substitute.For<ILlmProvider>();
-        var glossaryRepo = Substitute.For<IGlossaryRepository>();
+        llmProviderFactory.GetCurrentAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult(llmProvider));
+        llmProviderFactory.GetForProfileAsync(Arg.Any<Profile>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(llmProvider));
         var appSettings = Substitute.For<IAppSettings>();
         var progress = Substitute.For<IJobProgressNotifier>();
-        var cancellation = Substitute.For<IJobCancellationRegistry>();
         var sidecar = Substitute.For<IPythonSidecarClient>();
         var eventBus = Substitute.For<IDomainEventBus>();
 
@@ -97,12 +91,12 @@ public sealed class ProcessQueueWorkerEnrichmentTests
             Arg.Any<string?>(),
             Arg.Any<IProgress<int>>(),
             Arg.Any<CancellationToken>())
-            .Returns([new TranscriptSegment { Text = "hello", Start = TimeSpan.Zero, End = TimeSpan.FromSeconds(1) }]);
+            .Returns([new TranscriptSegment(TimeSpan.Zero, TimeSpan.FromSeconds(1), "hello")]);
 
         llm.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(false);
 
         notes.GetByTranscriptIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(new List<ProcessedNote>());
+            .Returns([]);
 
         var recording = new Recording
         {
@@ -114,29 +108,26 @@ public sealed class ProcessQueueWorkerEnrichmentTests
         };
         recordings.GetByIdAsync(RecordingId, Arg.Any<CancellationToken>()).Returns(recording);
 
-        var cancellationSource = new CancellationTokenSource();
-        var linkedToken = new CancellationTokenRegistration();
-        cancellation.Register(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(cancellationSource);
-
-        var glossary = new GlossaryApplicator(glossaryRepo);
-        var correction = new CorrectionService();
-        var llmCorrection = new LlmCorrectionService(llmProvider);
-
         sidecar.ProcessAllAsync(Arg.Any<string>(), Arg.Any<IReadOnlyList<string>?>(), Arg.Any<CancellationToken>())
             .Returns(FakeEnrichment());
+
+        var glossary = new GlossaryApplicator();
+        var correction = new CorrectionService();
+        var llmCorrection = new LlmCorrectionService(
+            llmProviderFactory,
+            glossary,
+            NullLogger<LlmCorrectionService>.Instance);
+
+        var cancellationRegistry = new SimpleCancellationRegistry();
 
         var sut = new ProcessQueueWorker(
             jobs, stages, recordings, transcripts, notes, profiles,
             audioConverter, transcription, llm,
             correction, glossary, llmCorrection,
-            appSettings, progress, cancellation, sidecar, eventBus,
+            appSettings, progress, cancellationRegistry, sidecar, eventBus,
             NullLogger<ProcessQueueWorker>.Instance);
 
-        return (jobs, stages, recordings, transcripts, notes, profiles,
-            audioConverter, transcription, llm,
-            correction, glossary, llmCorrection,
-            appSettings, progress, cancellation, sidecar, eventBus, sut);
+        return (jobs, sidecar, sut);
     }
 
     private static ProcessingJob MakeJob() => new()
@@ -144,19 +135,16 @@ public sealed class ProcessQueueWorkerEnrichmentTests
         Id = JobId,
         RecordingId = RecordingId,
         ProfileId = ProfileId,
-        Status = JobStatus.Pending
+        Status = JobStatus.Queued
     };
 
     [TestMethod]
     public async Task ProcessJobAsync_WhenEnrichmentEnabled_CallsProcessAllAsync()
     {
-        var (jobs, _, _, _, _, _, _, _, _, _, _, _, _, _, cancellation, sidecar, _, sut) =
-            BuildWorker(enrichmentEnabled: true);
+        var (jobs, sidecar, sut) = BuildWorker(enrichmentEnabled: true);
 
         var job = MakeJob();
         jobs.GetByIdAsync(JobId, Arg.Any<CancellationToken>()).Returns(job);
-        cancellation.Register(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(new CancellationTokenSource());
 
         await sut.ProcessJobAsync(JobId, CancellationToken.None);
 
@@ -169,13 +157,10 @@ public sealed class ProcessQueueWorkerEnrichmentTests
     [TestMethod]
     public async Task ProcessJobAsync_WhenEnrichmentDisabled_DoesNotCallProcessAllAsync()
     {
-        var (jobs, _, _, _, _, _, _, _, _, _, _, _, _, _, cancellation, sidecar, _, sut) =
-            BuildWorker(enrichmentEnabled: false);
+        var (jobs, sidecar, sut) = BuildWorker(enrichmentEnabled: false);
 
         var job = MakeJob();
         jobs.GetByIdAsync(JobId, Arg.Any<CancellationToken>()).Returns(job);
-        cancellation.Register(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(new CancellationTokenSource());
 
         await sut.ProcessJobAsync(JobId, CancellationToken.None);
 

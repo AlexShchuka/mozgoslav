@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,4 +23,9 @@ public sealed class ProfileType
         [Service] IProfileRepository repository,
         CancellationToken ct)
         => repository.GetByIdAsync(id, ct);
+
+    public IReadOnlyList<GlossaryEntry> GetGlossaryByLanguage([Parent] Profile profile)
+        => profile.GlossaryByLanguage
+            .Select(kv => new GlossaryEntry(kv.Key, kv.Value.AsReadOnly()))
+            .ToList();
 }

@@ -141,7 +141,7 @@ public sealed class ProcessQueueWorker
         var wavPath = await _audioConverter.ConvertToWavAsync(recording.FilePath, ct);
 
         var segmentProgress = new Progress<int>(p => _ = NotifyProgressAsync(job, ScaleProgress(p, 0, TranscribeEnd), ct));
-        var whisperInitialPrompt = _glossary.TryBuildInitialPrompt(profile);
+        var whisperInitialPrompt = _glossary.TryBuildInitialPrompt(profile, _settings.Language);
         var segments = await _transcriptionService.TranscribeAsync(
             wavPath, _settings.Language, whisperInitialPrompt, segmentProgress, ct);
 
@@ -163,7 +163,7 @@ public sealed class ProcessQueueWorker
         if (profile.LlmCorrectionEnabled && await _llmService.IsAvailableAsync(ct))
         {
             await TransitionAsync(job, JobStatus.Correcting, LlmCorrectionEnd, "LLM correction", ct);
-            cleanText = await _llmCorrection.CorrectAsync(cleanText, profile, ct);
+            cleanText = await _llmCorrection.CorrectAsync(cleanText, profile, ct, _settings.Language);
         }
 
         await TransitionAsync(job, JobStatus.Summarizing, LlmCorrectionEnd, "Summarizing via LLM", ct);

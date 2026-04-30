@@ -23,6 +23,22 @@ export function domainCleanupLevelToGql(level: Profile["cleanupLevel"]): Cleanup
   }
 }
 
+export function glossaryEntriesToRecord(
+  entries: ReadonlyArray<{ language: string; terms: ReadonlyArray<string> }>
+): Record<string, string[]> {
+  const result: Record<string, string[]> = {};
+  for (const { language, terms } of entries) {
+    result[language] = [...terms];
+  }
+  return result;
+}
+
+export function recordToGlossaryEntries(
+  record: Record<string, string[]>
+): Array<{ language: string; terms: string[] }> {
+  return Object.entries(record).map(([language, terms]) => ({ language, terms: [...terms] }));
+}
+
 export function mapGqlProfile(p: {
   id: string;
   name: string;
@@ -32,6 +48,10 @@ export function mapGqlProfile(p: {
   cleanupLevel: CleanupLevel;
   exportFolder: string;
   autoTags: ReadonlyArray<string>;
+  glossaryByLanguage: ReadonlyArray<{ language: string; terms: ReadonlyArray<string> }>;
+  llmCorrectionEnabled: boolean;
+  llmProviderOverride: string;
+  llmModelOverride: string;
   isDefault: boolean;
   isBuiltIn: boolean;
 }): Profile {
@@ -44,6 +64,10 @@ export function mapGqlProfile(p: {
     cleanupLevel: gqlCleanupLevelToDomain(p.cleanupLevel),
     exportFolder: p.exportFolder,
     autoTags: [...p.autoTags],
+    glossaryByLanguage: glossaryEntriesToRecord(p.glossaryByLanguage),
+    llmCorrectionEnabled: p.llmCorrectionEnabled,
+    llmProviderOverride: p.llmProviderOverride,
+    llmModelOverride: p.llmModelOverride,
     isDefault: p.isDefault,
     isBuiltIn: p.isBuiltIn,
   };
@@ -56,8 +80,10 @@ export function mapDomainProfileToInput(draft: Omit<Profile, "id" | "isBuiltIn">
   cleanupLevel: CleanupLevel;
   exportFolder: string;
   autoTags: string[];
-  glossary: string[];
+  glossaryByLanguage: Array<{ language: string; terms: string[] }>;
   llmCorrectionEnabled: boolean;
+  llmProviderOverride: string;
+  llmModelOverride: string;
   isDefault: boolean;
 } {
   return {
@@ -67,8 +93,10 @@ export function mapDomainProfileToInput(draft: Omit<Profile, "id" | "isBuiltIn">
     cleanupLevel: domainCleanupLevelToGql(draft.cleanupLevel),
     exportFolder: draft.exportFolder,
     autoTags: [...draft.autoTags],
-    glossary: [],
-    llmCorrectionEnabled: false,
+    glossaryByLanguage: recordToGlossaryEntries(draft.glossaryByLanguage ?? {}),
+    llmCorrectionEnabled: draft.llmCorrectionEnabled,
+    llmProviderOverride: draft.llmProviderOverride ?? "",
+    llmModelOverride: draft.llmModelOverride ?? "",
     isDefault: draft.isDefault,
   };
 }

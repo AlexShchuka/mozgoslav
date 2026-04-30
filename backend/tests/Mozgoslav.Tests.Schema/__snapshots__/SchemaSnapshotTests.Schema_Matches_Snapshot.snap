@@ -225,6 +225,11 @@ type JobsEdge {
   node: ProcessingJob!
 }
 
+type GlossaryEntry {
+  language: String!
+  terms: [String!]!
+}
+
 type KeyValuePairOfStringAndString {
   key: String!
   value: String!
@@ -505,8 +510,10 @@ type Profile implements Node {
   autoTags: [String!]!
   isDefault: Boolean!
   isBuiltIn: Boolean!
-  glossary: [String!]!
   llmCorrectionEnabled: Boolean!
+  llmProviderOverride: String!
+  llmModelOverride: String!
+  glossaryByLanguage: [GlossaryEntry!]!
 }
 
 type ProfilePayload {
@@ -534,6 +541,7 @@ type QueryType {
   llmModels: [LlmModelDescriptor!]! @cost(weight: "10")
   profiles: [Profile!]! @cost(weight: "10")
   profile(id: UUID!): Profile @cost(weight: "10")
+  suggestGlossaryTerms(profileId: UUID! language: String!): [String!]! @cost(weight: "10")
   models: [ModelEntry!]!
   recordings("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: RecordingFilterInput @cost(weight: "10") order: [RecordingSortInput!] @cost(weight: "10")): RecordingsConnection @listSize(assumedSize: 200, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 25, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
   recording(id: UUID!): Recording @cost(weight: "10")
@@ -843,9 +851,11 @@ input CreateProfileInput {
   cleanupLevel: CleanupLevel!
   exportFolder: String!
   autoTags: [String!]!
-  glossary: [String!]!
+  glossaryByLanguage: [GlossaryEntryInput!]!
   llmCorrectionEnabled: Boolean!
   isDefault: Boolean!
+  llmProviderOverride: String! = ""
+  llmModelOverride: String! = ""
 }
 
 input DateTimeOperationFilterInput {
@@ -893,6 +903,11 @@ input JobStatusOperationFilterInput {
   neq: JobStatus @cost(weight: "10")
   in: [JobStatus!] @cost(weight: "10")
   nin: [JobStatus!] @cost(weight: "10")
+}
+
+input GlossaryEntryInput {
+  language: String!
+  terms: [String!]!
 }
 
 input KeyValuePairOfStringAndStringInput {
