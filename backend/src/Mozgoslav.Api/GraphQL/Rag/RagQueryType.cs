@@ -23,8 +23,8 @@ public sealed class RagQueryType
         [Service] IVectorIndex index,
         CancellationToken ct)
     {
-        var allNotes = await notes.GetAllAsync(ct);
-        return new RagIndexStatus(allNotes.Count, index.Count);
+        var noteCount = await notes.CountAsync(ct);
+        return new RagIndexStatus(noteCount, index.Count);
     }
 
     public async Task<RagQueryResult?> RagQuery(

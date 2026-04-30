@@ -23,7 +23,6 @@ public interface IProcessingJobRepository
 
     Task<bool> SetPauseRequestedAsync(Guid id, CancellationToken ct);
     Task<bool> ClearPauseRequestedAsync(Guid id, CancellationToken ct);
-    Task<bool> MarkPausedAsync(Guid id, CancellationToken ct);
 
     Task<bool> RequestRetryFromStageAsync(Guid jobId, JobStage fromStage, bool skipFailed, CancellationToken ct);
 }
