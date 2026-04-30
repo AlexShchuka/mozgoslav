@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Mozgoslav.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using Mozgoslav.Infrastructure.Persistence;
 namespace Mozgoslav.Infrastructure.Persistence.EfMigrations
 {
     [DbContext(typeof(MozgoslavDbContext))]
-    partial class MozgoslavDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260430125510_AddPauseRequested")]
+    partial class AddPauseRequested
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.7");

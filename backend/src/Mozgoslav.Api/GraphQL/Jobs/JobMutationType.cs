@@ -79,4 +79,72 @@ public sealed class JobMutationType
         registry.TryCancel(id);
         return new CancelJobPayload([]);
     }
+
+    public async Task<CancelJobPayload> PauseJob(
+        Guid id,
+        [Service] IProcessingJobRepository jobs,
+        CancellationToken ct)
+    {
+        var job = await jobs.GetByIdAsync(id, ct);
+        if (job is null)
+        {
+            return new CancelJobPayload([new NotFoundError("NOT_FOUND", "Job not found", "ProcessingJob", id.ToString())]);
+        }
+
+        if (job.Status is not (JobStatus.PreflightChecks or JobStatus.Transcribing or JobStatus.Correcting or JobStatus.Summarizing or JobStatus.Exporting))
+        {
+            return new CancelJobPayload([new ConflictError("CONFLICT", "Job cannot be paused in its current state")]);
+        }
+
+        await jobs.SetPauseRequestedAsync(id, ct);
+        return new CancelJobPayload([]);
+    }
+
+    public async Task<JobPayload> ResumeJob(
+        Guid id,
+        [Service] IProcessingJobRepository jobs,
+        [Service] IProcessingJobScheduler scheduler,
+        CancellationToken ct)
+    {
+        var job = await jobs.GetByIdAsync(id, ct);
+        if (job is null)
+        {
+            return new JobPayload(null, [new NotFoundError("NOT_FOUND", "Job not found", "ProcessingJob", id.ToString())]);
+        }
+
+        if (job.Status != JobStatus.Paused)
+        {
+            return new JobPayload(null, [new ConflictError("CONFLICT", "Only paused jobs can be resumed")]);
+        }
+
+        await jobs.ClearPauseRequestedAsync(id, ct);
+        job.Status = JobStatus.Queued;
+        job.FinishedAt = null;
+        await jobs.UpdateAsync(job, ct);
+        await scheduler.ScheduleAsync(job.Id, ct);
+        return new JobPayload(job, []);
+    }
+
+    public async Task<JobPayload> RetryJobFromStage(
+        RetryJobFromStageInput input,
+        [Service] IProcessingJobRepository jobs,
+        [Service] IProcessingJobScheduler scheduler,
+        CancellationToken ct)
+    {
+        var job = await jobs.GetByIdAsync(input.JobId, ct);
+        if (job is null)
+        {
+            return new JobPayload(null, [new NotFoundError("NOT_FOUND", "Job not found", "ProcessingJob", input.JobId.ToString())]);
+        }
+
+        if (job.Status is not (JobStatus.Failed or JobStatus.Cancelled or JobStatus.Paused or JobStatus.Done))
+        {
+            return new JobPayload(null, [new ConflictError("CONFLICT", "Job must be in a terminal or paused state to retry")]);
+        }
+
+        await jobs.RequestRetryFromStageAsync(input.JobId, input.FromStage, input.SkipFailed, ct);
+        var updated = await jobs.GetByIdAsync(input.JobId, ct);
+        await scheduler.ScheduleAsync(input.JobId, ct);
+        return new JobPayload(updated, []);
+    }
 }

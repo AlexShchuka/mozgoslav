@@ -71,6 +71,7 @@ type AppSettingsDto {
   remindersSkillEnabled: Boolean!
   dictationClassifyIntentEnabled: Boolean!
   claudeCliPath: String!
+  sidecarEnrichmentEnabled: Boolean!
   obsidianBootstrapPins: String!
 }
 
@@ -184,6 +185,11 @@ type FolderCompletionPayload {
   globalBytes: Long!
 }
 
+type GlossaryEntry {
+  language: String!
+  terms: [String!]!
+}
+
 type HealthStatus {
   status: String!
   time: String!
@@ -225,9 +231,9 @@ type JobsEdge {
   node: ProcessingJob!
 }
 
-type GlossaryEntry {
-  language: String!
-  terms: [String!]!
+type KeyValuePairOfStringAndListOfString {
+  key: String!
+  value: [String!]!
 }
 
 type KeyValuePairOfStringAndString {
@@ -318,6 +324,9 @@ type MutationType {
   exportNote(id: UUID!): NotePayload! @cost(weight: "10")
   enqueueJob(input: EnqueueJobInput!): JobPayload! @cost(weight: "10")
   cancelJob(id: UUID!): CancelJobPayload! @cost(weight: "10")
+  pauseJob(id: UUID!): CancelJobPayload! @cost(weight: "10")
+  resumeJob(id: UUID!): JobPayload! @cost(weight: "10")
+  retryJobFromStage(input: RetryJobFromStageInput!): JobPayload! @cost(weight: "10")
   dictationStart(source: String recordingId: UUID): DictationStartPayload! @cost(weight: "10")
   dictationStop(sessionId: UUID! bundleId: String): DictationStopPayload! @cost(weight: "10")
   dictationCancel(sessionId: UUID!): DictationCancelPayload! @cost(weight: "10")
@@ -486,6 +495,7 @@ type ProcessingJob implements Node {
   startedAt: DateTime
   finishedAt: DateTime
   cancelRequested: Boolean!
+  pauseRequested: Boolean!
   stages: [ProcessingJobStage!]! @cost(weight: "10")
 }
 
@@ -510,10 +520,10 @@ type Profile implements Node {
   autoTags: [String!]!
   isDefault: Boolean!
   isBuiltIn: Boolean!
+  glossaryByLanguage: [GlossaryEntry!]!
   llmCorrectionEnabled: Boolean!
   llmProviderOverride: String!
   llmModelOverride: String!
-  glossaryByLanguage: [GlossaryEntry!]!
 }
 
 type ProfilePayload {
@@ -878,6 +888,11 @@ input EnqueueJobInput {
   profileId: UUID!
 }
 
+input GlossaryEntryInput {
+  language: String!
+  terms: [String!]!
+}
+
 input ImportRecordingsInput {
   filePaths: [String!]!
   profileId: UUID
@@ -903,11 +918,6 @@ input JobStatusOperationFilterInput {
   neq: JobStatus @cost(weight: "10")
   in: [JobStatus!] @cost(weight: "10")
   nin: [JobStatus!] @cost(weight: "10")
-}
-
-input GlossaryEntryInput {
-  language: String!
-  terms: [String!]!
 }
 
 input KeyValuePairOfStringAndStringInput {
@@ -995,6 +1005,7 @@ input ProcessingJobFilterInput {
   startedAt: DateTimeOperationFilterInput
   finishedAt: DateTimeOperationFilterInput
   cancelRequested: BooleanOperationFilterInput
+  pauseRequested: BooleanOperationFilterInput
 }
 
 input ProcessingJobSortInput {
@@ -1010,6 +1021,7 @@ input ProcessingJobSortInput {
   startedAt: SortEnumType @cost(weight: "10")
   finishedAt: SortEnumType @cost(weight: "10")
   cancelRequested: SortEnumType @cost(weight: "10")
+  pauseRequested: SortEnumType @cost(weight: "10")
 }
 
 input RecordingFilterInput {
@@ -1043,6 +1055,12 @@ input RecordingStatusOperationFilterInput {
   neq: RecordingStatus @cost(weight: "10")
   in: [RecordingStatus!] @cost(weight: "10")
   nin: [RecordingStatus!] @cost(weight: "10")
+}
+
+input RetryJobFromStageInput {
+  jobId: UUID!
+  fromStage: JobStage!
+  skipFailed: Boolean!
 }
 
 input SourceTypeOperationFilterInput {
@@ -1127,6 +1145,7 @@ input UpdateSettingsInput {
   remindersSkillEnabled: Boolean! = false
   dictationClassifyIntentEnabled: Boolean! = false
   claudeCliPath: String! = ""
+  sidecarEnrichmentEnabled: Boolean! = false
 }
 
 input UploadRecordingsInput {
@@ -1205,8 +1224,17 @@ enum DiagnosticAction {
   OPEN_SETTINGS
 }
 
+enum JobStage {
+  TRANSCRIBING
+  CORRECTING
+  LLM_CORRECTION
+  SUMMARIZING
+  EXPORTING
+}
+
 enum JobStatus {
   QUEUED
+  PREFLIGHT_CHECKS
   TRANSCRIBING
   CORRECTING
   SUMMARIZING
@@ -1214,7 +1242,7 @@ enum JobStatus {
   DONE
   FAILED
   CANCELLED
-  PREFLIGHT_CHECKS
+  PAUSED
 }
 
 enum ModelKind {

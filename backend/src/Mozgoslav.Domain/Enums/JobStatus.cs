@@ -13,5 +13,6 @@ public enum JobStatus
     Exporting,
     Done,
     Failed,
-    Cancelled
+    Cancelled,
+    Paused
 }

@@ -21,4 +21,5 @@ public sealed class ProcessingJob
     public DateTime? FinishedAt { get; set; }
 
     public bool CancelRequested { get; set; }
+    public bool PauseRequested { get; set; }
 }

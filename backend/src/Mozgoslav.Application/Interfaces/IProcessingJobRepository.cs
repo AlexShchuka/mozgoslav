@@ -20,4 +20,10 @@ public interface IProcessingJobRepository
     Task<IReadOnlyList<ProcessingJob>> GetByStatusAsync(JobStatus status, CancellationToken ct);
 
     Task<bool> SetCancelRequestedAsync(Guid id, CancellationToken ct);
+
+    Task<bool> SetPauseRequestedAsync(Guid id, CancellationToken ct);
+    Task<bool> ClearPauseRequestedAsync(Guid id, CancellationToken ct);
+    Task<bool> MarkPausedAsync(Guid id, CancellationToken ct);
+
+    Task<bool> RequestRetryFromStageAsync(Guid jobId, JobStage fromStage, bool skipFailed, CancellationToken ct);
 }
