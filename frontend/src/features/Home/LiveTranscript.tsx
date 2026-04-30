@@ -1,6 +1,7 @@
 import { FC, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type { Dispatch } from "redux";
 
 import type { JobStatus } from "../../domain/enums";
@@ -22,7 +23,7 @@ export interface LiveTranscriptProps {
   recordingId: string;
 }
 
-const selectStatusLabel = (status: JobStatus | null, step: string | null, t: (key: string, opts?: Record<string, string>) => string): string => {
+const selectStatusLabel = (status: JobStatus | null, step: string | null, t: TFunction): string => {
   if (status === null) return t("recording.listening");
   if (status === "Transcribing") return t("recording.processing.transcribing");
   if (status === "Correcting" && step === "LLM correction") return t("recording.processing.llmCleanup");

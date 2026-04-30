@@ -26,7 +26,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_UnknownJob_IsNoOp()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         fixture.Jobs.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((ProcessingJob?)null);
 
@@ -38,7 +38,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_AlreadyTerminal_IsNoOp()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob(JobStatus.Done);
 
         await fixture.Worker.ProcessJobAsync(job.Id, CancellationToken.None);
@@ -49,7 +49,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_HappyPath_RunsFullPipelineAndMarksJobDone()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
 
@@ -70,7 +70,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_NoteVersion_StartsAtOne_WhenNoPriorNotesExist()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
         fixture.Notes.GetByTranscriptIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
@@ -89,7 +89,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_NoteVersion_IncrementsPastLatest_OnReprocessing()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
 
@@ -113,7 +113,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_LlmUnavailable_KeepsRawTranscriptAndStillProducesNote()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline(llmAvailable: false);
 
@@ -134,7 +134,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_HappyPath_PersistsNoteWithExportFlagFalse()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
 
@@ -154,7 +154,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_HappyPath_PublishesProcessedNoteSavedAfterAdd()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
 
@@ -177,7 +177,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_UnknownRecording_MarksJobFailed()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.Recordings.GetByIdAsync(job.RecordingId, Arg.Any<CancellationToken>())
             .Returns((Recording?)null);
@@ -192,7 +192,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_TranscriptionThrows_MarksJobFailedButDoesNotStallPipeline()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
         fixture.Transcription
@@ -209,7 +209,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_WhenHostStopping_RethrowsCancellation()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
         using var hostStopping = new CancellationTokenSource();
@@ -229,7 +229,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_WhenCancelRequestedBeforeTranscribe_MarksCancelled()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         job.CancelRequested = true;
         fixture.ArrangeHappyPipeline();
@@ -247,7 +247,7 @@ public sealed class ProcessQueueWorkerTests
     [TestMethod]
     public async Task ProcessJobAsync_WhenTokenCancelledDuringTranscribe_MarksCancelled()
     {
-        var fixture = new Fixture();
+        using var fixture = new Fixture();
         var job = fixture.SeedJob();
         fixture.ArrangeHappyPipeline();
 
@@ -379,19 +379,25 @@ public sealed class ProcessQueueWorkerTests
 
     private sealed class Fixture : IDisposable
     {
-        private readonly string _tempDir = System.IO.Path.Combine(
-            System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
-
         public Fixture()
         {
-            System.IO.Directory.CreateDirectory(_tempDir);
+            System.IO.Directory.CreateDirectory(VaultPath);
             Stages.GetByJobIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
                 .Returns(Array.Empty<ProcessingJobStage>());
         }
 
         public void Dispose()
         {
-            try { System.IO.Directory.Delete(_tempDir, true); } catch { }
+            try
+            {
+                System.IO.Directory.Delete(VaultPath, true);
+            }
+            catch (System.IO.IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
         }
 
         public IProcessingJobRepository Jobs { get; } = Substitute.For<IProcessingJobRepository>();
@@ -409,11 +415,12 @@ public sealed class ProcessQueueWorkerTests
         public IPythonSidecarClient SidecarClient { get; } = Substitute.For<IPythonSidecarClient>();
         public TestJobCancellationRegistry CancellationRegistry { get; } = new();
 
-        public string VaultPath => _tempDir;
+        public string VaultPath { get; } = System.IO.Path.Combine(
+            System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
 
         public string CreateModelFile(string name = "ggml-small-q8_0.bin")
         {
-            var path = System.IO.Path.Combine(_tempDir, name);
+            var path = System.IO.Path.Combine(VaultPath, name);
             System.IO.File.WriteAllText(path, "fake-model-data");
             return path;
         }
