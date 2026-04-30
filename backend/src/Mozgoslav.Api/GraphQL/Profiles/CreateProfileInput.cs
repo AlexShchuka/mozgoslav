@@ -11,6 +11,8 @@ public sealed record CreateProfileInput(
     CleanupLevel CleanupLevel,
     string ExportFolder,
     IReadOnlyList<string> AutoTags,
-    IReadOnlyList<string> Glossary,
+    IReadOnlyList<GlossaryEntryInput> GlossaryByLanguage,
     bool LlmCorrectionEnabled,
-    bool IsDefault);
+    bool IsDefault,
+    string LlmProviderOverride = "",
+    string LlmModelOverride = "");

@@ -5,9 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Application.Services;
 using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.Enums;
 using Mozgoslav.Domain.Services;
@@ -17,43 +17,21 @@ namespace Mozgoslav.Application.UseCases;
 public sealed class ImportRecordingUseCase
 {
     private readonly IRecordingRepository _recordings;
-    private readonly IProcessingJobRepository _jobs;
     private readonly IProfileRepository _profiles;
-    private readonly IProcessingJobScheduler _scheduler;
     private readonly IAudioMetadataProbe? _metadataProbe;
+    private readonly RecordingFinaliser _finaliser;
     private readonly ILogger<ImportRecordingUseCase> _logger;
 
     public ImportRecordingUseCase(
         IRecordingRepository recordings,
-        IProcessingJobRepository jobs,
+        RecordingFinaliser finaliser,
         IProfileRepository profiles,
-        IProcessingJobScheduler scheduler)
-        : this(recordings, jobs, profiles, scheduler, metadataProbe: null, NullLogger<ImportRecordingUseCase>.Instance)
-    {
-    }
-
-    public ImportRecordingUseCase(
-        IRecordingRepository recordings,
-        IProcessingJobRepository jobs,
-        IProfileRepository profiles,
-        IProcessingJobScheduler scheduler,
-        ILogger<ImportRecordingUseCase> logger)
-        : this(recordings, jobs, profiles, scheduler, metadataProbe: null, logger)
-    {
-    }
-
-    public ImportRecordingUseCase(
-        IRecordingRepository recordings,
-        IProcessingJobRepository jobs,
-        IProfileRepository profiles,
-        IProcessingJobScheduler scheduler,
         IAudioMetadataProbe? metadataProbe,
         ILogger<ImportRecordingUseCase> logger)
     {
         _recordings = recordings;
-        _jobs = jobs;
+        _finaliser = finaliser;
         _profiles = profiles;
-        _scheduler = scheduler;
         _metadataProbe = metadataProbe;
         _logger = logger;
     }
@@ -111,32 +89,21 @@ public sealed class ImportRecordingUseCase
                 throw new InvalidOperationException($"Unsupported audio format for file: {path}");
             }
 
-            var sha256 = await HashCalculator.Sha256Async(path, ct);
-
-            var duration = _metadataProbe is not null
-                ? await _metadataProbe.GetDurationAsync(path, ct)
-                : TimeSpan.Zero;
+            var metadata = await _finaliser.ResolveMetadataAsync(path, _metadataProbe, ct);
 
             var recording = new Recording
             {
                 FileName = Path.GetFileName(path),
                 FilePath = path,
-                Sha256 = sha256,
+                Sha256 = metadata.Sha256,
                 Format = format,
                 SourceType = SourceType.Imported,
-                Duration = duration
+                Duration = metadata.Duration
             };
 
             await _recordings.AddAsync(recording, ct);
 
-            var processingJob = await _jobs.EnqueueAsync(
-                new ProcessingJob
-                {
-                    RecordingId = recording.Id,
-                    ProfileId = profile.Id
-                },
-                ct);
-            await _scheduler.ScheduleAsync(processingJob.Id, ct);
+            await _finaliser.EnqueueAndScheduleAsync(recording.Id, profile.Id, ct);
 
             result.Add(recording);
         }

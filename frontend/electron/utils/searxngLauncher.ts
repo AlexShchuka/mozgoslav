@@ -10,6 +10,7 @@ const HEALTH_POLL_MS = 500;
 const HEALTH_MAX_ATTEMPTS = 20;
 
 let searxngProcess: ChildProcess | null = null;
+let lastStartOptions: SearxngStartOptions | null = null;
 
 const pollHealthz = (): Promise<boolean> =>
   new Promise((resolve) => {
@@ -47,6 +48,7 @@ export interface SearxngStartOptions {
 }
 
 export const tryStartSearxng = async (options: SearxngStartOptions): Promise<void> => {
+  lastStartOptions = options;
   const candidatePaths: string[] = [];
   const repoRoot = resolveRepoRoot({
     dirname: __dirname,
@@ -143,4 +145,14 @@ export const stopSearxng = async (graceMs: number = SEARXNG_STOP_GRACE_MS): Prom
     }
     await Promise.race([exited, new Promise<void>((r) => setTimeout(r, 1000))]);
   }
+};
+
+export const restartSearxng = async (): Promise<void> => {
+  if (!lastStartOptions) {
+    console.info("[searxngLauncher] restartSearxng called before tryStartSearxng — no-op");
+    return;
+  }
+  const opts = lastStartOptions;
+  await stopSearxng();
+  await tryStartSearxng(opts);
 };

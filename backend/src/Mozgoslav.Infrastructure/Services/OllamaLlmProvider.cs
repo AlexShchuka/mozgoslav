@@ -36,14 +36,20 @@ public sealed class OllamaLlmProvider : ILlmProvider
 
     public string Kind => "ollama";
 
-    public async Task<string> ChatAsync(string systemPrompt, string userPrompt, CancellationToken ct)
+    public Task<string> ChatAsync(string systemPrompt, string userPrompt, CancellationToken ct)
+        => ChatWithModelAsync(systemPrompt, userPrompt, string.Empty, ct);
+
+    public async Task<string> ChatWithModelAsync(string systemPrompt, string userPrompt, string model, CancellationToken ct)
     {
         try
         {
             using var client = _httpClientFactory.CreateClient("llm");
 
             var endpoint = new Uri(new Uri(_settings.LlmEndpoint), "/api/chat");
-            var model = string.IsNullOrWhiteSpace(_settings.LlmModel) ? "llama3.2" : _settings.LlmModel;
+            var resolvedModel = !string.IsNullOrWhiteSpace(model)
+                ? model
+                : (string.IsNullOrWhiteSpace(_settings.LlmModel) ? "llama3.2" : _settings.LlmModel);
+            model = resolvedModel;
 
             var payload = new OllamaRequest(
                 Model: model,

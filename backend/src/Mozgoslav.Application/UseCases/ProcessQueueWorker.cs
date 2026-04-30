@@ -37,6 +37,7 @@ public sealed class ProcessQueueWorker
     private readonly IAppSettings _settings;
     private readonly IJobProgressNotifier _progressNotifier;
     private readonly IJobCancellationRegistry _cancellationRegistry;
+    private readonly IPythonSidecarClient _sidecarClient;
     private readonly IDomainEventBus _eventBus;
     private readonly ILogger<ProcessQueueWorker> _logger;
 
@@ -56,6 +57,7 @@ public sealed class ProcessQueueWorker
         IAppSettings settings,
         IJobProgressNotifier progressNotifier,
         IJobCancellationRegistry cancellationRegistry,
+        IPythonSidecarClient sidecarClient,
         IDomainEventBus eventBus,
         ILogger<ProcessQueueWorker> logger)
     {
@@ -74,6 +76,7 @@ public sealed class ProcessQueueWorker
         _settings = settings;
         _progressNotifier = progressNotifier;
         _cancellationRegistry = cancellationRegistry;
+        _sidecarClient = sidecarClient;
         _eventBus = eventBus;
         _logger = logger;
     }
@@ -138,7 +141,7 @@ public sealed class ProcessQueueWorker
         var wavPath = await _audioConverter.ConvertToWavAsync(recording.FilePath, ct);
 
         var segmentProgress = new Progress<int>(p => _ = NotifyProgressAsync(job, ScaleProgress(p, 0, TranscribeEnd), ct));
-        var whisperInitialPrompt = _glossary.TryBuildInitialPrompt(profile);
+        var whisperInitialPrompt = _glossary.TryBuildInitialPrompt(profile, _settings.Language);
         var segments = await _transcriptionService.TranscribeAsync(
             wavPath, _settings.Language, whisperInitialPrompt, segmentProgress, ct);
 
@@ -160,7 +163,7 @@ public sealed class ProcessQueueWorker
         if (profile.LlmCorrectionEnabled && await _llmService.IsAvailableAsync(ct))
         {
             await TransitionAsync(job, JobStatus.Correcting, LlmCorrectionEnd, "LLM correction", ct);
-            cleanText = await _llmCorrection.CorrectAsync(cleanText, profile, ct);
+            cleanText = await _llmCorrection.CorrectAsync(cleanText, profile, ct, _settings.Language);
         }
 
         await TransitionAsync(job, JobStatus.Summarizing, LlmCorrectionEnd, "Summarizing via LLM", ct);
@@ -193,6 +196,21 @@ public sealed class ProcessQueueWorker
             recording.Duration = segments[^1].End;
         }
         await _recordings.UpdateAsync(recording, ct);
+
+        if (_settings.SidecarEnrichmentEnabled)
+        {
+            try
+            {
+                var enrichment = await _sidecarClient.ProcessAllAsync(wavPath, steps: null, ct);
+                _logger.LogInformation(
+                    "Sidecar enrichment completed for job {JobId}: cleanedText={Len}ch embedding={Dim}d",
+                    job.Id, enrichment.CleanedText.Length, enrichment.Embedding.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Sidecar enrichment failed for job {JobId} — skipping", job.Id);
+            }
+        }
 
         await TransitionAsync(job, JobStatus.Done, ExportEnd, null, ct);
         job.FinishedAt = DateTime.UtcNow;

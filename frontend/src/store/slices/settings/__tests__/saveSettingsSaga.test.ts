@@ -49,6 +49,7 @@ const fakeSettings: AppSettings = {
   dictationDumpEnabled: false,
   dictationDumpHotkeyToggle: "",
   dictationDumpHotkeyHold: "",
+  sidecarEnrichmentEnabled: false,
 };
 
 const fakeSavedDto = {
@@ -89,6 +90,7 @@ const fakeSavedDto = {
   dictationDumpEnabled: false,
   dictationDumpHotkeyToggle: "",
   dictationDumpHotkeyHold: "",
+  sidecarEnrichmentEnabled: false,
 };
 
 describe("saveSettingsSaga", () => {

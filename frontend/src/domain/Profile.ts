@@ -9,6 +9,10 @@ export interface Profile {
   cleanupLevel: CleanupLevel;
   exportFolder: string;
   autoTags: string[];
+  glossaryByLanguage: Record<string, string[]>;
+  llmCorrectionEnabled: boolean;
+  llmProviderOverride: string;
+  llmModelOverride: string;
   isDefault: boolean;
   isBuiltIn: boolean;
 }

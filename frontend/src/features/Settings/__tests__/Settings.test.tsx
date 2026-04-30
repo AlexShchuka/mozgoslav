@@ -41,6 +41,7 @@ const baseSettings = {
   dictationDumpEnabled: false,
   dictationDumpHotkeyToggle: "",
   dictationDumpHotkeyHold: "",
+  sidecarEnrichmentEnabled: false,
 };
 
 const fakeModels: readonly LlmModelDescriptor[] = [

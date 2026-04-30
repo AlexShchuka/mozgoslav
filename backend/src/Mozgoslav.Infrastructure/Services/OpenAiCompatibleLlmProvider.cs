@@ -48,7 +48,10 @@ public sealed class OpenAiCompatibleLlmProvider : ILlmProvider
 
     public string Kind => "openai_compatible";
 
-    public async Task<string> ChatAsync(string systemPrompt, string userPrompt, CancellationToken ct)
+    public Task<string> ChatAsync(string systemPrompt, string userPrompt, CancellationToken ct)
+        => ChatWithModelAsync(systemPrompt, userPrompt, string.Empty, ct);
+
+    public async Task<string> ChatWithModelAsync(string systemPrompt, string userPrompt, string model, CancellationToken ct)
     {
         var endpoint = _settings.LlmEndpoint;
         if (string.IsNullOrWhiteSpace(endpoint))
@@ -58,12 +61,13 @@ public sealed class OpenAiCompatibleLlmProvider : ILlmProvider
         }
 
         var apiKey = string.IsNullOrWhiteSpace(_settings.LlmApiKey) ? "lm-studio" : _settings.LlmApiKey;
-        var model = await ResolveModelOnceAsync(endpoint, apiKey, ct);
-        if (string.IsNullOrWhiteSpace(model))
+        var resolvedModel = !string.IsNullOrWhiteSpace(model) ? model : await ResolveModelOnceAsync(endpoint, apiKey, ct);
+        if (string.IsNullOrWhiteSpace(resolvedModel))
         {
             _logger.LogWarning("LLM model could not be resolved from settings or /v1/models");
             return string.Empty;
         }
+        model = resolvedModel;
 
         var chatUri = new Uri(new Uri(endpoint.TrimEnd('/')), "/v1/chat/completions");
         var capabilities = _capabilitiesCache.TryGetCurrent();

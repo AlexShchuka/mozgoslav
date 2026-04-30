@@ -8,10 +8,10 @@ using Mozgoslav.Api.GraphQL.Errors;
 using Mozgoslav.Api.GraphQL.Mutations;
 using Mozgoslav.Api.Services;
 using Mozgoslav.Application.Interfaces;
+using Mozgoslav.Application.Services;
 using Mozgoslav.Application.UseCases;
 using Mozgoslav.Domain.Entities;
 using Mozgoslav.Domain.Enums;
-using Mozgoslav.Domain.Services;
 using Mozgoslav.Infrastructure.Platform;
 using IOPath = System.IO.Path;
 
@@ -165,11 +165,10 @@ public sealed class RecordingMutationType
         [Service] IAudioRecorder recorder,
         [Service] RecordingSessionRegistry sessions,
         [Service] IRecordingRepository recordings,
-        [Service] IProcessingJobRepository jobs,
-        [Service] IProcessingJobScheduler scheduler,
         [Service] IProfileRepository profiles,
         [Service] IDictationSessionManager dictationManager,
         [Service] IAudioMetadataProbe? metadataProbe,
+        [Service] RecordingFinaliser finaliser,
         CancellationToken ct)
     {
         if (!sessions.TryStop(sessionId, out var session))
@@ -207,18 +206,18 @@ public sealed class RecordingMutationType
                 [new UnavailableError("UNAVAILABLE", $"Recorder produced no file at {path}.")]);
         }
 
-        var sha256 = await HashCalculator.Sha256Async(path, ct);
-        var duration = metadataProbe is not null
-            ? await metadataProbe.GetDurationAsync(path, ct)
-            : TimeSpan.Zero;
+        var metadata = await finaliser.ResolveMetadataAsync(path, metadataProbe, ct);
+
+        var profile = await profiles.TryGetDefaultAsync(ct)
+            ?? throw new InvalidOperationException("No default profile configured");
 
         var updated = new Recording
         {
             Id = recording.Id,
             FileName = IOPath.GetFileName(path),
             FilePath = path,
-            Sha256 = sha256,
-            Duration = duration,
+            Sha256 = metadata.Sha256,
+            Duration = metadata.Duration,
             Format = AudioFormat.Wav,
             SourceType = SourceType.Recorded,
             Status = RecordingStatus.Transcribing,
@@ -226,17 +225,7 @@ public sealed class RecordingMutationType
         };
         await recordings.UpdateAsync(updated, ct);
 
-        var profile = await profiles.TryGetDefaultAsync(ct)
-            ?? throw new InvalidOperationException("No default profile configured");
-
-        var job = await jobs.EnqueueAsync(
-            new ProcessingJob
-            {
-                RecordingId = updated.Id,
-                ProfileId = profile.Id
-            },
-            ct);
-        await scheduler.ScheduleAsync(job.Id, ct);
+        await finaliser.EnqueueAndScheduleAsync(updated.Id, profile.Id, ct);
 
         return new StopRecordingPayload(sessionId, [updated], []);
     }

@@ -20,7 +20,10 @@ public sealed class Profile
     public bool IsDefault { get; set; }
     public bool IsBuiltIn { get; set; }
 
-    public List<string> Glossary { get; set; } = [];
+    public Dictionary<string, List<string>> GlossaryByLanguage { get; set; } = [];
 
     public bool LlmCorrectionEnabled { get; set; }
+
+    public string LlmProviderOverride { get; set; } = string.Empty;
+    public string LlmModelOverride { get; set; } = string.Empty;
 }

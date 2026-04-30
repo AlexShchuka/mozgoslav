@@ -230,7 +230,7 @@ public sealed class DictationSessionManagerTests
     {
         var fixture = new Fixture();
         fixture.Settings.DictationVocabulary.Returns(
-            ["Mozgoslav", "scenarios", "LRT", "кафка"]);
+            ["Mozgoslav", "obsidian", "ffmpeg", "podcast"]);
         fixture.ArrangeEmptyStream();
 
         var session = fixture.Manager.Start();
@@ -238,7 +238,7 @@ public sealed class DictationSessionManagerTests
 
         fixture.Streaming.InitialPrompt.Should().NotBeNull();
         fixture.Streaming.InitialPrompt.Should().Contain("Mozgoslav");
-        fixture.Streaming.InitialPrompt.Should().Contain("кафка");
+        fixture.Streaming.InitialPrompt.Should().Contain("podcast");
     }
 
     [TestMethod]

@@ -52,6 +52,7 @@ public interface IAppSettings
     bool RemindersSkillEnabled { get; }
     bool DictationClassifyIntentEnabled { get; }
     string ClaudeCliPath { get; }
+    bool SidecarEnrichmentEnabled { get; }
 
     AppSettingsDto Snapshot { get; }
 

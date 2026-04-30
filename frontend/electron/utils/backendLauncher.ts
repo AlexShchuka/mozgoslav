@@ -2,6 +2,8 @@ import { type ChildProcess, execFile, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
+import { restartSearxng } from "./searxngLauncher";
+
 const BACKEND_BINARY_NAME = "Mozgoslav.Api";
 const BACKEND_PORT = 5050;
 
@@ -102,7 +104,14 @@ export const tryStartBackend = async (
     });
 
     backendProcess.stdout?.on("data", (chunk: Buffer) => {
-      console.info(`[backend] ${chunk.toString().trimEnd()}`);
+      const text = chunk.toString();
+      console.info(`[backend] ${text.trimEnd()}`);
+      if (text.includes("MOZGOSLAV_EVENT:searxng-restart")) {
+        restartSearxng().then(
+          () => console.info("[backendLauncher] SearXNG restarted after settings save"),
+          (err: unknown) => console.error("[backendLauncher] SearXNG restart failed:", err)
+        );
+      }
     });
 
     backendProcess.stderr?.on("data", (chunk: Buffer) => {

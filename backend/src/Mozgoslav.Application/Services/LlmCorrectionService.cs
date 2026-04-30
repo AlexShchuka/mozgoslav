@@ -31,7 +31,7 @@ public sealed class LlmCorrectionService
         _logger = logger;
     }
 
-    public async Task<string> CorrectAsync(string rawText, Profile profile, CancellationToken ct)
+    public async Task<string> CorrectAsync(string rawText, Profile profile, CancellationToken ct, string? language = null)
     {
         ArgumentNullException.ThrowIfNull(profile);
         if (string.IsNullOrWhiteSpace(rawText))
@@ -39,15 +39,18 @@ public sealed class LlmCorrectionService
             return string.Empty;
         }
 
-        var systemPrompt = BuildSystemPrompt(profile);
+        var systemPrompt = BuildSystemPrompt(profile, language);
         try
         {
-            var provider = await _providerFactory.GetCurrentAsync(ct);
+            var provider = await _providerFactory.GetForProfileAsync(profile, ct);
+            var modelOverride = profile.LlmModelOverride;
             var chunks = Chunk(rawText, ChunkChars, OverlapChars).ToList();
             var corrected = new List<string>(chunks.Count);
             foreach (var chunk in chunks)
             {
-                var response = await provider.ChatAsync(systemPrompt, chunk, ct);
+                var response = string.IsNullOrWhiteSpace(modelOverride)
+                    ? await provider.ChatAsync(systemPrompt, chunk, ct)
+                    : await provider.ChatWithModelAsync(systemPrompt, chunk, modelOverride, ct);
                 if (string.IsNullOrWhiteSpace(response))
                 {
                     _logger.LogWarning("LLM correction returned empty response; falling back to raw chunk");
@@ -71,9 +74,9 @@ public sealed class LlmCorrectionService
         }
     }
 
-    private string BuildSystemPrompt(Profile profile)
+    private string BuildSystemPrompt(Profile profile, string? language = null)
     {
-        var glossarySuffix = _glossary.TryBuildLlmSystemPromptSuffix(profile);
+        var glossarySuffix = _glossary.TryBuildLlmSystemPromptSuffix(profile, language);
         var core = "You are a transcription editor. Fix only evident transcription errors: " +
                    "homophones, incorrect proper-noun spellings, missing punctuation, " +
                    "word-boundary slips. Do not paraphrase, do not translate, do not " +

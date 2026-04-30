@@ -269,6 +269,31 @@ jobs:
           path: native/MozgoslavDictationHelper/coverage.lcov
           retention-days: 7
 
+  rag-eval:
+    name: rag eval / NDCG@5 + MRR + Recall@10
+    needs: verify
+    runs-on: ubuntu-latest
+    if: >
+      contains(github.event.head_commit.modified, 'backend/src/Mozgoslav.Infrastructure/Rag/') ||
+      contains(github.event.head_commit.modified, 'python-sidecar/app/services/rerank_service.py') ||
+      contains(github.event.head_commit.modified, 'python-sidecar/scripts/eval-fixtures/')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: python-sidecar/requirements-dev.txt
+      - name: Install python-sidecar deps
+        run: |
+          cd python-sidecar
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Run RAG eval harness
+        run: bash scripts/eval-rag.sh
+
   coverage-comment:
     name: post-checks / coverage
     needs: [ backend, frontend, python, native ]

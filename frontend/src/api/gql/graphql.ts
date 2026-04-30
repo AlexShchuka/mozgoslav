@@ -79,6 +79,7 @@ export type AppSettingsDto = {
   obsidianApiToken: Scalars["String"]["output"];
   obsidianBootstrapPins: Scalars["String"]["output"];
   obsidianFeatureEnabled: Scalars["Boolean"]["output"];
+  sidecarEnrichmentEnabled: Scalars["Boolean"]["output"];
   syncthingApiKey: Scalars["String"]["output"];
   syncthingBaseUrl: Scalars["String"]["output"];
   syncthingEnabled: Scalars["Boolean"]["output"];
@@ -211,13 +212,20 @@ export type CreateNoteInput = {
   title: Scalars["String"]["input"];
 };
 
+export type GlossaryEntryInput = {
+  language: Scalars["String"]["input"];
+  terms: Array<Scalars["String"]["input"]>;
+};
+
 export type CreateProfileInput = {
   autoTags: Array<Scalars["String"]["input"]>;
   cleanupLevel: CleanupLevel;
   exportFolder: Scalars["String"]["input"];
-  glossary: Array<Scalars["String"]["input"]>;
+  glossaryByLanguage: Array<GlossaryEntryInput>;
   isDefault: Scalars["Boolean"]["input"];
   llmCorrectionEnabled: Scalars["Boolean"]["input"];
+  llmProviderOverride: Scalars["String"]["input"];
+  llmModelOverride: Scalars["String"]["input"];
   name: Scalars["String"]["input"];
   outputTemplate: Scalars["String"]["input"];
   systemPrompt: Scalars["String"]["input"];
@@ -969,16 +977,24 @@ export type ProcessingJobStage = {
   startedAt: Scalars["DateTime"]["output"];
 };
 
+export type GlossaryEntry = {
+  __typename?: "GlossaryEntry";
+  language: Scalars["String"]["output"];
+  terms: Array<Scalars["String"]["output"]>;
+};
+
 export type Profile = Node & {
   __typename?: "Profile";
   autoTags: Array<Scalars["String"]["output"]>;
   cleanupLevel: CleanupLevel;
   exportFolder: Scalars["String"]["output"];
-  glossary: Array<Scalars["String"]["output"]>;
+  glossaryByLanguage: Array<GlossaryEntry>;
   id: Scalars["ID"]["output"];
   isBuiltIn: Scalars["Boolean"]["output"];
   isDefault: Scalars["Boolean"]["output"];
   llmCorrectionEnabled: Scalars["Boolean"]["output"];
+  llmProviderOverride: Scalars["String"]["output"];
+  llmModelOverride: Scalars["String"]["output"];
   name: Scalars["String"]["output"];
   outputTemplate: Scalars["String"]["output"];
   systemPrompt: Scalars["String"]["output"];
@@ -1470,6 +1486,7 @@ export type UpdateSettingsInput = {
   obsidianApiHost: Scalars["String"]["input"];
   obsidianApiToken: Scalars["String"]["input"];
   obsidianFeatureEnabled?: Scalars["Boolean"]["input"];
+  sidecarEnrichmentEnabled?: Scalars["Boolean"]["input"];
   syncthingApiKey: Scalars["String"]["input"];
   syncthingBaseUrl: Scalars["String"]["input"];
   syncthingEnabled: Scalars["Boolean"]["input"];
@@ -2395,8 +2412,14 @@ export type QueryProfilesQuery = {
     autoTags: Array<string>;
     isDefault: boolean;
     isBuiltIn: boolean;
-    glossary: Array<string>;
+    glossaryByLanguage: Array<{
+      __typename?: "GlossaryEntry";
+      language: string;
+      terms: Array<string>;
+    }>;
     llmCorrectionEnabled: boolean;
+    llmProviderOverride: string;
+    llmModelOverride: string;
   }>;
 };
 
@@ -2420,8 +2443,14 @@ export type MutationCreateProfileMutation = {
       autoTags: Array<string>;
       isDefault: boolean;
       isBuiltIn: boolean;
-      glossary: Array<string>;
+      glossaryByLanguage: Array<{
+        __typename?: "GlossaryEntry";
+        language: string;
+        terms: Array<string>;
+      }>;
       llmCorrectionEnabled: boolean;
+      llmProviderOverride: string;
+      llmModelOverride: string;
     } | null;
     errors: Array<
       | { __typename?: "ConflictError"; code: string; message: string }
@@ -2453,8 +2482,14 @@ export type MutationUpdateProfileMutation = {
       autoTags: Array<string>;
       isDefault: boolean;
       isBuiltIn: boolean;
-      glossary: Array<string>;
+      glossaryByLanguage: Array<{
+        __typename?: "GlossaryEntry";
+        language: string;
+        terms: Array<string>;
+      }>;
       llmCorrectionEnabled: boolean;
+      llmProviderOverride: string;
+      llmModelOverride: string;
     } | null;
     errors: Array<
       | { __typename?: "ConflictError"; code: string; message: string }
@@ -2503,8 +2538,14 @@ export type MutationDuplicateProfileMutation = {
       autoTags: Array<string>;
       isDefault: boolean;
       isBuiltIn: boolean;
-      glossary: Array<string>;
+      glossaryByLanguage: Array<{
+        __typename?: "GlossaryEntry";
+        language: string;
+        terms: Array<string>;
+      }>;
       llmCorrectionEnabled: boolean;
+      llmProviderOverride: string;
+      llmModelOverride: string;
     } | null;
     errors: Array<
       | { __typename?: "ConflictError"; code: string; message: string }
@@ -2513,6 +2554,16 @@ export type MutationDuplicateProfileMutation = {
       | { __typename?: "ValidationError"; code: string; message: string }
     >;
   };
+};
+
+export type SuggestGlossaryTermsQueryVariables = Exact<{
+  profileId: Scalars["UUID"]["input"];
+  language: Scalars["String"]["input"];
+}>;
+
+export type SuggestGlossaryTermsQuery = {
+  __typename?: "QueryType";
+  suggestGlossaryTerms: Array<string>;
 };
 
 export type QueryPromptTemplatesQueryVariables = Exact<{ [key: string]: never }>;
@@ -3014,6 +3065,7 @@ export type QuerySettingsQuery = {
     dictationDumpEnabled: boolean;
     dictationDumpHotkeyToggle: string;
     dictationDumpHotkeyHold: string;
+    sidecarEnrichmentEnabled: boolean;
     dictationAppProfiles: Array<{
       __typename?: "KeyValuePairOfStringAndString";
       key: string;
@@ -3068,6 +3120,7 @@ export type MutationUpdateSettingsMutation = {
       dictationDumpEnabled: boolean;
       dictationDumpHotkeyToggle: string;
       dictationDumpHotkeyHold: string;
+      sidecarEnrichmentEnabled: boolean;
       dictationAppProfiles: Array<{
         __typename?: "KeyValuePairOfStringAndString";
         key: string;
@@ -5269,8 +5322,20 @@ export const QueryProfilesDocument = {
                 { kind: "Field", name: { kind: "Name", value: "autoTags" } },
                 { kind: "Field", name: { kind: "Name", value: "isDefault" } },
                 { kind: "Field", name: { kind: "Name", value: "isBuiltIn" } },
-                { kind: "Field", name: { kind: "Name", value: "glossary" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "glossaryByLanguage" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "language" } },
+                      { kind: "Field", name: { kind: "Name", value: "terms" } },
+                    ],
+                  },
+                },
                 { kind: "Field", name: { kind: "Name", value: "llmCorrectionEnabled" } },
+                { kind: "Field", name: { kind: "Name", value: "llmProviderOverride" } },
+                { kind: "Field", name: { kind: "Name", value: "llmModelOverride" } },
               ],
             },
           },
@@ -5331,8 +5396,20 @@ export const MutationCreateProfileDocument = {
                       { kind: "Field", name: { kind: "Name", value: "autoTags" } },
                       { kind: "Field", name: { kind: "Name", value: "isDefault" } },
                       { kind: "Field", name: { kind: "Name", value: "isBuiltIn" } },
-                      { kind: "Field", name: { kind: "Name", value: "glossary" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "glossaryByLanguage" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "language" } },
+                            { kind: "Field", name: { kind: "Name", value: "terms" } },
+                          ],
+                        },
+                      },
                       { kind: "Field", name: { kind: "Name", value: "llmCorrectionEnabled" } },
+                      { kind: "Field", name: { kind: "Name", value: "llmProviderOverride" } },
+                      { kind: "Field", name: { kind: "Name", value: "llmModelOverride" } },
                     ],
                   },
                 },
@@ -5420,8 +5497,20 @@ export const MutationUpdateProfileDocument = {
                       { kind: "Field", name: { kind: "Name", value: "autoTags" } },
                       { kind: "Field", name: { kind: "Name", value: "isDefault" } },
                       { kind: "Field", name: { kind: "Name", value: "isBuiltIn" } },
-                      { kind: "Field", name: { kind: "Name", value: "glossary" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "glossaryByLanguage" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "language" } },
+                            { kind: "Field", name: { kind: "Name", value: "terms" } },
+                          ],
+                        },
+                      },
                       { kind: "Field", name: { kind: "Name", value: "llmCorrectionEnabled" } },
+                      { kind: "Field", name: { kind: "Name", value: "llmProviderOverride" } },
+                      { kind: "Field", name: { kind: "Name", value: "llmModelOverride" } },
                     ],
                   },
                 },
@@ -5556,8 +5645,20 @@ export const MutationDuplicateProfileDocument = {
                       { kind: "Field", name: { kind: "Name", value: "autoTags" } },
                       { kind: "Field", name: { kind: "Name", value: "isDefault" } },
                       { kind: "Field", name: { kind: "Name", value: "isBuiltIn" } },
-                      { kind: "Field", name: { kind: "Name", value: "glossary" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "glossaryByLanguage" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "language" } },
+                            { kind: "Field", name: { kind: "Name", value: "terms" } },
+                          ],
+                        },
+                      },
                       { kind: "Field", name: { kind: "Name", value: "llmCorrectionEnabled" } },
+                      { kind: "Field", name: { kind: "Name", value: "llmProviderOverride" } },
+                      { kind: "Field", name: { kind: "Name", value: "llmModelOverride" } },
                     ],
                   },
                 },
@@ -5583,6 +5684,55 @@ export const MutationDuplicateProfileDocument = {
   MutationDuplicateProfileMutation,
   MutationDuplicateProfileMutationVariables
 >;
+export const SuggestGlossaryTermsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "SuggestGlossaryTerms" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "profileId" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "language" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "suggestGlossaryTerms" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "profileId" },
+                value: { kind: "Variable", name: { kind: "Name", value: "profileId" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "language" },
+                value: { kind: "Variable", name: { kind: "Name", value: "language" } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<SuggestGlossaryTermsQuery, SuggestGlossaryTermsQueryVariables>;
 export const QueryPromptTemplatesDocument = {
   kind: "Document",
   definitions: [
@@ -7011,6 +7161,7 @@ export const QuerySettingsDocument = {
                 { kind: "Field", name: { kind: "Name", value: "dictationDumpEnabled" } },
                 { kind: "Field", name: { kind: "Name", value: "dictationDumpHotkeyToggle" } },
                 { kind: "Field", name: { kind: "Name", value: "dictationDumpHotkeyHold" } },
+                { kind: "Field", name: { kind: "Name", value: "sidecarEnrichmentEnabled" } },
               ],
             },
           },
@@ -7114,6 +7265,7 @@ export const MutationUpdateSettingsDocument = {
                       { kind: "Field", name: { kind: "Name", value: "dictationDumpEnabled" } },
                       { kind: "Field", name: { kind: "Name", value: "dictationDumpHotkeyToggle" } },
                       { kind: "Field", name: { kind: "Name", value: "dictationDumpHotkeyHold" } },
+                      { kind: "Field", name: { kind: "Name", value: "sidecarEnrichmentEnabled" } },
                     ],
                   },
                 },

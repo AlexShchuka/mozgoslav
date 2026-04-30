@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,10 +40,12 @@ public sealed class ProfileMutationType
             CleanupLevel = input.CleanupLevel,
             ExportFolder = string.IsNullOrWhiteSpace(input.ExportFolder) ? "_inbox" : input.ExportFolder,
             AutoTags = input.AutoTags.ToList(),
-            Glossary = input.Glossary.ToList(),
+            GlossaryByLanguage = ToGlossaryDictionary(input.GlossaryByLanguage),
             LlmCorrectionEnabled = input.LlmCorrectionEnabled,
             IsDefault = input.IsDefault,
             IsBuiltIn = false,
+            LlmProviderOverride = input.LlmProviderOverride,
+            LlmModelOverride = input.LlmModelOverride,
         };
 
         await repository.AddAsync(profile, ct);
@@ -77,9 +80,11 @@ public sealed class ProfileMutationType
         existing.CleanupLevel = input.CleanupLevel;
         existing.ExportFolder = string.IsNullOrWhiteSpace(input.ExportFolder) ? "_inbox" : input.ExportFolder;
         existing.AutoTags = input.AutoTags.ToList();
-        existing.Glossary = input.Glossary.ToList();
+        existing.GlossaryByLanguage = ToGlossaryDictionary(input.GlossaryByLanguage);
         existing.LlmCorrectionEnabled = input.LlmCorrectionEnabled;
         existing.IsDefault = input.IsDefault;
+        existing.LlmProviderOverride = input.LlmProviderOverride;
+        existing.LlmModelOverride = input.LlmModelOverride;
 
         await repository.UpdateAsync(existing, ct);
         return new ProfilePayload(existing, []);
@@ -120,15 +125,21 @@ public sealed class ProfileMutationType
             CleanupLevel = source.CleanupLevel,
             ExportFolder = source.ExportFolder,
             AutoTags = source.AutoTags.ToList(),
-            Glossary = source.Glossary.ToList(),
+            GlossaryByLanguage = source.GlossaryByLanguage
+                .ToDictionary(kv => kv.Key, kv => kv.Value.ToList()),
             LlmCorrectionEnabled = source.LlmCorrectionEnabled,
             IsDefault = false,
             IsBuiltIn = false,
+            LlmProviderOverride = source.LlmProviderOverride,
+            LlmModelOverride = source.LlmModelOverride,
         };
 
         await repository.AddAsync(copy, ct);
         return new ProfilePayload(copy, []);
     }
+
+    private static Dictionary<string, List<string>> ToGlossaryDictionary(IReadOnlyList<GlossaryEntryInput> entries)
+        => entries.ToDictionary(e => e.Language, e => e.Terms.ToList());
 
     private static async Task DemoteCurrentDefaultAsync(IProfileRepository repository, CancellationToken ct)
     {

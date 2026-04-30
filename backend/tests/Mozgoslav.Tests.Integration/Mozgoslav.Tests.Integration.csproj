@@ -31,11 +31,9 @@
         <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting"/>
     </ItemGroup>
     <ItemGroup>
-        <!-- Canned Opus-in-WebM sample (legacy one-shot scenario). -->
         <Content Include="_fixtures\*.*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
-        <!-- D4 — chunked MediaRecorder fixtures (header-less continuation clusters). -->
         <Content Include="Fixtures\dictation-webm-chunks\*.*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>

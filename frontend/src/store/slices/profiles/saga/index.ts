@@ -5,12 +5,14 @@ import { watchCreateProfile } from "./createProfileSaga";
 import { watchDeleteProfile } from "./deleteProfileSaga";
 import { watchDuplicateProfile } from "./duplicateProfileSaga";
 import { watchLoadProfiles } from "./loadProfilesSaga";
+import { watchSuggestGlossaryTerms } from "./suggestGlossaryTermsSaga";
 import { watchUpdateProfile } from "./updateProfileSaga";
 
 export { createProfileSaga } from "./createProfileSaga";
 export { deleteProfileSaga } from "./deleteProfileSaga";
 export { duplicateProfileSaga } from "./duplicateProfileSaga";
 export { loadProfilesSaga } from "./loadProfilesSaga";
+export { suggestGlossaryTermsSaga } from "./suggestGlossaryTermsSaga";
 export { updateProfileSaga } from "./updateProfileSaga";
 
 export function* watchProfilesSagas(): SagaIterator {
@@ -20,5 +22,6 @@ export function* watchProfilesSagas(): SagaIterator {
     fork(watchUpdateProfile),
     fork(watchDeleteProfile),
     fork(watchDuplicateProfile),
+    fork(watchSuggestGlossaryTerms),
   ]);
 }

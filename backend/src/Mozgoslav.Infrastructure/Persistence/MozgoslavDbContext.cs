@@ -38,6 +38,17 @@ public sealed class MozgoslavDbContext : DbContext
             v => JsonSerializer.Serialize(v ?? new List<string>(), (JsonSerializerOptions?)null),
             v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>());
 
+        var glossaryByLanguageConverter = new ValueConverter<Dictionary<string, List<string>>, string>(
+            v => JsonSerializer.Serialize(v ?? new Dictionary<string, List<string>>(), (JsonSerializerOptions?)null),
+            v => JsonSerializer.Deserialize<Dictionary<string, List<string>>>(v, (JsonSerializerOptions?)null) ?? new Dictionary<string, List<string>>());
+
+        var glossaryByLanguageComparer = new ValueComparer<Dictionary<string, List<string>>>(
+            (l, r) => JsonSerializer.Serialize(l, (JsonSerializerOptions?)null) == JsonSerializer.Serialize(r, (JsonSerializerOptions?)null),
+            v => v == null ? 0 : JsonSerializer.Serialize(v, (JsonSerializerOptions?)null).GetHashCode(StringComparison.Ordinal),
+            v => v == null
+                ? new Dictionary<string, List<string>>()
+                : new Dictionary<string, List<string>>(v.ToDictionary(kv => kv.Key, kv => kv.Value.ToList())));
+
         var actionItemListConverter = new ValueConverter<List<ActionItem>, string>(
             v => JsonSerializer.Serialize(v ?? new List<ActionItem>(), (JsonSerializerOptions?)null),
             v => JsonSerializer.Deserialize<List<ActionItem>>(v, (JsonSerializerOptions?)null) ?? new List<ActionItem>());
@@ -145,9 +156,11 @@ public sealed class MozgoslavDbContext : DbContext
             autoTagsProperty.Metadata.SetValueComparer(stringListComparer);
             e.Property(x => x.IsDefault).HasColumnName("is_default");
             e.Property(x => x.IsBuiltIn).HasColumnName("is_built_in");
-            var glossaryProperty = e.Property(x => x.Glossary).HasColumnName("glossary_json").HasConversion(stringListConverter);
-            glossaryProperty.Metadata.SetValueComparer(stringListComparer);
+            var glossaryByLanguageProperty = e.Property(x => x.GlossaryByLanguage).HasColumnName("glossary_by_language_json").HasConversion(glossaryByLanguageConverter);
+            glossaryByLanguageProperty.Metadata.SetValueComparer(glossaryByLanguageComparer);
             e.Property(x => x.LlmCorrectionEnabled).HasColumnName("llm_correction_enabled");
+            e.Property(x => x.LlmProviderOverride).HasColumnName("llm_provider_override").HasDefaultValue(string.Empty);
+            e.Property(x => x.LlmModelOverride).HasColumnName("llm_model_override").HasDefaultValue(string.Empty);
         });
 
         modelBuilder.Entity<ProcessingJob>(e =>

@@ -37,6 +37,7 @@ export interface AppSettings {
   dictationDumpEnabled: boolean;
   dictationDumpHotkeyToggle: string;
   dictationDumpHotkeyHold: string;
+  sidecarEnrichmentEnabled: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -73,4 +74,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   dictationDumpEnabled: false,
   dictationDumpHotkeyToggle: "",
   dictationDumpHotkeyHold: "",
+  sidecarEnrichmentEnabled: false,
 };

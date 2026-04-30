@@ -14,16 +14,36 @@ public sealed class GlossaryApplicatorTests
     public void TryBuildInitialPrompt_EmptyGlossary_ReturnsNull()
     {
         var applicator = new GlossaryApplicator();
-        var profile = new Profile { Glossary = [] };
+        var profile = new Profile { GlossaryByLanguage = [] };
         applicator.TryBuildInitialPrompt(profile).Should().BeNull();
     }
 
     [TestMethod]
-    public void TryBuildInitialPrompt_JoinsTermsWithCommaSpace()
+    public void TryBuildInitialPrompt_MatchesExactLanguage_ReturnsTerms()
     {
         var applicator = new GlossaryApplicator();
-        var profile = new Profile { Glossary = { "Mozgoslav", "Мариной", "antony66" } };
-        applicator.TryBuildInitialPrompt(profile).Should().Be("Mozgoslav, Мариной, antony66");
+        var profile = new Profile
+        {
+            GlossaryByLanguage = new()
+            {
+                ["ru"] = ["Mozgoslav", "Мариной", "antony66"],
+            },
+        };
+        applicator.TryBuildInitialPrompt(profile, "ru").Should().Be("Mozgoslav, Мариной, antony66");
+    }
+
+    [TestMethod]
+    public void TryBuildInitialPrompt_FallsBackToDefault_WhenLanguageNotFound()
+    {
+        var applicator = new GlossaryApplicator();
+        var profile = new Profile
+        {
+            GlossaryByLanguage = new()
+            {
+                ["default"] = ["Iván", "Moscow"],
+            },
+        };
+        applicator.TryBuildInitialPrompt(profile, "fr").Should().Be("Iván, Moscow");
     }
 
     [TestMethod]
@@ -32,9 +52,12 @@ public sealed class GlossaryApplicatorTests
         var applicator = new GlossaryApplicator();
         var profile = new Profile
         {
-            Glossary = { "Iván", " ", "Iván", "", "  Moscow  " },
+            GlossaryByLanguage = new()
+            {
+                ["en"] = ["Iván", " ", "Iván", "", "  Moscow  "],
+            },
         };
-        applicator.TryBuildInitialPrompt(profile).Should().Be("Iván, Moscow");
+        applicator.TryBuildInitialPrompt(profile, "en").Should().Be("Iván, Moscow");
     }
 
     [TestMethod]
@@ -42,8 +65,8 @@ public sealed class GlossaryApplicatorTests
     {
         var applicator = new GlossaryApplicator();
         var longTerms = Enumerable.Range(0, 200).Select(i => $"Term{i}").ToList();
-        var profile = new Profile { Glossary = longTerms };
-        var prompt = applicator.TryBuildInitialPrompt(profile);
+        var profile = new Profile { GlossaryByLanguage = new() { ["ru"] = longTerms } };
+        var prompt = applicator.TryBuildInitialPrompt(profile, "ru");
         prompt.Should().NotBeNull();
         prompt.Length.Should().BeLessThanOrEqualTo(200);
     }
@@ -52,7 +75,7 @@ public sealed class GlossaryApplicatorTests
     public void TryBuildLlmSystemPromptSuffix_EmptyGlossary_ReturnsNull()
     {
         var applicator = new GlossaryApplicator();
-        var profile = new Profile { Glossary = [] };
+        var profile = new Profile { GlossaryByLanguage = [] };
         applicator.TryBuildLlmSystemPromptSuffix(profile).Should().BeNull();
     }
 
@@ -60,8 +83,28 @@ public sealed class GlossaryApplicatorTests
     public void TryBuildLlmSystemPromptSuffix_JoinsTermsVerbatimHint()
     {
         var applicator = new GlossaryApplicator();
-        var profile = new Profile { Glossary = { "Mozgoslav", "antony66" } };
-        var suffix = applicator.TryBuildLlmSystemPromptSuffix(profile);
+        var profile = new Profile
+        {
+            GlossaryByLanguage = new()
+            {
+                ["en"] = ["Mozgoslav", "antony66"],
+            },
+        };
+        var suffix = applicator.TryBuildLlmSystemPromptSuffix(profile, "en");
         suffix.Should().Be("Proper nouns to preserve verbatim: Mozgoslav, antony66.");
+    }
+
+    [TestMethod]
+    public void TryBuildInitialPrompt_NoLanguageGiven_ReturnsNull_WhenNoDefault()
+    {
+        var applicator = new GlossaryApplicator();
+        var profile = new Profile
+        {
+            GlossaryByLanguage = new()
+            {
+                ["ru"] = ["Mozgoslav"],
+            },
+        };
+        applicator.TryBuildInitialPrompt(profile, null).Should().BeNull();
     }
 }

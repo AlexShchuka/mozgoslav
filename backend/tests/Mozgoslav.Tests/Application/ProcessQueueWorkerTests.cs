@@ -284,6 +284,7 @@ public sealed class ProcessQueueWorkerTests
         public IAppSettings Settings { get; } = Substitute.For<IAppSettings>();
         public IJobProgressNotifier ProgressNotifier { get; } = Substitute.For<IJobProgressNotifier>();
         public IDomainEventBus EventBus { get; } = Substitute.For<IDomainEventBus>();
+        public IPythonSidecarClient SidecarClient { get; } = Substitute.For<IPythonSidecarClient>();
         public TestJobCancellationRegistry CancellationRegistry { get; } = new();
 
         public string VaultPath { get; init; } = "/tmp/vault";
@@ -299,6 +300,7 @@ public sealed class ProcessQueueWorkerTests
                 NullLogger<LlmCorrectionService>.Instance),
             Settings, ProgressNotifier,
             CancellationRegistry,
+            SidecarClient,
             EventBus,
             NullLogger<ProcessQueueWorker>.Instance);
 

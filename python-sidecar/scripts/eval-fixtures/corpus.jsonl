@@ -1,0 +1,60 @@
+{"id": "c01", "text": "Pasta carbonara is made with eggs, pancetta, Pecorino Romano, and black pepper."}
+{"id": "c02", "text": "Sourdough bread requires a live starter culture of wild yeast and bacteria."}
+{"id": "c03", "text": "Braising meat low and slow in liquid breaks down tough collagen into gelatin."}
+{"id": "c04", "text": "Knife skills improve cooking efficiency; a sharp chef's knife is safer than a dull one."}
+{"id": "c05", "text": "Miso soup base is dashi stock combined with dissolved miso paste."}
+{"id": "c06", "text": "Blanching vegetables in salted water preserves their colour and stops enzyme activity."}
+{"id": "c07", "text": "Emulsification in vinaigrette requires whisking oil slowly into mustard and vinegar."}
+{"id": "c08", "text": "Caramelisation of sugar begins around 160 degrees Celsius."}
+{"id": "c09", "text": "Mise en place means having all ingredients prepped and measured before cooking starts."}
+{"id": "c10", "text": "Python uses indentation instead of curly braces to define code blocks."}
+{"id": "c11", "text": "A git rebase rewrites commit history by replaying commits on top of another branch."}
+{"id": "c12", "text": "Docker containers share the host OS kernel but isolate processes and filesystems."}
+{"id": "c13", "text": "Async/await in Python is built on top of coroutines and the event loop."}
+{"id": "c14", "text": "A binary search tree maintains sorted order for O(log n) lookups."}
+{"id": "c15", "text": "SQL joins combine rows from two tables based on a matching condition."}
+{"id": "c16", "text": "Gradient descent minimises a loss function by iteratively adjusting parameters."}
+{"id": "c17", "text": "REST APIs communicate over HTTP using verbs GET, POST, PUT, DELETE."}
+{"id": "c18", "text": "Type inference lets compilers deduce variable types without explicit annotations."}
+{"id": "c19", "text": "Unit tests validate individual functions in isolation from external dependencies."}
+{"id": "c20", "text": "Progressive overload means gradually increasing training volume to force adaptation."}
+{"id": "c21", "text": "Compound lifts like squats and deadlifts recruit multiple muscle groups simultaneously."}
+{"id": "c22", "text": "Zone 2 cardio trains the aerobic base and improves mitochondrial density."}
+{"id": "c23", "text": "Rest periods between sets affect whether training targets strength or hypertrophy."}
+{"id": "c24", "text": "Protein synthesis is maximised with 0.7 to 1 gram of protein per pound of bodyweight."}
+{"id": "c25", "text": "Foam rolling before a workout increases blood flow and reduces myofascial tension."}
+{"id": "c26", "text": "HIIT workouts alternate short bursts of maximum effort with recovery intervals."}
+{"id": "c27", "text": "Grip strength is a reliable proxy for overall muscular health and longevity."}
+{"id": "c28", "text": "Sleep is the most important recovery tool for athletic performance."}
+{"id": "c29", "text": "The pentatonic scale is the foundation of blues and rock improvisation."}
+{"id": "c30", "text": "Chord inversions change the bass note while keeping the same harmonic function."}
+{"id": "c31", "text": "Counterpoint is the art of combining two or more independent melodic lines."}
+{"id": "c32", "text": "Modal interchange borrows chords from parallel modes to add colour."}
+{"id": "c33", "text": "Side-chain compression in EDM creates the pumping effect by ducking the bass."}
+{"id": "c34", "text": "A capo raises pitch by clamping across guitar frets without retuning."}
+{"id": "c35", "text": "The circle of fifths maps all 12 keys and their relationships."}
+{"id": "c36", "text": "Dynamic range compression reduces the difference between loud and quiet signals."}
+{"id": "c37", "text": "Reverb simulates acoustic reflections and adds perceived space to dry recordings."}
+{"id": "c38", "text": "EQ is used to cut problematic frequencies before boosting desired ones."}
+{"id": "c39", "text": "Backpacking light means keeping a base weight under ten pounds."}
+{"id": "c40", "text": "Altitude sickness occurs above 2500 metres and is prevented by slow ascent."}
+{"id": "c41", "text": "Travel insurance should cover medical evacuation when visiting remote regions."}
+{"id": "c42", "text": "Layering clothing with moisture-wicking base, insulating mid, and waterproof shell regulates temperature."}
+{"id": "c43", "text": "A local SIM card is cheaper than roaming for data access abroad."}
+{"id": "c44", "text": "Currency exchange at airports typically offers the worst rates."}
+{"id": "c45", "text": "Visa requirements differ per passport; always check 90 days before travel."}
+{"id": "c46", "text": "Jet lag recovery is faster when you adopt local meal times immediately."}
+{"id": "c47", "text": "Hostels offer social atmospheres and significantly lower costs than hotels."}
+{"id": "c48", "text": "A universal adapter covers most socket types but does not convert voltage."}
+{"id": "c49", "text": "Seasoning a cast-iron pan builds a polymerised oil layer that prevents rust."}
+{"id": "c50", "text": "Lambda functions in Python are anonymous single-expression functions."}
+{"id": "c51", "text": "Tempo runs improve lactate threshold by sustaining uncomfortable but sustainable pace."}
+{"id": "c52", "text": "Blues scale adds a flattened fifth to the minor pentatonic for tension."}
+{"id": "c53", "text": "Packing cubes compress clothes and keep a suitcase organised by category."}
+{"id": "c54", "text": "Maillard reaction creates the brown crust and savoury flavour in seared meat."}
+{"id": "c55", "text": "Decorators in Python wrap a function to extend its behaviour without modifying it."}
+{"id": "c56", "text": "Eccentric training under load is the primary driver of hypertrophy adaptation."}
+{"id": "c57", "text": "MIDI messages encode musical events as note-on, note-off, and control-change packets."}
+{"id": "c58", "text": "Travel hacking uses credit card points and airline miles to fly business class cheaply."}
+{"id": "c59", "text": "Umami is the fifth basic taste and is concentrated in aged cheese, soy, and mushrooms."}
+{"id": "c60", "text": "Dependency injection decouples module construction from usage for easier testing."}

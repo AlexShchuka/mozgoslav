@@ -46,4 +46,5 @@ public sealed record UpdateSettingsInput(
     bool ActionsSkillEnabled = false,
     bool RemindersSkillEnabled = false,
     bool DictationClassifyIntentEnabled = false,
-    string ClaudeCliPath = "");
+    string ClaudeCliPath = "",
+    bool SidecarEnrichmentEnabled = false);

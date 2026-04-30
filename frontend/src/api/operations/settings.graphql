@@ -50,6 +50,7 @@ query QuerySettings {
     dictationDumpEnabled
     dictationDumpHotkeyToggle
     dictationDumpHotkeyHold
+    sidecarEnrichmentEnabled
   }
 }
 
@@ -96,6 +97,7 @@ mutation MutationUpdateSettings($input: UpdateSettingsInput!) {
       dictationDumpEnabled
       dictationDumpHotkeyToggle
       dictationDumpHotkeyHold
+      sidecarEnrichmentEnabled
     }
     errors {
       code
