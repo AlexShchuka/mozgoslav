@@ -91,6 +91,18 @@
     "liveTranscriptLabel": "Live transcription",
     "liveTranscriptWaiting": "Listening…"
   },
+  "recording": {
+    "listening": "Listening…",
+    "processing": {
+      "transcribing": "Transcribing audio…",
+      "correcting": "Correcting…",
+      "llmCleanup": "LLM cleanup…",
+      "summarizing": "Summarizing…",
+      "exporting": "Exporting…",
+      "paused": "Paused",
+      "failed": "Failed at {{step}}"
+    }
+  },
   "dashboard": {
     "title": "Dashboard",
     "importTitle": "Add recording",

@@ -91,6 +91,18 @@
     "liveTranscriptLabel": "Идёт расшифровка",
     "liveTranscriptWaiting": "Слушаю микрофон…"
   },
+  "recording": {
+    "listening": "Слушаю микрофон…",
+    "processing": {
+      "transcribing": "Превращаю в текст…",
+      "correcting": "Исправляю опечатки…",
+      "llmCleanup": "Уточняю через LLM…",
+      "summarizing": "Готовлю summary…",
+      "exporting": "Сохраняю в Obsidian…",
+      "paused": "На паузе",
+      "failed": "Не получилось — {{step}}"
+    }
+  },
   "dashboard": {
     "title": "Дашборд",
     "importTitle": "Добавить запись",
