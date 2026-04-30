@@ -481,7 +481,7 @@
     "engineGoogle": "Google",
     "cacheTtl": "Время кэша (часы)",
     "rawSettings": "Настройки SearXNG (YAML)",
-    "saveNote": "Настройки применятся при следующем перезапуске sidecar"
+    "saveNote": "Настройки применятся немедленно"
   },
   "errors": {
     "genericErrorWithMessage": "Ошибка: {{message}}"

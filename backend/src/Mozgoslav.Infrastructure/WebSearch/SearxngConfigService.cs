@@ -57,6 +57,7 @@ public sealed class SearxngConfigService
         yaml = SetEngineEnabled(yaml, "google", googleEnabled);
 
         await File.WriteAllTextAsync(UserSettingsPath, yaml, ct);
+        Console.WriteLine("MOZGOSLAV_EVENT:searxng-restart");
     }
 
     private void EnsureUserSettingsExist()
