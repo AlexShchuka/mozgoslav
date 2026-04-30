@@ -40,11 +40,11 @@ const makeWsClientStub = (): { subscribe: jest.Mock; dispose: jest.Mock } => {
   return { subscribe, dispose };
 };
 
-const makeJob = (overrides: Partial<ProcessingJob> = {}): ProcessingJob => ({
+const makeJob = (overrides: Partial<ProcessingJob> = {}) => ({
   id: "job-1",
   recordingId: "rec-1",
   profileId: "prof-1",
-  status: "Transcribing",
+  status: "Transcribing" as ProcessingJob["status"],
   progress: 30,
   currentStep: "Transcribing audio",
   errorMessage: null,
@@ -52,6 +52,7 @@ const makeJob = (overrides: Partial<ProcessingJob> = {}): ProcessingJob => ({
   createdAt: "2026-04-19T20:00:00Z",
   startedAt: "2026-04-19T20:00:01Z",
   finishedAt: null,
+  stages: [],
   ...overrides,
 });
 
