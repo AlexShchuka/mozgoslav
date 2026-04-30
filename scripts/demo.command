@@ -116,10 +116,20 @@ echo ""
 
 # --- Release ports :5050 and :5060 from stale processes ---
 for port in 5050 5060; do
-  pid="$(lsof -ti tcp:$port 2>/dev/null || true)"
-  if [ -n "$pid" ]; then
-    echo "→ releasing port :$port (PID $pid)..."
-    kill -9 $pid 2>/dev/null || true
+  if ! command -v lsof >/dev/null 2>&1; then
+    echo "[demo] lsof not installed, skipping port :$port cleanup"
+    continue
+  fi
+  PIDS="$(lsof -ti tcp:"$port" 2>/dev/null || true)"
+  if [ -n "$PIDS" ]; then
+    echo "→ releasing port :$port (PID $PIDS)..."
+    echo "$PIDS" | xargs kill -TERM 2>/dev/null || true
+    sleep 0.5
+    STILL="$(lsof -ti tcp:"$port" 2>/dev/null || true)"
+    if [ -n "$STILL" ]; then
+      echo "[demo] forcing SIGKILL on :$port (PID $STILL)"
+      echo "$STILL" | xargs kill -KILL 2>/dev/null || true
+    fi
   fi
 done
 

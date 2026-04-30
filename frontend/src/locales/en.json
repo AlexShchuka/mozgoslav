@@ -483,7 +483,9 @@
       "version": "Version",
       "hint": "Hint",
       "running": "Running",
-      "notRunning": "Not running"
+      "notInstalled": "Not installed",
+      "installedNotRunning": "Installed, not running",
+      "error": "Error"
     },
     "services": {
       "title": "Supervisor services",

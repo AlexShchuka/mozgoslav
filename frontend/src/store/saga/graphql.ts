@@ -1,6 +1,6 @@
 import { call } from "redux-saga/effects";
 import type { Effect } from "redux-saga/effects";
-import { eventChannel } from "redux-saga";
+import { END, eventChannel } from "redux-saga";
 import type { EventChannel } from "redux-saga";
 import type { TypedDocumentNode } from "@graphql-typed-document-node/core";
 import type { Variables } from "graphql-request";
@@ -32,9 +32,11 @@ export function gqlSubscriptionChannel<
           }
         },
         error: () => {
+          emit(END);
           void wsClient.dispose();
         },
         complete: () => {
+          emit(END);
           void wsClient.dispose();
         },
       }

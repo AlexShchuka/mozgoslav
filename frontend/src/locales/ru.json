@@ -483,7 +483,9 @@
       "version": "Версия",
       "hint": "Подсказка",
       "running": "Запущен",
-      "notRunning": "Не запущен"
+      "notInstalled": "Не установлен",
+      "installedNotRunning": "Установлен, не запущен",
+      "error": "Ошибка"
     },
     "services": {
       "title": "Supervisor-сервисы",

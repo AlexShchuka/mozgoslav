@@ -28,6 +28,7 @@ import type { WebSearchState } from "../store/slices/webSearch/types";
 import { initialSystemActionsState, type SystemActionsState } from "../store/slices/systemActions";
 import { initialRoutinesState, type RoutinesState } from "../store/slices/routines";
 import { initialPromptsState, type PromptsState } from "../store/slices/prompts";
+import { initialMonitoringState, type MonitoringState } from "../store/slices/monitoring";
 
 export const jobsById = (jobs: readonly ProcessingJob[]): Record<string, ProcessingJob> =>
   Object.fromEntries(jobs.map((job) => [job.id, job]));
@@ -151,6 +152,12 @@ export const mockPromptsState = (
   patch: Partial<PromptsState> = {}
 ): Pick<GlobalState, "prompts"> => ({
   prompts: { ...initialPromptsState, ...patch },
+});
+
+export const mockMonitoringState = (
+  patch: Partial<MonitoringState> = {}
+): Pick<GlobalState, "monitoring"> => ({
+  monitoring: { ...initialMonitoringState, ...patch },
 });
 
 export const mergeMockState = (...parts: Partial<GlobalState>[]): Partial<GlobalState> =>

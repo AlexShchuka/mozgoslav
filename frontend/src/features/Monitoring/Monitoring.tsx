@@ -1,5 +1,7 @@
-import { FC } from "react";
+import { FC, useEffect } from "react";
+import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
+import type { Action, Dispatch } from "redux";
 import { RefreshCw } from "lucide-react";
 
 import Badge from "../../components/Badge";
@@ -9,6 +11,7 @@ import type {
   SupervisorServiceState,
   SyncthingRuntimeState,
 } from "../../api/gql/graphql";
+import { monitoringSubscribe, monitoringUnsubscribe } from "../../store/slices/monitoring";
 import type { MonitoringProps } from "./types";
 import {
   EmptyState,
@@ -37,6 +40,14 @@ const Monitoring: FC<MonitoringProps> = ({
   onReprobe,
 }) => {
   const { t } = useTranslation();
+  const dispatch = useDispatch<Dispatch<Action>>();
+
+  useEffect(() => {
+    dispatch(monitoringSubscribe());
+    return () => {
+      dispatch(monitoringUnsubscribe());
+    };
+  }, [dispatch]);
 
   return (
     <MonitoringRoot data-testid="monitoring-root">
@@ -128,17 +139,43 @@ interface SyncthingPanelProps {
   t: ReturnType<typeof useTranslation>["t"];
 }
 
+type SyncthingDetection = "not-installed" | "installed-not-running" | "running" | "error";
+
+type SyncthingStatusInfo = {
+  tone: "success" | "warning" | "error" | "neutral";
+  labelKey:
+    | "monitoring.syncthing.running"
+    | "monitoring.syncthing.installedNotRunning"
+    | "monitoring.syncthing.error"
+    | "monitoring.syncthing.notInstalled";
+};
+
+function syncthingStatusInfo(detection: string): SyncthingStatusInfo {
+  switch (detection as SyncthingDetection) {
+    case "running":
+      return { tone: "success", labelKey: "monitoring.syncthing.running" };
+    case "installed-not-running":
+      return { tone: "warning", labelKey: "monitoring.syncthing.installedNotRunning" };
+    case "error":
+      return { tone: "error", labelKey: "monitoring.syncthing.error" };
+    case "not-installed":
+    default:
+      return { tone: "neutral", labelKey: "monitoring.syncthing.notInstalled" };
+  }
+}
+
 const SyncthingPanel: FC<SyncthingPanelProps> = ({ syncthing, t }) => {
-  const detected = syncthing.detection !== "not_found" && syncthing.detection !== "none";
+  const { tone, labelKey } = syncthingStatusInfo(syncthing.detection);
+  const isRunning = syncthing.detection === "running";
   return (
     <Panel data-testid="monitoring-syncthing-panel">
       <PanelTitle>
-        <StatusIndicator $online={detected} /> {t("monitoring.syncthing.title")}
+        <StatusIndicator $online={isRunning} /> {t("monitoring.syncthing.title")}
       </PanelTitle>
       <FieldRow>
         <FieldLabel>{t("monitoring.syncthing.detection")}</FieldLabel>
         <FieldValue>
-          <Badge tone={detected ? "success" : "neutral"}>{syncthing.detection}</Badge>
+          <Badge tone={tone}>{t(labelKey)}</Badge>
         </FieldValue>
       </FieldRow>
       {syncthing.version && (

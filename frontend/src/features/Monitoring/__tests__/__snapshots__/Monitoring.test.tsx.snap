@@ -176,7 +176,7 @@ exports[`Monitoring matches snapshot with runtime state 1`] = `
             <span
               class="sc-bdfDLd ezRRIL"
             >
-              running
+              Запущен
             </span>
           </span>
         </div>
