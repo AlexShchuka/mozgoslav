@@ -261,6 +261,17 @@ type LlmModelDescriptor {
   supportsJsonMode: Boolean
 }
 
+type LlmRuntimeState {
+  endpoint: String!
+  online: Boolean!
+  lastProbedAt: DateTime!
+  model: String!
+  contextLength: Int!
+  supportsToolCalling: Boolean!
+  supportsJsonMode: Boolean!
+  lastError: String
+}
+
 type LmStudioCheck {
   ok: Boolean!
   severity: CheckSeverity!
@@ -346,6 +357,8 @@ type MutationType {
   buildPrompt(template: String!): String! @cost(weight: "10")
   toggleRoutine(key: String! enabled: Boolean!): RoutineDefinitionDto! @cost(weight: "10")
   runRoutineNow(key: String!): RoutineRunDto! @cost(weight: "10")
+  reprobeRuntimeState: RuntimeStatePayload! @cost(weight: "10")
+  publishElectronServices(input: PublishElectronServicesInput!): RuntimeStatePayload! @cost(weight: "10")
 }
 
 type NotFoundError implements IUserError {
@@ -549,6 +562,7 @@ type QueryType {
   settings: AppSettingsDto! @cost(weight: "10")
   llmCapabilities: LlmCapabilities
   llmModels: [LlmModelDescriptor!]! @cost(weight: "10")
+  runtimeState: RuntimeState! @cost(weight: "10")
   profiles: [Profile!]! @cost(weight: "10")
   profile(id: UUID!): Profile @cost(weight: "10")
   suggestGlossaryTerms(profileId: UUID! language: String!): [String!]! @cost(weight: "10")
@@ -680,6 +694,17 @@ type RoutineRunDto {
   payloadSummary: String
 }
 
+type RuntimeState {
+  llm: LlmRuntimeState!
+  syncthing: SyncthingRuntimeState!
+  services: [SupervisorServiceState!]!
+}
+
+type RuntimeStatePayload {
+  state: RuntimeState
+  errors: [IUserError!]!
+}
+
 type SetupObsidianPayload {
   report: ObsidianSetupReport
   errors: [IUserError!]!
@@ -707,6 +732,16 @@ type SubscriptionType {
   hotkeyEvents: HotkeyEventMessage!
   recordingPartials(recordingId: UUID!): RecordingPartialPayload!
   syncEvents: SyncEventMessage!
+  runtimeStateChanged: RuntimeState!
+}
+
+type SupervisorServiceState {
+  name: String!
+  state: String!
+  lastError: String
+  restartCount: Int!
+  pid: Int
+  port: Int
 }
 
 type SyncDeviceEntry {
@@ -742,6 +777,14 @@ type SyncPairingPayloadResult {
 type SyncStatusResult {
   folders: [SyncFolderEntry!]!
   devices: [SyncDeviceEntry!]!
+}
+
+type SyncthingRuntimeState {
+  detection: String!
+  binaryPath: String
+  apiUrl: String
+  version: String
+  hint: String
 }
 
 type SystemActionTemplateDto {
@@ -1024,6 +1067,10 @@ input ProcessingJobSortInput {
   pauseRequested: SortEnumType @cost(weight: "10")
 }
 
+input PublishElectronServicesInput {
+  services: [SupervisorServiceStateInput!]!
+}
+
 input RecordingFilterInput {
   and: [RecordingFilterInput!]
   or: [RecordingFilterInput!]
@@ -1083,6 +1130,15 @@ input StringOperationFilterInput {
   nstartsWith: String @cost(weight: "20")
   endsWith: String @cost(weight: "20")
   nendsWith: String @cost(weight: "20")
+}
+
+input SupervisorServiceStateInput {
+  name: String!
+  state: String!
+  lastError: String
+  restartCount: Int!
+  pid: Int
+  port: Int
 }
 
 input TimeSpanOperationFilterInput {
