@@ -259,7 +259,9 @@ jobs:
           bin_name=$(basename "$test_bundle" .xctest)
           bin_path="${test_bundle}/Contents/MacOS/${bin_name}"
           [ -f "$bin_path" ] || bin_path="${test_bundle}/${bin_name}"
-          xcrun llvm-cov export -format=lcov "$bin_path" -instr-profile "$profdata" > coverage.lcov
+          xcrun llvm-cov export -format=lcov \
+            -ignore-filename-regex='(/Applications/Xcode|/Library/Developer|/usr/lib|\.build/checkouts|/SourcePackages/)' \
+            "$bin_path" -instr-profile "$profdata" > coverage.lcov
           ls -la coverage.lcov
       - name: Upload native coverage
         if: always()
