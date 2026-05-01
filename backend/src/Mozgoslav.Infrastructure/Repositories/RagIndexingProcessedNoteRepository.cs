@@ -49,6 +49,11 @@ public sealed class RagIndexingProcessedNoteRepository : IProcessedNoteRepositor
         return _inner.GetByRecordingIdsAsync(recordingIds, ct);
     }
 
+    public Task<int> CountAsync(CancellationToken ct)
+    {
+        return _inner.CountAsync(ct);
+    }
+
     public Task<IReadOnlyList<ProcessedNote>> GetAllAsync(CancellationToken ct)
     {
         return _inner.GetAllAsync(ct);

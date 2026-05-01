@@ -56,19 +56,13 @@ describe("LiveTranscript — context-aware status label", () => {
   it("shows transcribing label when job status is Transcribing", () => {
     const job = buildJob({ status: "Transcribing" });
     renderLiveTranscript(job);
-    expect(screen.getByText("Transcribing audio…")).toBeInTheDocument();
+    expect(screen.getByText("Transcribing…")).toBeInTheDocument();
   });
 
-  it("shows correcting label when job status is Correcting", () => {
-    const job = buildJob({ status: "Correcting", currentStep: "Cleaning transcript" });
+  it("shows cleaning-transcript label when job status is Correcting", () => {
+    const job = buildJob({ status: "Correcting" });
     renderLiveTranscript(job);
-    expect(screen.getByText("Correcting…")).toBeInTheDocument();
-  });
-
-  it("shows LLM cleanup label when job status is Correcting with LLM step", () => {
-    const job = buildJob({ status: "Correcting", currentStep: "LLM correction" });
-    renderLiveTranscript(job);
-    expect(screen.getByText("LLM cleanup…")).toBeInTheDocument();
+    expect(screen.getByText("Cleaning transcript…")).toBeInTheDocument();
   });
 
   it("shows summarizing label when job status is Summarizing", () => {

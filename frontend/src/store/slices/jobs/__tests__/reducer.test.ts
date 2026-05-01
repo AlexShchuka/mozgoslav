@@ -1,10 +1,13 @@
 import type { ProcessingJob } from "../../../../domain/ProcessingJob";
+import type { ProcessingJobStage } from "../../../../domain/ProcessingJobStage";
 import {
   jobUpdated,
   jobsSeedFailed,
   jobsSeeded,
   jobsStreamClosed,
   jobsStreamOpened,
+  pauseJobFailed,
+  pauseJobSucceeded,
   pendingJobCreated,
   pendingJobFailed,
   pendingJobResolved,
@@ -104,5 +107,95 @@ describe("jobs reducer", () => {
   it("ignores resolve/fail for unknown tempId", () => {
     const next = jobsReducer(initialJobsState, dispatch(pendingJobResolved({ tempId: "missing" })));
     expect(next).toEqual(initialJobsState);
+  });
+});
+
+const makeStage = (overrides: Partial<ProcessingJobStage> = {}): ProcessingJobStage => ({
+  id: "stage-1",
+  jobId: "job-1",
+  stageName: "Transcribing",
+  startedAt: "2026-04-19T20:00:01Z",
+  finishedAt: null,
+  durationMs: null,
+  errorMessage: null,
+  ...overrides,
+});
+
+describe("jobs reducer — stagesByJobId", () => {
+  it("JOBS_SEEDED populates stagesByJobId from job stages", () => {
+    const stage = makeStage();
+    const jobWithStages = {
+      ...makeJob({ id: "job-1" }),
+      stages: [stage],
+    } as unknown as ProcessingJob;
+    const next = jobsReducer(initialJobsState, dispatch(jobsSeeded([jobWithStages])));
+    expect(next.stagesByJobId["job-1"]).toHaveLength(1);
+    expect(next.stagesByJobId["job-1"][0].stageName).toBe("Transcribing");
+  });
+
+  it("JOBS_SEEDED with empty stages array sets stagesByJobId entry to []", () => {
+    const jobWithStages = { ...makeJob({ id: "job-1" }), stages: [] } as unknown as ProcessingJob;
+    const next = jobsReducer(initialJobsState, dispatch(jobsSeeded([jobWithStages])));
+    expect(next.stagesByJobId["job-1"]).toEqual([]);
+  });
+
+  it("JOB_UPDATED replaces one job's stages atomically — not merged", () => {
+    const initial = makeStage({ id: "old-stage", stageName: "Correcting" });
+    const seeded = jobsReducer(
+      initialJobsState,
+      dispatch(
+        jobsSeeded([{ ...makeJob({ id: "job-1" }), stages: [initial] } as unknown as ProcessingJob])
+      )
+    );
+    expect(seeded.stagesByJobId["job-1"]).toHaveLength(1);
+
+    const updatedStages = [
+      makeStage({ id: "s-1", stageName: "Transcribing" }),
+      makeStage({ id: "s-2", stageName: "Correcting" }),
+    ];
+    const next = jobsReducer(
+      seeded,
+      dispatch(
+        jobUpdated({
+          ...makeJob({ id: "job-1", progress: 50 }),
+          stages: updatedStages,
+        } as unknown as ProcessingJob)
+      )
+    );
+    expect(next.stagesByJobId["job-1"]).toHaveLength(2);
+    expect(next.stagesByJobId["job-1"][0].id).toBe("s-1");
+    expect(next.stagesByJobId["job-1"][1].id).toBe("s-2");
+  });
+});
+
+describe("jobs reducer — PAUSE_JOB", () => {
+  it("PAUSE_JOB_SUCCEEDED sets job status to Paused and clears error", () => {
+    const seeded = jobsReducer(
+      { ...initialJobsState, errors: { "job-1": "prev-error" } },
+      dispatch(jobsSeeded([makeJob({ id: "job-1", status: "Transcribing" })]))
+    );
+    const next = jobsReducer(seeded, dispatch(pauseJobSucceeded("job-1")));
+    expect(next.byId["job-1"].status).toBe("Paused");
+    expect(next.errors["job-1"]).toBeUndefined();
+  });
+
+  it("PAUSE_JOB_SUCCEEDED is a no-op for unknown jobId", () => {
+    const state = jobsReducer(initialJobsState, dispatch(pauseJobSucceeded("unknown")));
+    expect(state.byId).toEqual({});
+  });
+
+  it("PAUSE_JOB_FAILED stores error keyed by jobId", () => {
+    const next = jobsReducer(
+      initialJobsState,
+      dispatch(pauseJobFailed("job-1", "Job cannot be paused"))
+    );
+    expect(next.errors["job-1"]).toBe("Job cannot be paused");
+  });
+
+  it("PAUSE_JOB_FAILED does not overwrite other job errors", () => {
+    const withError = { ...initialJobsState, errors: { "job-2": "job-2-error" } };
+    const next = jobsReducer(withError, dispatch(pauseJobFailed("job-1", "pause failed")));
+    expect(next.errors["job-2"]).toBe("job-2-error");
+    expect(next.errors["job-1"]).toBe("pause failed");
   });
 });

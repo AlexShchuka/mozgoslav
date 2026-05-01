@@ -31,6 +31,7 @@ internal static class SchemaBuilderExtensions
             .AddTypeExtension<ProcessingJobType>()
             .AddTypeExtension<ProcessingJobStagesExtension>()
             .AddDataLoader<ProcessingJobByIdDataLoader>()
+            .AddDataLoader<ProcessingJobStagesByJobIdDataLoader>()
             .AddFiltering()
             .AddSorting()
             .AddProjections()

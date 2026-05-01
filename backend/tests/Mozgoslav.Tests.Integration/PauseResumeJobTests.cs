@@ -40,36 +40,6 @@ public sealed class PauseResumeJobTests
     }
 
     [TestMethod]
-    public async Task MarkPausedAsync_SetsStatusPausedAndFinishedAt()
-    {
-        await using var db = new TestDatabase();
-        await using var ctx = db.CreateContext();
-        var repo = new EfProcessingJobRepository(ctx);
-
-        var job = new ProcessingJob
-        {
-            RecordingId = Guid.NewGuid(),
-            ProfileId = Guid.NewGuid(),
-            Status = JobStatus.Transcribing,
-            PauseRequested = true
-        };
-        await repo.EnqueueAsync(job, CancellationToken.None);
-
-        var before = DateTime.UtcNow;
-        var result = await repo.MarkPausedAsync(job.Id, CancellationToken.None);
-        var after = DateTime.UtcNow;
-
-        result.Should().BeTrue();
-
-        await using var freshCtx = db.CreateContext();
-        var reloaded = await new EfProcessingJobRepository(freshCtx).GetByIdAsync(job.Id, CancellationToken.None);
-        reloaded.Should().NotBeNull();
-        reloaded.Status.Should().Be(JobStatus.Paused);
-        reloaded.FinishedAt.Should().NotBeNull();
-        reloaded.FinishedAt.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
-    }
-
-    [TestMethod]
     public async Task ClearPauseRequestedAsync_ClearsFlagOnPausedJob()
     {
         await using var db = new TestDatabase();

@@ -43,4 +43,13 @@ public sealed class EfProcessingJobStageRepository : IProcessingJobStageReposito
             .ToListAsync(ct);
         return stages.OrderBy(s => s.StartedAt).ToList();
     }
+
+    public async Task<IReadOnlyList<ProcessingJobStage>> GetByJobIdsAsync(IReadOnlyList<Guid> jobIds, CancellationToken ct)
+    {
+        var stages = await _db.ProcessingJobStages
+            .AsNoTracking()
+            .Where(s => jobIds.Contains(s.JobId))
+            .ToListAsync(ct);
+        return stages.OrderBy(s => s.StartedAt).ToList();
+    }
 }

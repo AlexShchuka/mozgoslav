@@ -182,14 +182,30 @@ public sealed class ProcessQueueWorker
 
     private bool _preflightPassed;
     private HashSet<string>? _completedStageNames;
+    private bool _llmAvailabilityChecked;
+    private bool _llmAvailableThisRun;
 
     private bool IsStageAlreadyCompleted(string stageName)
         => _completedStageNames?.Contains(stageName) == true;
 
     private bool _pauseSignaled;
 
+    private async Task<bool> IsLlmAvailableAsync(CancellationToken ct)
+    {
+        if (_llmAvailabilityChecked)
+        {
+            return _llmAvailableThisRun;
+        }
+        _llmAvailableThisRun = await _llmService.IsAvailableAsync(ct);
+        _llmAvailabilityChecked = true;
+        return _llmAvailableThisRun;
+    }
+
     private async Task RunPipelineAsync(ProcessingJob job, CancellationToken ct)
     {
+        _llmAvailabilityChecked = false;
+        _llmAvailableThisRun = false;
+
         var completedStages = await _stages.GetByJobIdAsync(job.Id, ct);
         _completedStageNames = new HashSet<string>(
             completedStages
@@ -254,7 +270,7 @@ public sealed class ProcessQueueWorker
         }
         var cleanText = _correctionService.Correct(transcript.RawText, profile);
 
-        if (profile.LlmCorrectionEnabled && await _llmService.IsAvailableAsync(ct))
+        if (profile.LlmCorrectionEnabled && await IsLlmAvailableAsync(ct))
         {
             if (!IsStageAlreadyCompleted("LLM correction"))
             {
@@ -269,14 +285,14 @@ public sealed class ProcessQueueWorker
 
         if (!IsStageAlreadyCompleted("Summarizing via LLM"))
         {
-            await TransitionAsync(job, JobStatus.Summarizing, LlmCorrectionEnd, "Summarizing via LLM", ct);
+            await TransitionAsync(job, JobStatus.Summarizing, SummarizeEnd, "Summarizing via LLM", ct);
             if (_pauseSignaled)
             {
                 return;
             }
         }
         LlmProcessingResult? llmResult = null;
-        if (await _llmService.IsAvailableAsync(ct))
+        if (await IsLlmAvailableAsync(ct))
         {
             var summarisationSystemPrompt = ComposeSummarisationPrompt(profile);
             llmResult = await _llmService.ProcessAsync(cleanText, summarisationSystemPrompt, ct);

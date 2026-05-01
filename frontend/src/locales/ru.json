@@ -1,5 +1,17 @@
 {
   "pipeline": {
+    "status": {
+      "Queued": "В очереди",
+      "PreflightChecks": "Проверка ресурсов…",
+      "Transcribing": "Расшифровка…",
+      "Correcting": "Очистка текста…",
+      "Summarizing": "Саммари…",
+      "Exporting": "Экспорт…",
+      "Done": "Готово",
+      "Failed": "Ошибка",
+      "Cancelled": "Отменено",
+      "Paused": "Пауза"
+    },
     "timeline": {
       "stage": {
         "transcribing": "Транскрипция",
@@ -471,7 +483,9 @@
       "version": "Версия",
       "hint": "Подсказка",
       "running": "Запущен",
-      "notRunning": "Не запущен"
+      "notInstalled": "Не установлен",
+      "installedNotRunning": "Установлен, не запущен",
+      "error": "Ошибка"
     },
     "services": {
       "title": "Supervisor-сервисы",

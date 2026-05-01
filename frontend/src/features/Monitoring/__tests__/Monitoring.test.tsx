@@ -1,11 +1,22 @@
-import { render } from "@testing-library/react";
-import { ThemeProvider } from "styled-components";
-import { lightTheme } from "../../../styles/theme";
-import { I18nextProvider } from "react-i18next";
-import i18n from "../../../i18n";
+jest.mock("../../../api/graphqlClient", () => ({
+  graphqlClient: { request: jest.fn() },
+  getGraphqlWsClient: jest.fn(),
+}));
+
+jest.mock("../../../store/saga/graphql", () => ({
+  gqlRequest: jest.fn(),
+  gqlSubscriptionChannel: jest.fn(),
+}));
+
+import { gqlSubscriptionChannel } from "../../../store/saga/graphql";
+import { END, eventChannel } from "redux-saga";
+import "../../../i18n";
+import { renderWithStore, mockMonitoringState, mergeMockState } from "../../../testUtils";
 import Monitoring from "../Monitoring";
 import type { MonitoringProps } from "../types";
 import type { RuntimeState } from "../../../api/gql/graphql";
+
+const mockedGqlSubscriptionChannel = gqlSubscriptionChannel as jest.Mock;
 
 const mockRuntimeState: RuntimeState = {
   llm: {
@@ -53,14 +64,17 @@ const defaultProps: MonitoringProps = {
   onReprobe: jest.fn(),
 };
 
+beforeEach(() => {
+  jest.clearAllMocks();
+  const channel = eventChannel<never>(() => () => {});
+  mockedGqlSubscriptionChannel.mockReturnValue(channel);
+  void END;
+});
+
 const renderMonitoring = (props: Partial<MonitoringProps> = {}) =>
-  render(
-    <I18nextProvider i18n={i18n}>
-      <ThemeProvider theme={lightTheme}>
-        <Monitoring {...defaultProps} {...props} />
-      </ThemeProvider>
-    </I18nextProvider>
-  );
+  renderWithStore(<Monitoring {...defaultProps} {...props} />, {
+    preloadedState: mergeMockState(mockMonitoringState()),
+  });
 
 describe("Monitoring", () => {
   it("renders the page title and reprobe button", () => {
@@ -107,5 +121,38 @@ describe("Monitoring", () => {
   it("matches snapshot with runtime state", () => {
     const { container } = renderMonitoring({ runtimeState: mockRuntimeState });
     expect(container).toMatchSnapshot();
+  });
+});
+
+describe("SyncthingPanel — detection states (#264)", () => {
+  const makeSyncState = (detection: string): RuntimeState => ({
+    ...mockRuntimeState,
+    syncthing: { ...mockRuntimeState.syncthing, detection },
+  });
+
+  it("shows success badge when detection is running", () => {
+    const { getByTestId } = renderMonitoring({ runtimeState: makeSyncState("running") });
+    const panel = getByTestId("monitoring-syncthing-panel");
+    expect(panel.textContent).toContain("Запущен");
+  });
+
+  it("shows warning badge when detection is installed-not-running", () => {
+    const { getByTestId } = renderMonitoring({
+      runtimeState: makeSyncState("installed-not-running"),
+    });
+    const panel = getByTestId("monitoring-syncthing-panel");
+    expect(panel.textContent).toContain("Установлен");
+  });
+
+  it("shows error badge when detection is error", () => {
+    const { getByTestId } = renderMonitoring({ runtimeState: makeSyncState("error") });
+    const panel = getByTestId("monitoring-syncthing-panel");
+    expect(panel.textContent).toContain("Ошибка");
+  });
+
+  it("shows neutral badge when detection is not-installed", () => {
+    const { getByTestId } = renderMonitoring({ runtimeState: makeSyncState("not-installed") });
+    const panel = getByTestId("monitoring-syncthing-panel");
+    expect(panel.textContent).toContain("Не установлен");
   });
 });

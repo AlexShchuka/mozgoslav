@@ -48,6 +48,9 @@ public sealed class EfProcessedNoteRepository : IProcessedNoteRepository
             .Select(x => x.note)
             .ToListAsync(ct);
 
+    public Task<int> CountAsync(CancellationToken ct) =>
+        _db.ProcessedNotes.CountAsync(ct);
+
     public async Task<IReadOnlyList<ProcessedNote>> GetAllAsync(CancellationToken ct) =>
         await _db.ProcessedNotes.AsNoTracking()
             .OrderByDescending(n => n.CreatedAt)

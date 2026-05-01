@@ -7,6 +7,7 @@ import {
   resumeJobRequested,
   retryJobFromStageRequested,
   selectAllJobs,
+  selectStagesByJobId,
 } from "../../store/slices/jobs";
 import {
   loadRecordings,
@@ -35,7 +36,7 @@ const mapStateToProps = (state: GlobalState) => {
     isBackendUnavailable: selectBackendUnavailable(state),
     error: selectRecordingsError(state),
     jobsByRecordingId,
-    stagesByJobId: {},
+    stagesByJobId: selectStagesByJobId(state),
   };
 };
 

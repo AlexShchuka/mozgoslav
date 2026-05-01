@@ -108,19 +108,6 @@ public sealed class EfProcessingJobRepository : IProcessingJobRepository
         return true;
     }
 
-    public async Task<bool> MarkPausedAsync(Guid id, CancellationToken ct)
-    {
-        var existing = await _db.ProcessingJobs.FirstOrDefaultAsync(j => j.Id == id, ct);
-        if (existing is null)
-        {
-            return false;
-        }
-        existing.Status = JobStatus.Paused;
-        existing.FinishedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync(ct);
-        return true;
-    }
-
     public async Task<bool> RequestRetryFromStageAsync(Guid jobId, JobStage fromStage, bool skipFailed, CancellationToken ct)
     {
         var job = await _db.ProcessingJobs.FirstOrDefaultAsync(j => j.Id == jobId, ct);
@@ -143,13 +130,11 @@ public sealed class EfProcessingJobRepository : IProcessingJobRepository
             .Where(s => s.JobId == jobId)
             .ToListAsync(ct);
 
-        var fromStageName = StageNameFor(fromStage);
-        var stageOrder = StageOrder();
-        var fromIndex = stageOrder.IndexOf(fromStageName);
+        var fromIndex = StageOrderByStage[fromStage];
 
         foreach (var stage in stages)
         {
-            var stageIndex = stageOrder.IndexOf(stage.StageName);
+            var stageIndex = StageOrderByName.TryGetValue(stage.StageName, out var idx) ? idx : -1;
             if (stageIndex < fromIndex)
             {
                 continue;
@@ -172,22 +157,22 @@ public sealed class EfProcessingJobRepository : IProcessingJobRepository
         return true;
     }
 
-    private static string StageNameFor(JobStage stage) => stage switch
+    private static readonly Dictionary<JobStage, int> StageOrderByStage = new()
     {
-        JobStage.Transcribing => "Transcribing audio",
-        JobStage.Correcting => "Cleaning transcript",
-        JobStage.LlmCorrection => "LLM correction",
-        JobStage.Summarizing => "Summarizing via LLM",
-        JobStage.Exporting => "Exporting to vault",
-        _ => throw new ArgumentOutOfRangeException(nameof(stage), stage, null)
+        [JobStage.Transcribing] = 0,
+        [JobStage.Correcting] = 1,
+        [JobStage.LlmCorrection] = 2,
+        [JobStage.Summarizing] = 3,
+        [JobStage.Exporting] = 4,
     };
 
-    private static List<string> StageOrder() =>
-    [
-        "Transcribing audio",
-        "Cleaning transcript",
-        "LLM correction",
-        "Summarizing via LLM",
-        "Exporting to vault"
-    ];
+    private static readonly Dictionary<string, int> StageOrderByName = new(StringComparer.Ordinal)
+    {
+        ["Transcribing audio"] = 0,
+        ["Cleaning transcript"] = 1,
+        ["LLM correction"] = 2,
+        ["Summarizing via LLM"] = 3,
+        ["Exporting to vault"] = 4,
+    };
+
 }

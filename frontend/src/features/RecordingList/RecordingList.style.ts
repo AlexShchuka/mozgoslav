@@ -31,3 +31,9 @@ export const ErrorText = styled.div`
 export const Meta = styled.span`
   font-variant-numeric: tabular-nums;
 `;
+
+export const UserHintText = styled.span`
+  color: ${({ theme }) => theme.colors.error};
+  font-size: ${({ theme }) => theme.font.size.sm};
+  margin-left: ${({ theme }) => theme.space(2)};
+`;

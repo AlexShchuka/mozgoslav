@@ -1,4 +1,14 @@
-import { cancel, cancelled, fork, put, race, take, takeLatest } from "redux-saga/effects";
+import {
+  cancel,
+  cancelled,
+  delay,
+  fork,
+  join,
+  put,
+  race,
+  take,
+  takeLatest,
+} from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 import type { Task, EventChannel } from "redux-saga";
 
@@ -53,39 +63,68 @@ function* consumeRuntimeStateEvents(
   }
 }
 
+const MAX_RECONNECT_ATTEMPTS = 5;
+
 export function* subscribeRuntimeStateSaga(): SagaIterator {
   yield put(monitoringLoadRequested());
 
-  let channel: EventChannel<SubscriptionRuntimeStateChangedSubscription> | null = null;
-  let consumer: Task | null = null;
+  let attempt = 0;
 
-  try {
-    channel = gqlSubscriptionChannel(SubscriptionRuntimeStateChangedDocument, {});
-    consumer = yield fork(consumeRuntimeStateEvents, channel);
+  while (attempt < MAX_RECONNECT_ATTEMPTS) {
+    let channel: EventChannel<SubscriptionRuntimeStateChangedSubscription> | null = null;
+    let consumer: Task | null = null;
 
-    yield race({
-      unsubscribe: take(MONITORING_UNSUBSCRIBE),
-    });
-  } catch {
-    yield put(monitoringLoadRequested());
-  } finally {
-    if (consumer !== null) {
-      yield cancel(consumer);
-    }
-    if (channel !== null) {
-      channel.close();
+    try {
+      channel = gqlSubscriptionChannel(SubscriptionRuntimeStateChangedDocument, {});
+      consumer = (yield fork(consumeRuntimeStateEvents, channel)) as Task;
+
+      const result = (yield race({
+        unsubscribe: take(MONITORING_UNSUBSCRIBE),
+        channelClosed: join(consumer),
+      })) as { unsubscribe?: unknown; channelClosed?: unknown };
+
+      if (result.unsubscribe) {
+        return;
+      }
+
+      attempt += 1;
+      const backoffMs = Math.min(1000 * Math.pow(2, attempt), 30000);
+      yield delay(backoffMs);
+    } finally {
+      if (consumer !== null && !(consumer as Task).isCancelled()) {
+        yield cancel(consumer as Task);
+      }
+      if (channel !== null) {
+        channel.close();
+      }
     }
   }
+
+  yield put(
+    monitoringLoadFailed(`Subscription reconnect failed after ${MAX_RECONNECT_ATTEMPTS} attempts`)
+  );
 }
 
 export function* reprobeRuntimeStateSaga(): SagaIterator {
   try {
-    (yield* gqlRequest(
+    const result = (yield* gqlRequest(
       MutationReprobeRuntimeStateDocument,
       {}
     )) as MutationReprobeRuntimeStateMutation;
-    yield put(monitoringReprobeSucceeded());
-    yield put(monitoringLoadRequested());
+
+    const errors = result.reprobeRuntimeState.errors ?? [];
+    if (errors.length > 0) {
+      yield put(monitoringReprobeFailed(errors[0].message));
+      return;
+    }
+
+    const state = result.reprobeRuntimeState.state;
+    if (state) {
+      yield put(monitoringReprobeSucceeded());
+      yield put(monitoringLoadSucceeded(state));
+    } else {
+      yield put(monitoringReprobeFailed("Reprobe returned no state"));
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     yield put(monitoringReprobeFailed(message));

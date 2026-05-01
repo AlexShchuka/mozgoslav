@@ -31,7 +31,8 @@
       <DataCollector friendlyName="XPlat code coverage" enabled="True">
         <Configuration>
           <Format>cobertura</Format>
-          <Exclude>[Mozgoslav.Tests*]*,[Mozgoslav.Api]Program</Exclude>
+          <Include>[Mozgoslav.Domain]*,[Mozgoslav.Application]*,[Mozgoslav.Infrastructure]*</Include>
+          <Exclude>[Mozgoslav.Tests*]*</Exclude>
           <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
           <SingleHit>false</SingleHit>
           <UseSourceLink>true</UseSourceLink>

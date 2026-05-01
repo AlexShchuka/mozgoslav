@@ -1,24 +1,41 @@
 import type { ProcessingJob } from "../../../domain/ProcessingJob";
+import type { ProcessingJobStage } from "../../../domain/ProcessingJobStage";
 import type { JobsState, PendingJob } from "./types";
 
-export const seedJobs = (state: JobsState, jobs: ProcessingJob[]): JobsState => {
+type JobWithStages = ProcessingJob & { stages?: ProcessingJobStage[] };
+
+export const seedJobs = (state: JobsState, jobs: JobWithStages[]): JobsState => {
   const byId = jobs.reduce<Record<string, ProcessingJob>>((acc, job) => {
-    acc[job.id] = job;
+    const { stages: _stages, ...jobCore } = job;
+    acc[job.id] = jobCore;
     return acc;
   }, {});
-  return { ...state, byId, lastError: null };
+  const stagesByJobId = jobs.reduce<Record<string, ProcessingJobStage[]>>((acc, job) => {
+    acc[job.id] = job.stages ?? [];
+    return acc;
+  }, {});
+  return {
+    ...state,
+    byId,
+    stagesByJobId: { ...state.stagesByJobId, ...stagesByJobId },
+    lastError: null,
+  };
 };
 
-export const upsertJob = (state: JobsState, job: ProcessingJob): JobsState => {
+export const upsertJob = (state: JobsState, job: JobWithStages): JobsState => {
+  const { stages, ...jobCore } = job;
   const nextPending = { ...state.pending };
   for (const [tempId, pending] of Object.entries(state.pending)) {
-    if (pending.recordingId && pending.recordingId === job.recordingId) {
+    if (pending.recordingId && pending.recordingId === jobCore.recordingId) {
       delete nextPending[tempId];
     }
   }
+  const nextStagesByJobId =
+    stages !== undefined ? { ...state.stagesByJobId, [jobCore.id]: stages } : state.stagesByJobId;
   return {
     ...state,
-    byId: { ...state.byId, [job.id]: job },
+    byId: { ...state.byId, [jobCore.id]: jobCore },
+    stagesByJobId: nextStagesByJobId,
     pending: nextPending,
   };
 };

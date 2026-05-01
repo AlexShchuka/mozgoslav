@@ -23,16 +23,29 @@ export interface LiveTranscriptProps {
   recordingId: string;
 }
 
-const selectStatusLabel = (status: JobStatus | null, step: string | null, t: TFunction): string => {
-  if (status === null) return t("recording.listening");
-  if (status === "Transcribing") return t("recording.processing.transcribing");
-  if (status === "Correcting" && step === "LLM correction")
-    return t("recording.processing.llmCleanup");
-  if (status === "Correcting") return t("recording.processing.correcting");
-  if (status === "Summarizing") return t("recording.processing.summarizing");
-  if (status === "Exporting") return t("recording.processing.exporting");
-  if (status === "Failed") return t("recording.processing.failed", { step: step ?? "" });
-  return t("recording.listening");
+const STATUS_I18N_KEYS: Record<JobStatus, string> = {
+  Queued: "pipeline.status.Queued",
+  PreflightChecks: "pipeline.status.PreflightChecks",
+  Transcribing: "pipeline.status.Transcribing",
+  Correcting: "pipeline.status.Correcting",
+  Summarizing: "pipeline.status.Summarizing",
+  Exporting: "pipeline.status.Exporting",
+  Done: "pipeline.status.Done",
+  Failed: "pipeline.status.Failed",
+  Cancelled: "pipeline.status.Cancelled",
+  Paused: "pipeline.status.Paused",
+};
+
+const tStr = (t: TFunction, key: string): string => (t as (k: string) => string)(key);
+
+const selectStatusLabel = (
+  status: JobStatus | null,
+  userHint: string | null,
+  t: TFunction
+): string => {
+  if (status === null) return tStr(t, "home.liveTranscriptWaiting");
+  if (status === "Failed" && userHint) return userHint;
+  return tStr(t, STATUS_I18N_KEYS[status]);
 };
 
 const LiveTranscript: FC<LiveTranscriptProps> = ({ recordingId }) => {
@@ -50,7 +63,7 @@ const LiveTranscript: FC<LiveTranscriptProps> = ({ recordingId }) => {
     };
   }, [dispatch, recordingId]);
 
-  const statusLabel = selectStatusLabel(job?.status ?? null, job?.currentStep ?? null, t);
+  const statusLabel = selectStatusLabel(job?.status ?? null, job?.userHint ?? null, t);
 
   return (
     <LiveTranscriptRoot data-testid={`home-live-transcript-${recordingId}`}>

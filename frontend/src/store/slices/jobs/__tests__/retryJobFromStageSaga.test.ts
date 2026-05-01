@@ -32,11 +32,11 @@ const makeGqlJob = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const makeDomainJob = (overrides: Partial<ProcessingJob> = {}): ProcessingJob => ({
+const makeDomainJob = (overrides: Partial<ProcessingJob> = {}) => ({
   id: "job-1",
   recordingId: "rec-1",
   profileId: "prof-1",
-  status: "Queued",
+  status: "Queued" as ProcessingJob["status"],
   progress: 0,
   currentStep: null,
   errorMessage: null,
@@ -44,6 +44,7 @@ const makeDomainJob = (overrides: Partial<ProcessingJob> = {}): ProcessingJob =>
   createdAt: "2026-04-19T20:00:00Z",
   startedAt: null,
   finishedAt: null,
+  stages: [],
   ...overrides,
 });
 

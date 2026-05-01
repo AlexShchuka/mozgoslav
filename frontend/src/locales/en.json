@@ -1,5 +1,17 @@
 {
   "pipeline": {
+    "status": {
+      "Queued": "Queued",
+      "PreflightChecks": "Pre-flight checks…",
+      "Transcribing": "Transcribing…",
+      "Correcting": "Cleaning transcript…",
+      "Summarizing": "Summarizing…",
+      "Exporting": "Exporting…",
+      "Done": "Done",
+      "Failed": "Error",
+      "Cancelled": "Cancelled",
+      "Paused": "Paused"
+    },
     "timeline": {
       "stage": {
         "transcribing": "Transcribing",
@@ -471,7 +483,9 @@
       "version": "Version",
       "hint": "Hint",
       "running": "Running",
-      "notRunning": "Not running"
+      "notInstalled": "Not installed",
+      "installedNotRunning": "Installed, not running",
+      "error": "Error"
     },
     "services": {
       "title": "Supervisor services",

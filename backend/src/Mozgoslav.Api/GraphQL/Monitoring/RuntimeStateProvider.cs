@@ -23,8 +23,9 @@ public sealed class RuntimeStateProvider : IRuntimeStateProvider
     private readonly ITopicEventSender _eventSender;
     private readonly ILogger<RuntimeStateProvider> _logger;
     private volatile IReadOnlyList<SupervisorServiceState> _electronServices = [];
-    private volatile string? _lastLlmError;
-    private volatile bool _llmOnline;
+    private readonly Lock _llmStateLock = new();
+    private string? _lastLlmError;
+    private bool _llmOnline;
 
     public RuntimeStateProvider(
         ILlmCapabilitiesCache capabilitiesCache,
@@ -70,10 +71,14 @@ public sealed class RuntimeStateProvider : IRuntimeStateProvider
                     cts.Token);
 
                 _capabilitiesCache.SetCurrent(capabilities);
-                _lastLlmError = null;
 
-                var wasOffline = !_llmOnline;
-                _llmOnline = true;
+                bool wasOffline;
+                lock (_llmStateLock)
+                {
+                    wasOffline = !_llmOnline;
+                    _llmOnline = true;
+                    _lastLlmError = null;
+                }
 
                 if (wasOffline)
                 {
@@ -84,9 +89,13 @@ public sealed class RuntimeStateProvider : IRuntimeStateProvider
             }
             catch (OperationCanceledException)
             {
-                _lastLlmError = "Probe timed out";
-                var wasOnline = _llmOnline;
-                _llmOnline = false;
+                bool wasOnline;
+                lock (_llmStateLock)
+                {
+                    wasOnline = _llmOnline;
+                    _llmOnline = false;
+                    _lastLlmError = "Probe timed out";
+                }
 
                 if (wasOnline)
                 {
@@ -97,9 +106,13 @@ public sealed class RuntimeStateProvider : IRuntimeStateProvider
             }
             catch (Exception ex)
             {
-                _lastLlmError = ex.Message;
-                var wasOnline = _llmOnline;
-                _llmOnline = false;
+                bool wasOnline;
+                lock (_llmStateLock)
+                {
+                    wasOnline = _llmOnline;
+                    _llmOnline = false;
+                    _lastLlmError = ex.Message;
+                }
 
                 if (wasOnline)
                 {
@@ -130,6 +143,12 @@ public sealed class RuntimeStateProvider : IRuntimeStateProvider
         var endpoint = _appSettings.LlmEndpoint ?? string.Empty;
         var capabilities = _capabilitiesCache.TryGetCurrent();
 
+        string? lastError;
+        lock (_llmStateLock)
+        {
+            lastError = _lastLlmError;
+        }
+
         var llmState = capabilities is not null
             ? BuildOnlineLlmState(endpoint, capabilities)
             : new LlmRuntimeState(
@@ -140,7 +159,7 @@ public sealed class RuntimeStateProvider : IRuntimeStateProvider
                 ContextLength: 0,
                 SupportsToolCalling: false,
                 SupportsJsonMode: false,
-                LastError: _lastLlmError);
+                LastError: lastError);
 
         var syncthingState = _syncthingDetection.Detect();
         return new RuntimeState(llmState, syncthingState, _electronServices);
