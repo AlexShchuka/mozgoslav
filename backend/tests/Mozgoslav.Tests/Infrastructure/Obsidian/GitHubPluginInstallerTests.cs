@@ -64,16 +64,15 @@ public sealed class GitHubPluginInstallerTests
     private sealed class Fixture : IDisposable
     {
         private readonly IHttpClientFactory _httpClientFactory = Substitute.For<IHttpClientFactory>();
-        private readonly string _tempVaultPath;
         private HttpSetup? _httpSetup;
 
         public Fixture()
         {
-            _tempVaultPath = Path.Combine(Path.GetTempPath(), $"vault-test-{Guid.NewGuid():N}");
-            Directory.CreateDirectory(_tempVaultPath);
+            VaultPath = Path.Combine(Path.GetTempPath(), $"vault-test-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(VaultPath);
         }
 
-        public string VaultPath => _tempVaultPath;
+        public string VaultPath { get; }
 
         public GitHubPluginInstaller BuildSut() =>
             new(_httpClientFactory, NullLogger<GitHubPluginInstaller>.Instance);
@@ -101,9 +100,9 @@ public sealed class GitHubPluginInstallerTests
         public void Dispose()
         {
             _httpSetup?.Dispose();
-            if (Directory.Exists(_tempVaultPath))
+            if (Directory.Exists(VaultPath))
             {
-                Directory.Delete(_tempVaultPath, recursive: true);
+                Directory.Delete(VaultPath, recursive: true);
             }
         }
     }

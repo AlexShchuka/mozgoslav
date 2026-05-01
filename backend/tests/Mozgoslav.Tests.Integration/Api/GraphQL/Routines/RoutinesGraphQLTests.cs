@@ -29,7 +29,7 @@ public sealed class RoutinesGraphQLTests : IntegrationTestsBase
         var rawBody = await response.Content.ReadAsStringAsync();
         var json = JsonNode.Parse(rawBody);
         json.Should().NotBeNull();
-        (json!["data"] is not null || json["errors"] is not null).Should().BeTrue();
+        (json["data"] is not null || json["errors"] is not null).Should().BeTrue();
     }
 
     [TestMethod]
@@ -77,6 +77,6 @@ public sealed class RoutinesGraphQLTests : IntegrationTestsBase
         var rawBody = await response.Content.ReadAsStringAsync();
         var json = JsonNode.Parse(rawBody);
         json.Should().NotBeNull();
-        (json!["data"] is not null || json["errors"] is not null).Should().BeTrue();
+        (json["data"] is not null || json["errors"] is not null).Should().BeTrue();
     }
 }

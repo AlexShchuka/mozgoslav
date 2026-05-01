@@ -60,7 +60,7 @@ public sealed class NotesMcpToolsTests
         var result = await sut.GetAsync(id.ToString(), CancellationToken.None);
 
         result.Should().NotBeNull();
-        result!.Id.Should().Be(id.ToString());
+        result.Id.Should().Be(id.ToString());
         result.Content.Should().Be("hello world");
     }
 

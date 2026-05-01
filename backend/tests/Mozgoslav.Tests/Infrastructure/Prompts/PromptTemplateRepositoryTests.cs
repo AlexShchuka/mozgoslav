@@ -50,7 +50,7 @@ public sealed class PromptTemplateRepositoryTests : IDisposable
         var retrieved = await sut.GetByIdAsync(added.Id, CancellationToken.None);
 
         retrieved.Should().NotBeNull();
-        retrieved!.Name.Should().Be("My Template");
+        retrieved.Name.Should().Be("My Template");
         retrieved.Body.Should().Be("Hello {name}");
     }
 

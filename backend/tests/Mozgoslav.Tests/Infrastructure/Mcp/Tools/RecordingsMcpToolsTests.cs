@@ -48,7 +48,7 @@ public sealed class RecordingsMcpToolsTests
         var result = await sut.SearchAsync(null, null, CancellationToken.None);
 
         result.Should().HaveCount(2);
-        string.Compare(result[0].CreatedAt, result[1].CreatedAt, System.StringComparison.Ordinal).Should().BeGreaterThanOrEqualTo(0);
+        string.Compare(result[0].CreatedAt, result[1].CreatedAt, StringComparison.Ordinal).Should().BeGreaterThanOrEqualTo(0);
     }
 
     [TestMethod]
