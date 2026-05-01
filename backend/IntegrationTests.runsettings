@@ -34,6 +34,7 @@
           <Include>[Mozgoslav.Api]*,[Mozgoslav.Application]*,[Mozgoslav.Domain]*,[Mozgoslav.Infrastructure]*</Include>
           <Exclude>[Mozgoslav.Tests*]*,[Mozgoslav.Api]Program</Exclude>
           <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+          <ExcludeByFile>**/obj/**/*.cs</ExcludeByFile>
           <SingleHit>false</SingleHit>
           <UseSourceLink>true</UseSourceLink>
           <SkipAutoProps>true</SkipAutoProps>
