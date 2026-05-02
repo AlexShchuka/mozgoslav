@@ -30,6 +30,7 @@ const DownloadsDrawer: FC<DownloadsDrawerProps> = ({
   cancellingDownloadId,
   onClose,
   onCancel,
+  onRetry,
 }) => {
   const { t } = useTranslation();
 
@@ -44,7 +45,7 @@ const DownloadsDrawer: FC<DownloadsDrawerProps> = ({
           <CloseButton
             type="button"
             onClick={onClose}
-            aria-label="close"
+            aria-label={t("downloads.closeAriaLabel")}
             data-testid="downloads-drawer-close"
           >
             <X size={18} />
@@ -60,6 +61,7 @@ const DownloadsDrawer: FC<DownloadsDrawerProps> = ({
                 download={download}
                 isCancelling={cancellingDownloadId === download.id}
                 onCancel={onCancel}
+                onRetry={onRetry}
               />
             ))
           )}
@@ -74,9 +76,10 @@ interface DownloadEntryProps {
   download: DownloadsDrawerProps["downloads"][number];
   isCancelling: boolean;
   onCancel: (downloadId: string) => void;
+  onRetry: (catalogueId: string) => void;
 }
 
-const DownloadEntry: FC<DownloadEntryProps> = ({ download, isCancelling, onCancel }) => {
+const DownloadEntry: FC<DownloadEntryProps> = ({ download, isCancelling, onCancel, onRetry }) => {
   const { t } = useTranslation();
 
   const isActive =
@@ -133,6 +136,16 @@ const DownloadEntry: FC<DownloadEntryProps> = ({ download, isCancelling, onCance
             data-testid={`download-cancel-${download.id}`}
           >
             {t("downloads.cancel")}
+          </Button>
+        )}
+        {isFailed && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onRetry(download.catalogueId)}
+            data-testid={`download-retry-${download.id}`}
+          >
+            {t("downloads.retry")}
           </Button>
         )}
       </DownloadItemHeader>

@@ -54,7 +54,9 @@ LIMIT 10;
 
 3. If `ErrorKind = 'Sha'` or `'NotFound'` — the `.partial` file was already deleted during the failure transition. The user clicks **Retry**; a new job starts from byte 0.
 
-## How to remove a stale DownloadJob row manually
+## How to remove a stale DownloadJob row from SQLite manually
+
+Connect to the SQLite database at `~/Library/Application Support/Mozgoslav/mozgoslav.db` using any SQLite client, then run:
 
 ```sql
 DELETE FROM DownloadJobs WHERE Id = '<guid>';

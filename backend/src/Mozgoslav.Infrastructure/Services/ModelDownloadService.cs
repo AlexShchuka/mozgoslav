@@ -128,13 +128,14 @@ public sealed class ModelDownloadService
         return null;
     }
 
-    public static async Task MovePartialToDestinationAsync(string destinationPath)
+    public static Task MovePartialToDestinationAsync(string destinationPath)
     {
         var partialPath = destinationPath + ".partial";
         if (File.Exists(partialPath))
         {
             File.Move(partialPath, destinationPath, overwrite: true);
         }
+        return Task.CompletedTask;
     }
 
     public static async Task<string?> ComputeSha256Async(string path, CancellationToken ct)

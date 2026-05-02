@@ -576,7 +576,10 @@
     "downloading": "Downloading",
     "finalizing": "Finalizing",
     "failed": "Failed",
-    "cancelled": "Cancelled"
+    "cancelled": "Cancelled",
+    "closeAriaLabel": "Close",
+    "cancelledToast": "Download cancelled",
+    "successTitle": "Installed"
   },
   "obsidian": {
     "title": "Obsidian vault",

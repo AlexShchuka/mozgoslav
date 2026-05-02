@@ -133,4 +133,60 @@ public sealed class ModelsGraphQLTests : IntegrationTestsBase
         errors[0]!["code"]!.GetValue<string>().Should().Be("VALIDATION_ERROR");
     }
 
+    [TestMethod]
+    public async Task TC_G07_ActiveDownloads_WhenNothingActive_ReturnsEmptyArray()
+    {
+        using var client = CreateClient();
+        var body = new
+        {
+            query = """
+                query {
+                  activeDownloads {
+                    id
+                    catalogueId
+                    state
+                    bytesReceived
+                    totalBytes
+                    speedBytesPerSecond
+                    errorMessage
+                    startedAt
+                  }
+                }
+                """
+        };
+
+        using var response = await client.PostAsJsonAsync("/graphql", body);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await response.Content.ReadAsStringAsync();
+        var json = JsonNode.Parse(content)!;
+        json["errors"].Should().BeNull($"activeDownloads query failed: {content}");
+        var activeDownloads = json["data"]!["activeDownloads"]!.AsArray();
+        activeDownloads.Count.Should().Be(0, "no downloads are active in a fresh test database");
+    }
+
+    [TestMethod]
+    public async Task TC_G05_CancelModelDownload_UnknownId_ReturnsNotFound()
+    {
+        using var client = CreateClient();
+        var body = new
+        {
+            query = """
+                mutation {
+                  cancelModelDownload(downloadId: "aaaabbbbccccddddeeeeffffaaaabbbb") {
+                    ok
+                    errors { code message }
+                  }
+                }
+                """
+        };
+
+        using var response = await client.PostAsJsonAsync("/graphql", body);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = JsonNode.Parse(await response.Content.ReadAsStringAsync())!;
+        json["data"]!["cancelModelDownload"]!["ok"]!.GetValue<bool>().Should().BeFalse();
+        json["data"]!["cancelModelDownload"]!["errors"]!.AsArray()[0]!["code"]!
+            .GetValue<string>().Should().Be("NOT_FOUND");
+    }
 }

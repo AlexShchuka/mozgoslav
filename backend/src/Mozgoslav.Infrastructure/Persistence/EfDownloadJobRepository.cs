@@ -29,26 +29,26 @@ public sealed class EfDownloadJobRepository : IDownloadJobRepository
     public async Task<DownloadJob?> TryGetActiveByCatalogueIdAsync(string catalogueId, CancellationToken ct)
     {
         await using var ctx = await _factory.CreateDbContextAsync(ct);
-        return await ctx.DownloadJobs
+        var jobs = await ctx.DownloadJobs
             .AsNoTracking()
             .Where(j => j.CatalogueId == catalogueId &&
                         (j.State == DownloadState.Queued ||
                          j.State == DownloadState.Downloading ||
                          j.State == DownloadState.Finalizing))
-            .OrderByDescending(j => j.CreatedAt)
-            .FirstOrDefaultAsync(ct);
+            .ToListAsync(ct);
+        return jobs.OrderByDescending(j => j.CreatedAt).FirstOrDefault();
     }
 
     public async Task<IReadOnlyList<DownloadJob>> ListActiveAsync(CancellationToken ct)
     {
         await using var ctx = await _factory.CreateDbContextAsync(ct);
-        return await ctx.DownloadJobs
+        var jobs = await ctx.DownloadJobs
             .AsNoTracking()
             .Where(j => j.State == DownloadState.Queued ||
                         j.State == DownloadState.Downloading ||
                         j.State == DownloadState.Finalizing)
-            .OrderBy(j => j.CreatedAt)
             .ToListAsync(ct);
+        return jobs.OrderBy(j => j.CreatedAt).ToList();
     }
 
     public async Task AddAsync(DownloadJob job, CancellationToken ct)

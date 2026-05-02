@@ -576,7 +576,10 @@
     "downloading": "Скачивается",
     "finalizing": "Финализация",
     "failed": "Ошибка",
-    "cancelled": "Отменено"
+    "cancelled": "Отменено",
+    "closeAriaLabel": "Закрыть",
+    "cancelledToast": "Загрузка отменена",
+    "successTitle": "Установлено"
   },
   "obsidian": {
     "title": "Obsidian vault",

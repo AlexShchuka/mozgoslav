@@ -4,6 +4,7 @@ import type { GlobalState } from "../../store";
 import {
   cancelModelDownload,
   closeDownloadsDrawer,
+  downloadModel,
   selectActiveDownloadList,
   selectCancellingDownloadId,
   selectIsDownloadsDrawerOpen,
@@ -17,6 +18,9 @@ const mapStateToProps = (state: GlobalState) => ({
 });
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators({ onCancel: cancelModelDownload, onClose: closeDownloadsDrawer }, dispatch);
+  bindActionCreators(
+    { onCancel: cancelModelDownload, onClose: closeDownloadsDrawer, onRetry: downloadModel },
+    dispatch
+  );
 
 export default connect(mapStateToProps, mapDispatchToProps)(DownloadsDrawer);

@@ -6,4 +6,5 @@ export interface DownloadsDrawerProps {
   cancellingDownloadId: string | null;
   onClose: () => void;
   onCancel: (downloadId: string) => void;
+  onRetry: (catalogueId: string) => void;
 }

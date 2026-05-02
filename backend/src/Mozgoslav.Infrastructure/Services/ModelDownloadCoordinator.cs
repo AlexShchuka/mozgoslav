@@ -407,19 +407,13 @@ public sealed class ModelDownloadCoordinator : IModelDownloadCoordinator, IDispo
             catch (IOException ex)
             {
                 _logger.LogError(ex, "IOException during download {DownloadId}", downloadId);
-                await TransitionAsync(job, DownloadState.Failed, DownloadErrorKind.Unknown, ex.Message, null, CancellationToken.None);
-                EmitAndStore(slot, new ModelDownloadProgress(
-                    downloadId, job.BytesReceived, job.TotalBytes, DownloadState.Failed, null, ex.Message));
-                ModelDownloadService.DeletePartial(job.DestinationPath);
+                await FailAndDeletePartialAsync(downloadId, job, slot, DownloadErrorKind.Unknown, ex.Message);
                 return RetryResult.Failed;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error during download {DownloadId}", downloadId);
-                await TransitionAsync(job, DownloadState.Failed, DownloadErrorKind.Unknown, ex.Message, null, CancellationToken.None);
-                EmitAndStore(slot, new ModelDownloadProgress(
-                    downloadId, job.BytesReceived, job.TotalBytes, DownloadState.Failed, null, ex.Message));
-                ModelDownloadService.DeletePartial(job.DestinationPath);
+                await FailAndDeletePartialAsync(downloadId, job, slot, DownloadErrorKind.Unknown, ex.Message);
                 return RetryResult.Failed;
             }
 
@@ -442,14 +436,24 @@ public sealed class ModelDownloadCoordinator : IModelDownloadCoordinator, IDispo
             }
 
             var errMsg = errorKind == DownloadErrorKind.NotFound ? "HTTP 404 Not Found" : "HTTP error";
-            await TransitionAsync(job, DownloadState.Failed, errorKind.Value, errMsg, null, CancellationToken.None);
-            EmitAndStore(slot, new ModelDownloadProgress(
-                downloadId, job.BytesReceived, job.TotalBytes, DownloadState.Failed, null, errMsg));
-            ModelDownloadService.DeletePartial(job.DestinationPath);
+            await FailAndDeletePartialAsync(downloadId, job, slot, errorKind.Value, errMsg);
             return RetryResult.Failed;
         }
 
         return RetryResult.Failed;
+    }
+
+    private async Task FailAndDeletePartialAsync(
+        string downloadId,
+        DownloadJob job,
+        DownloadSlot slot,
+        DownloadErrorKind errorKind,
+        string errorMessage)
+    {
+        await TransitionAsync(job, DownloadState.Failed, errorKind, errorMessage, null, CancellationToken.None);
+        EmitAndStore(slot, new ModelDownloadProgress(
+            downloadId, job.BytesReceived, job.TotalBytes, DownloadState.Failed, null, errorMessage));
+        ModelDownloadService.DeletePartial(job.DestinationPath);
     }
 
     private async Task<bool> FinalizeAsync(string downloadId, DownloadJob job, DownloadSlot slot)
