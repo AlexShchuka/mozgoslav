@@ -190,6 +190,14 @@ public sealed class ModelDownloadCoordinator : IModelDownloadCoordinator, IDispo
         }
 
         await slot.Cts.CancelAsync();
+
+        if (job.State == DownloadState.Queued)
+        {
+            EmitAndStore(slot, new ModelDownloadProgress(
+                downloadId, 0, null, DownloadState.Cancelled, null, null));
+            slot.Channel.Writer.TryComplete();
+        }
+
         return null;
     }
 

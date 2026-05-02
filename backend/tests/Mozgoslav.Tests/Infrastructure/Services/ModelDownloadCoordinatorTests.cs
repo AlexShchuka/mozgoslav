@@ -337,10 +337,10 @@ public sealed class ModelDownloadCoordinatorTests : IDisposable
         var cancelResult = await _sut.TryCancelAsync(id3, CancellationToken.None);
         cancelResult.Should().BeNull();
 
-        // Use a generous timeout: on macos CI with full suite parallelism the thread pool
-        // may delay Task.Run(RunJobAsync) for many seconds before it reaches WaitAsync(ct)
-        // and emits the Cancelled terminal phase.
-        using var pollCts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
+        // TryCancelAsync now eagerly emits Cancelled to the channel for Queued downloads,
+        // so the terminal phase arrives promptly regardless of thread-pool scheduling delays
+        // on macos CI.  Keep a generous timeout as a backstop.
+        using var pollCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var terminal = DownloadState.Queued;
         try
         {
