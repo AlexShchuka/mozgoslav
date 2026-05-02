@@ -4,7 +4,6 @@ import { expectSaga } from "redux-saga-test-plan";
 import { DownloadState } from "../../../../api/gql/graphql";
 import {
   modelDownloadProgress,
-  modelDownloadCompleted,
   loadModels,
   SUBSCRIBE_MODEL_DOWNLOAD,
   UNSUBSCRIBE_MODEL_DOWNLOAD,
