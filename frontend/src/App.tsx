@@ -26,6 +26,8 @@ import { ROUTES } from "./constants/routes";
 import { GLOBAL_HOTKEY_REDISPATCH_EVENT } from "./constants/events";
 import { OnboardingCompleteGuard } from "./guards";
 import { dictationCancelRequested } from "./store/slices/dictation";
+import { loadActiveDownloads } from "./store/slices/models";
+import DownloadsDrawer from "./features/DownloadsDrawer";
 
 const OVERLAY_ROUTE = "/dictation-overlay";
 const ASK_OVERLAY_ROUTE = "/ask-overlay";
@@ -36,6 +38,10 @@ const AppShell: FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch<Dispatch<Action>>();
+
+  useEffect(() => {
+    dispatch(loadActiveDownloads());
+  }, [dispatch]);
 
   useEffect(() => {
     const bridge = typeof window !== "undefined" ? window.mozgoslav : undefined;
@@ -174,6 +180,7 @@ const AppShell: FC = () => {
         </Routes>
       </Layout>
       <CommandPalette />
+      <DownloadsDrawer />
     </>
   );
 };

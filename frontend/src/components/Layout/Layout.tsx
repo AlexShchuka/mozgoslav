@@ -8,6 +8,7 @@ import {
   Archive,
   Brain,
   Database,
+  Download,
   FolderCog,
   FolderTree,
   HelpCircle,
@@ -24,6 +25,7 @@ import {
 import { useBackendHealth } from "../../hooks/useBackendHealth";
 import { useSidebarCollapsed } from "../../hooks/useSidebarCollapsed";
 import { ROUTES } from "../../constants/routes";
+import { openDownloadsDrawer, selectActiveDownloadCount } from "../../store/slices/models";
 import {
   completeOnboarding,
   resetOnboarding,
@@ -34,6 +36,8 @@ import {
   BackendStatusBanner,
   CollapseButton,
   Content,
+  DownloadsBadge,
+  DownloadsButton,
   HelpButton,
   LayoutRoot,
   Sidebar,
@@ -57,6 +61,7 @@ const Layout: FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch<Dispatch<Action>>();
   const onboardingCompleted = useSelector(selectOnboardingCompleted);
+  const activeDownloadCount = useSelector(selectActiveDownloadCount);
   const isHealthy = health.status === "ok";
   const [collapsed, toggleCollapsed] = useSidebarCollapsed();
 
@@ -183,6 +188,20 @@ const Layout: FC<LayoutProps> = ({ children }) => {
               {isHealthy ? t("backendHealth.online") : t("backendHealth.offline")}
             </span>
           </SidebarStatus>
+          <DownloadsButton
+            type="button"
+            aria-label={t("downloads.openDrawer")}
+            title={t("downloads.openDrawer")}
+            onClick={() => dispatch(openDownloadsDrawer())}
+            data-testid="sidebar-open-downloads"
+          >
+            <Download size={18} />
+            {activeDownloadCount > 0 && (
+              <DownloadsBadge data-testid="sidebar-downloads-badge">
+                {activeDownloadCount}
+              </DownloadsBadge>
+            )}
+          </DownloadsButton>
           <HelpButton
             type="button"
             aria-label={t("sidebar.restartOnboarding")}

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
@@ -11,6 +12,7 @@ using FluentAssertions;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
+using Mozgoslav.Domain.Enums;
 using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Tests.Infrastructure;
@@ -50,7 +52,7 @@ public sealed class ModelDownloadServiceTests : IDisposable
     }
 
     [TestMethod]
-    public async Task DownloadAsync_HappyPath_WritesFileAndReportsProgress()
+    public async Task DownloadAsync_HappyPath_WritesPartialThenNull()
     {
         var payload = RandomNumberGenerator.GetBytes(32_000);
         var factory = BuildFactory(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(payload) });
@@ -59,27 +61,62 @@ public sealed class ModelDownloadServiceTests : IDisposable
         var progress = new SynchronousProgress<ModelDownloadService.Progress>();
 
         var service = new ModelDownloadService(factory, NullLogger<ModelDownloadService>.Instance);
-        var result = await service.DownloadAsync("https://example.invalid/model.bin", destination, progress, TestContext.CancellationToken);
+        var result = await service.DownloadAsync("https://example.invalid/model.bin", destination, 0, progress, TestContext.CancellationToken);
 
-        result.Should().Be(destination);
-        File.Exists(destination).Should().BeTrue();
-        new FileInfo(destination).Length.Should().Be(payload.Length);
+        result.Should().BeNull();
+        File.Exists(destination + ".partial").Should().BeTrue();
+        new FileInfo(destination + ".partial").Length.Should().Be(payload.Length);
         progress.Reports.Should().NotBeEmpty();
         progress.Reports[^1].BytesReceived.Should().Be(payload.Length);
     }
 
     [TestMethod]
-    public async Task DownloadAsync_NotFound_Throws_AndDoesNotCreateDestination()
+    public async Task DownloadAsync_NotFound_ReturnsNotFoundErrorKind()
     {
         var factory = BuildFactory(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
 
         var destination = Path.Combine(_tempDirectory, "missing.bin");
         var service = new ModelDownloadService(factory, NullLogger<ModelDownloadService>.Instance);
 
-        Func<Task> act = () => service.DownloadAsync("https://example.invalid/missing.bin", destination, progress: null, TestContext.CancellationToken);
+        var result = await service.DownloadAsync("https://example.invalid/missing.bin", destination, 0, null, TestContext.CancellationToken);
 
-        await act.Should().ThrowAsync<HttpRequestException>();
+        result.Should().Be(DownloadErrorKind.NotFound);
         File.Exists(destination).Should().BeFalse();
+    }
+
+    [TestMethod]
+    public async Task DownloadAsync_ServerError_ReturnsTransientErrorKind()
+    {
+        var factory = BuildFactory(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+        var destination = Path.Combine(_tempDirectory, "error.bin");
+        var service = new ModelDownloadService(factory, NullLogger<ModelDownloadService>.Instance);
+
+        var result = await service.DownloadAsync("https://example.invalid/error.bin", destination, 0, null, TestContext.CancellationToken);
+
+        result.Should().Be(DownloadErrorKind.Transient);
+    }
+
+    [TestMethod]
+    public async Task DownloadAsync_WithResumeFrom_SendsRangeHeader()
+    {
+        HttpRequestMessage? capturedRequest = null;
+        var payload = RandomNumberGenerator.GetBytes(16_000);
+        var factory = BuildFactory(req =>
+        {
+            capturedRequest = req;
+            return new HttpResponseMessage(HttpStatusCode.PartialContent) { Content = new ByteArrayContent(payload) };
+        });
+
+        var destination = Path.Combine(_tempDirectory, "resume.bin");
+        var service = new ModelDownloadService(factory, NullLogger<ModelDownloadService>.Instance);
+
+        await service.DownloadAsync("https://example.invalid/resume.bin", destination, 1024, null, TestContext.CancellationToken);
+
+        capturedRequest.Should().NotBeNull();
+        capturedRequest.Headers.Range.Should().NotBeNull();
+        capturedRequest.Headers.Range.Ranges.Should().HaveCount(1);
+        capturedRequest.Headers.Range.Ranges.First().From.Should().Be(1024);
     }
 
     [TestMethod]
@@ -101,6 +138,51 @@ public sealed class ModelDownloadServiceTests : IDisposable
 
         hash.Should().NotBeNull();
         hash.Should().MatchRegex("^[0-9a-f]{64}$");
+    }
+
+    [TestMethod]
+    public void GetPartialSize_NoPartialFile_ReturnsZero()
+    {
+        var destination = Path.Combine(_tempDirectory, "nonexistent.bin");
+        var size = ModelDownloadService.GetPartialSize(destination);
+        size.Should().Be(0);
+    }
+
+    [TestMethod]
+    public async Task GetPartialSize_PartialFileExists_ReturnsFileSize()
+    {
+        var destination = Path.Combine(_tempDirectory, "partial.bin");
+        var partialPath = destination + ".partial";
+        await File.WriteAllBytesAsync(partialPath, new byte[512], TestContext.CancellationToken);
+
+        var size = ModelDownloadService.GetPartialSize(destination);
+        size.Should().Be(512);
+    }
+
+    [TestMethod]
+    public async Task DeletePartial_PartialFileExists_RemovesFile()
+    {
+        var destination = Path.Combine(_tempDirectory, "todelete.bin");
+        var partialPath = destination + ".partial";
+        await File.WriteAllBytesAsync(partialPath, [1, 2, 3], TestContext.CancellationToken);
+
+        ModelDownloadService.DeletePartial(destination);
+
+        File.Exists(partialPath).Should().BeFalse();
+    }
+
+    [TestMethod]
+    public async Task MovePartialToDestinationAsync_PartialExists_MovesToDestination()
+    {
+        var destination = Path.Combine(_tempDirectory, "moved.bin");
+        var partialPath = destination + ".partial";
+        await File.WriteAllBytesAsync(partialPath, [9, 8, 7], TestContext.CancellationToken);
+
+        await ModelDownloadService.MovePartialToDestinationAsync(destination);
+
+        File.Exists(partialPath).Should().BeFalse();
+        File.Exists(destination).Should().BeTrue();
+        (await File.ReadAllBytesAsync(destination, TestContext.CancellationToken)).Should().Equal([9, 8, 7]);
     }
 
     private IHttpClientFactory BuildFactory(Func<HttpRequestMessage, HttpResponseMessage> responder)

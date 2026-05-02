@@ -552,6 +552,7 @@
     "installedButton": "Installed",
     "notInstalled": "Not downloaded",
     "download": "Download",
+    "downloading": "Downloading",
     "sizeMb": "{{size}} MB",
     "filter": {
       "all": "All",
@@ -561,6 +562,21 @@
       "AUDIO_ML": "Embedding",
       "NLP_ML": "NLP"
     }
+  },
+  "downloads": {
+    "title": "Downloads",
+    "empty": "No active downloads",
+    "openDrawer": "Downloads",
+    "cancel": "Cancel",
+    "retry": "Retry",
+    "installed": "Installed",
+    "eta": "{{time}} left",
+    "speed": "{{speed}}/s",
+    "queued": "Queued",
+    "downloading": "Downloading",
+    "finalizing": "Finalizing",
+    "failed": "Failed",
+    "cancelled": "Cancelled"
   },
   "obsidian": {
     "title": "Obsidian vault",

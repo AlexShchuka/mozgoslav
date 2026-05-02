@@ -1,6 +1,7 @@
 import { cancel, cancelled, fork, put, take, takeEvery } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 import type { Task, EventChannel } from "redux-saga";
+import { DownloadState } from "../../../../api/gql/graphql";
 import type { SubscriptionModelDownloadProgressSubscription } from "../../../../api/gql/graphql";
 import { SubscriptionModelDownloadProgressDocument } from "../../../../api/gql/graphql";
 import { gqlSubscriptionChannel } from "../../../saga/graphql";
@@ -14,6 +15,8 @@ import {
   type UnsubscribeModelDownloadAction,
 } from "../actions";
 
+const TERMINAL_STATES = [DownloadState.Completed, DownloadState.Failed, DownloadState.Cancelled];
+
 function* consumeChannel(
   channel: EventChannel<SubscriptionModelDownloadProgressSubscription>,
   downloadId: string
@@ -25,11 +28,12 @@ function* consumeChannel(
       const progress = {
         bytesRead: Number(evt.bytesRead),
         totalBytes: evt.totalBytes != null ? Number(evt.totalBytes) : null,
-        done: evt.done,
+        phase: evt.phase,
+        speedBytesPerSecond: evt.speedBytesPerSecond ?? null,
         error: evt.error ?? null,
       };
       yield put(modelDownloadProgress({ downloadId, ...progress }));
-      if (progress.done || progress.error != null) {
+      if (TERMINAL_STATES.includes(evt.phase) || evt.error != null) {
         yield put(modelDownloadCompleted(downloadId));
         yield put(loadModels());
         break;

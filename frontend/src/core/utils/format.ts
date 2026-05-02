@@ -1,5 +1,22 @@
 const PENDING_PLACEHOLDER = "—";
 
+export const formatBytes = (bytes: number): string => {
+  if (bytes <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  const i = Math.min(Math.floor(Math.log2(bytes) / 10), units.length - 1);
+  const value = bytes / Math.pow(1024, i);
+  return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+};
+
+export const formatEta = (remainingBytes: number, speedBytesPerSec: number): string => {
+  if (speedBytesPerSec <= 0 || remainingBytes <= 0) return PENDING_PLACEHOLDER;
+  const seconds = Math.round(remainingBytes / speedBytesPerSec);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${minutes}m ${secs}s`;
+};
+
 export const formatDuration = (raw: string): string => {
   if (!raw) {
     return PENDING_PLACEHOLDER;

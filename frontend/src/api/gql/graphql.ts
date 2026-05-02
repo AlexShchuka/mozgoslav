@@ -48,6 +48,18 @@ export type ActionItemFilterInput = {
   task?: InputMaybe<StringOperationFilterInput>;
 };
 
+export type ActiveDownloadDto = {
+  __typename?: "ActiveDownloadDto";
+  bytesReceived: Scalars["Long"]["output"];
+  catalogueId: Scalars["String"]["output"];
+  errorMessage?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["String"]["output"];
+  speedBytesPerSecond?: Maybe<Scalars["Float"]["output"]>;
+  startedAt?: Maybe<Scalars["DateTime"]["output"]>;
+  state: DownloadState;
+  totalBytes?: Maybe<Scalars["Long"]["output"]>;
+};
+
 export type AppSettingsDto = {
   __typename?: "AppSettingsDto";
   actionsSkillEnabled: Scalars["Boolean"]["output"];
@@ -173,6 +185,12 @@ export type BootstrapFileDrift = {
 export type CancelJobPayload = {
   __typename?: "CancelJobPayload";
   errors: Array<IUserError>;
+};
+
+export type CancelModelDownloadPayload = {
+  __typename?: "CancelModelDownloadPayload";
+  errors: Array<IUserError>;
+  ok: Scalars["Boolean"]["output"];
 };
 
 export enum CheckSeverity {
@@ -313,6 +331,15 @@ export type DownloadModelPayload = {
   downloadId?: Maybe<Scalars["String"]["output"]>;
   errors: Array<IUserError>;
 };
+
+export enum DownloadState {
+  Cancelled = "CANCELLED",
+  Completed = "COMPLETED",
+  Downloading = "DOWNLOADING",
+  Failed = "FAILED",
+  Finalizing = "FINALIZING",
+  Queued = "QUEUED",
+}
 
 export type EnqueueJobInput = {
   profileId: Scalars["UUID"]["input"];
@@ -541,9 +568,10 @@ export type MetaInfo = {
 export type ModelDownloadProgressEvent = {
   __typename?: "ModelDownloadProgressEvent";
   bytesRead: Scalars["Long"]["output"];
-  done: Scalars["Boolean"]["output"];
   downloadId: Scalars["String"]["output"];
   error?: Maybe<Scalars["String"]["output"]>;
+  phase: DownloadState;
+  speedBytesPerSecond?: Maybe<Scalars["Float"]["output"]>;
   totalBytes?: Maybe<Scalars["Long"]["output"]>;
 };
 
@@ -579,6 +607,7 @@ export type MutationType = {
   acceptSyncDevice: AcceptSyncDevicePayload;
   buildPrompt: Scalars["String"]["output"];
   cancelJob: CancelJobPayload;
+  cancelModelDownload: CancelModelDownloadPayload;
   createBackup: CreateBackupPayload;
   createNote: NotePayload;
   createProfile: ProfilePayload;
@@ -631,6 +660,10 @@ export type MutationTypeBuildPromptArgs = {
 
 export type MutationTypeCancelJobArgs = {
   id: Scalars["UUID"]["input"];
+};
+
+export type MutationTypeCancelModelDownloadArgs = {
+  downloadId: Scalars["String"]["input"];
 };
 
 export type MutationTypeCreateNoteArgs = {
@@ -1081,6 +1114,7 @@ export type PublishElectronServicesInput = {
 
 export type QueryType = {
   __typename?: "QueryType";
+  activeDownloads: Array<ActiveDownloadDto>;
   activeJobs: Array<ProcessingJob>;
   backups: Array<BackupEntry>;
   dictationAudioCapabilities: DictationAudioCapabilities;
@@ -2195,6 +2229,23 @@ export type QueryModelsQuery = {
   }>;
 };
 
+export type QueryActiveDownloadsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type QueryActiveDownloadsQuery = {
+  __typename?: "QueryType";
+  activeDownloads: Array<{
+    __typename?: "ActiveDownloadDto";
+    id: string;
+    catalogueId: string;
+    state: DownloadState;
+    bytesReceived: any;
+    totalBytes?: any | null;
+    speedBytesPerSecond?: number | null;
+    errorMessage?: string | null;
+    startedAt?: string | null;
+  }>;
+};
+
 export type MutationDownloadModelMutationVariables = Exact<{
   catalogueId: Scalars["String"]["input"];
 }>;
@@ -2204,6 +2255,24 @@ export type MutationDownloadModelMutation = {
   downloadModel: {
     __typename?: "DownloadModelPayload";
     downloadId?: string | null;
+    errors: Array<
+      | { __typename?: "ConflictError"; code: string; message: string }
+      | { __typename?: "NotFoundError"; code: string; message: string }
+      | { __typename?: "UnavailableError"; code: string; message: string }
+      | { __typename?: "ValidationError"; code: string; message: string }
+    >;
+  };
+};
+
+export type MutationCancelModelDownloadMutationVariables = Exact<{
+  downloadId: Scalars["String"]["input"];
+}>;
+
+export type MutationCancelModelDownloadMutation = {
+  __typename?: "MutationType";
+  cancelModelDownload: {
+    __typename?: "CancelModelDownloadPayload";
+    ok: boolean;
     errors: Array<
       | { __typename?: "ConflictError"; code: string; message: string }
       | { __typename?: "NotFoundError"; code: string; message: string }
@@ -2224,7 +2293,8 @@ export type SubscriptionModelDownloadProgressSubscription = {
     downloadId: string;
     bytesRead: any;
     totalBytes?: any | null;
-    done: boolean;
+    phase: DownloadState;
+    speedBytesPerSecond?: number | null;
     error?: string | null;
   };
 };
@@ -5077,6 +5147,38 @@ export const QueryModelsDocument = {
     },
   ],
 } as unknown as DocumentNode<QueryModelsQuery, QueryModelsQueryVariables>;
+export const QueryActiveDownloadsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "QueryActiveDownloads" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "activeDownloads" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "catalogueId" } },
+                { kind: "Field", name: { kind: "Name", value: "state" } },
+                { kind: "Field", name: { kind: "Name", value: "bytesReceived" } },
+                { kind: "Field", name: { kind: "Name", value: "totalBytes" } },
+                { kind: "Field", name: { kind: "Name", value: "speedBytesPerSecond" } },
+                { kind: "Field", name: { kind: "Name", value: "errorMessage" } },
+                { kind: "Field", name: { kind: "Name", value: "startedAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<QueryActiveDownloadsQuery, QueryActiveDownloadsQueryVariables>;
 export const MutationDownloadModelDocument = {
   kind: "Document",
   definitions: [
@@ -5130,6 +5232,62 @@ export const MutationDownloadModelDocument = {
     },
   ],
 } as unknown as DocumentNode<MutationDownloadModelMutation, MutationDownloadModelMutationVariables>;
+export const MutationCancelModelDownloadDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "MutationCancelModelDownload" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "downloadId" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "cancelModelDownload" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "downloadId" },
+                value: { kind: "Variable", name: { kind: "Name", value: "downloadId" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "ok" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "code" } },
+                      { kind: "Field", name: { kind: "Name", value: "message" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MutationCancelModelDownloadMutation,
+  MutationCancelModelDownloadMutationVariables
+>;
 export const SubscriptionModelDownloadProgressDocument = {
   kind: "Document",
   definitions: [
@@ -5166,7 +5324,8 @@ export const SubscriptionModelDownloadProgressDocument = {
                 { kind: "Field", name: { kind: "Name", value: "downloadId" } },
                 { kind: "Field", name: { kind: "Name", value: "bytesRead" } },
                 { kind: "Field", name: { kind: "Name", value: "totalBytes" } },
-                { kind: "Field", name: { kind: "Name", value: "done" } },
+                { kind: "Field", name: { kind: "Name", value: "phase" } },
+                { kind: "Field", name: { kind: "Name", value: "speedBytesPerSecond" } },
                 { kind: "Field", name: { kind: "Name", value: "error" } },
               ],
             },

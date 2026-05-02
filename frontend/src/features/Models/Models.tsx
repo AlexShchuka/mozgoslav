@@ -9,11 +9,11 @@ import Badge from "../../components/Badge";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import EmptyState from "../../components/EmptyState";
-import ModelDownloadProgress from "../../components/ModelDownloadProgress";
 import { ModelKind } from "../../api/gql/graphql";
 import {
   downloadModel,
   loadModels,
+  openDownloadsDrawer,
   selectAllModels,
   selectActiveDownloadIdForModel,
   selectDownloadingModelId,
@@ -153,6 +153,7 @@ const ModelRow: FC<ModelRowProps> = ({
   onDownload,
 }) => {
   const { t } = useTranslation();
+  const dispatch = useDispatch<Dispatch<Action>>();
   const activeDownloadId = useSelector(selectActiveDownloadIdForModel(modelId));
 
   return (
@@ -192,9 +193,15 @@ const ModelRow: FC<ModelRowProps> = ({
           <code>{modelDestinationPath}</code>
         </ModelMeta>
         {activeDownloadId && (
-          <div>
-            <ModelDownloadProgress downloadId={activeDownloadId} label={modelName} />
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            leftIcon={<Download size={14} />}
+            onClick={() => dispatch(openDownloadsDrawer())}
+            data-testid={`models-open-drawer-${modelId}`}
+          >
+            {t("downloads.openDrawer")}
+          </Button>
         )}
       </Card>
     </ModelCard>

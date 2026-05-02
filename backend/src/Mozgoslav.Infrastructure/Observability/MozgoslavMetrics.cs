@@ -21,6 +21,12 @@ public sealed class MozgoslavMetrics : IDisposable
     public Counter<long> ObsidianDiagnosticsCheck { get; }
     public Counter<long> ObsidianWizardStep { get; }
 
+    public Counter<long> DownloadsStarted { get; }
+    public Counter<long> DownloadsCompleted { get; }
+    public Counter<long> DownloadsFailed { get; }
+    public UpDownCounter<long> DownloadsActive { get; }
+    public Histogram<double> DownloadDuration { get; }
+
     public MozgoslavMetrics()
     {
         _meter = new Meter(MeterName, "1.0.0");
@@ -38,6 +44,12 @@ public sealed class MozgoslavMetrics : IDisposable
         ObsidianExportFailure = _meter.CreateCounter<long>("mozgoslav.obsidian.export.failure", "events");
         ObsidianDiagnosticsCheck = _meter.CreateCounter<long>("mozgoslav.obsidian.diagnostics.check", "checks");
         ObsidianWizardStep = _meter.CreateCounter<long>("mozgoslav.obsidian.wizard.step", "steps");
+
+        DownloadsStarted = _meter.CreateCounter<long>("mozgoslav.downloads.started_total", "downloads");
+        DownloadsCompleted = _meter.CreateCounter<long>("mozgoslav.downloads.completed_total", "downloads");
+        DownloadsFailed = _meter.CreateCounter<long>("mozgoslav.downloads.failed_total", "downloads");
+        DownloadsActive = _meter.CreateUpDownCounter<long>("mozgoslav.downloads.active", "downloads");
+        DownloadDuration = _meter.CreateHistogram<double>("mozgoslav.downloads.duration_seconds", "s");
     }
 
     public void Dispose() => _meter.Dispose();

@@ -7,9 +7,12 @@ using System.Threading.Tasks;
 
 using FluentAssertions;
 
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
+using Mozgoslav.Domain.Enums;
+using Mozgoslav.Infrastructure.Observability;
+using Mozgoslav.Infrastructure.Persistence;
 using Mozgoslav.Infrastructure.Services;
 
 using NSubstitute;
@@ -17,111 +20,92 @@ using NSubstitute;
 namespace Mozgoslav.Tests.Infrastructure.Services;
 
 [TestClass]
-public sealed class ModelDownloadCoordinatorTests
+public sealed class ModelDownloadCoordinatorTests : IDisposable
 {
-    private sealed class Fixture : IDisposable
+    private readonly IHttpClientFactory _httpClientFactory = Substitute.For<IHttpClientFactory>();
+    private readonly IDownloadJobRepository _repo = Substitute.For<IDownloadJobRepository>();
+    private readonly MozgoslavMetrics _metrics = new();
+    private ModelDownloadCoordinator _sut = null!;
+    private bool _disposed;
+
+    [TestInitialize]
+    public void Setup()
     {
-        private readonly CancellationTokenSource _hostCts = new();
-        private readonly IHttpClientFactory _httpClientFactory = Substitute.For<IHttpClientFactory>();
-        public IHostApplicationLifetime Lifetime { get; } = Substitute.For<IHostApplicationLifetime>();
-        public ModelDownloadService Downloader { get; }
+        var downloader = new ModelDownloadService(_httpClientFactory, NullLogger<ModelDownloadService>.Instance);
+        _sut = new ModelDownloadCoordinator(
+            downloader,
+            _repo,
+            _metrics,
+            Options.Create(new ModelDownloadCoordinatorOptions()),
+            NullLogger<ModelDownloadCoordinator>.Instance);
+    }
 
-        public Fixture()
-        {
-            Lifetime.ApplicationStopping.Returns(_hostCts.Token);
-            Downloader = new ModelDownloadService(_httpClientFactory, NullLogger<ModelDownloadService>.Instance);
-        }
+    [TestCleanup]
+    public void Cleanup() => Dispose();
 
-        public ModelDownloadCoordinator BuildSut() =>
-            new(Downloader, NullLogger<ModelDownloadCoordinator>.Instance, Lifetime);
-
-        public void Dispose()
-        {
-            _hostCts.Dispose();
-        }
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _sut?.Dispose();
+        _metrics.Dispose();
     }
 
     [TestMethod]
-    public void Start_BlankCatalogueId_ThrowsArgumentException()
+    public async Task StartAsync_BlankCatalogueId_ThrowsArgumentException()
     {
-        using var fixture = new Fixture();
-        using var sut = fixture.BuildSut();
-
-        var act = () => sut.Start("", "http://example.com/model.bin", "/tmp/model.bin", CancellationToken.None);
-
-        act.Should().Throw<ArgumentException>();
+        var act = () => _sut.StartAsync("", "http://example.com/model.bin", "/tmp/model.bin", null, CancellationToken.None);
+        await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [TestMethod]
-    public void Start_BlankUrl_ThrowsArgumentException()
+    public async Task StartAsync_BlankUrl_ThrowsArgumentException()
     {
-        using var fixture = new Fixture();
-        using var sut = fixture.BuildSut();
-
-        var act = () => sut.Start("my-model", "", "/tmp/model.bin", CancellationToken.None);
-
-        act.Should().Throw<ArgumentException>();
+        var act = () => _sut.StartAsync("my-model", "", "/tmp/model.bin", null, CancellationToken.None);
+        await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [TestMethod]
-    public void Start_BlankDestination_ThrowsArgumentException()
+    public async Task StartAsync_BlankDestination_ThrowsArgumentException()
     {
-        using var fixture = new Fixture();
-        using var sut = fixture.BuildSut();
-
-        var act = () => sut.Start("my-model", "http://example.com/model.bin", "", CancellationToken.None);
-
-        act.Should().Throw<ArgumentException>();
+        var act = () => _sut.StartAsync("my-model", "http://example.com/model.bin", "", null, CancellationToken.None);
+        await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [TestMethod]
-    public void Start_ValidArgs_ReturnsNonEmptyDownloadId()
+    public async Task StartAsync_ValidArgs_ReturnsNonEmptyDownloadId()
     {
-        using var fixture = new Fixture();
-        using var sut = fixture.BuildSut();
-
-        var id = sut.Start("my-model", "http://example.com/model.bin", "/tmp/model.bin", CancellationToken.None);
-
+        var id = await _sut.StartAsync("my-model", "http://example.com/model.bin", "/tmp/model.bin", null, CancellationToken.None);
         id.Should().NotBeNullOrEmpty();
     }
 
     [TestMethod]
-    public void Start_CalledTwice_ReturnsDifferentDownloadIds()
+    public async Task StartAsync_CalledTwice_ReturnsDifferentDownloadIds()
     {
-        using var fixture = new Fixture();
-        using var sut = fixture.BuildSut();
-
-        var id1 = sut.Start("model-a", "http://example.com/a.bin", "/tmp/a.bin", CancellationToken.None);
-        var id2 = sut.Start("model-b", "http://example.com/b.bin", "/tmp/b.bin", CancellationToken.None);
-
+        var id1 = await _sut.StartAsync("model-a", "http://example.com/a.bin", "/tmp/a.bin", null, CancellationToken.None);
+        var id2 = await _sut.StartAsync("model-b", "http://example.com/b.bin", "/tmp/b.bin", null, CancellationToken.None);
         id1.Should().NotBe(id2);
     }
 
     [TestMethod]
-    public async Task StreamAsync_UnknownDownloadId_YieldsDoneWithError()
+    public async Task StreamAsync_UnknownDownloadId_YieldsFailedPhaseWithError()
     {
-        using var fixture = new Fixture();
-        using var sut = fixture.BuildSut();
-
         var events = new List<ModelDownloadProgress>();
-        await foreach (var p in sut.StreamAsync("unknown-id", CancellationToken.None))
+        await foreach (var p in _sut.StreamAsync("unknown-id", CancellationToken.None))
         {
             events.Add(p);
         }
 
         events.Should().HaveCount(1);
-        events[0].Done.Should().BeTrue();
+        events[0].Phase.Should().Be(DownloadState.Failed);
         events[0].Error.Should().Be("unknown-download-id");
     }
 
     [TestMethod]
-    public async Task StreamAsync_Cancellation_EventuallyYieldsDoneProgress()
+    public async Task StreamAsync_Cancellation_EventuallyYieldsTerminalPhase()
     {
-        using var fixture = new Fixture();
-        using var sut = fixture.BuildSut();
-
         using var cts = new CancellationTokenSource();
-        var downloadId = sut.Start("model", "http://localhost:9/nonexistent.bin", "/tmp/test-model.bin", cts.Token);
+        var downloadId = await _sut.StartAsync("model", "http://localhost:9/nonexistent.bin", "/tmp/test-model.bin", null, cts.Token);
 
         await cts.CancelAsync();
 
@@ -129,10 +113,10 @@ public sealed class ModelDownloadCoordinatorTests
         using var streamCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         try
         {
-            await foreach (var p in sut.StreamAsync(downloadId, streamCts.Token))
+            await foreach (var p in _sut.StreamAsync(downloadId, streamCts.Token))
             {
                 events.Add(p);
-                if (p.Done) break;
+                if (IsTerminal(p.Phase)) break;
             }
         }
         catch (OperationCanceledException)
@@ -140,7 +124,25 @@ public sealed class ModelDownloadCoordinatorTests
         }
 
         events.Should().NotBeEmpty();
-        events.Last().Done.Should().BeTrue();
+        IsTerminal(events.Last().Phase).Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task TryCancelAsync_UnknownDownloadId_ReturnsNotFound()
+    {
+        var error = await _sut.TryCancelAsync("does-not-exist", CancellationToken.None);
+        error.Should().Be("NOT_FOUND");
+    }
+
+    [TestMethod]
+    public async Task ListActiveAsync_NoActiveJobs_ReturnsEmpty()
+    {
+        _repo.ListActiveAsync(Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<Mozgoslav.Domain.Entities.DownloadJob>());
+
+        var result = await _sut.ListActiveAsync(CancellationToken.None);
+
+        result.Should().BeEmpty();
     }
 
     [TestMethod]
@@ -148,11 +150,13 @@ public sealed class ModelDownloadCoordinatorTests
     {
         var act = () =>
         {
-            using var fixture = new Fixture();
-            using var sut = fixture.BuildSut();
-            sut.Start("x", "http://localhost/x.bin", "/tmp/x.bin", CancellationToken.None);
+            _ = _sut.StartAsync("x", "http://localhost/x.bin", "/tmp/x.bin", null, CancellationToken.None);
+            _sut.Dispose();
         };
 
         act.Should().NotThrow();
     }
+
+    private static bool IsTerminal(DownloadState state) =>
+        state is DownloadState.Completed or DownloadState.Failed or DownloadState.Cancelled;
 }

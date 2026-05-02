@@ -80,4 +80,78 @@ public sealed class ModelsGraphQLTests : IntegrationTestsBase
         errors.Count.Should().BeGreaterThan(0);
         errors[0]!["code"]!.GetValue<string>().Should().Be("VALIDATION_ERROR");
     }
+
+    [TestMethod]
+    public async Task CancelModelDownloadMutation_UnknownDownloadId_ReturnsNotFoundError()
+    {
+        using var client = CreateClient();
+        var body = new
+        {
+            query = """
+                mutation {
+                  cancelModelDownload(downloadId: "ffffffffffffffffffffffffffffffff") {
+                    ok
+                    errors { code message }
+                  }
+                }
+                """
+        };
+
+        using var response = await client.PostAsJsonAsync("/graphql", body);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = JsonNode.Parse(await response.Content.ReadAsStringAsync())!;
+        var ok = json["data"]!["cancelModelDownload"]!["ok"]!.GetValue<bool>();
+        ok.Should().BeFalse();
+        var errors = json["data"]!["cancelModelDownload"]!["errors"]!.AsArray();
+        errors.Count.Should().BeGreaterThan(0);
+        errors[0]!["code"]!.GetValue<string>().Should().Be("NOT_FOUND");
+    }
+
+    [TestMethod]
+    public async Task CancelModelDownloadMutation_EmptyDownloadId_ReturnsValidationError()
+    {
+        using var client = CreateClient();
+        var body = new
+        {
+            query = """
+                mutation {
+                  cancelModelDownload(downloadId: "") {
+                    ok
+                    errors { code message }
+                  }
+                }
+                """
+        };
+
+        using var response = await client.PostAsJsonAsync("/graphql", body);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = JsonNode.Parse(await response.Content.ReadAsStringAsync())!;
+        var errors = json["data"]!["cancelModelDownload"]!["errors"]!.AsArray();
+        errors.Count.Should().BeGreaterThan(0);
+        errors[0]!["code"]!.GetValue<string>().Should().Be("VALIDATION_ERROR");
+    }
+
+    [TestMethod]
+    public async Task ActiveDownloadsQuery_NoActiveJobs_ReturnsEmptyArray()
+    {
+        using var client = CreateClient();
+        var body = new
+        {
+            query = """
+                query {
+                  activeDownloads { id catalogueId state bytesReceived totalBytes }
+                }
+                """
+        };
+
+        using var response = await client.PostAsJsonAsync("/graphql", body);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = JsonNode.Parse(await response.Content.ReadAsStringAsync())!;
+        json["errors"].Should().BeNull();
+        var arr = json["data"]!["activeDownloads"]!.AsArray();
+        arr.Count.Should().Be(0);
+    }
 }

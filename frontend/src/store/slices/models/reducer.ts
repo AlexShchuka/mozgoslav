@@ -1,16 +1,25 @@
 import type { Reducer } from "redux";
+import { DownloadState } from "../../../api/gql/graphql";
 import {
+  CANCEL_MODEL_DOWNLOAD_FAILURE,
+  CANCEL_MODEL_DOWNLOAD_REQUESTED,
+  CANCEL_MODEL_DOWNLOAD_SUCCESS,
+  CLOSE_DOWNLOADS_DRAWER,
   DOWNLOAD_MODEL_REQUEST_FAILED,
   DOWNLOAD_MODEL_REQUESTED,
   DOWNLOAD_MODEL_STARTED,
+  LOAD_ACTIVE_DOWNLOADS,
+  LOAD_ACTIVE_DOWNLOADS_FAILURE,
+  LOAD_ACTIVE_DOWNLOADS_SUCCESS,
   LOAD_MODELS,
   LOAD_MODELS_FAILURE,
   LOAD_MODELS_SUCCESS,
   MODEL_DOWNLOAD_COMPLETED,
   MODEL_DOWNLOAD_PROGRESS,
+  OPEN_DOWNLOADS_DRAWER,
   type ModelsAction,
 } from "./actions";
-import { initialModelsState, type ModelsState } from "./types";
+import { initialModelsState, type ActiveDownload, type ModelsState } from "./types";
 
 export const modelsReducer: Reducer<ModelsState> = (
   state: ModelsState = initialModelsState,
@@ -33,6 +42,32 @@ export const modelsReducer: Reducer<ModelsState> = (
     case LOAD_MODELS_FAILURE:
       return { ...state, isLoading: false };
 
+    case LOAD_ACTIVE_DOWNLOADS:
+      return { ...state, isLoadingActiveDownloads: true };
+
+    case LOAD_ACTIVE_DOWNLOADS_SUCCESS: {
+      const incoming = (typed as { payload: ModelsState["activeDownloadList"] }).payload;
+      const prevById = new Map(state.activeDownloadList.map((d) => [d.id, d]));
+      const merged: ActiveDownload[] = incoming.map((next) => {
+        const prev = prevById.get(next.id);
+        if (!prev) return next;
+        return {
+          ...next,
+          bytesReceived: Math.max(prev.bytesReceived, next.bytesReceived),
+          totalBytes: next.totalBytes ?? prev.totalBytes,
+          speedBytesPerSecond: prev.speedBytesPerSecond ?? next.speedBytesPerSecond,
+        };
+      });
+      return {
+        ...state,
+        isLoadingActiveDownloads: false,
+        activeDownloadList: merged,
+      };
+    }
+
+    case LOAD_ACTIVE_DOWNLOADS_FAILURE:
+      return { ...state, isLoadingActiveDownloads: false };
+
     case DOWNLOAD_MODEL_REQUESTED:
       return {
         ...state,
@@ -43,34 +78,70 @@ export const modelsReducer: Reducer<ModelsState> = (
       const { catalogueId, downloadId } = (
         typed as { payload: { catalogueId: string; downloadId: string } }
       ).payload;
+      const alreadyInList = state.activeDownloadList.some((d) => d.id === downloadId);
+      const optimistic: ActiveDownload = {
+        id: downloadId,
+        catalogueId,
+        state: DownloadState.Queued,
+        bytesReceived: 0,
+        totalBytes: null,
+        speedBytesPerSecond: null,
+        errorMessage: null,
+        startedAt: null,
+      };
       return {
         ...state,
         requestingDownloadId: null,
         activeDownloads: { ...state.activeDownloads, [catalogueId]: downloadId },
+        activeDownloadList: alreadyInList
+          ? state.activeDownloadList
+          : [...state.activeDownloadList, optimistic],
+        isDownloadsDrawerOpen: true,
       };
     }
 
     case DOWNLOAD_MODEL_REQUEST_FAILED:
       return { ...state, requestingDownloadId: null };
 
+    case CANCEL_MODEL_DOWNLOAD_REQUESTED:
+      return { ...state, cancellingDownloadId: (typed as { payload: string }).payload };
+
+    case CANCEL_MODEL_DOWNLOAD_SUCCESS:
+    case CANCEL_MODEL_DOWNLOAD_FAILURE:
+      return { ...state, cancellingDownloadId: null };
+
     case MODEL_DOWNLOAD_PROGRESS: {
-      const { downloadId, bytesRead, totalBytes, done, error } = (
+      const { downloadId, bytesRead, totalBytes, phase, speedBytesPerSecond, error } = (
         typed as {
           payload: {
             downloadId: string;
             bytesRead: number;
             totalBytes: number | null;
-            done: boolean;
+            phase: ModelsState["downloadProgress"][string]["phase"];
+            speedBytesPerSecond: number | null;
             error: string | null;
           };
         }
       ).payload;
+      const activeDownloadList = state.activeDownloadList.map((d) =>
+        d.id === downloadId
+          ? {
+              ...d,
+              state: phase,
+              bytesReceived: Math.max(d.bytesReceived, bytesRead),
+              totalBytes: totalBytes ?? d.totalBytes,
+              speedBytesPerSecond: speedBytesPerSecond ?? d.speedBytesPerSecond,
+              errorMessage: error ?? d.errorMessage,
+            }
+          : d
+      );
       return {
         ...state,
         downloadProgress: {
           ...state.downloadProgress,
-          [downloadId]: { bytesRead, totalBytes, done, error },
+          [downloadId]: { bytesRead, totalBytes, phase, speedBytesPerSecond, error },
         },
+        activeDownloadList,
       };
     }
 
@@ -80,8 +151,20 @@ export const modelsReducer: Reducer<ModelsState> = (
       const activeDownloads = Object.fromEntries(
         Object.entries(state.activeDownloads).filter(([, dId]) => dId !== downloadId)
       );
-      return { ...state, downloadProgress: restProgress, activeDownloads };
+      const activeDownloadList = state.activeDownloadList.filter((d) => d.id !== downloadId);
+      return {
+        ...state,
+        downloadProgress: restProgress,
+        activeDownloads,
+        activeDownloadList,
+      };
     }
+
+    case OPEN_DOWNLOADS_DRAWER:
+      return { ...state, isDownloadsDrawerOpen: true };
+
+    case CLOSE_DOWNLOADS_DRAWER:
+      return { ...state, isDownloadsDrawerOpen: false };
 
     default:
       return state;

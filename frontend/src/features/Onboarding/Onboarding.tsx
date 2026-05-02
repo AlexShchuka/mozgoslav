@@ -15,9 +15,9 @@ import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
 import type { Action, Dispatch } from "redux";
 
+import Badge from "../../components/Badge";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
-import ModelDownloadProgress from "../../components/ModelDownloadProgress";
 import { ModelTier } from "../../api/gql/graphql";
 import { ROUTES } from "../../constants/routes";
 import { useAudioPermissions, useLlmDetection, useObsidianDetection } from "./hooks";
@@ -257,9 +257,7 @@ const Onboarding: FC<OnboardingProps> = ({ currentStepIndex, onNextStep, onCompl
                             </span>
                           )}
                         </div>
-                        {activeDownloadId && (
-                          <ModelDownloadProgress downloadId={activeDownloadId} label={model.name} />
-                        )}
+                        {activeDownloadId && <Badge tone="accent">{t("models.downloading")}</Badge>}
                       </div>
                     );
                   })}
