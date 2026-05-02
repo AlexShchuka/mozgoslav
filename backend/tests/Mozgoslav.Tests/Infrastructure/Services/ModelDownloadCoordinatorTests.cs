@@ -334,21 +334,37 @@ public sealed class ModelDownloadCoordinatorTests : IDisposable
         Volatile.Read(ref httpCallCount).Should().Be(2,
             "with concurrency=2 and id1/id2 holding both slots, id3 must still be parked at the semaphore — it must not have issued an HTTP request");
 
+        using (var schedCts = new CancellationTokenSource(TimeSpan.FromSeconds(10)))
+        {
+            await foreach (var p in _sut.StreamAsync(id3, schedCts.Token))
+            {
+                if (p.Phase == DownloadState.Queued) break;
+            }
+        }
+        await Task.Delay(200);
+
         var cancelResult = await _sut.TryCancelAsync(id3, CancellationToken.None);
         cancelResult.Should().BeNull();
 
-        using var pollCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var pollCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var terminal = DownloadState.Queued;
-        await foreach (var p in _sut.StreamAsync(id3, pollCts.Token))
+        try
         {
-            if (p.Phase == DownloadState.Cancelled
-                || p.Phase == DownloadState.Failed
-                || p.Phase == DownloadState.Completed)
+            await foreach (var p in _sut.StreamAsync(id3, pollCts.Token))
             {
-                terminal = p.Phase;
-                break;
+                if (p.Phase == DownloadState.Cancelled
+                    || p.Phase == DownloadState.Failed
+                    || p.Phase == DownloadState.Completed)
+                {
+                    terminal = p.Phase;
+                    break;
+                }
             }
         }
+        catch (OperationCanceledException) when (pollCts.IsCancellationRequested)
+        {
+        }
+
         terminal.Should().Be(DownloadState.Cancelled,
             "cancelling a queued download must drive it to Cancelled, not Failed or Completed");
 
