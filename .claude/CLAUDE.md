@@ -13,7 +13,7 @@ Contract between this repo and any coding agent. Only things you cannot infer fr
 
 **Ask first:**
 
-- Schema change on `Mozgoslav.Domain` entities (drops the local `mozgoslav.db` on every dev machine — `EnsureCreatedAsync`, not a migration tool).
+- Schema change on `Mozgoslav.Domain` entities — adds an EF migration (`dotnet ef migrations add`) and drops the local `mozgoslav.db` on every dev machine. `DatabaseInitializer` runs `MigrateAsync()` at startup; migrations are the only path.
 - Any dependency on a new npm / NuGet / PyPI package.
 - Any change to `.github/workflows/*`, `lefthook.yml`, `renovate.json`, or `electron-builder.yml`.
 - Any cross-stack contract change (GraphQL schema drop, IPC shape, native Swift signature).

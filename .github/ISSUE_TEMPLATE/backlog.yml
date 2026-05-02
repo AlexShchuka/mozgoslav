@@ -59,13 +59,35 @@ body:
     id: acceptance
     attributes:
       label: Acceptance
-      description: Checklist of observable outcomes that mark this as done.
+      description: Checklist of observable outcomes that mark this as done. Each item must be verifiable by a human or automated check, with no ambiguity.
       value: |
         - [ ]
         - [ ]
         - [ ]
     validations:
       required: true
+
+  - type: textarea
+    id: test_plan
+    attributes:
+      label: Test plan
+      description: |
+        Enumerate every business case the implementation must cover. Use stable TC ids (`TC-B01`, `TC-G02`, `TC-F09a`) so test method names can grep back to this issue. Group by layer (backend unit / integration / frontend / observability). Include at least: happy path, every error path the feature exposes, idempotency, concurrency, regression for each open bug the issue closes. Tests must be written upfront, not as follow-up work.
+      value: |
+        **Backend unit (`backend/tests/Mozgoslav.Tests/`):**
+        - [ ] TC-B01 — happy path
+        - [ ] TC-B02 — …
+
+        **Backend integration (`backend/tests/Mozgoslav.Tests.Integration/`):**
+        - [ ] TC-G01 — …
+
+        **Frontend (`frontend/src/**/__tests__/`):**
+        - [ ] TC-F01 — …
+
+        **Observability / runbook:**
+        - [ ] TC-M01 — …
+    validations:
+      required: false
 
   - type: textarea
     id: rejected

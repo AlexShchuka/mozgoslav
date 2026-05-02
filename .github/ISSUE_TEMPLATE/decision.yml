@@ -60,3 +60,12 @@ body:
     attributes:
       label: Alternatives rejected
       description: Optional. Table or bullets — `alt → reason`.
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification
+      description: |
+        How is this decision proven? Reference the regression test or assertion (`TC-Bxx` / `TC-Gxx` / `TC-Fxx`) that would catch a regression. Decisions without a verifying test rot silently — call this out explicitly if no test is feasible (e.g. policy decisions).
+    validations:
+      required: false
