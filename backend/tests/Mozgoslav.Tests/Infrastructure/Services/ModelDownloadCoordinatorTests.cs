@@ -334,19 +334,13 @@ public sealed class ModelDownloadCoordinatorTests : IDisposable
         Volatile.Read(ref httpCallCount).Should().Be(2,
             "with concurrency=2 and id1/id2 holding both slots, id3 must still be parked at the semaphore — it must not have issued an HTTP request");
 
-        using (var schedCts = new CancellationTokenSource(TimeSpan.FromSeconds(10)))
-        {
-            await foreach (var p in _sut.StreamAsync(id3, schedCts.Token))
-            {
-                if (p.Phase == DownloadState.Queued) break;
-            }
-        }
-        await Task.Delay(200);
-
         var cancelResult = await _sut.TryCancelAsync(id3, CancellationToken.None);
         cancelResult.Should().BeNull();
 
-        using var pollCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        // Use a generous timeout: on macos CI with full suite parallelism the thread pool
+        // may delay Task.Run(RunJobAsync) for many seconds before it reaches WaitAsync(ct)
+        // and emits the Cancelled terminal phase.
+        using var pollCts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
         var terminal = DownloadState.Queued;
         try
         {
