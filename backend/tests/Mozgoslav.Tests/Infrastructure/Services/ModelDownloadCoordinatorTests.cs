@@ -305,7 +305,13 @@ public sealed class ModelDownloadCoordinatorTests : IDisposable
         {
             Interlocked.Increment(ref httpCallCount);
             httpRequestReceived.Release();
-            await releaseHttp.WaitAsync();
+            try
+            {
+                await releaseHttp.WaitAsync();
+            }
+            catch (ObjectDisposedException)
+            {
+            }
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new ByteArrayContent(bigPayload)
@@ -323,14 +329,41 @@ public sealed class ModelDownloadCoordinatorTests : IDisposable
         using var waitCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await httpRequestReceived.WaitAsync(waitCts.Token);
         await httpRequestReceived.WaitAsync(waitCts.Token);
+        await Task.Delay(300, waitCts.Token);
+
+        Volatile.Read(ref httpCallCount).Should().Be(2,
+            "with concurrency=2 and id1/id2 holding both slots, id3 must still be parked at the semaphore — it must not have issued an HTTP request");
 
         var cancelResult = await _sut.TryCancelAsync(id3, CancellationToken.None);
         cancelResult.Should().BeNull();
 
-        var events3 = await CollectEventsAsync(id3, TimeSpan.FromSeconds(15));
-        events3.Should().Contain(e => e.Phase == DownloadState.Cancelled);
+        // TryCancelAsync now eagerly emits Cancelled to the channel for Queued downloads,
+        // so the terminal phase arrives promptly regardless of thread-pool scheduling delays
+        // on macos CI.  Keep a generous timeout as a backstop.
+        using var pollCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        var terminal = DownloadState.Queued;
+        try
+        {
+            await foreach (var p in _sut.StreamAsync(id3, pollCts.Token))
+            {
+                if (p.Phase == DownloadState.Cancelled
+                    || p.Phase == DownloadState.Failed
+                    || p.Phase == DownloadState.Completed)
+                {
+                    terminal = p.Phase;
+                    break;
+                }
+            }
+        }
+        catch (OperationCanceledException) when (pollCts.IsCancellationRequested)
+        {
+        }
 
-        httpCallCount.Should().Be(2);
+        terminal.Should().Be(DownloadState.Cancelled,
+            "cancelling a queued download must drive it to Cancelled, not Failed or Completed");
+
+        Volatile.Read(ref httpCallCount).Should().Be(2,
+            "the cancelled queued download must never have issued an HTTP request");
 
         releaseHttp.Release(2);
     }
