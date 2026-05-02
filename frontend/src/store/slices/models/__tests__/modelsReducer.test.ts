@@ -282,6 +282,50 @@ describe("modelsReducer — TC-F01..F06", () => {
     expect(closed.isDownloadsDrawerOpen).toBe(false);
   });
 
+  it("TC-F13a: SET_HIGHLIGHTED_DOWNLOAD stores id and CLEAR resets it", () => {
+    const set = modelsReducer(initialModelsState, {
+      type: "models/SET_HIGHLIGHTED_DOWNLOAD",
+      payload: "dl-h1",
+    } as never);
+    expect(set.highlightedDownloadId).toBe("dl-h1");
+    const cleared = modelsReducer(set, { type: "models/CLEAR_HIGHLIGHTED_DOWNLOAD" } as never);
+    expect(cleared.highlightedDownloadId).toBeNull();
+  });
+
+  it("TC-F13b: CLOSE_DOWNLOADS_DRAWER clears highlight as a side effect", () => {
+    const set = modelsReducer(
+      { ...initialModelsState, isDownloadsDrawerOpen: true, highlightedDownloadId: "dl-h2" },
+      { type: "models/CLOSE_DOWNLOADS_DRAWER" } as never
+    );
+    expect(set.isDownloadsDrawerOpen).toBe(false);
+    expect(set.highlightedDownloadId).toBeNull();
+  });
+
+  it("TC-F11b: DOWNLOAD_MODEL_STARTED drops prior Failed entries for same catalogueId", () => {
+    const seeded = {
+      ...initialModelsState,
+      activeDownloadList: [
+        {
+          id: "dl-old",
+          catalogueId: "cat-retry",
+          state: DownloadState.Failed,
+          bytesReceived: 100,
+          totalBytes: 1024,
+          speedBytesPerSecond: null,
+          errorMessage: "boom",
+          startedAt: null,
+        },
+      ],
+    };
+    const state = modelsReducer(seeded, {
+      type: DOWNLOAD_MODEL_STARTED,
+      payload: { catalogueId: "cat-retry", downloadId: "dl-new" },
+    });
+    expect(state.activeDownloadList).toHaveLength(1);
+    expect(state.activeDownloadList[0]?.id).toBe("dl-new");
+    expect(state.activeDownloadList[0]?.state).toBe(DownloadState.Queued);
+  });
+
   it("TC-F14: LOAD_ACTIVE_DOWNLOADS_SUCCESS keeps fresher per-id bytesReceived from previous list", () => {
     const seeded = {
       ...initialModelsState,

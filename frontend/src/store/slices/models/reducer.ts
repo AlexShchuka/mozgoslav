@@ -4,6 +4,7 @@ import {
   CANCEL_MODEL_DOWNLOAD_FAILURE,
   CANCEL_MODEL_DOWNLOAD_REQUESTED,
   CANCEL_MODEL_DOWNLOAD_SUCCESS,
+  CLEAR_HIGHLIGHTED_DOWNLOAD,
   CLOSE_DOWNLOADS_DRAWER,
   DOWNLOAD_MODEL_REQUEST_FAILED,
   DOWNLOAD_MODEL_REQUESTED,
@@ -17,6 +18,7 @@ import {
   MODEL_DOWNLOAD_COMPLETED,
   MODEL_DOWNLOAD_PROGRESS,
   OPEN_DOWNLOADS_DRAWER,
+  SET_HIGHLIGHTED_DOWNLOAD,
   type ModelsAction,
 } from "./actions";
 import { initialModelsState, type ActiveDownload, type ModelsState } from "./types";
@@ -78,7 +80,14 @@ export const modelsReducer: Reducer<ModelsState> = (
       const { catalogueId, downloadId } = (
         typed as { payload: { catalogueId: string; downloadId: string } }
       ).payload;
-      const alreadyInList = state.activeDownloadList.some((d) => d.id === downloadId);
+      const withoutPriorTerminal = state.activeDownloadList.filter(
+        (d) =>
+          d.catalogueId !== catalogueId ||
+          (d.state !== DownloadState.Failed &&
+            d.state !== DownloadState.Cancelled &&
+            d.state !== DownloadState.Completed)
+      );
+      const alreadyInList = withoutPriorTerminal.some((d) => d.id === downloadId);
       const optimistic: ActiveDownload = {
         id: downloadId,
         catalogueId,
@@ -94,8 +103,8 @@ export const modelsReducer: Reducer<ModelsState> = (
         requestingDownloadId: null,
         activeDownloads: { ...state.activeDownloads, [catalogueId]: downloadId },
         activeDownloadList: alreadyInList
-          ? state.activeDownloadList
-          : [...state.activeDownloadList, optimistic],
+          ? withoutPriorTerminal
+          : [...withoutPriorTerminal, optimistic],
         isDownloadsDrawerOpen: true,
       };
     }
@@ -164,7 +173,16 @@ export const modelsReducer: Reducer<ModelsState> = (
       return { ...state, isDownloadsDrawerOpen: true };
 
     case CLOSE_DOWNLOADS_DRAWER:
-      return { ...state, isDownloadsDrawerOpen: false };
+      return { ...state, isDownloadsDrawerOpen: false, highlightedDownloadId: null };
+
+    case SET_HIGHLIGHTED_DOWNLOAD:
+      return {
+        ...state,
+        highlightedDownloadId: (typed as { payload: string }).payload,
+      };
+
+    case CLEAR_HIGHLIGHTED_DOWNLOAD:
+      return { ...state, highlightedDownloadId: null };
 
     default:
       return state;

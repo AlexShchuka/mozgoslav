@@ -17,6 +17,7 @@ import {
   selectAllModels,
   selectActiveDownloadIdForModel,
   selectDownloadingModelId,
+  setHighlightedDownload,
 } from "../../store/slices/models";
 import {
   FilterChip,
@@ -197,7 +198,10 @@ const ModelRow: FC<ModelRowProps> = ({
             variant="ghost"
             size="sm"
             leftIcon={<Download size={14} />}
-            onClick={() => dispatch(openDownloadsDrawer())}
+            onClick={() => {
+              dispatch(setHighlightedDownload(activeDownloadId));
+              dispatch(openDownloadsDrawer());
+            }}
             data-testid={`models-open-drawer-${modelId}`}
           >
             {t("downloads.openDrawer")}

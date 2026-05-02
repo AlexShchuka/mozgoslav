@@ -575,6 +575,130 @@ public sealed class ModelDownloadCoordinatorTests : IDisposable
     }
 
     [TestMethod]
+    public async Task TC_B14b_NewStart_AfterTransientFail_UsesRangeHeader()
+    {
+        SetupHttpFactory(req => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+
+        var destination = Path.Combine(_tempDir, "tc-b14b.bin");
+        var failedId = await _sut.StartAsync("cat-b14b", "http://fixture/b14b.bin", destination, null, CancellationToken.None);
+        var failedEvents = await CollectEventsAsync(failedId, TimeSpan.FromSeconds(60));
+        failedEvents.Last().Phase.Should().Be(DownloadState.Failed);
+
+        await File.WriteAllBytesAsync(destination + ".partial", new byte[2_048]);
+
+        long? observedRangeStart = null;
+        var payload = new byte[4_096];
+        SetupHttpFactory(req =>
+        {
+            observedRangeStart = req.Headers.Range?.Ranges.FirstOrDefault()?.From;
+            return new HttpResponseMessage(HttpStatusCode.PartialContent)
+            {
+                Content = new ByteArrayContent(new byte[2_048])
+            };
+        });
+
+        var resumedId = await _sut.StartAsync("cat-b14b", "http://fixture/b14b.bin", destination, null, CancellationToken.None);
+        var resumedEvents = await CollectEventsAsync(resumedId, TimeSpan.FromSeconds(10));
+
+        resumedEvents.Last().Phase.Should().Be(DownloadState.Completed);
+        observedRangeStart.Should().Be(2_048, "the new attempt must resume from the preserved partial offset");
+    }
+
+    [TestMethod]
+    public async Task TC_B14c_NewStart_AfterShaFailure_ClearsPartialAndStartsFromZero()
+    {
+        var destination = Path.Combine(_tempDir, "tc-b14c.bin");
+        var corruptPayload = new byte[256];
+        SetupHttpFactory(req => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new ByteArrayContent(corruptPayload)
+        });
+
+        var firstId = await _sut.StartAsync("cat-b14c", "http://fixture/b14c.bin", destination, "deadbeef".PadRight(64, '0'), CancellationToken.None);
+        var firstEvents = await CollectEventsAsync(firstId, TimeSpan.FromSeconds(10));
+        firstEvents.Last().Phase.Should().Be(DownloadState.Failed);
+        File.Exists(destination + ".partial").Should().BeFalse("SHA failure must clear *.partial");
+
+        long? observedRangeStart = null;
+        SetupHttpFactory(req =>
+        {
+            observedRangeStart = req.Headers.Range?.Ranges.FirstOrDefault()?.From;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(corruptPayload)
+            };
+        });
+
+        var secondId = await _sut.StartAsync("cat-b14c", "http://fixture/b14c.bin", destination, null, CancellationToken.None);
+        await CollectEventsAsync(secondId, TimeSpan.FromSeconds(10));
+
+        observedRangeStart.Should().BeNull("after Sha failure the new attempt must start from byte 0, not Range");
+    }
+
+    [TestMethod]
+    public async Task TC_B14d_NewStart_AfterCancel_StartsFromZero()
+    {
+        using var blockUntilCancel = new SemaphoreSlim(0, 1);
+        var firstResponseSent = new TaskCompletionSource<bool>();
+        SetupHttpFactoryAsync(async req =>
+        {
+            firstResponseSent.TrySetResult(true);
+            await blockUntilCancel.WaitAsync(TimeSpan.FromSeconds(20));
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(new byte[1024])
+            };
+        });
+
+        var destination = Path.Combine(_tempDir, "tc-b14d.bin");
+        var firstId = await _sut.StartAsync("cat-b14d", "http://fixture/b14d.bin", destination, null, CancellationToken.None);
+        await firstResponseSent.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await _sut.TryCancelAsync(firstId, CancellationToken.None);
+        blockUntilCancel.Release();
+        await WaitForPhaseAsync(firstId, DownloadState.Cancelled, TimeSpan.FromSeconds(5));
+        File.Exists(destination + ".partial").Should().BeFalse("cancel must clear *.partial");
+
+        long? observedRangeStart = null;
+        SetupHttpFactory(req =>
+        {
+            observedRangeStart = req.Headers.Range?.Ranges.FirstOrDefault()?.From;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(new byte[1024])
+            };
+        });
+
+        var secondId = await _sut.StartAsync("cat-b14d", "http://fixture/b14d.bin", destination, null, CancellationToken.None);
+        await CollectEventsAsync(secondId, TimeSpan.FromSeconds(10));
+
+        observedRangeStart.Should().BeNull("after Cancel the new attempt must start from byte 0");
+    }
+
+    [TestMethod]
+    public async Task TC_B19_TransientThenServerClosesShort_RetriesUntilFailWithoutPretendingSuccess()
+    {
+        var attempt = 0;
+        SetupHttpFactoryAsync(async req =>
+        {
+            attempt++;
+            var msg = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(new byte[100])
+            };
+            msg.Content.Headers.ContentLength = 4_096;
+            return await Task.FromResult(msg);
+        });
+
+        var destination = Path.Combine(_tempDir, "tc-b19.bin");
+        var id = await _sut.StartAsync("cat-b19", "http://fixture/b19.bin", destination, null, CancellationToken.None);
+        var events = await CollectEventsAsync(id, TimeSpan.FromSeconds(60));
+
+        events.Last().Phase.Should().Be(DownloadState.Failed,
+            "server claiming Content-Length=4096 but only delivering 100 bytes must NOT be reported as Completed");
+        attempt.Should().BeGreaterThan(1, "short response should be classified as Transient and retried");
+    }
+
+    [TestMethod]
     public async Task TC_B20_Regression_RequestCT_DoesNotCancelDownload()
     {
         var downloadStarted = new TaskCompletionSource<bool>();

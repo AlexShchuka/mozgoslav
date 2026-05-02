@@ -9,6 +9,7 @@ import {
   SUBSCRIBE_MODEL_DOWNLOAD,
   UNSUBSCRIBE_MODEL_DOWNLOAD,
 } from "../actions";
+import { notifySuccess } from "../../notifications";
 import { watchSubscribeModelDownload } from "../saga/subscribeModelDownloadSaga";
 
 jest.mock("../../../../api/graphqlClient", () => ({
@@ -37,6 +38,8 @@ const makeSubscriptionEvent = (phase: DownloadState, bytesRead = 0, totalBytes =
   },
 });
 
+const tick = (fn: () => void) => setTimeout(fn, 0);
+
 describe("subscribeModelDownloadSaga — TC-F03", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -48,15 +51,15 @@ describe("subscribeModelDownloadSaga — TC-F03", () => {
 
     const saga = expectSaga(watchSubscribeModelDownload);
 
-    setImmediate(() => {
+    tick(() => {
       saga.dispatch({
         type: SUBSCRIBE_MODEL_DOWNLOAD,
         payload: { downloadId: "dl-test" },
       });
 
-      setImmediate(() => {
+      tick(() => {
         mockChannel.put(makeSubscriptionEvent(DownloadState.Downloading, 512, 1024));
-        setImmediate(() => {
+        tick(() => {
           saga.dispatch({ type: UNSUBSCRIBE_MODEL_DOWNLOAD, payload: { downloadId: "dl-test" } });
         });
       });
@@ -76,42 +79,39 @@ describe("subscribeModelDownloadSaga — TC-F03", () => {
       .run({ timeout: 500, silenceTimeout: true });
   });
 
-  it("TC-F03b: SUCCESS (Completed) phase dispatches modelDownloadCompleted + loadModels", async () => {
+  it("TC-F03b: SUCCESS (Completed) phase dispatches loadModels and (after linger) modelDownloadCompleted", async () => {
     const mockChannel = channel();
     mockGqlSubscriptionChannel.mockReturnValue(mockChannel);
 
     const saga = expectSaga(watchSubscribeModelDownload);
 
-    setImmediate(() => {
+    tick(() => {
       saga.dispatch({
         type: SUBSCRIBE_MODEL_DOWNLOAD,
         payload: { downloadId: "dl-test" },
       });
 
-      setImmediate(() => {
+      tick(() => {
         mockChannel.put(makeSubscriptionEvent(DownloadState.Completed, 1024, 1024));
       });
     });
 
-    await saga
-      .put(modelDownloadCompleted("dl-test"))
-      .put(loadModels())
-      .run({ timeout: 500, silenceTimeout: true });
+    await saga.put(loadModels()).run({ timeout: 500, silenceTimeout: true });
   });
 
-  it("TC-F03c: FAILED phase dispatches modelDownloadCompleted + loadModels", async () => {
+  it("TC-F03c: FAILED phase dispatches loadModels and DOES NOT auto-remove", async () => {
     const mockChannel = channel();
     mockGqlSubscriptionChannel.mockReturnValue(mockChannel);
 
     const saga = expectSaga(watchSubscribeModelDownload);
 
-    setImmediate(() => {
+    tick(() => {
       saga.dispatch({
         type: SUBSCRIBE_MODEL_DOWNLOAD,
         payload: { downloadId: "dl-test" },
       });
 
-      setImmediate(() => {
+      tick(() => {
         mockChannel.put({
           modelDownloadProgress: {
             downloadId: "dl-test",
@@ -125,32 +125,38 @@ describe("subscribeModelDownloadSaga — TC-F03", () => {
       });
     });
 
-    await saga
-      .put(modelDownloadCompleted("dl-test"))
+    const { effects } = await saga
       .put(loadModels())
       .run({ timeout: 500, silenceTimeout: true });
+
+    const completedDispatched = effects.put?.some(
+      (e) =>
+        (e.payload?.action as { type?: string } | undefined)?.type ===
+        "models/MODEL_DOWNLOAD_COMPLETED"
+    );
+    expect(completedDispatched).toBeFalsy();
   });
 
-  it("TC-F03d: CANCELLED phase dispatches modelDownloadCompleted + loadModels", async () => {
+  it("TC-F03d: CANCELLED phase dispatches loadModels + notifySuccess (linger before modelDownloadCompleted)", async () => {
     const mockChannel = channel();
     mockGqlSubscriptionChannel.mockReturnValue(mockChannel);
 
     const saga = expectSaga(watchSubscribeModelDownload);
 
-    setImmediate(() => {
+    tick(() => {
       saga.dispatch({
         type: SUBSCRIBE_MODEL_DOWNLOAD,
         payload: { downloadId: "dl-test" },
       });
 
-      setImmediate(() => {
+      tick(() => {
         mockChannel.put(makeSubscriptionEvent(DownloadState.Cancelled, 0, 1024));
       });
     });
 
     await saga
-      .put(modelDownloadCompleted("dl-test"))
       .put(loadModels())
+      .put(notifySuccess({ messageKey: "downloads.cancelledToast" }))
       .run({ timeout: 500, silenceTimeout: true });
   });
 });

@@ -26,6 +26,9 @@ export const MODEL_DOWNLOAD_COMPLETED = "models/MODEL_DOWNLOAD_COMPLETED";
 export const OPEN_DOWNLOADS_DRAWER = "models/OPEN_DOWNLOADS_DRAWER";
 export const CLOSE_DOWNLOADS_DRAWER = "models/CLOSE_DOWNLOADS_DRAWER";
 
+export const SET_HIGHLIGHTED_DOWNLOAD = "models/SET_HIGHLIGHTED_DOWNLOAD";
+export const CLEAR_HIGHLIGHTED_DOWNLOAD = "models/CLEAR_HIGHLIGHTED_DOWNLOAD";
+
 export interface LoadModelsAction {
   type: typeof LOAD_MODELS;
 }
@@ -112,6 +115,15 @@ export interface CloseDownloadsDrawerAction {
   type: typeof CLOSE_DOWNLOADS_DRAWER;
 }
 
+export interface SetHighlightedDownloadAction {
+  type: typeof SET_HIGHLIGHTED_DOWNLOAD;
+  payload: string;
+}
+
+export interface ClearHighlightedDownloadAction {
+  type: typeof CLEAR_HIGHLIGHTED_DOWNLOAD;
+}
+
 export type ModelsAction =
   | LoadModelsAction
   | LoadModelsSuccessAction
@@ -130,7 +142,9 @@ export type ModelsAction =
   | ModelDownloadProgressAction
   | ModelDownloadCompletedAction
   | OpenDownloadsDrawerAction
-  | CloseDownloadsDrawerAction;
+  | CloseDownloadsDrawerAction
+  | SetHighlightedDownloadAction
+  | ClearHighlightedDownloadAction;
 
 export const loadModels = (): LoadModelsAction => ({ type: LOAD_MODELS });
 
@@ -229,6 +243,15 @@ export const openDownloadsDrawer = (): OpenDownloadsDrawerAction => ({
 
 export const closeDownloadsDrawer = (): CloseDownloadsDrawerAction => ({
   type: CLOSE_DOWNLOADS_DRAWER,
+});
+
+export const setHighlightedDownload = (downloadId: string): SetHighlightedDownloadAction => ({
+  type: SET_HIGHLIGHTED_DOWNLOAD,
+  payload: downloadId,
+});
+
+export const clearHighlightedDownload = (): ClearHighlightedDownloadAction => ({
+  type: CLEAR_HIGHLIGHTED_DOWNLOAD,
 });
 
 export type { DownloadState };

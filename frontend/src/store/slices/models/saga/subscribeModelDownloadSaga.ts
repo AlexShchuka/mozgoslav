@@ -1,10 +1,11 @@
-import { cancel, cancelled, fork, put, take, takeEvery } from "redux-saga/effects";
+import { cancel, cancelled, delay, fork, put, take, takeEvery } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
 import type { Task, EventChannel } from "redux-saga";
 import { DownloadState } from "../../../../api/gql/graphql";
 import type { SubscriptionModelDownloadProgressSubscription } from "../../../../api/gql/graphql";
 import { SubscriptionModelDownloadProgressDocument } from "../../../../api/gql/graphql";
 import { gqlSubscriptionChannel } from "../../../saga/graphql";
+import { notifySuccess } from "../../notifications";
 import {
   SUBSCRIBE_MODEL_DOWNLOAD,
   UNSUBSCRIBE_MODEL_DOWNLOAD,
@@ -16,6 +17,7 @@ import {
 } from "../actions";
 
 const TERMINAL_STATES = [DownloadState.Completed, DownloadState.Failed, DownloadState.Cancelled];
+export const LINGER_MS = 2000;
 
 function* consumeChannel(
   channel: EventChannel<SubscriptionModelDownloadProgressSubscription>,
@@ -34,8 +36,15 @@ function* consumeChannel(
       };
       yield put(modelDownloadProgress({ downloadId, ...progress }));
       if (TERMINAL_STATES.includes(evt.phase) || evt.error != null) {
-        yield put(modelDownloadCompleted(downloadId));
         yield put(loadModels());
+        if (evt.phase === DownloadState.Cancelled) {
+          yield put(notifySuccess({ messageKey: "downloads.cancelledToast" }));
+          yield delay(LINGER_MS);
+          yield put(modelDownloadCompleted(downloadId));
+        } else if (evt.phase === DownloadState.Completed) {
+          yield delay(LINGER_MS);
+          yield put(modelDownloadCompleted(downloadId));
+        }
         break;
       }
     }

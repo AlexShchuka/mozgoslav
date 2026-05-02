@@ -97,7 +97,11 @@ describe("TC-F15: archived component not imported", () => {
     scanDir(srcDir);
 
     const importLines = results.filter(
-      (r) => r.includes("import") && !r.includes("store/slices") && !r.includes("api/gql")
+      (r) =>
+        r.includes("import") &&
+        !r.includes("store/slices") &&
+        !r.includes("api/gql") &&
+        !r.includes("__tests__/i18nKeys.test.ts")
     );
 
     expect(importLines).toEqual([]);

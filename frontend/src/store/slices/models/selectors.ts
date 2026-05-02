@@ -51,3 +51,8 @@ export const selectActiveDownloadCount = createSelector(
   selectActiveDownloadList,
   (list): number => list.length
 );
+
+export const selectHighlightedDownloadId = createSelector(
+  selectModelsState,
+  (slice): string | null => slice.highlightedDownloadId
+);

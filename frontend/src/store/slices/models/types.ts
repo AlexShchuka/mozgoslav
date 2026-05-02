@@ -31,6 +31,7 @@ export interface ModelsState {
   readonly activeDownloadList: ActiveDownload[];
   readonly downloadProgress: Record<string, ModelDownloadProgress>;
   readonly isDownloadsDrawerOpen: boolean;
+  readonly highlightedDownloadId: string | null;
 }
 
 export const initialModelsState: ModelsState = {
@@ -43,4 +44,5 @@ export const initialModelsState: ModelsState = {
   activeDownloadList: [],
   downloadProgress: {},
   isDownloadsDrawerOpen: false,
+  highlightedDownloadId: null,
 };

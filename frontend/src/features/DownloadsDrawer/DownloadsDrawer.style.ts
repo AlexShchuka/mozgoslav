@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled, { css, keyframes } from "styled-components";
 
 export const Overlay = styled.div`
   position: fixed;
@@ -62,7 +62,19 @@ export const DrawerBody = styled.div`
   gap: ${({ theme }) => theme.space(2)};
 `;
 
-export const DownloadItem = styled.div`
+const highlightPulse = keyframes`
+  0% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb, 102, 178, 255), 0.5); }
+  60% { box-shadow: 0 0 0 6px rgba(var(--accent-rgb, 102, 178, 255), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb, 102, 178, 255), 0); }
+`;
+
+const finalizingPulse = keyframes`
+  0% { opacity: 0.65; }
+  50% { opacity: 1; }
+  100% { opacity: 0.65; }
+`;
+
+export const DownloadItem = styled.div<{ $highlighted?: boolean; $finalizing?: boolean }>`
   padding: ${({ theme }) => theme.space(3)};
   border: 1px solid ${({ theme }) => theme.colors.border.subtle};
   border-radius: ${({ theme }) => theme.radii.md};
@@ -70,6 +82,19 @@ export const DownloadItem = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.space(2)};
+
+  ${({ $highlighted, theme }) =>
+    $highlighted &&
+    css`
+      border-color: ${theme.colors.accent.primary};
+      animation: ${highlightPulse} 1.2s ease-out 1;
+    `}
+
+  ${({ $finalizing }) =>
+    $finalizing &&
+    css`
+      animation: ${finalizingPulse} 1.4s ease-in-out infinite;
+    `}
 `;
 
 export const DownloadItemHeader = styled.div`

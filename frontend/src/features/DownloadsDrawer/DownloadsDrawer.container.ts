@@ -7,6 +7,7 @@ import {
   downloadModel,
   selectActiveDownloadList,
   selectCancellingDownloadId,
+  selectHighlightedDownloadId,
   selectIsDownloadsDrawerOpen,
 } from "../../store/slices/models";
 import DownloadsDrawer from "./DownloadsDrawer";
@@ -15,6 +16,7 @@ const mapStateToProps = (state: GlobalState) => ({
   isOpen: selectIsDownloadsDrawerOpen(state),
   downloads: selectActiveDownloadList(state),
   cancellingDownloadId: selectCancellingDownloadId(state),
+  highlightedDownloadId: selectHighlightedDownloadId(state),
 });
 
 const mapDispatchToProps = (dispatch: Dispatch) =>

@@ -1,7 +1,7 @@
 import { FC } from "react";
 import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 import { DownloadState } from "../../api/gql/graphql";
 import Button from "../../components/Button";
@@ -28,6 +28,7 @@ const DownloadsDrawer: FC<DownloadsDrawerProps> = ({
   isOpen,
   downloads,
   cancellingDownloadId,
+  highlightedDownloadId = null,
   onClose,
   onCancel,
   onRetry,
@@ -60,6 +61,7 @@ const DownloadsDrawer: FC<DownloadsDrawerProps> = ({
                 key={download.id}
                 download={download}
                 isCancelling={cancellingDownloadId === download.id}
+                isHighlighted={highlightedDownloadId === download.id}
                 onCancel={onCancel}
                 onRetry={onRetry}
               />
@@ -75,11 +77,18 @@ const DownloadsDrawer: FC<DownloadsDrawerProps> = ({
 interface DownloadEntryProps {
   download: DownloadsDrawerProps["downloads"][number];
   isCancelling: boolean;
+  isHighlighted: boolean;
   onCancel: (downloadId: string) => void;
   onRetry: (catalogueId: string) => void;
 }
 
-const DownloadEntry: FC<DownloadEntryProps> = ({ download, isCancelling, onCancel, onRetry }) => {
+const DownloadEntry: FC<DownloadEntryProps> = ({
+  download,
+  isCancelling,
+  isHighlighted,
+  onCancel,
+  onRetry,
+}) => {
   const { t } = useTranslation();
 
   const isActive =
@@ -90,10 +99,13 @@ const DownloadEntry: FC<DownloadEntryProps> = ({ download, isCancelling, onCance
   const isCancellable =
     download.state === DownloadState.Queued || download.state === DownloadState.Downloading;
 
+  const isFinalizing = download.state === DownloadState.Finalizing;
+  const isCompleted = download.state === DownloadState.Completed;
   const isFailed = download.state === DownloadState.Failed;
 
-  const pct =
-    download.totalBytes && download.totalBytes > 0
+  const pct = isCompleted
+    ? 100
+    : download.totalBytes && download.totalBytes > 0
       ? Math.round((download.bytesReceived / download.totalBytes) * 100)
       : 0;
 
@@ -109,6 +121,8 @@ const DownloadEntry: FC<DownloadEntryProps> = ({ download, isCancelling, onCance
         return t("downloads.failed");
       case DownloadState.Cancelled:
         return t("downloads.cancelled");
+      case DownloadState.Completed:
+        return t("downloads.installed");
       default:
         return download.state;
     }
@@ -123,9 +137,21 @@ const DownloadEntry: FC<DownloadEntryProps> = ({ download, isCancelling, onCance
   const etaLabel = speed > 0 && remaining > 0 ? formatEta(remaining, speed) : PENDING;
 
   return (
-    <DownloadItem data-testid={`download-item-${download.id}`}>
+    <DownloadItem
+      data-testid={`download-item-${download.id}`}
+      data-highlighted={isHighlighted ? "true" : undefined}
+      $highlighted={isHighlighted}
+      $finalizing={isFinalizing}
+    >
       <DownloadItemHeader>
         <DownloadItemName title={download.catalogueId}>{download.catalogueId}</DownloadItemName>
+        {isCompleted && (
+          <Check
+            size={18}
+            aria-label={t("downloads.installed")}
+            data-testid={`download-success-${download.id}`}
+          />
+        )}
         {isActive && (
           <Button
             variant="ghost"
