@@ -124,9 +124,7 @@ describe("subscribeModelDownloadSaga — TC-F03", () => {
       });
     });
 
-    const { effects } = await saga
-      .put(loadModels())
-      .run({ timeout: 500, silenceTimeout: true });
+    const { effects } = await saga.put(loadModels()).run({ timeout: 500, silenceTimeout: true });
 
     const completedDispatched = effects.put?.some(
       (e) =>

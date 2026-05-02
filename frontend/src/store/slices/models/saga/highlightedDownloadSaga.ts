@@ -1,9 +1,6 @@
 import { delay, put, takeLatest } from "redux-saga/effects";
 import type { SagaIterator } from "redux-saga";
-import {
-  SET_HIGHLIGHTED_DOWNLOAD,
-  clearHighlightedDownload,
-} from "../actions";
+import { SET_HIGHLIGHTED_DOWNLOAD, clearHighlightedDownload } from "../actions";
 
 export const HIGHLIGHT_LINGER_MS = 2000;
 
