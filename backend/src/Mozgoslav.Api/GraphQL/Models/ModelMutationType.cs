@@ -1,13 +1,14 @@
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
 using HotChocolate;
-using HotChocolate.Subscriptions;
 using HotChocolate.Types;
 
 using Mozgoslav.Api.GraphQL.Errors;
 using Mozgoslav.Api.GraphQL.Mutations;
 using Mozgoslav.Api.Models;
+using Mozgoslav.Infrastructure.Persistence;
 using Mozgoslav.Infrastructure.Platform;
 using Mozgoslav.Infrastructure.Services;
 
@@ -19,7 +20,8 @@ public sealed class ModelMutationType
     public async Task<DownloadModelPayload> DownloadModel(
         string catalogueId,
         [Service] IModelDownloadCoordinator coordinator,
-        [Service] ITopicEventSender sender,
+        [Service] IDownloadJobRepository repo,
+        [Service] Microsoft.Extensions.Hosting.IHostApplicationLifetime lifetime,
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(catalogueId))
@@ -36,29 +38,55 @@ public sealed class ModelMutationType
         }
 
         var destination = ResolveDestination(entry);
-        var downloadId = coordinator.Start(catalogueId, entry.Url, destination, ct);
-        var topic = ModelDownloadTopics.ForDownloadId(downloadId);
-
-        _ = Task.Run(async () =>
+        if (File.Exists(destination))
         {
-            await foreach (var p in coordinator.StreamAsync(downloadId, CancellationToken.None))
-            {
-                var evt = new ModelDownloadProgressEvent(
-                    p.DownloadId,
-                    p.BytesRead,
-                    p.TotalBytes,
-                    p.Done,
-                    p.Error);
-                await sender.SendAsync(topic, evt, CancellationToken.None);
-                if (p.Done)
-                {
-                    await sender.CompleteAsync(topic);
-                    break;
-                }
-            }
-        }, CancellationToken.None);
+            return new DownloadModelPayload(null,
+                [new ConflictError("ALREADY_INSTALLED", $"Model {catalogueId} is already installed")]);
+        }
+
+        var existing = await repo.TryGetActiveByCatalogueIdAsync(catalogueId, ct);
+        if (existing is not null)
+        {
+            return new DownloadModelPayload(existing.Id.ToString("N"), []);
+        }
+
+        var downloadId = await coordinator.StartAsync(
+            catalogueId,
+            entry.Url,
+            destination,
+            null,
+            lifetime.ApplicationStopping);
 
         return new DownloadModelPayload(downloadId, []);
+    }
+
+    public async Task<CancelModelDownloadPayload> CancelModelDownload(
+        string downloadId,
+        [Service] IModelDownloadCoordinator coordinator,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(downloadId))
+        {
+            return new CancelModelDownloadPayload(false,
+                [new ValidationError("VALIDATION_ERROR", "downloadId is required", "downloadId")]);
+        }
+
+        var error = await coordinator.TryCancelAsync(downloadId, ct);
+
+        if (error == "NOT_FOUND")
+        {
+            return new CancelModelDownloadPayload(false,
+                [new NotFoundError("NOT_FOUND", $"Download {downloadId} not found", "DownloadJob", downloadId)]);
+        }
+
+        if (error == "CANNOT_CANCEL_FINALIZING")
+        {
+            return new CancelModelDownloadPayload(false,
+                [new ConflictError("CANNOT_CANCEL_FINALIZING",
+                    "Cannot cancel a download that is finalizing")]);
+        }
+
+        return new CancelModelDownloadPayload(true, []);
     }
 
     private static string ResolveDestination(CatalogEntry entry)

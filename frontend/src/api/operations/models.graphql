@@ -13,9 +13,32 @@ query QueryModels {
   }
 }
 
+query QueryActiveDownloads {
+  activeDownloads {
+    id
+    catalogueId
+    state
+    bytesReceived
+    totalBytes
+    speedBytesPerSecond
+    errorMessage
+    startedAt
+  }
+}
+
 mutation MutationDownloadModel($catalogueId: String!) {
   downloadModel(catalogueId: $catalogueId) {
     downloadId
+    errors {
+      code
+      message
+    }
+  }
+}
+
+mutation MutationCancelModelDownload($downloadId: String!) {
+  cancelModelDownload(downloadId: $downloadId) {
+    ok
     errors {
       code
       message
@@ -28,7 +51,8 @@ subscription SubscriptionModelDownloadProgress($downloadId: String!) {
     downloadId
     bytesRead
     totalBytes
-    done
+    phase
+    speedBytesPerSecond
     error
   }
 }

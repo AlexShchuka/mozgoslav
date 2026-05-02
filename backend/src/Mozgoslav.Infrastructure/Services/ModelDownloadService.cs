@@ -1,12 +1,15 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
+using Mozgoslav.Domain.Enums;
 using Mozgoslav.Infrastructure.Platform;
 
 namespace Mozgoslav.Infrastructure.Services;
@@ -26,9 +29,10 @@ public sealed class ModelDownloadService
         _logger = logger;
     }
 
-    public async Task<string> DownloadAsync(
+    public async Task<DownloadErrorKind?> DownloadAsync(
         string url,
         string destinationPath,
+        long resumeFrom,
         IProgress<Progress>? progress,
         CancellationToken ct)
     {
@@ -38,40 +42,100 @@ public sealed class ModelDownloadService
         AppPaths.EnsureExist();
         Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
 
-        var tempPath = destinationPath + ".tmp";
-        if (File.Exists(tempPath))
-        {
-            File.Delete(tempPath);
-        }
+        var partialPath = destinationPath + ".partial";
 
         using var client = _httpClientFactory.CreateClient("models");
 
-        using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
-        response.EnsureSuccessStatusCode();
-
-        var total = response.Content.Headers.ContentLength;
-        await using var source = await response.Content.ReadAsStreamAsync(ct);
-        long received = 0;
-        await using (var target = File.Create(tempPath))
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        if (resumeFrom > 0)
         {
-            var buffer = new byte[81_920];
-            int read;
-            while ((read = await source.ReadAsync(buffer, ct)) > 0)
+            request.Headers.Range = new RangeHeaderValue(resumeFrom, null);
+        }
+
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+        }
+        catch (HttpRequestException ex) when (IsTransientException(ex))
+        {
+            _logger.LogWarning(ex, "Transient HTTP error downloading {Url}", url);
+            return DownloadErrorKind.Transient;
+        }
+        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            _logger.LogWarning(ex, "Timeout downloading {Url}", url);
+            return DownloadErrorKind.Transient;
+        }
+
+        if (response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.Gone)
+        {
+            response.Dispose();
+            return DownloadErrorKind.NotFound;
+        }
+
+        if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
+        {
+            var code = (int)response.StatusCode;
+            response.Dispose();
+            _logger.LogWarning("Non-transient HTTP {Status} downloading {Url}", code, url);
+            return DownloadErrorKind.Unknown;
+        }
+
+        if ((int)response.StatusCode >= 500)
+        {
+            response.Dispose();
+            return DownloadErrorKind.Transient;
+        }
+
+        using (response)
+        {
+            var total = response.Content.Headers.ContentLength;
+            var effectiveTotal = total.HasValue ? resumeFrom + total.Value : 0;
+
+            await using var source = await response.Content.ReadAsStreamAsync(ct);
+
+            var fileMode = resumeFrom > 0 ? FileMode.Append : FileMode.Create;
+            var received = resumeFrom;
+
+            await using (var target = new FileStream(partialPath, fileMode, FileAccess.Write, FileShare.None))
             {
-                await target.WriteAsync(buffer.AsMemory(0, read), ct);
-                received += read;
-                var percent = total.HasValue && total.Value > 0
-                    ? (int)(100d * received / total.Value)
-                    : -1;
-                progress?.Report(new Progress(received, total, percent));
+                var buffer = new byte[81_920];
+                int read;
+                while ((read = await source.ReadAsync(buffer, ct)) > 0)
+                {
+                    await target.WriteAsync(buffer.AsMemory(0, read), ct);
+                    received += read;
+                    var pct = effectiveTotal > 0 ? (int)(100d * received / effectiveTotal) : -1;
+                    progress?.Report(new Progress(received, effectiveTotal > 0 ? effectiveTotal : null, pct));
+                }
+            }
+
+            if (effectiveTotal > 0 && received < effectiveTotal)
+            {
+                _logger.LogWarning(
+                    "Download of {Url} ended before TotalBytes: got {Received}, expected {Expected}",
+                    url, received, effectiveTotal);
+                return DownloadErrorKind.Transient;
+            }
+
+            if (effectiveTotal > 0)
+            {
+                progress?.Report(new Progress(received, effectiveTotal, 100));
             }
         }
 
-        progress?.Report(new Progress(received, total, 100));
+        return null;
+    }
 
-        File.Move(tempPath, destinationPath, overwrite: true);
-        _logger.LogInformation("Downloaded {Url} → {Path}", url, destinationPath);
-        return destinationPath;
+    public static Task MovePartialToDestinationAsync(string destinationPath)
+    {
+        var partialPath = destinationPath + ".partial";
+        if (File.Exists(partialPath))
+        {
+            File.Move(partialPath, destinationPath, overwrite: true);
+        }
+        return Task.CompletedTask;
     }
 
     public static async Task<string?> ComputeSha256Async(string path, CancellationToken ct)
@@ -83,5 +147,30 @@ public sealed class ModelDownloadService
         await using var stream = File.OpenRead(path);
         var hash = await SHA256.HashDataAsync(stream, ct);
         return Convert.ToHexString(hash).ToLowerInvariant();
+    }
+
+    public static long GetPartialSize(string destinationPath)
+    {
+        var partialPath = destinationPath + ".partial";
+        if (!File.Exists(partialPath)) return 0;
+        return new FileInfo(partialPath).Length;
+    }
+
+    public static void DeletePartial(string destinationPath)
+    {
+        var partialPath = destinationPath + ".partial";
+        if (File.Exists(partialPath))
+        {
+            File.Delete(partialPath);
+        }
+    }
+
+    private static bool IsTransientException(HttpRequestException ex)
+    {
+        if (ex.StatusCode.HasValue)
+        {
+            return (int)ex.StatusCode.Value >= 500;
+        }
+        return true;
     }
 }

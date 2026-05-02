@@ -44,7 +44,7 @@ internal static class SchemaBuilderExtensions
                 o.MaxPageSize = 200;
                 o.RequirePagingBoundaries = false;
             })
-            .ModifyRequestOptions(o => o.IncludeExceptionDetails = false);
+            .ModifyRequestOptions(o => o.IncludeExceptionDetails = !environment.IsProduction());
 
         if (environment.IsProduction())
         {

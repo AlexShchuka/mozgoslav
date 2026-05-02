@@ -552,6 +552,7 @@
     "installedButton": "Установлено",
     "notInstalled": "Не скачана",
     "download": "Скачать",
+    "downloading": "Скачивается",
     "sizeMb": "{{size}} МБ",
     "filter": {
       "all": "Все",
@@ -561,6 +562,24 @@
       "AUDIO_ML": "Embedding",
       "NLP_ML": "NLP"
     }
+  },
+  "downloads": {
+    "title": "Загрузки",
+    "empty": "Нет активных загрузок",
+    "openDrawer": "Загрузки",
+    "cancel": "Отменить",
+    "retry": "Повторить",
+    "installed": "Установлена",
+    "eta": "Осталось {{time}}",
+    "speed": "{{speed}}/с",
+    "queued": "В очереди",
+    "downloading": "Скачивается",
+    "finalizing": "Финализация",
+    "failed": "Ошибка",
+    "cancelled": "Отменено",
+    "closeAriaLabel": "Закрыть",
+    "cancelledToast": "Загрузка отменена",
+    "successTitle": "Установлено"
   },
   "obsidian": {
     "title": "Obsidian vault",

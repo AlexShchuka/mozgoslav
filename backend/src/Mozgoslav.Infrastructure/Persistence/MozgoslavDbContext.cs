@@ -29,6 +29,7 @@ public sealed class MozgoslavDbContext : DbContext
     public DbSet<RagChunk> RagChunks => Set<RagChunk>();
     public DbSet<PromptTemplateEntity> PromptTemplates => Set<PromptTemplateEntity>();
     public DbSet<RoutineRun> RoutineRuns => Set<RoutineRun>();
+    public DbSet<DownloadJob> DownloadJobs => Set<DownloadJob>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -252,6 +253,28 @@ public sealed class MozgoslavDbContext : DbContext
             e.Property(x => x.PayloadSummary).HasColumnName("payload_summary");
             e.HasIndex(x => x.RoutineKey).HasDatabaseName("ix_routine_runs_routine_key");
             e.HasIndex(x => x.StartedAt).HasDatabaseName("ix_routine_runs_started_at");
+        });
+
+        modelBuilder.Entity<DownloadJob>(e =>
+        {
+            e.ToTable("download_jobs");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.CatalogueId).HasColumnName("catalogue_id").IsRequired();
+            e.Property(x => x.SourceUrl).HasColumnName("source_url").IsRequired();
+            e.Property(x => x.DestinationPath).HasColumnName("destination_path").IsRequired();
+            e.Property(x => x.State).HasColumnName("state").HasConversion<string>().IsRequired();
+            e.Property(x => x.BytesReceived).HasColumnName("bytes_received");
+            e.Property(x => x.TotalBytes).HasColumnName("total_bytes");
+            e.Property(x => x.ExpectedSha256).HasColumnName("expected_sha256");
+            e.Property(x => x.ErrorKind).HasColumnName("error_kind").HasConversion<string>();
+            e.Property(x => x.ErrorMessage).HasColumnName("error_message");
+            e.Property(x => x.CreatedAt).HasColumnName("created_at");
+            e.Property(x => x.StartedAt).HasColumnName("started_at");
+            e.Property(x => x.FinishedAt).HasColumnName("finished_at");
+            e.HasIndex(x => x.CatalogueId).HasDatabaseName("ix_download_jobs_catalogue_id");
+            e.HasIndex(x => x.State).HasDatabaseName("ix_download_jobs_state");
+            e.HasIndex(x => x.CreatedAt).HasDatabaseName("ix_download_jobs_created_at");
         });
     }
 }

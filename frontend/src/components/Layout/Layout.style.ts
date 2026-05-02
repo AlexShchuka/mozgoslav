@@ -168,6 +168,28 @@ export const HelpButton = styled.button`
 
 export const CollapseButton = styled(HelpButton)``;
 
+export const DownloadsButton = styled(HelpButton)`
+  position: relative;
+`;
+
+export const DownloadsBadge = styled.span`
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: ${({ theme }) => theme.radii.full};
+  background: ${({ theme }) => theme.colors.accent.primary};
+  color: ${({ theme }) => theme.colors.bg.base};
+  font-size: 10px;
+  font-weight: ${({ theme }) => theme.font.weight.semibold};
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+`;
+
 export const StatusDot = styled.span<{ $ok: boolean }>`
   width: 8px;
   height: 8px;

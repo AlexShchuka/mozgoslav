@@ -279,7 +279,10 @@ try
     builder.Services.AddScoped<IVaultDiagnostics, VaultDiagnosticsService>();
     builder.Services.AddScoped<VaultSidecarOrchestrator>();
     builder.Services.AddSingleton(_ => PinnedPluginsLoader.LoadFromEmbeddedResource());
+    builder.Services.Configure<ModelDownloadCoordinatorOptions>(
+        builder.Configuration.GetSection(ModelDownloadCoordinatorOptions.SectionName));
     builder.Services.AddSingleton<ModelDownloadService>();
+    builder.Services.AddSingleton<IDownloadJobRepository, EfDownloadJobRepository>();
     builder.Services.AddSingleton<IModelDownloadCoordinator, ModelDownloadCoordinator>();
     builder.Services.AddSingleton<BackupService>();
     builder.Services.AddSingleton<RecordingSessionRegistry>();

@@ -64,7 +64,7 @@ describe("Models page — store-driven", () => {
     );
   });
 
-  it("Models_ShowsProgressBar_WhenActiveDownload", () => {
+  it("Models_ShowsOpenDrawerButton_WhenActiveDownload", () => {
     renderWithStore(
       <MemoryRouter>
         <Models />
@@ -75,21 +75,18 @@ describe("Models page — store-driven", () => {
           mockModelsState({
             byId: { [fakeModel.id]: fakeModel },
             activeDownloads: { [fakeModel.id]: "dl-xyz" },
-            downloadProgress: {
-              "dl-xyz": { bytesRead: 1024, totalBytes: 10240, done: false, error: null },
-            },
           })
         ),
       }
     );
 
-    expect(screen.getByTestId("model-download-dl-xyz")).toBeInTheDocument();
+    expect(screen.getByTestId(`models-open-drawer-${fakeModel.id}`)).toBeInTheDocument();
   });
 
-  it("does not mount progress before download starts", () => {
+  it("does not show open-drawer button before download starts", () => {
     renderModels();
 
-    expect(screen.queryByTestId(/^model-download-/)).toBeNull();
+    expect(screen.queryByTestId(`models-open-drawer-${fakeModel.id}`)).toBeNull();
   });
 });
 

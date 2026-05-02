@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -22,6 +25,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
 
     public string DatabasePath { get; }
 
+    public Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>? ModelsHttpResponder { get; set; }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("IntegrationTest");
@@ -37,7 +42,26 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.ConfigureTestServices(services =>
         {
             ReplaceDbContextRegistration(services, DatabasePath);
+            if (ModelsHttpResponder is not null)
+            {
+                var responder = ModelsHttpResponder;
+                services.AddHttpClient("models")
+                    .ConfigurePrimaryHttpMessageHandler(() => new ScriptedHandler(responder));
+            }
         });
+    }
+
+    private sealed class ScriptedHandler : HttpMessageHandler
+    {
+        private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _responder;
+
+        public ScriptedHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responder)
+        {
+            _responder = responder;
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            => _responder(request, cancellationToken);
     }
 
     private static void ReplaceDbContextRegistration(IServiceCollection services, string databasePath)

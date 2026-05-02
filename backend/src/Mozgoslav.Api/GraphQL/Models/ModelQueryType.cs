@@ -1,12 +1,16 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
+using HotChocolate;
 using HotChocolate.Types;
 
 using Mozgoslav.Api.GraphQL.Queries;
 using Mozgoslav.Api.Models;
 using Mozgoslav.Infrastructure.Platform;
+using Mozgoslav.Infrastructure.Services;
 
 namespace Mozgoslav.Api.GraphQL.Models;
 
@@ -32,9 +36,25 @@ public sealed class ModelQueryType
         }).ToList();
     }
 
+    public async Task<IReadOnlyList<ActiveDownloadDto>> ActiveDownloads(
+        [Service] IModelDownloadCoordinator coordinator,
+        CancellationToken ct)
+    {
+        var snapshots = await coordinator.ListActiveAsync(ct);
+        return snapshots.Select(s => new ActiveDownloadDto(
+            s.Id,
+            s.CatalogueId,
+            s.State,
+            s.BytesReceived,
+            s.TotalBytes,
+            s.SpeedBytesPerSecond,
+            s.ErrorMessage,
+            s.StartedAt)).ToList();
+    }
+
     private static string ResolveDestination(CatalogEntry entry)
     {
-        var fileName = Path.GetFileName(new System.Uri(entry.Url).AbsolutePath);
-        return Path.Combine(AppPaths.Models, fileName);
+        var fileName = System.IO.Path.GetFileName(new System.Uri(entry.Url).AbsolutePath);
+        return System.IO.Path.Combine(AppPaths.Models, fileName);
     }
 }
