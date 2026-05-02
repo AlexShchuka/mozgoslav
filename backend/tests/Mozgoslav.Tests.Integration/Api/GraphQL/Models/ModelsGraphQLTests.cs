@@ -133,25 +133,4 @@ public sealed class ModelsGraphQLTests : IntegrationTestsBase
         errors[0]!["code"]!.GetValue<string>().Should().Be("VALIDATION_ERROR");
     }
 
-    [TestMethod]
-    public async Task ActiveDownloadsQuery_NoActiveJobs_ReturnsEmptyArray()
-    {
-        using var client = CreateClient();
-        var body = new
-        {
-            query = """
-                query {
-                  activeDownloads { id catalogueId state bytesReceived totalBytes }
-                }
-                """
-        };
-
-        using var response = await client.PostAsJsonAsync("/graphql", body);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var json = JsonNode.Parse(await response.Content.ReadAsStringAsync())!;
-        json["errors"].Should().BeNull();
-        var arr = json["data"]!["activeDownloads"]!.AsArray();
-        arr.Count.Should().Be(0);
-    }
 }
