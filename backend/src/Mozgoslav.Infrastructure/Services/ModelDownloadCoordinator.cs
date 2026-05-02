@@ -97,7 +97,7 @@ public sealed class ModelDownloadCoordinator : IModelDownloadCoordinator, IDispo
             CatalogueId = catalogueId;
             Cts = cts;
             Channel = System.Threading.Channels.Channel.CreateUnbounded<ModelDownloadProgress>(
-                new UnboundedChannelOptions { SingleReader = false, SingleWriter = false });
+                new UnboundedChannelOptions { SingleReader = false, SingleWriter = true });
         }
     }
 
@@ -193,9 +193,8 @@ public sealed class ModelDownloadCoordinator : IModelDownloadCoordinator, IDispo
 
         if (job.State == DownloadState.Queued)
         {
-            EmitAndStore(slot, new ModelDownloadProgress(
-                downloadId, 0, null, DownloadState.Cancelled, null, null));
-            slot.Channel.Writer.TryComplete();
+            slot.LastProgress = new ModelDownloadProgress(
+                downloadId, 0, null, DownloadState.Cancelled, null, null);
         }
 
         return null;
