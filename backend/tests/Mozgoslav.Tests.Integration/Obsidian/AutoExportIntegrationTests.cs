@@ -68,12 +68,14 @@ public sealed class AutoExportIntegrationTests : IntegrationTestsBase
         }
 
         var bus = GetRequiredService<IDomainEventBus>();
+        using var subscriberCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        await bus.WaitForSubscriberAsync<ProcessedNoteSaved>(subscriberCts.Token);
         await bus.PublishAsync(new ProcessedNoteSaved(note.Id, profile.Id, DateTimeOffset.UtcNow), CancellationToken.None);
 
         var expectedRelative = "_inbox/2026-04-27-Auto-Export-Smoke-AutoExportTest.md";
         var expectedAbsolute = Path.Combine(_vaultRoot, "_inbox", "2026-04-27-Auto-Export-Smoke-AutoExportTest.md");
 
-        await WaitUntilAsync(() => File.Exists(expectedAbsolute), TimeSpan.FromSeconds(5));
+        await WaitUntilAsync(() => File.Exists(expectedAbsolute), TimeSpan.FromSeconds(5), "vault file exists");
 
         File.Exists(expectedAbsolute).Should().BeTrue();
         var content = await File.ReadAllTextAsync(expectedAbsolute, TestContext.CancellationToken);
@@ -85,7 +87,7 @@ public sealed class AutoExportIntegrationTests : IntegrationTestsBase
             var notes = scope.ServiceProvider.GetRequiredService<IProcessedNoteRepository>();
             var refreshed = await notes.GetByIdAsync(note.Id, CancellationToken.None);
             return refreshed?.ExportedToVault == true;
-        }, TimeSpan.FromSeconds(5));
+        }, TimeSpan.FromSeconds(5), "note.ExportedToVault flag set");
 
         using (var scope = CreateScope())
         {
@@ -97,7 +99,7 @@ public sealed class AutoExportIntegrationTests : IntegrationTestsBase
         }
     }
 
-    private static async Task WaitUntilAsync(Func<bool> predicate, TimeSpan timeout)
+    private static async Task WaitUntilAsync(Func<bool> predicate, TimeSpan timeout, string description)
     {
         var deadline = DateTime.UtcNow + timeout;
         while (DateTime.UtcNow < deadline)
@@ -108,9 +110,10 @@ public sealed class AutoExportIntegrationTests : IntegrationTestsBase
             }
             await Task.Delay(25, CancellationToken.None);
         }
+        throw new TimeoutException($"Timed out after {timeout.TotalSeconds}s waiting for: {description}");
     }
 
-    private static async Task WaitUntilAsync(Func<Task<bool>> predicate, TimeSpan timeout)
+    private static async Task WaitUntilAsync(Func<Task<bool>> predicate, TimeSpan timeout, string description)
     {
         var deadline = DateTime.UtcNow + timeout;
         while (DateTime.UtcNow < deadline)
@@ -121,5 +124,6 @@ public sealed class AutoExportIntegrationTests : IntegrationTestsBase
             }
             await Task.Delay(25, CancellationToken.None);
         }
+        throw new TimeoutException($"Timed out after {timeout.TotalSeconds}s waiting for: {description}");
     }
 }

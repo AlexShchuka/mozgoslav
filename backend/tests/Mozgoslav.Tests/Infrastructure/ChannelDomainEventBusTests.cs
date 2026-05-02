@@ -103,5 +103,57 @@ public sealed class ChannelDomainEventBusTests
         enumerator.Current.Should().Be(payload);
     }
 
+    [TestMethod]
+    public async Task WaitForSubscriberAsync_WhenSubscriberAlreadyRegistered_CompletesImmediately()
+    {
+        using var bus = new ChannelDomainEventBus();
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+        var enumerator = bus.SubscribeAsync<ProcessedNoteSaved>(cts.Token).GetAsyncEnumerator(cts.Token);
+        var firstMove = enumerator.MoveNextAsync();
+
+        await Task.Delay(50, CancellationToken.None);
+
+        using var waitCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+        var waitTask = bus.WaitForSubscriberAsync<ProcessedNoteSaved>(waitCts.Token);
+        var winner = await Task.WhenAny(waitTask, Task.Delay(TimeSpan.FromMilliseconds(200), CancellationToken.None));
+        winner.Should().Be(waitTask, "subscriber was already registered so the wait should complete immediately");
+
+        await cts.CancelAsync();
+        try { await firstMove; } catch (OperationCanceledException) { }
+        await enumerator.DisposeAsync();
+    }
+
+    [TestMethod]
+    public async Task WaitForSubscriberAsync_WhenSubscriberRegistersLater_Completes()
+    {
+        using var bus = new ChannelDomainEventBus();
+        using var waitCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+        var waitTask = bus.WaitForSubscriberAsync<ProcessedNoteSaved>(waitCts.Token);
+
+        using var subCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var enumerator = bus.SubscribeAsync<ProcessedNoteSaved>(subCts.Token).GetAsyncEnumerator(subCts.Token);
+        var firstMove = enumerator.MoveNextAsync();
+
+        var winner = await Task.WhenAny(waitTask, Task.Delay(TimeSpan.FromSeconds(2), CancellationToken.None));
+        winner.Should().Be(waitTask, "wait should complete once a subscriber is registered");
+
+        await subCts.CancelAsync();
+        try { await firstMove; } catch (OperationCanceledException) { }
+        await enumerator.DisposeAsync();
+    }
+
+    [TestMethod]
+    public async Task WaitForSubscriberAsync_WhenCancelled_Throws()
+    {
+        using var bus = new ChannelDomainEventBus();
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
+
+        var act = async () => await bus.WaitForSubscriberAsync<ProcessedNoteSaved>(cts.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
     private sealed record OtherEvent(string Name);
 }

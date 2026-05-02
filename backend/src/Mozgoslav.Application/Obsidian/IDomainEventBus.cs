@@ -11,4 +11,7 @@ public interface IDomainEventBus
 
     IAsyncEnumerable<TEvent> SubscribeAsync<TEvent>(CancellationToken ct)
         where TEvent : class;
+
+    Task WaitForSubscriberAsync<TEvent>(CancellationToken ct)
+        where TEvent : class;
 }
