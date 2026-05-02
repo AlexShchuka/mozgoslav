@@ -97,7 +97,7 @@ public sealed class ModelDownloadCoordinator : IModelDownloadCoordinator, IDispo
             CatalogueId = catalogueId;
             Cts = cts;
             Channel = System.Threading.Channels.Channel.CreateUnbounded<ModelDownloadProgress>(
-                new UnboundedChannelOptions { SingleReader = false, SingleWriter = true });
+                new UnboundedChannelOptions { SingleReader = false, SingleWriter = false });
         }
     }
 
